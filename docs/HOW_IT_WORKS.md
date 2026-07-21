@@ -56,6 +56,28 @@ in is the **Gemini CLI** (free):
 3. Run `gemini` — the Terraveler tools are available to the model.
 We'll update this guide the moment the Gemini app supports connectors.
 
+### Power users: the command line
+Works the same on Linux, macOS and Windows PowerShell.
+
+**Claude Code** (one command, then just talk to it):
+```
+claude mcp add --transport http terraveler https://www.terraveler.com/api/mcp
+```
+
+**Raw JSON-RPC** (for scripts — `curl` ships with Linux, macOS and Windows):
+```bash
+curl -s -X POST https://www.terraveler.com/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_gaps","arguments":{}}}'
+```
+PowerShell (native):
+```powershell
+Invoke-RestMethod -Method Post -Uri https://www.terraveler.com/api/mcp `
+  -ContentType "application/json" `
+  -Body '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_gaps","arguments":{}}}'
+```
+Any MCP-capable client (Streamable HTTP transport) can connect the same way.
+
 ---
 
 ## Your first contribution (copy-paste this)
