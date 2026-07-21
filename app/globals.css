@@ -1,0 +1,176 @@
+:root {
+  --parchment: #f2e6cf;
+  --parchment-deep: #e7d5b0;
+  --ink: #2b2117;
+  --ink-soft: #5a4a34;
+  --sea: #a8b8a0;
+  --route: #7a2e1d;
+  --brass: #a9772f;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: Georgia, "Times New Roman", serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+a { color: var(--route); }
+
+/* --- Map: warm the basemap toward parchment for a period feel --- */
+.maplibregl-canvas {
+  filter: sepia(0.35) saturate(0.82) hue-rotate(-8deg) brightness(1.03);
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(242, 230, 207, 0.72) !important;
+  font-size: 10px;
+}
+.maplibregl-ctrl-attrib a { color: var(--ink-soft); }
+
+/* --- Waypoint markers, coloured by confidence --- */
+.wp-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--brass);
+  cursor: pointer;
+  box-shadow: 0 0 0 2px rgba(242, 230, 207, 0.85);
+  transition: transform 0.15s ease;
+}
+.wp-dot:hover { transform: scale(1.45); }
+.wp-dot.conf-approximate { background: #c9a24a; }
+.wp-dot.conf-reconstructed { background: transparent; border-style: dashed; }
+
+/* --- Moving ship marker --- */
+.ship-marker {
+  color: var(--route);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+  pointer-events: none;
+}
+.ship-marker svg { display: block; width: 26px; height: 26px; }
+
+/* --- Time scrubber --- */
+input[type="range"].scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--parchment-deep);
+  background-image: linear-gradient(var(--brass), var(--brass));
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+input[type="range"].scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--route);
+  border: 2px solid var(--parchment);
+  cursor: pointer;
+}
+input[type="range"].scrubber::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--route);
+  border: 2px solid var(--parchment);
+  cursor: pointer;
+}
+
+.conf-badge {
+  display: inline-block;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--ink-soft);
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.play-btn {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--ink-soft);
+  background: var(--parchment-deep);
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.play-btn:hover { background: var(--brass); color: var(--parchment); }
+
+/* --- Lens switcher --- */
+.lens-switch {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 5;
+  display: flex;
+  gap: 2px;
+  background: rgba(242, 230, 207, 0.9);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 9px;
+  padding: 3px;
+  box-shadow: 0 3px 12px rgba(43, 33, 23, 0.15);
+}
+.lens-btn {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  padding: 5px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.lens-btn.active { background: var(--route); color: var(--parchment); }
+.lens-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* --- Chart lens instruments --- */
+.instruments {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin: 12px 0 4px;
+}
+.instruments > div { display: flex; flex-direction: column; }
+.instruments span {
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.instruments strong {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+.surveyor-note {
+  margin-top: 10px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}

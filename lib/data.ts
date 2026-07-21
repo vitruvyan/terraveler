@@ -1,0 +1,64 @@
+import { supabase } from "./supabase";
+import type { Navigator, Voyage, Waypoint } from "./types";
+import bougainville from "@/data/bougainville.json";
+
+export interface VoyageBundle {
+  navigator: Navigator;
+  voyage: Voyage;
+  waypoints: Waypoint[];
+}
+
+function hasSupabase(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+  );
+}
+
+// Bundled at build time — reliable on Vercel with no runtime filesystem access.
+function fromJson(): VoyageBundle {
+  return bougainville as unknown as VoyageBundle;
+}
+
+/**
+ * Loads a voyage bundle. Prefers Supabase when configured, and falls back to
+ * the bundled JSON so the prototype renders even before Supabase is wired.
+ */
+export async function getVoyageBundle(
+  slug = "boudeuse-1766"
+): Promise<VoyageBundle> {
+  if (hasSupabase()) {
+    try {
+      const { data: voyage } = await supabase
+        .from("voyages")
+        .select("*")
+        .eq("slug", slug)
+        .single();
+
+      if (voyage) {
+        const [navRes, wpRes] = await Promise.all([
+          supabase
+            .from("navigators")
+            .select("*")
+            .eq("id", voyage.navigator_id)
+            .single(),
+          supabase
+            .from("waypoints")
+            .select("*")
+            .eq("voyage_id", voyage.id)
+            .order("seq", { ascending: true }),
+        ]);
+
+        if (navRes.data && wpRes.data && wpRes.data.length > 0) {
+          return {
+            navigator: navRes.data as Navigator,
+            voyage: voyage as Voyage,
+            waypoints: wpRes.data as Waypoint[],
+          };
+        }
+      }
+    } catch {
+      // fall through to the bundled JSON
+    }
+  }
+  return fromJson();
+}
