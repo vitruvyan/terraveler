@@ -22,8 +22,10 @@ DRY_RUN = os.environ.get("DRY_RUN", "1") != "0"
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 SB_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SB_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
-VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", "gemini-1.5-flash")
-EMBED_MODEL = "text-embedding-004"
+VISION_MODEL = os.environ.get("GEMINI_VISION_MODEL", "gemini-2.0-flash")
+EMBED_MODEL = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+EMBED_DIM = 768
+BATCH = int(os.environ.get("BATCH", "25"))
 VOYAGE = "boudeuse-1766"
 UA = "terraveler-rag/1.0 (contact: dbaldoni@gmail.com)"
 
@@ -162,7 +164,10 @@ def _retry(fn, tries=4):
 
 def gemini_embed(text):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{EMBED_MODEL}:embedContent?key={GEMINI_KEY}"
-    body = {"model": f"models/{EMBED_MODEL}", "content": {"parts": [{"text": text[:8000]}]}}
+    body = {"model": f"models/{EMBED_MODEL}",
+            "content": {"parts": [{"text": text[:8000]}]},
+            "taskType": "RETRIEVAL_DOCUMENT",
+            "outputDimensionality": EMBED_DIM}
     return _retry(lambda: post_json(url, body, {})["embedding"]["values"])
 
 def gemini_describe(image_bytes, mime, title):
@@ -182,6 +187,43 @@ def supabase_insert(rows):
     url = f"{SB_URL}/rest/v1/rag_docs"
     post_json(url, rows, {"apikey": SB_KEY, "Authorization": f"Bearer {SB_KEY}",
                           "Prefer": "return=minimal"})
+
+def sb_get(path):
+    req = urllib.request.Request(f"{SB_URL}/rest/v1/{path}",
+        headers={"User-Agent": UA, "apikey": SB_KEY, "Authorization": f"Bearer {SB_KEY}"})
+    return json.loads(_read(req, 60).decode("utf-8", "replace"))
+
+def doc_key(d):
+    return (d["type"], d.get("title"), d.get("chunk_index"), d.get("media_url"))
+
+def existing_keys():
+    """What's already in the DB for this voyage — so re-runs resume."""
+    keys, offset = set(), 0
+    while True:
+        rows = sb_get(f"rag_docs?voyage_slug=eq.{VOYAGE}"
+                      f"&select=type,title,chunk_index,media_url&limit=1000&offset={offset}")
+        for r in rows:
+            keys.add((r["type"], r.get("title"), r.get("chunk_index"), r.get("media_url")))
+        if len(rows) < 1000:
+            return keys
+        offset += 1000
+
+def pick_models():
+    """Auto-select embedding/vision models actually available on this key."""
+    global EMBED_MODEL, VISION_MODEL
+    try:
+        d = get_json(f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_KEY}")
+        meth = {m["name"].split("/")[-1]: m.get("supportedGenerationMethods", []) for m in d.get("models", [])}
+        if "embedContent" not in meth.get(EMBED_MODEL, []):
+            cand = [n for n, mm in meth.items() if "embedContent" in mm]
+            if cand: EMBED_MODEL = cand[0]
+        if "generateContent" not in meth.get(VISION_MODEL, []):
+            cand = ([n for n, mm in meth.items() if "generateContent" in mm and "flash" in n]
+                    or [n for n, mm in meth.items() if "generateContent" in mm])
+            if cand: VISION_MODEL = cand[0]
+    except Exception as e:
+        print("model autodetect skipped:", e)
+    print(f"using embed={EMBED_MODEL}  vision={VISION_MODEL}")
 
 # ---------------------------------------------------------------- main
 def gather():
@@ -235,7 +277,11 @@ def gather():
 
 
 def main():
-    print(f"DRY_RUN={DRY_RUN}  vision={VISION_MODEL}  embed={EMBED_MODEL}")
+    print(f"DRY_RUN={DRY_RUN}")
+    if not DRY_RUN:
+        if not (GEMINI_KEY and SB_URL and SB_KEY):
+            raise SystemExit("Set GEMINI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY to run for real.")
+        pick_models()
     docs = gather()
     n_text = sum(1 for d in docs if d["type"] == "text")
     n_img = sum(1 for d in docs if d["type"] == "image")
@@ -243,23 +289,20 @@ def main():
     if DRY_RUN:
         print("DRY_RUN: not embedding or writing. Review the counts above.")
         return
-    if not (GEMINI_KEY and SB_URL and SB_KEY):
-        raise SystemExit("Set GEMINI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY to run for real.")
-    # Clear any previous rows for this voyage so re-runs stay clean (no duplicates).
-    _read(urllib.request.Request(
-        f"{SB_URL}/rest/v1/rag_docs?voyage_slug=eq.{VOYAGE}", method="DELETE",
-        headers={"User-Agent": UA, "apikey": SB_KEY,
-                 "Authorization": f"Bearer {SB_KEY}", "Prefer": "return=minimal"}), 60)
-    print(f"cleared previous rows for {VOYAGE}")
-    batch = []
-    for i, d in enumerate(docs, 1):
+    # Resume: skip anything already in the DB, then embed the rest in small batches.
+    done = existing_keys()
+    todo = [d for d in docs if doc_key(d) not in done]
+    print(f"resuming: {len(done)} already in DB, {len(todo)} to embed (batch={BATCH})")
+    batch, n = [], 0
+    for d in todo:
         d["embedding"] = "[" + ",".join(f"{x:.6f}" for x in gemini_embed(d["content"])) + "]"
-        batch.append(d)
-        if len(batch) >= 40:
-            supabase_insert(batch); print(f"  inserted {i}/{len(docs)}"); batch = []
-        time.sleep(0.05)
+        batch.append(d); n += 1
+        if len(batch) >= BATCH:
+            supabase_insert(batch); print(f"  inserted {n}/{len(todo)}"); batch = []; time.sleep(0.3)
+        else:
+            time.sleep(0.05)
     if batch:
-        supabase_insert(batch); print(f"  inserted {len(docs)}/{len(docs)}")
+        supabase_insert(batch); print(f"  inserted {n}/{len(todo)}")
     print("Done.")
 
 
