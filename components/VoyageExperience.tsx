@@ -198,7 +198,7 @@ export default function VoyageExperience({
   const [lens, setLens] = useState<Lens>("log");
   const [showHist, setShowHist] = useState(true);
   const [autopause, setAutopause] = useState(false);
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -207,6 +207,13 @@ export default function VoyageExperience({
   legsRef.current = legs;
   const setTRef = useRef(setT);
   setTRef.current = setT;
+  // Open the Log window at a specific landfall (used by route dots & timeline ticks).
+  const openLogRef = useRef<(arrival: number) => void>(() => {});
+  openLogRef.current = (arrival: number) => {
+    setT(arrival);
+    setLens("log");
+    setPanelOpen(true);
+  };
 
   // Initialise the map once.
   useEffect(() => {
@@ -325,7 +332,7 @@ export default function VoyageExperience({
           const el = document.createElement("div");
           el.className = `wp-dot conf-${l.wp.confidence}`;
           el.title = l.wp.place_historical ?? l.wp.place_modern ?? "";
-          el.addEventListener("click", () => setTRef.current(l.arrival));
+          el.addEventListener("click", () => openLogRef.current(l.arrival));
           new gl.Marker({ element: el }).setLngLat([l.lng, l.lat]).addTo(map!);
         });
 
@@ -437,6 +444,7 @@ export default function VoyageExperience({
     );
 
   function togglePlay() {
+    setPanelOpen(true);
     if (!playing) {
       if (t >= maxTime) setT(minTime);
       setPlaying(true);
@@ -724,7 +732,7 @@ export default function VoyageExperience({
                 aria-label={l.wp.place_historical ?? l.wp.place_modern ?? "landfall"}
                 onClick={() => {
                   setPlaying(false);
-                  setT(l.arrival);
+                  openLogRef.current(l.arrival);
                 }}
               />
             ))}
