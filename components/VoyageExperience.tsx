@@ -371,8 +371,11 @@ export default function VoyageExperience({
       setT((prev) => {
         const next = prev + span / 600;
         if (autopause) {
-          const stop = legs.find((l) => l.arrival > prev + 1)?.arrival;
-          if (stop != null && next >= stop) {
+          // Stop at the next milestone on EITHER timeline — landfall or world event.
+          const nextLeg = legs.find((l) => l.arrival > prev + 1)?.arrival ?? Infinity;
+          const nextEv = events.find((e) => e.time > prev + 1)?.time ?? Infinity;
+          const stop = Math.min(nextLeg, nextEv);
+          if (Number.isFinite(stop) && next >= stop) {
             setPlaying(false);
             return stop;
           }
@@ -385,7 +388,7 @@ export default function VoyageExperience({
       });
     }, 40);
     return () => clearInterval(id);
-  }, [playing, minTime, maxTime, autopause, legs]);
+  }, [playing, minTime, maxTime, autopause, legs, events]);
 
   useEffect(() => {
     if (playing && t >= maxTime) setPlaying(false);
@@ -709,27 +712,44 @@ export default function VoyageExperience({
           <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem" }}>{dateLabel}</div>
           <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>{placeName ? `Off ${placeName}` : ""}</div>
         </div>
-        <input
-          type="range"
-          className="scrubber"
-          min={minTime}
-          max={maxTime}
-          step={DAY}
-          value={t}
-          onChange={(e) => {
-            setPlaying(false);
-            setT(Number(e.target.value));
-          }}
-          style={{ flex: 1, backgroundSize: `${pct}% 100%` }}
-          aria-label="Voyage timeline"
-        />
+        <div className="voyage-track">
+          <div className="vt-ticks">
+            {legs.map((l) => (
+              <button
+                key={l.wp.id}
+                className="vt-tick"
+                style={{ left: `${pctOf(l.arrival)}%` }}
+                title={l.wp.place_historical ?? l.wp.place_modern ?? "landfall"}
+                aria-label={l.wp.place_historical ?? l.wp.place_modern ?? "landfall"}
+                onClick={() => {
+                  setPlaying(false);
+                  setT(l.arrival);
+                }}
+              />
+            ))}
+          </div>
+          <input
+            type="range"
+            className="scrubber"
+            min={minTime}
+            max={maxTime}
+            step={DAY}
+            value={t}
+            onChange={(e) => {
+              setPlaying(false);
+              setT(Number(e.target.value));
+            }}
+            style={{ width: "100%", backgroundSize: `${pct}% 100%` }}
+            aria-label="Voyage timeline"
+          />
+        </div>
         <label className="autopause-toggle">
           <input
             type="checkbox"
             checked={autopause}
             onChange={(e) => setAutopause(e.target.checked)}
           />
-          Pause at each landfall
+          Pause at each stop &amp; event
         </label>
       </div>
     </div>

@@ -316,3 +316,33 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
 }
 .autopause-toggle input { cursor: pointer; }
+
+/* --- Voyage scrubber with landfall ticks --- */
+.voyage-track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.vt-ticks {
+  position: relative;
+  height: 8px;
+}
+.vt-tick {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  padding: 0;
+  border: none;
+  border-radius: 1px;
+  background: var(--brass);
+  opacity: 0.55;
+  cursor: pointer;
+}
+.vt-tick:hover {
+  opacity: 1;
+  height: 11px;
+}
