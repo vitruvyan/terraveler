@@ -477,6 +477,9 @@ export default function VoyageExperience({
             <a href="/about" style={{ marginLeft: 10, letterSpacing: "0.06em", textTransform: "none", fontSize: 11 }}>
               About
             </a>
+            <a href="/contribute" style={{ marginLeft: 8, letterSpacing: "0.06em", textTransform: "none", fontSize: 11 }}>
+              Contribute
+            </a>
           </span>
           <h1 style={{ margin: "2px 0 0", fontSize: "1.35rem" }}>{voyage.title}</h1>
         </div>

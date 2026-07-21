@@ -106,6 +106,7 @@ export default function About() {
       </p>
 
       <p style={{ marginTop: 40 }}>
+        <Link href="/contribute">See what the atlas is looking for →</Link> ·{" "}
         <Link href="/">← Return to the voyage</Link>
       </p>
     </main>

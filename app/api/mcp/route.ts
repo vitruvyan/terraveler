@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bougainville from "@/data/bougainville.json";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -114,8 +115,13 @@ const TOOLS = [
     description: "Return the Terraveler contribution guide: roles, flow, tool reference.",
     inputSchema: { type: "object", properties: {} } },
   { name: "list_gaps",
-    description: "The editorial roadmap: what Terraveler currently wants (open gaps, by priority). Work these, not random ideas.",
+    description: "The editorial roadmap: what Terraveler currently wants (curated gaps by priority, PLUS an auto-computed completeness report of existing voyages: which waypoints lack media, diary excerpts, dates). Work these, not random ideas.",
     inputSchema: { type: "object", properties: {} } },
+  { name: "claim_gap",
+    description: "Claim an open gap before working on it, so no one duplicates effort. Returns confirmation; the claim is recorded in the audit trail.",
+    inputSchema: { type: "object", required: ["handle", "invite_code", "gap_id"],
+      properties: { handle: { type: "string" }, invite_code: { type: "string" },
+        gap_id: { type: "number" } } } },
   { name: "propose_idea",
     description: "Propose an idea BEFORE doing any drafting work. Returns a submission id; the editorial desk assesses scope/feasibility.",
     inputSchema: { type: "object", required: ["handle", "invite_code", "title", "description"],
@@ -147,7 +153,40 @@ async function callTool(name: string, args: any): Promise<string> {
     }
     case "list_gaps": {
       const rows = await sb("GET", "editorial_gaps?status=eq.open&order=priority.asc,id.asc&select=id,title,description,kind,priority");
-      return JSON.stringify({ gaps: rows }, null, 2);
+      // Auto-computed completeness: what the existing voyage data actually lacks.
+      const b: any = bougainville;
+      const wps: any[] = b.waypoints ?? [];
+      const seqs = (pred: (w: any) => boolean) => wps.filter(pred).map((w) => w.seq);
+      const completeness = [{
+        voyage: b.voyage?.slug,
+        title: b.voyage?.title,
+        waypoints_total: wps.length,
+        waypoints_missing_media: seqs((w) => !w.media_url),
+        waypoints_missing_diary_excerpt: seqs((w) => !w.diary_excerpt),
+        waypoints_missing_departure_date: seqs((w) => !w.departure_date),
+        waypoints_low_confidence: wps.filter((w) => w.confidence !== "certain")
+          .map((w) => ({ seq: w.seq, confidence: w.confidence })),
+      }];
+      return JSON.stringify({
+        curated_gaps: rows,
+        voyage_completeness: completeness,
+        note: "curated_gaps are the desk's priorities; voyage_completeness is auto-computed from the live data — every listed seq is a concrete contribution opportunity (media must be PD/CC; excerpts verbatim with source).",
+      }, null, 2);
+    }
+    case "claim_gap": {
+      const err = requireWrite(args);
+      if (err) return `ERROR: ${err}`;
+      const updated = await sb("PATCH",
+        `editorial_gaps?id=eq.${Number(args.gap_id)}&status=eq.open`, { status: "claimed" });
+      if (!updated?.length) return "ERROR: gap not found or not open (already claimed/done).";
+      await contributorId(args.handle);
+      await sb("POST", "audit_log", {
+        submission_id: null, actor: "mcp", action: "claim-gap", verdict: null,
+        findings: [["INFO", 0, `gap #${args.gap_id} '${updated[0].title}' claimed by ${args.handle}`]],
+        carta_version: CARTA_VERSION,
+      });
+      return JSON.stringify({ claimed: updated[0],
+        note: "Gap claimed. Propose your idea with propose_idea, then draft and submit_draft. If you abandon it, tell the desk so it can be reopened." }, null, 2);
     }
     case "propose_idea": {
       const err = requireWrite(args);
