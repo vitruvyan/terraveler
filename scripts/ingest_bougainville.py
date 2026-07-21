@@ -16,7 +16,7 @@ Run schema first (supabase/rag_schema.sql), then:
 Only public-domain / CC sources are ingested. Copyrighted secondary sites
 (e.g. herodote.net) are NOT ingested — link to them / short quotes only.
 """
-import os, re, json, time, base64, urllib.request, urllib.parse
+import os, re, json, time, base64, urllib.request, urllib.parse, urllib.error
 
 DRY_RUN = os.environ.get("DRY_RUN", "1") != "0"
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -62,10 +62,17 @@ IMAGE_QUERIES = [
 IMAGES_PER_QUERY = 2
 
 # ---------------------------------------------------------------- http
+def _read(req, timeout):
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read()
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "replace")[:400]
+        raise RuntimeError(f"HTTP {e.code}: {detail}") from None
+
 def _get(url, headers=None):
     req = urllib.request.Request(url, headers={"User-Agent": UA, **(headers or {})})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read()
+    return _read(req, 60)
 
 def get_text(url):
     return _get(url).decode("utf-8", "replace")
@@ -77,8 +84,8 @@ def post_json(url, body, headers):
     data = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST",
                                  headers={"User-Agent": UA, "Content-Type": "application/json", **headers})
-    with urllib.request.urlopen(req, timeout=120) as r:
-        return json.loads(r.read().decode("utf-8", "replace")) if r.length != 0 else {}
+    raw = _read(req, 120)
+    return json.loads(raw.decode("utf-8", "replace")) if raw else {}
 
 # ---------------------------------------------------------------- fetchers
 def fetch_gutenberg(url):
@@ -144,10 +151,19 @@ def chunk(text, size=900, overlap=150):
     return chunks
 
 # ---------------------------------------------------------------- gemini
+def _retry(fn, tries=4):
+    for i in range(tries):
+        try:
+            return fn()
+        except Exception:
+            if i == tries - 1:
+                raise
+            time.sleep(2 ** i)
+
 def gemini_embed(text):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{EMBED_MODEL}:embedContent?key={GEMINI_KEY}"
-    r = post_json(url, {"model": f"models/{EMBED_MODEL}", "content": {"parts": [{"text": text[:8000]}]}}, {})
-    return r["embedding"]["values"]
+    body = {"model": f"models/{EMBED_MODEL}", "content": {"parts": [{"text": text[:8000]}]}}
+    return _retry(lambda: post_json(url, body, {})["embedding"]["values"])
 
 def gemini_describe(image_bytes, mime, title):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{VISION_MODEL}:generateContent?key={GEMINI_KEY}"
@@ -158,7 +174,7 @@ def gemini_describe(image_bytes, mime, title):
         {"text": prompt},
         {"inline_data": {"mime_type": mime, "data": base64.b64encode(image_bytes).decode()}},
     ]}]}
-    r = post_json(url, body, {})
+    r = _retry(lambda: post_json(url, body, {}))
     return r["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 # ---------------------------------------------------------------- supabase
@@ -197,10 +213,14 @@ def gather():
     for q in IMAGE_QUERIES:
         try:
             imgs = commons_images(q, IMAGES_PER_QUERY)
-            print(f"  images '{q}': {len(imgs)} PD/CC hits")
-            for im in imgs:
-                if not im["img"]:
-                    continue
+        except Exception as e:
+            print(f"  !! image search failed ({q}): {e}")
+            imgs = []
+        print(f"  images '{q}': {len(imgs)} PD/CC hits")
+        for im in imgs:
+            if not im["img"]:
+                continue
+            try:
                 desc = f"[DRY_RUN description placeholder] {im['title']}"
                 if not DRY_RUN:
                     raw = _get(im["img"])
@@ -209,8 +229,8 @@ def gather():
                 docs.append({"voyage_slug": VOYAGE, "type": "image", "title": im["title"],
                              "content": desc, "source_url": im["page"], "license": im["license"],
                              "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None})
-        except Exception as e:
-            print(f"  !! image query failed ({q}): {e}")
+            except Exception as e:
+                print(f"    !! skip image ({im['title'][:40]}): {e}")
     return docs
 
 
@@ -225,6 +245,12 @@ def main():
         return
     if not (GEMINI_KEY and SB_URL and SB_KEY):
         raise SystemExit("Set GEMINI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY to run for real.")
+    # Clear any previous rows for this voyage so re-runs stay clean (no duplicates).
+    _read(urllib.request.Request(
+        f"{SB_URL}/rest/v1/rag_docs?voyage_slug=eq.{VOYAGE}", method="DELETE",
+        headers={"User-Agent": UA, "apikey": SB_KEY,
+                 "Authorization": f"Bearer {SB_KEY}", "Prefer": "return=minimal"}), 60)
+    print(f"cleared previous rows for {VOYAGE}")
     batch = []
     for i, d in enumerate(docs, 1):
         d["embedding"] = "[" + ",".join(f"{x:.6f}" for x in gemini_embed(d["content"])) + "]"
