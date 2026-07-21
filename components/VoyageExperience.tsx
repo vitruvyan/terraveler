@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Navigator, Voyage, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
+import AccountPanel from "@/components/AccountPanel";
 
 const DAY = 86_400_000;
 
@@ -202,6 +203,7 @@ export default function VoyageExperience({
   const [cartOpen, setCartOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
+  const [acctOpen, setAcctOpen] = useState(false);
 
   // Cartouche: remember collapsed state; start collapsed on small screens.
   useEffect(() => {
@@ -497,40 +499,46 @@ export default function VoyageExperience({
             🧭
           </button>
         )}
-        {/* Lens switcher */}
+        {/* Lens switcher — icons only, hover reveals what they are */}
         <div className="lens-switch" role="group" aria-label="View lens">
           <button
-            className={`lens-btn ${lens === "log" ? "active" : ""}`}
+            className={`lens-btn lens-btn-ico ${lens === "log" ? "active" : ""}`}
+            title="Ship's Log — the journal at each landfall"
+            aria-label="Ship's Log"
             onClick={() => {
               setLens("log");
               setPanelOpen(true);
             }}
           >
-            ⚓ Log
+            ⚓
           </button>
           <button
-            className={`lens-btn ${lens === "chart" ? "active" : ""}`}
+            className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}
+            title="Navigation Chart — the voyage's instruments"
+            aria-label="Navigation Chart"
             onClick={() => {
               setLens("chart");
               setPanelOpen(true);
             }}
           >
-            🗺 Chart
+            🗺
           </button>
           <button
-            className={`lens-btn ${lens === "carto" ? "active" : ""}`}
+            className={`lens-btn lens-btn-ico ${lens === "carto" ? "active" : ""}`}
+            title="Cartographer — map layers and legend"
+            aria-label="Cartographer"
             onClick={() => {
               setLens("carto");
               setPanelOpen(true);
             }}
           >
-            🧭 Cartographer
+            🧭
           </button>
-          <button className="lens-btn" disabled title="Coming soon">
-            🎨 Art
+          <button className="lens-btn lens-btn-ico" disabled title="Art — coming soon" aria-label="Art (coming soon)">
+            🎨
           </button>
-          <button className="lens-btn" disabled title="Coming soon">
-            🪶 Peoples
+          <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
+            🪶
           </button>
         </div>
       </div>
@@ -545,12 +553,8 @@ export default function VoyageExperience({
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
               <a href="/about">About</a>
               <a href="/contribute">Contribute</a>
-              <a href="https://github.com/vitruvyan/terraveler/blob/main/docs/HOW_IT_WORKS.md" target="_blank" rel="noreferrer">
-                How it works
-              </a>
-              <a href="https://github.com/vitruvyan/terraveler/blob/main/MAGNA_CARTA.md" target="_blank" rel="noreferrer">
-                The Magna Carta
-              </a>
+              <a href="/how-it-works">How it works</a>
+              <a href="/magna-carta">The Magna Carta</a>
               <div className="tr-menu-foot">
                 Terraveler — a Vitruvyan EOOD company
                 <br />
@@ -560,10 +564,11 @@ export default function VoyageExperience({
             </div>
           )}
         </div>
-        <a className="tr-btn" href="/desk" title="Sign in" aria-label="Sign in">
+        <button className="tr-btn" onClick={() => setAcctOpen(true)} title="Account" aria-label="Account">
           👤
-        </a>
+        </button>
       </div>
+      <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
 
       {/* World-events strip: dots always, words only when there is something to say. */}
       <div
@@ -571,6 +576,7 @@ export default function VoyageExperience({
         onMouseEnter={() => setStripHover(true)}
         onMouseLeave={() => setStripHover(false)}
       >
+        <div className="ws-kicker">Meanwhile in the world</div>
         <div className="wt-track">
           {events.map((ev) => (
             <button
@@ -591,7 +597,6 @@ export default function VoyageExperience({
         </div>
         {worldNow && (stripHover || t - worldNow.time < 45 * DAY) && (
           <div className="ws-card">
-            <span className="wt-label">Meanwhile in the world</span>{" "}
             <strong>{worldNow.title}</strong> — {worldNow.blurb}{" "}
             {worldNow.source_url && (
               <a href={worldNow.source_url} target="_blank" rel="noreferrer" className="wt-src">

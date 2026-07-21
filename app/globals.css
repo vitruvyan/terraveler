@@ -673,3 +673,189 @@ input[type="range"].scrubber::-moz-range-thumb {
 @media (min-width: 681px) {
   .pig-launch { bottom: 88px; }
 }
+
+/* ============ Site chrome v2: bold header/footer, account panel, prose ============ */
+
+/* Equal timelines: the world strip matches the transport bar width. */
+.world-strip {
+  width: min(880px, calc(100vw - 24px));
+}
+.ws-kicker {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 4px;
+}
+
+/* Lens buttons: icons only, larger */
+.lens-btn-ico {
+  font-size: 19px;
+  padding: 7px 12px;
+  line-height: 1;
+}
+
+/* --- Bold fixed site header (editorial pages) --- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--parchment);
+  border-bottom: 3px double var(--brass);
+  box-shadow: 0 3px 14px rgba(43, 33, 23, 0.12);
+}
+.sh-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.sh-brand { display: flex; flex-direction: column; margin-right: auto; }
+.sh-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.7rem;
+  letter-spacing: 0.06em;
+  color: var(--route);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.sh-tagline { font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
+.sh-nav { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+.sh-nav a {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+}
+.sh-nav a:hover { color: var(--route); border-bottom-color: var(--brass); }
+.sh-acct { box-shadow: none; }
+
+/* --- Rich footer (editorial pages) --- */
+.site-footer2 {
+  margin-top: 60px;
+  background: var(--parchment-deep);
+  border-top: 3px double var(--brass);
+  color: var(--ink);
+}
+.sf-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 34px 22px 22px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 26px;
+}
+.sf-col { display: flex; flex-direction: column; gap: 7px; font-size: 13.5px; }
+.sf-col h4 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.sf-col a { color: var(--ink); text-decoration: none; }
+.sf-col a:hover { color: var(--route); text-decoration: underline; }
+.sf-wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--route);
+}
+.sf-tag { font-size: 13px; line-height: 1.5; color: var(--ink-soft); max-width: 340px; }
+.sf-company { font-size: 13px; margin-top: 4px; }
+.sf-base {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 22px 26px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  border-top: 1px solid rgba(43, 33, 23, 0.15);
+}
+
+/* --- Account slide panel --- */
+.acct-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(43, 33, 23, 0.35);
+}
+.acct-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: min(340px, 92vw);
+  background: var(--parchment);
+  border-left: 1px solid var(--parchment-deep);
+  box-shadow: -8px 0 28px rgba(43, 33, 23, 0.3);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: acct-in 0.18s ease-out;
+}
+@keyframes acct-in { from { transform: translateX(30px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.acct-head { display: flex; align-items: center; justify-content: space-between; }
+.acct-mail { font-size: 14px; margin: 4px 0; }
+.acct-cta { display: block; text-align: center; text-decoration: none; }
+.acct-note {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+/* --- Markdown prose pages (Magna Carta, How it works) --- */
+.prose {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 22px 60px;
+  line-height: 1.7;
+  font-size: 15.5px;
+}
+.prose h1 { font-size: 2rem; margin: 0 0 6px; }
+.prose h2 { font-size: 1.3rem; margin-top: 34px; }
+.prose h3 { font-size: 1.1rem; margin-top: 24px; }
+.prose blockquote {
+  margin: 16px 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--brass);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.prose code {
+  background: rgba(43, 33, 23, 0.07);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+.prose pre {
+  background: rgba(43, 33, 23, 0.07);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 8px;
+  padding: 12px 14px;
+  overflow-x: auto;
+}
+.prose pre code { background: none; padding: 0; }
+.prose table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 14px; }
+.prose th, .prose td { border: 1px solid var(--parchment-deep); padding: 7px 10px; text-align: left; }
+.prose th { background: rgba(43, 33, 23, 0.06); font-family: var(--font-display); }
+.prose hr { border: none; border-top: 1px solid var(--parchment-deep); margin: 26px 0; }
+.prose img { max-width: 100%; }
+
+@media (max-width: 680px) {
+  .sf-inner { grid-template-columns: 1fr 1fr; }
+  .sh-wordmark { font-size: 1.35rem; }
+  .world-strip { top: 66px; left: 50%; transform: translateX(-50%); width: calc(100vw - 24px); }
+}

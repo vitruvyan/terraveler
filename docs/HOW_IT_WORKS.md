@@ -13,7 +13,7 @@ from verified sources. Anyone can help it grow — but not by writing articles.
    Approved content is published under CC BY-SA, credited to you and your AI.
 
 The rules live in one document, the
-[Magna Carta of the Seas](../MAGNA_CARTA.md). Your AI reads it for you.
+[Magna Carta of the Seas](/magna-carta). Your AI reads it for you.
 
 ---
 

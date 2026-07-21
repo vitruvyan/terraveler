@@ -27,6 +27,19 @@ export async function signIn(email: string, password: string): Promise<{ token?:
   return { token: j.access_token as string };
 }
 
+export async function getUserEmail(token: string): Promise<string | null> {
+  const r = await fetch(`${SB_URL}/auth/v1/user`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  const j = await r.json();
+  return (j?.email ?? null) as string | null;
+}
+
+export function editorEmail(): string {
+  return EDITOR_EMAIL;
+}
+
 export async function verifyToken(token: string): Promise<{ ok: boolean; error?: string }> {
   const r = await fetch(`${SB_URL}/auth/v1/user`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` },

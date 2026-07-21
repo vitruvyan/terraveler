@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import SiteHeader from "@/components/SiteHeader";
 
 type Sub = {
   id: number;
@@ -88,7 +89,9 @@ export default function Desk() {
 
   if (!authed) {
     return (
-      <main style={{ maxWidth: 380, margin: "10vh auto", padding: "0 22px" }}>
+      <>
+      <SiteHeader />
+      <main style={{ maxWidth: 380, margin: "8vh auto", padding: "0 22px" }}>
         <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
           Terraveler · Editorial desk
         </span>
@@ -109,10 +112,13 @@ export default function Desk() {
           {err && <div style={{ color: "#a3402c", fontSize: 13 }}>{err}</div>}
         </form>
       </main>
+      </>
     );
   }
 
   return (
+    <>
+    <SiteHeader />
     <main style={{ maxWidth: 860, margin: "0 auto", padding: "34px 22px 80px", lineHeight: 1.55 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 }}>
         <div>
@@ -195,5 +201,6 @@ export default function Desk() {
         ))}
       </div>
     </main>
+    </>
   );
 }

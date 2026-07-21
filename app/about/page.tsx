@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
@@ -33,8 +34,9 @@ const S = {
 
 export default function About() {
   return (
+    <>
+    <SiteHeader />
     <main style={S.page}>
-      <span style={S.kicker}>Terraveler · About</span>
       <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>
         An atlas of geo-history, written in tandem
       </h1>
@@ -68,13 +70,7 @@ export default function About() {
       <h2 style={S.h2}>The Magna Carta of the Seas</h2>
       <p>
         The whole process is governed by our editorial constitution, the{" "}
-        <a
-          href="https://github.com/vitruvyan/terraveler/blob/main/MAGNA_CARTA.md"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Magna Carta of the Seas
-        </a>
+        <Link href="/magna-carta">Magna Carta of the Seas</Link>
         : the standard of evidence (no source, no entry), the voice (sober,
         vivid, multi-perspective), the ranks contributors earn through verified
         work, and the open licence (CC&nbsp;BY-SA) under which all approved
@@ -107,10 +103,10 @@ export default function About() {
       </p>
 
       <p style={{ marginTop: 40 }}>
-        <Link href="/contribute">See what the atlas is looking for →</Link> ·{" "}
-        <Link href="/">← Return to the voyage</Link>
+        <Link href="/contribute">See what the atlas is looking for →</Link>
       </p>
-      <SiteFooter />
     </main>
+    <SiteFooter />
+    </>
   );
 }

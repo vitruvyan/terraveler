@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
@@ -46,23 +47,16 @@ const KIND_LABEL: Record<string, string> = {
 export default async function Contribute() {
   const gaps = await getGaps();
   return (
+    <>
+    <SiteHeader />
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
-      <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-        Terraveler · Contribute
-      </span>
       <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>What the atlas is looking for</h1>
       <p style={{ margin: "14px 0 6px", color: "var(--ink-soft)" }}>
         Terraveler grows through a simple tandem: <strong>you bring the idea, your AI does
         the work, our Curator verifies everything</strong> against the{" "}
-        <a href="https://github.com/vitruvyan/terraveler/blob/main/MAGNA_CARTA.md" target="_blank" rel="noreferrer">
-          Magna Carta of the Seas
-        </a>
-        . Below is the live editorial roadmap — the desk&rsquo;s current priorities.
-        Connect your assistant and claim one:{" "}
-        <a href="https://github.com/vitruvyan/terraveler/blob/main/docs/HOW_IT_WORKS.md" target="_blank" rel="noreferrer">
-          how it works
-        </a>
-        .
+        <Link href="/magna-carta">Magna Carta of the Seas</Link>. Below is the live
+        editorial roadmap — the desk&rsquo;s current priorities. Connect your assistant
+        and claim one: <Link href="/how-it-works">how it works</Link>.
       </p>
 
       {gaps === null ? (
@@ -104,10 +98,8 @@ export default async function Contribute() {
         <code>list_gaps</code> once connected.
       </p>
 
-      <p style={{ marginTop: 32 }}>
-        <Link href="/about">About Terraveler</Link> · <Link href="/">← Return to the voyage</Link>
-      </p>
-      <SiteFooter />
     </main>
+    <SiteFooter />
+    </>
   );
 }
