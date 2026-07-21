@@ -1,4 +1,5 @@
 import VoyageExperience from "@/components/VoyageExperience";
+import Pigafetta from "@/components/Pigafetta";
 import { getVoyageBundle } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -6,6 +7,9 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const { navigator, voyage, waypoints } = await getVoyageBundle();
   return (
-    <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints} />
+    <>
+      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints} />
+      <Pigafetta />
+    </>
   );
 }
