@@ -187,17 +187,17 @@ export default function VoyageExperience({
             carto: {
               type: "raster",
               tiles: [
-                "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                "https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                "https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-                "https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+                "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+                "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+                "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
+                "https://d.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
               ],
               tileSize: 256,
               attribution: "© OpenStreetMap contributors © CARTO",
             },
           },
           layers: [
-            { id: "bg", type: "background", paint: { "background-color": "#c9dbe4" } },
+            { id: "bg", type: "background", paint: { "background-color": "#dfe4e6" } },
             { id: "carto", type: "raster", source: "carto", paint: { "raster-opacity": 1 } },
           ],
         },
@@ -210,6 +210,22 @@ export default function VoyageExperience({
       map.on("load", () => {
         if (!map) return;
         const full = L.map((l) => [l.lng, l.lat] as [number, number]);
+
+        // Political world at Bougainville's time — borders c. 1715, the closest
+        // available to 1766 (a mid-18th-century reconstruction).
+        map.addSource("hist", { type: "geojson", data: "/world_1715.geojson" });
+        map.addLayer({
+          id: "hist-fill",
+          type: "fill",
+          source: "hist",
+          paint: { "fill-color": "#caa96a", "fill-opacity": 0.38 },
+        });
+        map.addLayer({
+          id: "hist-line",
+          type: "line",
+          source: "hist",
+          paint: { "line-color": "#6b4a2a", "line-width": 0.8, "line-opacity": 0.55 },
+        });
 
         map.addSource("route-full", { type: "geojson", data: lineFeature(full) });
         map.addSource("route-done", { type: "geojson", data: lineFeature([]) });
@@ -376,6 +392,11 @@ export default function VoyageExperience({
           <button className="lens-btn" disabled title="Coming soon">
             🪶 Peoples
           </button>
+        </div>
+
+        <div className="hist-note">
+          Borders: world c.&nbsp;1715 — the closest reconstruction to the voyage;
+          mid-18th-century precision varies.
         </div>
 
         {current && (
