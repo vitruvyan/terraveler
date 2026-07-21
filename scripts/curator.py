@@ -14,10 +14,12 @@ Verdict is never "approved": v0 recommends REJECT or HUMAN-REVIEW. Authority
 stays with the Editor-in-chief. Deterministic = reproducible, auditable, and
 immune to prompt injection.
 
-Usage:  python scripts/curator.py test/submission_test.json
+Usage:  python scripts/curator.py test/submission_test.json [--persist]
+With --persist (and SUPABASE_URL + SUPABASE_SERVICE_KEY set), the submission
+and the verdict are recorded in the governance backend (submissions/audit_log).
 Exit code: 0 = human-review, 1 = reject, 2 = error.
 """
-import json, math, re, sys, unicodedata, urllib.request, urllib.error
+import json, math, os, re, sys, unicodedata, urllib.request, urllib.error
 
 CARTA_VERSION = "0.1"
 UA = "terraveler-curator/0.1 (contact: dbaldoni@gmail.com)"
@@ -184,13 +186,50 @@ def stage2_coherence(sub):
                     add("PASS", 2, f"{tag}: chronology + speed plausible ({speed:.0f} nm/day)")
         prev = {"tag": tag, "date": d, "lat": lat, "lng": lng}
 
+# ---------------------------------------------------------------- persistence
+SB_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SB_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
+
+def sb(method, path, body=None, want_row=False):
+    headers = {"User-Agent": UA, "apikey": SB_KEY, "Authorization": f"Bearer {SB_KEY}",
+               "Content-Type": "application/json",
+               "Prefer": "return=representation" if want_row else "return=minimal"}
+    data = json.dumps(body).encode() if body is not None else None
+    req = urllib.request.Request(f"{SB_URL}/rest/v1/{path}", data=data, method=method, headers=headers)
+    raw = urllib.request.urlopen(req, timeout=60).read()
+    return json.loads(raw.decode("utf-8", "replace")) if raw else None
+
+def persist(sub, verdict):
+    """Record the submission and the Curator's verdict in the governance backend."""
+    meta = sub.get("meta") or {}
+    handle = meta.get("ideator") or "unknown"
+    rows = sb("GET", f"contributors?handle=eq.{urllib.parse.quote(handle)}&select=id")
+    if rows:
+        cid = rows[0]["id"]
+    else:
+        cid = sb("POST", "contributors", {"handle": handle}, want_row=True)[0]["id"]
+    status = "curator-rejected" if verdict == "reject" else "human-review"
+    s = sb("POST", "submissions", {
+        "contributor_id": cid, "type": meta.get("type") or "unknown",
+        "target_voyage": meta.get("target_voyage"), "payload": sub,
+        "status": status, "carta_version": meta.get("carta_version") or "?",
+    }, want_row=True)[0]
+    sb("POST", "audit_log", {
+        "submission_id": s["id"], "actor": "curator-v0", "action": "verdict",
+        "verdict": verdict, "findings": [list(f) for f in findings],
+        "carta_version": CARTA_VERSION,
+    })
+    print(f"persisted: submission #{s['id']} ({status}) + audit_log entry for '{handle}'")
+
 # ---------------------------------------------------------------- main
 def main():
-    if len(sys.argv) != 2:
-        print("usage: python scripts/curator.py <submission.json>")
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    do_persist = "--persist" in sys.argv
+    if len(args) != 1:
+        print("usage: python scripts/curator.py <submission.json> [--persist]")
         return 2
     try:
-        sub = json.load(open(sys.argv[1], encoding="utf-8"))
+        sub = json.load(open(args[0], encoding="utf-8"))
     except Exception as e:
         print(f"cannot read submission: {e}")
         return 2
@@ -211,14 +250,24 @@ def main():
 
     print("-" * 72)
     print(f"checks passed: {len(passes)}   failures: {len(fails)}")
+    verdict = "reject" if fails else "human-review"
     if fails:
         print("VERDICT: REJECT — return to Scribe with the findings above.")
         print("(Every failure cites the Carta rule it violates. Zero LLM tokens spent.)")
-        return 1
-    print("VERDICT: HUMAN-REVIEW — all deterministic checks passed.")
-    print("Semantic entailment (claim vs evidence) awaits the Editor-in-chief (v0)")
-    print("or the LLM entailment stage (v1).")
-    return 0
+    else:
+        print("VERDICT: HUMAN-REVIEW — all deterministic checks passed.")
+        print("Semantic entailment (claim vs evidence) awaits the Editor-in-chief (v0)")
+        print("or the LLM entailment stage (v1).")
+
+    if do_persist:
+        if SB_URL and SB_KEY:
+            try:
+                persist(sub, verdict)
+            except Exception as e:
+                print(f"persist FAILED: {str(e)[:200]}")
+        else:
+            print("persist skipped: set SUPABASE_URL and SUPABASE_SERVICE_KEY")
+    return 1 if fails else 0
 
 if __name__ == "__main__":
     import urllib.parse  # noqa: E402  (used in domain_ok)
