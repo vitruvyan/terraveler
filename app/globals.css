@@ -486,3 +486,30 @@ input[type="range"].scrubber::-moz-range-thumb {
   .pig-dock { width: 100vw; }
   .pig-chat { height: 60vh; }
 }
+
+/* --- Editorial desk --- */
+.desk-input {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--parchment-deep);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+}
+.desk-btn {
+  font-family: var(--font-display);
+  font-size: 13px;
+  padding: 8px 14px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 8px;
+  background: var(--parchment-deep);
+  color: var(--ink);
+  cursor: pointer;
+}
+.desk-btn:hover { filter: brightness(0.96); }
+.desk-btn:disabled { opacity: 0.5; cursor: default; }
+.desk-btn-primary { background: var(--route); border-color: var(--route); color: var(--parchment); }
+.desk-btn-approve { background: #4f8a5b; border-color: #4f8a5b; color: #fff; }
+.desk-btn-changes { background: #8a5a9a; border-color: #8a5a9a; color: #fff; }
+.desk-btn-reject { background: #a3402c; border-color: #a3402c; color: #fff; }
