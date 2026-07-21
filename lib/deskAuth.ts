@@ -27,9 +27,7 @@ export async function signIn(email: string, password: string): Promise<{ token?:
   return { token: j.access_token as string };
 }
 
-export async function requireEditor(req: Request): Promise<{ ok: boolean; error?: string }> {
-  const token = readCookie(req);
-  if (!token) return { ok: false, error: "not signed in" };
+export async function verifyToken(token: string): Promise<{ ok: boolean; error?: string }> {
   const r = await fetch(`${SB_URL}/auth/v1/user`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` },
   });
@@ -37,6 +35,16 @@ export async function requireEditor(req: Request): Promise<{ ok: boolean; error?
   const j = await r.json();
   if ((j?.email ?? "").toLowerCase() !== EDITOR_EMAIL) return { ok: false, error: "not an editor account" };
   return { ok: true };
+}
+
+export async function requireEditor(req: Request): Promise<{ ok: boolean; error?: string }> {
+  const token = readCookie(req);
+  if (!token) return { ok: false, error: "not signed in" };
+  return verifyToken(token);
+}
+
+export function supabaseUrl(): string {
+  return SB_URL;
 }
 
 export async function sb(method: string, path: string, body?: unknown): Promise<any> {

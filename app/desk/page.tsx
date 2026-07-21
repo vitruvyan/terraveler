@@ -39,7 +39,25 @@ export default function Desk() {
     setSubs(j.submissions ?? []);
     setAuthed(true);
   }
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    // Returning from Google OAuth: the token arrives in the URL hash.
+    const m = window.location.hash.match(/access_token=([^&]+)/);
+    if (m) {
+      window.history.replaceState(null, "", window.location.pathname);
+      fetch("/api/desk/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ access_token: decodeURIComponent(m[1]) }),
+      }).then(async (r) => {
+        if (!r.ok) setErr((await r.json()).error ?? "sign-in refused");
+        load();
+      });
+      return;
+    }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -75,6 +93,13 @@ export default function Desk() {
           Terraveler · Editorial desk
         </span>
         <h1 style={{ margin: "6px 0 18px", fontSize: "1.6rem" }}>Sign in</h1>
+        <a href="/api/desk/google" className="desk-btn desk-btn-primary"
+           style={{ display: "block", textAlign: "center", textDecoration: "none", marginBottom: 14 }}>
+          Sign in with Google
+        </a>
+        <div style={{ textAlign: "center", fontSize: 12, color: "var(--ink-soft)", margin: "0 0 10px" }}>
+          — or with email —
+        </div>
         <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email"
             type="email" autoComplete="username" className="desk-input" />
