@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "type": "new-voyage",
+    "target_voyage": "boussole-1785",
+    "ideator": "dbaldoni",
+    "contributor_rank": "cabin-boy",
+    "scribe_model": "claude-fable-5",
+    "carta_version": "0.1"
+  },
+  "voyage": {
+    "slug": "boussole-1785",
+    "title": "The Voyage of La Perouse (1785-1788)",
+    "navigator": "Jean-Francois de Galaup, comte de La Perouse",
+    "ships": "La Boussole & L'Astrolabe",
+    "sponsor": "King Louis XVI of France",
+    "summary": "France's answer to Cook: a scientific circumnavigation that crossed the Pacific from Chile to Alaska, China, Kamchatka and Samoa, reached Botany Bay days after the First Fleet, sailed north — and vanished. Four decades later, islander accounts collected by Peter Dillon placed both wrecks at Vanikoro."
+  },
+  "waypoints": [
+    {
+      "seq": 1,
+      "place_historical": "Brest",
+      "place_modern": "Brest, France",
+      "latitude": 48.3904,
+      "longitude": -4.4861,
+      "arrival_date": "1785-08-01",
+      "confidence": "certain",
+      "claims": [
+        {
+          "text": "The expedition sailed from Brest on 1 August 1785 and doubled Cape Horn in January 1786.",
+          "confidence": "certain",
+          "evidence": {
+            "quote": "The expedition sailed from Brest rather sooner than had at first been contemplated, on August 1, 1785, and doubled Cape Horn in January of the following year.",
+            "excerpt": "The expedition sailed from Brest rather sooner than had at first been contemplated, on August 1, 1785, and doubled Cape Horn in January of the following year.",
+            "source_url": "https://www.gutenberg.org/cache/epub/4222/pg4222.txt",
+            "source_title": "Ernest Scott, Laperouse (1912)",
+            "license": "Public domain"
+          }
+        }
+      ]
+    },
+    {
+      "seq": 2,
+      "place_historical": "Easter Island",
+      "place_modern": "Rapa Nui (Easter Island), Chile",
+      "latitude": -27.1127,
+      "longitude": -109.3497,
+      "arrival_date": "1786-04",
+      "confidence": "certain",
+      "claims": [
+        {
+          "text": "The expedition called at Easter Island in April 1786; relations with the islanders were strained by persistent theft.",
+          "confidence": "certain",
+          "evidence": {
+            "excerpt": "In April, 1786, the expedition was at Easter Island, where the inhabitants appeared to be a set of cunning and hypocritical thieves",
+            "source_url": "https://www.gutenberg.org/cache/epub/4222/pg4222.txt",
+            "source_title": "Ernest Scott, Laperouse (1912)",
+            "license": "Public domain"
+          }
+        }
+      ]
+    },
+    {
+      "seq": 3,
+      "place_historical": "Maouna (Tutuila), Navigator Islands",
+      "place_modern": "Tutuila, American Samoa",
+      "latitude": -14.2938,
+      "longitude": -170.7024,
+      "arrival_date": "1787-12",
+      "confidence": "certain",
+      "claims": [
+        {
+          "text": "In December 1787 a watering party was attacked at Tutuila; of the sixty-one men ashore, the boats that stayed afloat saved forty-nine, and Captain de Langle was among the killed.",
+          "confidence": "certain",
+          "evidence": {
+            "excerpt": "happily remaining afloat, were enabled to save forty-nine men out of the sixty-one.",
+            "source_url": "https://www.gutenberg.org/cache/epub/4222/pg4222.txt",
+            "source_title": "Ernest Scott, Laperouse (1912)",
+            "license": "Public domain"
+          }
+        }
+      ]
+    },
+    {
+      "seq": 4,
+      "place_historical": "Botany Bay",
+      "place_modern": "Botany Bay, Sydney, Australia",
+      "latitude": -33.98,
+      "longitude": 151.22,
+      "arrival_date": "1788-01-26",
+      "confidence": "certain",
+      "claims": [
+        {
+          "text": "Arriving off Botany Bay in late January 1788, the French sighted the British First Fleet at anchor inside the bay.",
+          "confidence": "certain",
+          "evidence": {
+            "quote": "This was a British squadron, at anchor in Botany Bay, the pennants and ensigns of which we could plainly distinguish.",
+            "excerpt": "This was a British squadron, at anchor in Botany Bay, the pennants and ensigns of which we could plainly distinguish.",
+            "source_url": "https://www.gutenberg.org/cache/epub/4222/pg4222.txt",
+            "source_title": "Ernest Scott, Laperouse (1912) — quoting La Perouse's journal",
+            "license": "Public domain"
+          }
+        }
+      ]
+    },
+    {
+      "seq": 5,
+      "place_historical": "Mannicolo (Vanikoro)",
+      "place_modern": "Vanikoro, Solomon Islands",
+      "latitude": -11.67,
+      "longitude": 166.9,
+      "arrival_date": "1788-06",
+      "date_note": "The ships left Botany Bay on 10 March 1788 and were never seen again by Europeans. The end of the voyage is reconstructed from islander accounts collected by Peter Dillon in 1826-1827, which place both wrecks at Vanikoro.",
+      "confidence": "reconstructed",
+      "claims": [
+        {
+          "text": "According to islander accounts gathered decades later by Peter Dillon, two large ships arrived at the Vanikoro cluster and anchored at Whanoo and Paiou, where both were lost.",
+          "confidence": "reconstructed",
+          "evidence": {
+            "excerpt": "They told me that the natives of Mannicolo stated that many years ago two large ships arrived at their islands; one anchored at the island of Whanoo, and the other at the island of Paiou, a little distance from each other.",
+            "source_url": "https://www.gutenberg.org/cache/epub/4222/pg4222.txt",
+            "source_title": "Ernest Scott, Laperouse (1912) — quoting Peter Dillon",
+            "license": "Public domain"
+          }
+        }
+      ]
+    }
+  ]
+}
