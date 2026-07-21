@@ -346,3 +346,55 @@ input[type="range"].scrubber::-moz-range-thumb {
   opacity: 1;
   height: 11px;
 }
+
+/* --- Draggable window (reusable panel chrome) --- */
+.win {
+  z-index: 6;
+  max-width: 86vw;
+  background: rgba(242, 230, 207, 0.96);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(43, 33, 23, 0.2);
+  overflow: hidden;
+}
+.win-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  background: var(--parchment-deep);
+  border-bottom: 1px solid rgba(43, 33, 23, 0.12);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.win-bar:active { cursor: grabbing; }
+.win-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+.win-ctrls { display: flex; gap: 2px; flex: 0 0 auto; }
+.win-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.win-btn:hover { background: rgba(43, 33, 23, 0.1); color: var(--ink); }
+.win-body {
+  padding: 14px 18px 16px;
+  max-height: 60vh;
+  overflow: auto;
+}

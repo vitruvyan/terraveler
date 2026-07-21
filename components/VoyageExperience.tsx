@@ -4,6 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Navigator, Voyage, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
+import DraggableWindow from "@/components/DraggableWindow";
 
 const DAY = 86_400_000;
 
@@ -197,6 +198,7 @@ export default function VoyageExperience({
   const [lens, setLens] = useState<Lens>("log");
   const [showHist, setShowHist] = useState(true);
   const [autopause, setAutopause] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -444,6 +446,8 @@ export default function VoyageExperience({
   }
 
   const placeName = current?.place_historical || current?.place_modern || "";
+  const panelTitle =
+    lens === "log" ? "Ship's Log" : lens === "chart" ? "Navigation Chart" : "Cartographer";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
@@ -516,19 +520,28 @@ export default function VoyageExperience({
         <div className="lens-switch" role="group" aria-label="View lens">
           <button
             className={`lens-btn ${lens === "log" ? "active" : ""}`}
-            onClick={() => setLens("log")}
+            onClick={() => {
+              setLens("log");
+              setPanelOpen(true);
+            }}
           >
             ⚓ Log
           </button>
           <button
             className={`lens-btn ${lens === "chart" ? "active" : ""}`}
-            onClick={() => setLens("chart")}
+            onClick={() => {
+              setLens("chart");
+              setPanelOpen(true);
+            }}
           >
             🗺 Chart
           </button>
           <button
             className={`lens-btn ${lens === "carto" ? "active" : ""}`}
-            onClick={() => setLens("carto")}
+            onClick={() => {
+              setLens("carto");
+              setPanelOpen(true);
+            }}
           >
             🧭 Cartographer
           </button>
@@ -545,22 +558,8 @@ export default function VoyageExperience({
           Cartographer lens for the key. A reconstruction; precision varies.
         </div>
 
-        {current && (
-          <aside
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              width: "min(360px, 86vw)",
-              maxHeight: "calc(100% - 32px)",
-              overflow: "auto",
-              background: "rgba(242, 230, 207, 0.94)",
-              border: "1px solid var(--parchment-deep)",
-              borderRadius: 8,
-              padding: "16px 18px",
-              boxShadow: "0 6px 24px rgba(43, 33, 23, 0.18)",
-            }}
-          >
+        {current && panelOpen && (
+          <DraggableWindow title={panelTitle} onClose={() => setPanelOpen(false)}>
             {lens === "carto" ? (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -692,7 +691,7 @@ export default function VoyageExperience({
             )}
               </>
             )}
-          </aside>
+          </DraggableWindow>
         )}
       </div>
 
