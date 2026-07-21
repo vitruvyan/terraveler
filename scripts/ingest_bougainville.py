@@ -131,6 +131,7 @@ def commons_images(query, limit):
             "page": ii.get("descriptionurl"),
             "license": lic,
             "credit": re.sub("<[^>]+>", "", (meta.get("Artist") or {}).get("value", "")).strip(),
+            "desc": re.sub(r"<[^>]+>", " ", (meta.get("ImageDescription") or {}).get("value", "")).strip(),
         })
         if len(out) >= limit:
             break
@@ -262,17 +263,12 @@ def gather():
         for im in imgs:
             if not im["img"]:
                 continue
-            try:
-                desc = f"[DRY_RUN description placeholder] {im['title']}"
-                if not DRY_RUN:
-                    raw = _get(im["img"])
-                    mime = "image/png" if im["img"].lower().endswith(".png") else "image/jpeg"
-                    desc = gemini_describe(raw, mime, im["title"])
-                docs.append({"voyage_slug": VOYAGE, "type": "image", "title": im["title"],
-                             "content": desc, "source_url": im["page"], "license": im["license"],
-                             "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None})
-            except Exception as e:
-                print(f"    !! skip image ({im['title'][:40]}): {e}")
+            # Embed the Commons caption (no vision API needed) so images are searchable.
+            title_clean = re.sub(r"^File:|\.[A-Za-z]+$", "", im["title"]).strip()
+            content = (title_clean + ". " + (im.get("desc") or "")).strip()[:1500]
+            docs.append({"voyage_slug": VOYAGE, "type": "image", "title": im["title"],
+                         "content": content, "source_url": im["page"], "license": im["license"],
+                         "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None})
     return docs
 
 
@@ -292,17 +288,28 @@ def main():
     # Resume: skip anything already in the DB, then embed the rest in small batches.
     done = existing_keys()
     todo = [d for d in docs if doc_key(d) not in done]
-    print(f"resuming: {len(done)} already in DB, {len(todo)} to embed (batch={BATCH})")
-    batch, n = [], 0
+    total = len(docs)
+    inserted = len(done)
+    print(f"resuming: {inserted} already in DB, {len(todo)} to embed (batch={BATCH})")
+    batch = []
     for d in todo:
-        d["embedding"] = "[" + ",".join(f"{x:.6f}" for x in gemini_embed(d["content"])) + "]"
-        batch.append(d); n += 1
+        try:
+            d["embedding"] = "[" + ",".join(f"{x:.6f}" for x in gemini_embed(d["content"])) + "]"
+        except Exception as e:
+            if batch:
+                supabase_insert(batch); inserted += len(batch); batch = []
+            print(f"\nStopped at {inserted}/{total} (likely quota): {str(e)[:180]}")
+            print("Re-run the same command later — it resumes from here.")
+            return
+        batch.append(d)
         if len(batch) >= BATCH:
-            supabase_insert(batch); print(f"  inserted {n}/{len(todo)}"); batch = []; time.sleep(0.3)
+            supabase_insert(batch); inserted += len(batch); batch = []
+            print(f"  inserted {inserted}/{total}"); time.sleep(0.3)
         else:
             time.sleep(0.05)
     if batch:
-        supabase_insert(batch); print(f"  inserted {n}/{len(todo)}")
+        supabase_insert(batch); inserted += len(batch)
+        print(f"  inserted {inserted}/{total}")
     print("Done.")
 
 
