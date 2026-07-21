@@ -238,3 +238,81 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .hist-popup .maplibregl-popup-tip { display: none; }
 .hist-popup .hp-emp { color: var(--ink-soft); }
+
+/* --- World-events timeline (top) --- */
+.world-timeline {
+  flex: 0 0 auto;
+  padding: 8px 18px 12px;
+  border-bottom: 1px solid var(--parchment-deep);
+  background: var(--parchment);
+}
+.wt-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 9px;
+}
+.wt-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.wt-current { font-size: 13px; line-height: 1.35; color: var(--ink); }
+.wt-current.wt-muted { color: var(--ink-soft); font-style: italic; }
+.wt-src { font-size: 11px; }
+.wt-track { position: relative; height: 14px; }
+.wt-track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--parchment-deep);
+}
+.wt-dot {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(43, 33, 23, 0.4);
+  background: var(--brass);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.wt-dot:hover { transform: scale(1.45); }
+.wt-dot.active { box-shadow: 0 0 0 3px rgba(122, 46, 29, 0.25); }
+.wt-dot.cat-conflict { background: #a3402c; }
+.wt-dot.cat-politics { background: #b0873a; }
+.wt-dot.cat-science { background: #3f8a8a; }
+.wt-dot.cat-culture { background: #8a5a9a; }
+.wt-dot.cat-exploration { background: #4f8a5b; }
+.wt-playhead {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 18px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--route);
+}
+
+/* --- Autopause toggle (bottom bar) --- */
+.autopause-toggle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.autopause-toggle input { cursor: pointer; }

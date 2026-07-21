@@ -3,10 +3,20 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Navigator, Voyage, Waypoint } from "@/lib/types";
+import worldEventsData from "@/data/world_events.json";
 
 const DAY = 86_400_000;
 
 type Lens = "log" | "chart" | "carto";
+
+type WorldEvent = {
+  date: string;
+  title: string;
+  blurb: string;
+  category: string;
+  region: string;
+  source_url: string;
+};
 
 // Great powers of ~1715 (matches the EMPIRE field baked into world_1715.geojson).
 const EMPIRE_COLORS: Array<[string, string]> = [
@@ -172,11 +182,21 @@ export default function VoyageExperience({
     return arr;
   }, [legs]);
 
+  // World events within the voyage window, on the same time axis.
+  const events = useMemo(
+    () =>
+      (worldEventsData as WorldEvent[])
+        .map((e) => ({ ...e, time: parseHistoricalDate(e.date) ?? minTime }))
+        .sort((a, b) => a.time - b.time),
+    [minTime]
+  );
+
   const [t, setT] = useState(minTime);
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [lens, setLens] = useState<Lens>("log");
   const [showHist, setShowHist] = useState(true);
+  const [autopause, setAutopause] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -350,11 +370,22 @@ export default function VoyageExperience({
     const id = setInterval(() => {
       setT((prev) => {
         const next = prev + span / 600;
-        return next >= maxTime ? maxTime : next;
+        if (autopause) {
+          const stop = legs.find((l) => l.arrival > prev + 1)?.arrival;
+          if (stop != null && next >= stop) {
+            setPlaying(false);
+            return stop;
+          }
+        }
+        if (next >= maxTime) {
+          setPlaying(false);
+          return maxTime;
+        }
+        return next;
       });
     }, 40);
     return () => clearInterval(id);
-  }, [playing, minTime, maxTime]);
+  }, [playing, minTime, maxTime, autopause, legs]);
 
   useEffect(() => {
     if (playing && t >= maxTime) setPlaying(false);
@@ -387,6 +418,18 @@ export default function VoyageExperience({
     timeZone: "UTC",
   }).format(new Date(t));
   const pct = maxTime > minTime ? ((t - minTime) / (maxTime - minTime)) * 100 : 0;
+
+  // Current world event = the most recent one on or before the ship's date.
+  let worldNow: (WorldEvent & { time: number }) | null = null;
+  for (const e of events) {
+    if (e.time <= t) worldNow = e;
+    else break;
+  }
+  const pctOf = (time: number) =>
+    Math.max(
+      0,
+      Math.min(100, maxTime > minTime ? ((time - minTime) / (maxTime - minTime)) * 100 : 0)
+    );
 
   function togglePlay() {
     if (!playing) {
@@ -426,6 +469,42 @@ export default function VoyageExperience({
           <div>{voyage.ships}</div>
         </div>
       </header>
+
+      <div className="world-timeline">
+        <div className="wt-head">
+          <span className="wt-label">Meanwhile in the world</span>
+          {worldNow ? (
+            <span className="wt-current">
+              <strong>{worldNow.title}</strong> — {worldNow.blurb}{" "}
+              {worldNow.source_url && (
+                <a href={worldNow.source_url} target="_blank" rel="noreferrer" className="wt-src">
+                  source
+                </a>
+              )}
+            </span>
+          ) : (
+            <span className="wt-current wt-muted">the voyage sets out…</span>
+          )}
+        </div>
+        <div className="wt-track">
+          {events.map((ev) => (
+            <button
+              key={ev.title}
+              className={`wt-dot cat-${ev.category} ${
+                worldNow && ev.title === worldNow.title ? "active" : ""
+              }`}
+              style={{ left: `${pctOf(ev.time)}%` }}
+              title={`${ev.date} · ${ev.title}`}
+              aria-label={ev.title}
+              onClick={() => {
+                setPlaying(false);
+                setT(ev.time);
+              }}
+            />
+          ))}
+          <div className="wt-playhead" style={{ left: `${pct}%` }} />
+        </div>
+      </div>
 
       <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
@@ -644,6 +723,14 @@ export default function VoyageExperience({
           style={{ flex: 1, backgroundSize: `${pct}% 100%` }}
           aria-label="Voyage timeline"
         />
+        <label className="autopause-toggle">
+          <input
+            type="checkbox"
+            checked={autopause}
+            onChange={(e) => setAutopause(e.target.checked)}
+          />
+          Pause at each landfall
+        </label>
       </div>
     </div>
   );
