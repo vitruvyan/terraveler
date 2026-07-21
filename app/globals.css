@@ -16,6 +16,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
+  overflow-x: hidden;
   background: var(--parchment);
   color: var(--ink);
   font-family: var(--font-body);
@@ -400,7 +401,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 /* --- Pigafetta chat --- */
-.pig-launch { position: fixed; right: 20px; bottom: 20px; z-index: 20; }
+.pig-launch { position: fixed; right: 18px; bottom: 96px; z-index: 20; }
 .pig-pill {
   display: flex; align-items: center; gap: 8px;
   font-family: var(--font-display); font-size: 14px; color: var(--parchment);
@@ -461,3 +462,27 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .pig-input button { width: 38px; border: none; border-radius: 9px; background: var(--route); color: var(--parchment); font-size: 16px; cursor: pointer; }
 .pig-input button:disabled { opacity: 0.5; cursor: default; }
+
+/* --- Mobile: keep it usable on small screens --- */
+@media (max-width: 680px) {
+  .app-header { padding: 8px 12px !important; gap: 6px 10px !important; }
+  .app-header h1 { font-size: 1.05rem !important; }
+
+  .world-timeline { padding: 6px 12px 10px !important; }
+  .wt-current { font-size: 12px; }
+
+  .lens-switch { gap: 1px; padding: 2px; }
+  .lens-btn { font-size: 11px; padding: 4px 7px; }
+
+  .control-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px 12px !important; }
+  .autopause-toggle { order: 4; }
+  .voyage-track { flex: 1 1 100% !important; order: 5; }
+
+  .win { width: 90vw !important; max-width: 94vw !important; }
+  .win-body { max-height: 46vh; }
+
+  .pig-launch { right: 12px; bottom: 116px; }
+  .pig-pill { font-size: 12.5px; padding: 8px 14px; }
+  .pig-dock { width: 100vw; }
+  .pig-chat { height: 60vh; }
+}

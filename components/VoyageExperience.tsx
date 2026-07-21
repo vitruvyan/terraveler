@@ -452,6 +452,7 @@ export default function VoyageExperience({
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
       <header
+        className="app-header"
         style={{
           padding: "10px 18px",
           borderBottom: "1px solid var(--parchment-deep)",
@@ -696,6 +697,7 @@ export default function VoyageExperience({
       </div>
 
       <div
+        className="control-bar"
         style={{
           padding: "12px 18px",
           borderTop: "1px solid var(--parchment-deep)",
