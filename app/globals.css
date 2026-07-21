@@ -32,7 +32,9 @@ a { color: var(--route); }
 
 /* --- Map: warm the basemap toward parchment for a period feel --- */
 .maplibregl-canvas {
-  filter: sepia(0.35) saturate(0.82) hue-rotate(-8deg) brightness(1.03);
+  /* Light warm wash over the Voyager basemap — keeps blue seas and country
+     borders legible while nodding to the period palette. */
+  filter: sepia(0.12) saturate(1.02) contrast(1.08) brightness(0.99);
 }
 .maplibregl-ctrl-attrib {
   background: rgba(242, 230, 207, 0.72) !important;
