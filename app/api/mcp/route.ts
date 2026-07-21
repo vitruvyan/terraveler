@@ -133,6 +133,12 @@ const TOOLS = [
     inputSchema: { type: "object", required: ["handle", "invite_code", "submission"],
       properties: { handle: { type: "string" }, invite_code: { type: "string" },
         submission: { type: "object", description: "See how_it_works for the schema." } } } },
+  { name: "suggest_feature",
+    description: "Suggest a feature or change for Terraveler itself (site, map, tools, process). The suggestion lands on the editorial desk for consideration.",
+    inputSchema: { type: "object", required: ["handle", "invite_code", "title", "description"],
+      properties: { handle: { type: "string" }, invite_code: { type: "string" },
+        title: { type: "string" }, description: { type: "string" },
+        area: { type: "string", description: "optional: map | timeline | chat | governance | mcp | other" } } } },
   { name: "get_submission_status",
     description: "Status and audit findings for a submission id.",
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
@@ -224,6 +230,20 @@ async function callTool(name: string, args: any): Promise<string> {
           ? "Rejected at the Stage-0 gate. Fix every finding (each cites a Carta rule) and resubmit."
           : "Passed the instant gate. Full source verification (verbatim quotes, coherence) follows; check get_submission_status.",
       }, null, 2);
+    }
+    case "suggest_feature": {
+      const err = requireWrite(args);
+      if (err) return `ERROR: ${err}`;
+      const cid = await contributorId(args.handle);
+      const s = await sb("POST", "submissions", {
+        contributor_id: cid, type: "feature-suggestion", target_voyage: null,
+        payload: { title: args.title, description: args.description, area: args.area ?? null },
+        status: "human-review", carta_version: CARTA_VERSION,
+      });
+      await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "suggestion",
+        verdict: null, findings: null, carta_version: CARTA_VERSION });
+      return JSON.stringify({ submission_id: s[0].id, status: "human-review",
+        note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
     }
     case "get_submission_status": {
       const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at`);

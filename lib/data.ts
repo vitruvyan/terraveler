@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type { Navigator, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
+import laperouse from "@/data/laperouse.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -14,9 +15,19 @@ function hasSupabase(): boolean {
   );
 }
 
+// The local atlas: bundled voyages by slug (DB takes precedence when present).
+const LOCAL: Record<string, unknown> = {
+  "boudeuse-1766": bougainville,
+  "boussole-1785": laperouse,
+};
+
+export function knownVoyages(): string[] {
+  return Object.keys(LOCAL);
+}
+
 // Bundled at build time — reliable on Vercel with no runtime filesystem access.
-function fromJson(): VoyageBundle {
-  return bougainville as unknown as VoyageBundle;
+function fromJson(slug: string): VoyageBundle {
+  return (LOCAL[slug] ?? bougainville) as VoyageBundle;
 }
 
 /**
@@ -60,5 +71,5 @@ export async function getVoyageBundle(
       // fall through to the bundled JSON
     }
   }
-  return fromJson();
+  return fromJson(slug);
 }

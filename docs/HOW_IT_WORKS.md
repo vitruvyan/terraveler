@@ -98,6 +98,10 @@ assessment, research public-domain sources, build the draft and submit it with
 `submit_draft`. You can always check progress by asking it to call
 `get_submission_status`.
 
+Got an idea about **Terraveler itself** — a feature, an improvement, something
+that bothers you? Tell your AI to call `suggest_feature`: your suggestion lands
+directly on the editorial desk.
+
 ---
 
 ## The five rules that matter

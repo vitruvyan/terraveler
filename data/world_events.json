@@ -1,15 +1,170 @@
 [
-  { "date": "1767-04-02", "title": "Jesuits expelled from the Spanish Empire", "blurb": "Charles III orders the Society of Jesus removed from Spain and all its colonies.", "category": "politics", "region": "Spanish Empire", "source_url": "https://en.wikipedia.org/wiki/Suppression_of_the_Society_of_Jesus" },
-  { "date": "1767-04-07", "title": "Fall of Ayutthaya", "blurb": "Burmese armies sack the Siamese capital, ending a kingdom of four centuries.", "category": "conflict", "region": "Southeast Asia", "source_url": "https://en.wikipedia.org/wiki/Fall_of_Ayutthaya" },
-  { "date": "1767-06-29", "title": "The Townshend Acts", "blurb": "Britain taxes its American colonies anew, deepening the road to revolution.", "category": "politics", "region": "British America", "source_url": "https://en.wikipedia.org/wiki/Townshend_Acts" },
-  { "date": "1767-07-30", "title": "Catherine II's Legislative Commission", "blurb": "The Russian empress convenes reformers to recodify the law, guided by her Nakaz.", "category": "politics", "region": "Russia", "source_url": "https://en.wikipedia.org/wiki/Nakaz" },
-  { "date": "1767-08-15", "title": "First Anglo-Mysore War", "blurb": "Hyder Ali's Mysore takes on the British East India Company in southern India.", "category": "conflict", "region": "India", "source_url": "https://en.wikipedia.org/wiki/First_Anglo-Mysore_War" },
-  { "date": "1767-10-18", "title": "Mason–Dixon line completed", "blurb": "Surveyors fix the famous boundary between Pennsylvania and Maryland.", "category": "science", "region": "British America", "source_url": "https://en.wikipedia.org/wiki/Mason%E2%80%93Dixon_line" },
-  { "date": "1767-11-01", "title": "The Qing–Burma War rages", "blurb": "Qing China's third invasion of Burma is repulsed in the frontier jungles.", "category": "conflict", "region": "East Asia", "source_url": "https://en.wikipedia.org/wiki/Sino-Burmese_War_(1765%E2%80%931769)" },
-  { "date": "1768-08-26", "title": "Cook's Endeavour sails", "blurb": "A rival British Pacific expedition departs Plymouth as Bougainville crosses the ocean.", "category": "exploration", "region": "Britain", "source_url": "https://en.wikipedia.org/wiki/First_voyage_of_James_Cook" },
-  { "date": "1768-09-25", "title": "Gorkha conquest of Kathmandu", "blurb": "Prithvi Narayan Shah takes the valley, founding the kingdom of Nepal.", "category": "politics", "region": "South Asia", "source_url": "https://en.wikipedia.org/wiki/Prithvi_Narayan_Shah" },
-  { "date": "1768-10-06", "title": "Russo-Turkish War begins", "blurb": "The Ottoman Empire declares war on Russia, a struggle that will run to 1774.", "category": "conflict", "region": "Ottoman & Russia", "source_url": "https://en.wikipedia.org/wiki/Russo-Turkish_War_(1768%E2%80%931774)" },
-  { "date": "1768-12-01", "title": "Encyclopædia Britannica begins", "blurb": "The first weekly instalments of the encyclopaedia appear in Edinburgh.", "category": "culture", "region": "Britain", "source_url": "https://en.wikipedia.org/wiki/Encyclop%C3%A6dia_Britannica_First_Edition" },
-  { "date": "1768-12-10", "title": "Royal Academy of Arts founded", "blurb": "London gains its academy of painting and sculpture, Joshua Reynolds presiding.", "category": "culture", "region": "Britain", "source_url": "https://en.wikipedia.org/wiki/Royal_Academy_of_Arts" },
-  { "date": "1769-01-05", "title": "Watt patents the steam condenser", "blurb": "James Watt's separate condenser points the age toward steam power.", "category": "science", "region": "Britain", "source_url": "https://en.wikipedia.org/wiki/James_Watt" }
+  {
+    "date": "1767-04-02",
+    "title": "Jesuits expelled from the Spanish Empire",
+    "blurb": "Charles III orders the Society of Jesus removed from Spain and all its colonies.",
+    "category": "politics",
+    "region": "Spanish Empire",
+    "source_url": "https://en.wikipedia.org/wiki/Suppression_of_the_Society_of_Jesus"
+  },
+  {
+    "date": "1767-04-07",
+    "title": "Fall of Ayutthaya",
+    "blurb": "Burmese armies sack the Siamese capital, ending a kingdom of four centuries.",
+    "category": "conflict",
+    "region": "Southeast Asia",
+    "source_url": "https://en.wikipedia.org/wiki/Fall_of_Ayutthaya"
+  },
+  {
+    "date": "1767-06-29",
+    "title": "The Townshend Acts",
+    "blurb": "Britain taxes its American colonies anew, deepening the road to revolution.",
+    "category": "politics",
+    "region": "British America",
+    "source_url": "https://en.wikipedia.org/wiki/Townshend_Acts"
+  },
+  {
+    "date": "1767-07-30",
+    "title": "Catherine II's Legislative Commission",
+    "blurb": "The Russian empress convenes reformers to recodify the law, guided by her Nakaz.",
+    "category": "politics",
+    "region": "Russia",
+    "source_url": "https://en.wikipedia.org/wiki/Nakaz"
+  },
+  {
+    "date": "1767-08-15",
+    "title": "First Anglo-Mysore War",
+    "blurb": "Hyder Ali's Mysore takes on the British East India Company in southern India.",
+    "category": "conflict",
+    "region": "India",
+    "source_url": "https://en.wikipedia.org/wiki/First_Anglo-Mysore_War"
+  },
+  {
+    "date": "1767-10-18",
+    "title": "Mason–Dixon line completed",
+    "blurb": "Surveyors fix the famous boundary between Pennsylvania and Maryland.",
+    "category": "science",
+    "region": "British America",
+    "source_url": "https://en.wikipedia.org/wiki/Mason%E2%80%93Dixon_line"
+  },
+  {
+    "date": "1767-11-01",
+    "title": "The Qing–Burma War rages",
+    "blurb": "Qing China's third invasion of Burma is repulsed in the frontier jungles.",
+    "category": "conflict",
+    "region": "East Asia",
+    "source_url": "https://en.wikipedia.org/wiki/Sino-Burmese_War_(1765%E2%80%931769)"
+  },
+  {
+    "date": "1768-08-26",
+    "title": "Cook's Endeavour sails",
+    "blurb": "A rival British Pacific expedition departs Plymouth as Bougainville crosses the ocean.",
+    "category": "exploration",
+    "region": "Britain",
+    "source_url": "https://en.wikipedia.org/wiki/First_voyage_of_James_Cook"
+  },
+  {
+    "date": "1768-09-25",
+    "title": "Gorkha conquest of Kathmandu",
+    "blurb": "Prithvi Narayan Shah takes the valley, founding the kingdom of Nepal.",
+    "category": "politics",
+    "region": "South Asia",
+    "source_url": "https://en.wikipedia.org/wiki/Prithvi_Narayan_Shah"
+  },
+  {
+    "date": "1768-10-06",
+    "title": "Russo-Turkish War begins",
+    "blurb": "The Ottoman Empire declares war on Russia, a struggle that will run to 1774.",
+    "category": "conflict",
+    "region": "Ottoman & Russia",
+    "source_url": "https://en.wikipedia.org/wiki/Russo-Turkish_War_(1768%E2%80%931774)"
+  },
+  {
+    "date": "1768-12-01",
+    "title": "Encyclopædia Britannica begins",
+    "blurb": "The first weekly instalments of the encyclopaedia appear in Edinburgh.",
+    "category": "culture",
+    "region": "Britain",
+    "source_url": "https://en.wikipedia.org/wiki/Encyclop%C3%A6dia_Britannica_First_Edition"
+  },
+  {
+    "date": "1768-12-10",
+    "title": "Royal Academy of Arts founded",
+    "blurb": "London gains its academy of painting and sculpture, Joshua Reynolds presiding.",
+    "category": "culture",
+    "region": "Britain",
+    "source_url": "https://en.wikipedia.org/wiki/Royal_Academy_of_Arts"
+  },
+  {
+    "date": "1769-01-05",
+    "title": "Watt patents the steam condenser",
+    "blurb": "James Watt's separate condenser points the age toward steam power.",
+    "category": "science",
+    "region": "Britain",
+    "source_url": "https://en.wikipedia.org/wiki/James_Watt"
+  },
+  {
+    "date": "1785-01-07",
+    "title": "First aerial Channel crossing",
+    "blurb": "Blanchard and Jeffries cross from Dover to Calais by balloon.",
+    "category": "science",
+    "region": "Europe",
+    "source_url": "https://en.wikipedia.org/wiki/Jean-Pierre_Blanchard"
+  },
+  {
+    "date": "1786-05-01",
+    "title": "The Marriage of Figaro premieres",
+    "blurb": "Mozart’s opera opens in Vienna.",
+    "category": "culture",
+    "region": "Austria",
+    "source_url": "https://en.wikipedia.org/wiki/The_Marriage_of_Figaro"
+  },
+  {
+    "date": "1786-08-08",
+    "title": "First ascent of Mont Blanc",
+    "blurb": "Balmat and Paccard reach the summit — alpinism is born.",
+    "category": "exploration",
+    "region": "Alps",
+    "source_url": "https://en.wikipedia.org/wiki/Jacques_Balmat"
+  },
+  {
+    "date": "1787-05-22",
+    "title": "Abolition society founded in London",
+    "blurb": "The Society for Effecting the Abolition of the Slave Trade holds its first meeting.",
+    "category": "politics",
+    "region": "Britain",
+    "source_url": "https://en.wikipedia.org/wiki/Society_for_Effecting_the_Abolition_of_the_Slave_Trade"
+  },
+  {
+    "date": "1787-09-17",
+    "title": "The US Constitution is signed",
+    "blurb": "The Philadelphia Convention signs the Constitution of the United States.",
+    "category": "politics",
+    "region": "United States",
+    "source_url": "https://en.wikipedia.org/wiki/Constitution_of_the_United_States"
+  },
+  {
+    "date": "1787-10-29",
+    "title": "Don Giovanni premieres",
+    "blurb": "Mozart conducts the first performance in Prague.",
+    "category": "culture",
+    "region": "Bohemia",
+    "source_url": "https://en.wikipedia.org/wiki/Don_Giovanni"
+  },
+  {
+    "date": "1788-01-26",
+    "title": "The First Fleet raises the flag at Sydney Cove",
+    "blurb": "Britain founds its penal colony — the same day La Perouse stands off Botany Bay.",
+    "category": "exploration",
+    "region": "Australia",
+    "source_url": "https://en.wikipedia.org/wiki/First_Fleet"
+  },
+  {
+    "date": "1788-06-21",
+    "title": "The US Constitution is ratified",
+    "blurb": "New Hampshire is the ninth state; the Constitution takes effect.",
+    "category": "politics",
+    "region": "United States",
+    "source_url": "https://en.wikipedia.org/wiki/Constitution_of_the_United_States"
+  }
 ]

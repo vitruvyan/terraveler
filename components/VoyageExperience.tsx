@@ -184,13 +184,14 @@ export default function VoyageExperience({
     return arr;
   }, [legs]);
 
-  // World events within the voyage window, on the same time axis.
+  // World events within THIS voyage's window, on the same time axis.
   const events = useMemo(
     () =>
       (worldEventsData as WorldEvent[])
         .map((e) => ({ ...e, time: parseHistoricalDate(e.date) ?? minTime }))
+        .filter((e) => e.time >= minTime && e.time <= maxTime)
         .sort((a, b) => a.time - b.time),
-    [minTime]
+    [minTime, maxTime]
   );
 
   const [t, setT] = useState(minTime);
@@ -493,6 +494,15 @@ export default function VoyageExperience({
               {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
             </div>
             <div className="cart-ships">{voyage.ships}</div>
+            <div className="cart-atlas">
+              <span className="cart-atlas-label">Atlas</span>
+              <a href="/" className={voyage.slug === "boudeuse-1766" ? "cur" : ""}>
+                Bougainville 1766
+              </a>
+              <a href="/voyage/boussole-1785" className={voyage.slug === "boussole-1785" ? "cur" : ""}>
+                La Pérouse 1785
+              </a>
+            </div>
           </div>
         ) : (
           <button className="cart-emblem" onClick={() => toggleCart(true)} title={voyage.title} aria-label="Voyage title">
@@ -571,6 +581,7 @@ export default function VoyageExperience({
       <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
 
       {/* World-events strip: dots always, words only when there is something to say. */}
+      {events.length > 0 && (
       <div
         className="world-strip"
         onMouseEnter={() => setStripHover(true)}
@@ -606,6 +617,7 @@ export default function VoyageExperience({
           </div>
         )}
       </div>
+      )}
 
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
