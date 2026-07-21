@@ -6,7 +6,24 @@ import type { Navigator, Voyage, Waypoint } from "@/lib/types";
 
 const DAY = 86_400_000;
 
-type Lens = "log" | "chart";
+type Lens = "log" | "chart" | "carto";
+
+// Great powers of ~1715 (matches the EMPIRE field baked into world_1715.geojson).
+const EMPIRE_COLORS: Array<[string, string]> = [
+  ["British", "#b04a3c"],
+  ["French", "#3f5f9a"],
+  ["Spanish", "#d0a23f"],
+  ["Portuguese", "#3f8a5a"],
+  ["Dutch", "#e07a2e"],
+  ["Habsburg (Austria)", "#b3a13f"],
+  ["Russian (Muscovy)", "#7d5a9a"],
+  ["Qing (Manchu)", "#c2653a"],
+  ["Mughal", "#a24a6e"],
+  ["Safavid (Persia)", "#3f9090"],
+  ["Ottoman", "#6b8f3f"],
+  ["Japan (Tokugawa)", "#9a4560"],
+];
+const OTHER_COLOR = "#d9caa4";
 
 const SHIP_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
   <path d="M3 15h18l-2.1 4.1a2 2 0 0 1-1.8 1.1H6.9a2 2 0 0 1-1.8-1.1L3 15z"/>
@@ -159,6 +176,7 @@ export default function VoyageExperience({
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [lens, setLens] = useState<Lens>("log");
+  const [showHist, setShowHist] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -214,11 +232,14 @@ export default function VoyageExperience({
         // Political world at Bougainville's time — borders c. 1715, the closest
         // available to 1766 (a mid-18th-century reconstruction).
         map.addSource("hist", { type: "geojson", data: "/world_1715.geojson" });
+        const empireColor: any = ["match", ["get", "EMPIRE"]];
+        EMPIRE_COLORS.forEach(([k, c]) => empireColor.push(k, c));
+        empireColor.push(OTHER_COLOR);
         map.addLayer({
           id: "hist-fill",
           type: "fill",
           source: "hist",
-          paint: { "fill-color": "#caa96a", "fill-opacity": 0.38 },
+          paint: { "fill-color": empireColor, "fill-opacity": 0.5 },
         });
         map.addLayer({
           id: "hist-line",
@@ -312,6 +333,16 @@ export default function VoyageExperience({
     if (playing && t >= maxTime) setPlaying(false);
   }, [t, playing, maxTime]);
 
+  // Toggle the 1715 political overlay.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const vis = showHist ? "visible" : "none";
+    ["hist-fill", "hist-line"].forEach((id) => {
+      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
+    });
+  }, [showHist, ready]);
+
   // Ship state + navigation figures for the current instant.
   const shipNow = shipStateAt(t, legs);
   const idx = shipNow.index;
@@ -386,6 +417,12 @@ export default function VoyageExperience({
           >
             🗺 Chart
           </button>
+          <button
+            className={`lens-btn ${lens === "carto" ? "active" : ""}`}
+            onClick={() => setLens("carto")}
+          >
+            🧭 Cartographer
+          </button>
           <button className="lens-btn" disabled title="Coming soon">
             🎨 Art
           </button>
@@ -395,8 +432,8 @@ export default function VoyageExperience({
         </div>
 
         <div className="hist-note">
-          Borders: world c.&nbsp;1715 — the closest reconstruction to the voyage;
-          mid-18th-century precision varies.
+          World c.&nbsp;1715 (nearest to the voyage) — great powers coloured; open the
+          Cartographer lens for the key. A reconstruction; precision varies.
         </div>
 
         {current && (
@@ -415,15 +452,52 @@ export default function VoyageExperience({
               boxShadow: "0 6px 24px rgba(43, 33, 23, 0.18)",
             }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
-                Landfall {current.seq}
-              </span>
-              <span className="conf-badge">{current.confidence}</span>
-            </div>
-            <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
+            {lens === "carto" ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                    Map key
+                  </span>
+                  <span className="conf-badge">c. 1715</span>
+                </div>
+                <h2 style={{ margin: "4px 0 6px", fontSize: "1.3rem" }}>The great powers of the era</h2>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-soft)", margin: "0 0 10px" }}>
+                  Nearest reconstruction to the 1766 voyage. Colours mark the era&rsquo;s
+                  great powers — European and Asian; most of the globe was still
+                  independent states and peoples.
+                </p>
+                <div className="legend">
+                  {EMPIRE_COLORS.map(([name, color]) => (
+                    <div className="legend-row" key={name}>
+                      <span className="legend-sw" style={{ background: color }} />
+                      <span>{name}</span>
+                    </div>
+                  ))}
+                  <div className="legend-row">
+                    <span className="legend-sw" style={{ background: OTHER_COLOR }} />
+                    <span>Independent states &amp; peoples</span>
+                  </div>
+                </div>
+                <label className="hist-toggle">
+                  <input
+                    type="checkbox"
+                    checked={showHist}
+                    onChange={(e) => setShowHist(e.target.checked)}
+                  />
+                  Show period borders &amp; territories
+                </label>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                    Landfall {current.seq}
+                  </span>
+                  <span className="conf-badge">{current.confidence}</span>
+                </div>
+                <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
 
-            {lens === "log" ? (
+                {lens === "log" ? (
               <>
                 {current.place_modern &&
                   current.place_historical &&
@@ -505,6 +579,8 @@ export default function VoyageExperience({
                 {current.date_note && (
                   <p className="surveyor-note">Surveyor&rsquo;s note: {current.date_note}</p>
                 )}
+              </>
+            )}
               </>
             )}
           </aside>

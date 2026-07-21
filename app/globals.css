@@ -32,9 +32,8 @@ a { color: var(--route); }
 
 /* --- Map: warm the basemap toward parchment for a period feel --- */
 .maplibregl-canvas {
-  /* Warm period wash over the light basemap (coastlines) that sits beneath
-     the 1715 political overlay. */
-  filter: sepia(0.25) saturate(0.92) brightness(1);
+  /* Very light wash so the empire fill colours stay true to the legend. */
+  filter: saturate(0.95) brightness(1);
 }
 .maplibregl-ctrl-attrib {
   background: rgba(242, 230, 207, 0.72) !important;
@@ -129,6 +128,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   left: 16px;
   z-index: 5;
   display: flex;
+  flex-wrap: wrap;
+  max-width: calc(100% - 32px);
   gap: 2px;
   background: rgba(242, 230, 207, 0.9);
   border: 1px solid var(--parchment-deep);
@@ -192,3 +193,34 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-radius: 6px;
   padding: 5px 9px;
 }
+
+/* --- Cartographer lens: legend + toggle --- */
+.legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 10px;
+  margin: 4px 0 12px;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink);
+}
+.legend-sw {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  border: 1px solid rgba(43, 33, 23, 0.35);
+  flex: 0 0 auto;
+}
+.hist-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.hist-toggle input { cursor: pointer; }
