@@ -199,6 +199,22 @@ export default function VoyageExperience({
   const [showHist, setShowHist] = useState(true);
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [stripHover, setStripHover] = useState(false);
+
+  // Cartouche: remember collapsed state; start collapsed on small screens.
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("cartouche") === "min" || window.innerWidth < 680) {
+        setCartOpen(false);
+      }
+    } catch { /* ignore */ }
+  }, []);
+  function toggleCart(open: boolean) {
+    setCartOpen(open);
+    try { localStorage.setItem("cartouche", open ? "open" : "min"); } catch { /* ignore */ }
+  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -458,79 +474,29 @@ export default function VoyageExperience({
     lens === "log" ? "Ship's Log" : lens === "chart" ? "Navigation Chart" : "Cartographer";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100dvh" }}>
-      <header
-        className="app-header"
-        style={{
-          padding: "10px 18px",
-          borderBottom: "1px solid var(--parchment-deep)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 11, color: "var(--brass)" }}>
-            Terraveler · Chrono-diary
-            <a href="/about" style={{ marginLeft: 10, letterSpacing: "0.06em", textTransform: "none", fontSize: 11 }}>
-              About
-            </a>
-            <a href="/contribute" style={{ marginLeft: 8, letterSpacing: "0.06em", textTransform: "none", fontSize: 11 }}>
-              Contribute
-            </a>
-          </span>
-          <h1 style={{ margin: "2px 0 0", fontSize: "1.35rem" }}>{voyage.title}</h1>
-        </div>
-        <div style={{ textAlign: "right", color: "var(--ink-soft)", fontSize: 13 }}>
-          <div>
-            <strong>{navigator.name}</strong>
-            {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
+    <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
+      {/* Cartouche — the map's own title box, per voyage. Doubles as the future voyage picker. */}
+      <div className="left-stack">
+        {cartOpen ? (
+          <div className="cartouche">
+            <div className="cart-head">
+              <span className="cart-kicker">Terraveler · Chrono-diary</span>
+              <button className="win-btn" onClick={() => toggleCart(false)} aria-label="Minimize" title="Minimize">
+                –
+              </button>
+            </div>
+            <h1 className="cart-title">{voyage.title}</h1>
+            <div className="cart-nav">
+              <strong>{navigator.name}</strong>
+              {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
+            </div>
+            <div className="cart-ships">{voyage.ships}</div>
           </div>
-          <div>{voyage.ships}</div>
-        </div>
-      </header>
-
-      <div className="world-timeline">
-        <div className="wt-head">
-          <span className="wt-label">Meanwhile in the world</span>
-          {worldNow ? (
-            <span className="wt-current">
-              <strong>{worldNow.title}</strong> — {worldNow.blurb}{" "}
-              {worldNow.source_url && (
-                <a href={worldNow.source_url} target="_blank" rel="noreferrer" className="wt-src">
-                  source
-                </a>
-              )}
-            </span>
-          ) : (
-            <span className="wt-current wt-muted">the voyage sets out…</span>
-          )}
-        </div>
-        <div className="wt-track">
-          {events.map((ev) => (
-            <button
-              key={ev.title}
-              className={`wt-dot cat-${ev.category} ${
-                worldNow && ev.title === worldNow.title ? "active" : ""
-              }`}
-              style={{ left: `${pctOf(ev.time)}%` }}
-              title={`${ev.date} · ${ev.title}`}
-              aria-label={ev.title}
-              onClick={() => {
-                setPlaying(false);
-                setT(ev.time);
-              }}
-            />
-          ))}
-          <div className="wt-playhead" style={{ left: `${pct}%` }} />
-        </div>
-      </div>
-
-      <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-        <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
-
+        ) : (
+          <button className="cart-emblem" onClick={() => toggleCart(true)} title={voyage.title} aria-label="Voyage title">
+            🧭
+          </button>
+        )}
         {/* Lens switcher */}
         <div className="lens-switch" role="group" aria-label="View lens">
           <button
@@ -567,6 +533,77 @@ export default function VoyageExperience({
             🪶 Peoples
           </button>
         </div>
+      </div>
+
+      {/* Top-right: account + compass menu */}
+      <div className="tr-cluster">
+        <div style={{ position: "relative" }}>
+          <button className="tr-btn" onClick={() => setMenuOpen((m) => !m)} aria-label="Menu" title="Menu">
+            ☰
+          </button>
+          {menuOpen && (
+            <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+              <a href="/about">About</a>
+              <a href="/contribute">Contribute</a>
+              <a href="https://github.com/vitruvyan/terraveler/blob/main/docs/HOW_IT_WORKS.md" target="_blank" rel="noreferrer">
+                How it works
+              </a>
+              <a href="https://github.com/vitruvyan/terraveler/blob/main/MAGNA_CARTA.md" target="_blank" rel="noreferrer">
+                The Magna Carta
+              </a>
+              <div className="tr-menu-foot">
+                Terraveler — a Vitruvyan EOOD company
+                <br />
+                <a href="mailto:dbaldoni@gmail.com">contact</a> ·{" "}
+                <a href="https://vitruvyan.com" target="_blank" rel="noreferrer">vitruvyan.com</a>
+              </div>
+            </div>
+          )}
+        </div>
+        <a className="tr-btn" href="/desk" title="Sign in" aria-label="Sign in">
+          👤
+        </a>
+      </div>
+
+      {/* World-events strip: dots always, words only when there is something to say. */}
+      <div
+        className="world-strip"
+        onMouseEnter={() => setStripHover(true)}
+        onMouseLeave={() => setStripHover(false)}
+      >
+        <div className="wt-track">
+          {events.map((ev) => (
+            <button
+              key={ev.title}
+              className={`wt-dot cat-${ev.category} ${
+                worldNow && ev.title === worldNow.title ? "active" : ""
+              }`}
+              style={{ left: `${pctOf(ev.time)}%` }}
+              title={`${ev.date} · ${ev.title}`}
+              aria-label={ev.title}
+              onClick={() => {
+                setPlaying(false);
+                setT(ev.time);
+              }}
+            />
+          ))}
+          <div className="wt-playhead" style={{ left: `${pct}%` }} />
+        </div>
+        {worldNow && (stripHover || t - worldNow.time < 45 * DAY) && (
+          <div className="ws-card">
+            <span className="wt-label">Meanwhile in the world</span>{" "}
+            <strong>{worldNow.title}</strong> — {worldNow.blurb}{" "}
+            {worldNow.source_url && (
+              <a href={worldNow.source_url} target="_blank" rel="noreferrer" className="wt-src">
+                source
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+        <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
         <div className="hist-note">
           World c.&nbsp;1715 (nearest to the voyage) — great powers coloured; open the
@@ -710,16 +747,7 @@ export default function VoyageExperience({
         )}
       </div>
 
-      <div
-        className="control-bar"
-        style={{
-          padding: "12px 18px",
-          borderTop: "1px solid var(--parchment-deep)",
-          display: "flex",
-          alignItems: "center",
-          gap: 16,
-        }}
-      >
+      <div className="transport-bar">
         <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
           {playing ? "❚❚" : "▶"}
         </button>

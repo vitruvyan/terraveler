@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "About — Terraveler",
@@ -109,6 +110,7 @@ export default function About() {
         <Link href="/contribute">See what the atlas is looking for →</Link> ·{" "}
         <Link href="/">← Return to the voyage</Link>
       </p>
+      <SiteFooter />
     </main>
   );
 }

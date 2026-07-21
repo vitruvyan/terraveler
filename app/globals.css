@@ -513,3 +513,163 @@ input[type="range"].scrubber::-moz-range-thumb {
 .desk-btn-approve { background: #4f8a5b; border-color: #4f8a5b; color: #fff; }
 .desk-btn-changes { background: #8a5a9a; border-color: #8a5a9a; color: #fff; }
 .desk-btn-reject { background: #a3402c; border-color: #a3402c; color: #fff; }
+
+/* --- Full-bleed map chrome: cartouche, top-right cluster, strip, transport --- */
+.left-stack {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: min(340px, calc(100vw - 130px));
+}
+.left-stack .lens-switch { position: static; }
+
+.cartouche {
+  background: rgba(242, 230, 207, 0.95);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 10px;
+  box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
+  padding: 10px 14px 12px;
+}
+.cart-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.cart-kicker {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  color: var(--brass);
+}
+.cart-title { margin: 3px 0 4px; font-size: 1.12rem; line-height: 1.25; }
+.cart-nav { font-size: 13px; color: var(--ink); }
+.cart-ships { font-size: 12.5px; color: var(--ink-soft); font-style: italic; }
+.cart-emblem {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--parchment-deep);
+  background: rgba(242, 230, 207, 0.95);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
+}
+.cart-emblem:hover { background: var(--parchment-deep); }
+
+.tr-cluster {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+}
+.tr-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--parchment-deep);
+  background: rgba(242, 230, 207, 0.95);
+  color: var(--ink);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
+}
+.tr-btn:hover { background: var(--parchment-deep); }
+.tr-menu {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  min-width: 230px;
+  background: rgba(242, 230, 207, 0.98);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(43, 33, 23, 0.25);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+.tr-menu > a {
+  padding: 8px 10px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-family: var(--font-display);
+}
+.tr-menu > a:hover { background: rgba(43, 33, 23, 0.08); }
+.tr-menu-foot {
+  margin-top: 6px;
+  padding: 8px 10px 4px;
+  border-top: 1px solid var(--parchment-deep);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.world-strip {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  width: min(560px, 44vw);
+  padding: 6px 12px;
+  background: rgba(242, 230, 207, 0.82);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(43, 33, 23, 0.15);
+}
+.ws-card {
+  margin-top: 7px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.transport-bar {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(880px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 14px;
+  background: rgba(242, 230, 207, 0.94);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 14px;
+  box-shadow: 0 8px 26px rgba(43, 33, 23, 0.24);
+}
+
+/* --- Site footer (editorial pages) --- */
+.site-footer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 22px 40px;
+  border-top: 1px solid var(--parchment-deep);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 14px; }
+.sf-copy { font-size: 11.5px; }
+
+/* map-chrome mobile refinements */
+@media (max-width: 680px) {
+  .world-strip { width: calc(100vw - 176px); top: 12px; left: 64px; transform: none; }
+  .transport-bar { flex-wrap: wrap; gap: 8px 12px; bottom: 10px; }
+  .pig-launch { bottom: 150px !important; }
+}
+@media (min-width: 681px) {
+  .pig-launch { bottom: 88px; }
+}

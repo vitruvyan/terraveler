@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Contribute — Terraveler",
@@ -106,6 +107,7 @@ export default async function Contribute() {
       <p style={{ marginTop: 32 }}>
         <Link href="/about">About Terraveler</Link> · <Link href="/">← Return to the voyage</Link>
       </p>
+      <SiteFooter />
     </main>
   );
 }
