@@ -474,6 +474,9 @@ export default function VoyageExperience({
         <div>
           <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 11, color: "var(--brass)" }}>
             Terraveler · Chrono-diary
+            <a href="/about" style={{ marginLeft: 10, letterSpacing: "0.06em", textTransform: "none", fontSize: 11 }}>
+              About
+            </a>
           </span>
           <h1 style={{ margin: "2px 0 0", fontSize: "1.35rem" }}>{voyage.title}</h1>
         </div>
