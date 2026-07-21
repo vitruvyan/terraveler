@@ -248,6 +248,33 @@ export default function VoyageExperience({
           paint: { "line-color": "#6b4a2a", "line-width": 0.8, "line-opacity": 0.55 },
         });
 
+        // Hover a territory to reveal its name and sovereign of the era.
+        const esc = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const histPopup = new gl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          className: "hist-popup",
+          offset: 8,
+        });
+        map.on("mousemove", "hist-fill", (e: any) => {
+          const f = e.features && e.features[0];
+          const p = (f && f.properties) || {};
+          const name = String(p.NAME || "").trim();
+          if (!name) {
+            histPopup.remove();
+            return;
+          }
+          const emp = p.EMPIRE && p.EMPIRE !== "Other" ? String(p.EMPIRE) : "";
+          histPopup
+            .setLngLat(e.lngLat)
+            .setHTML(
+              `<strong>${esc(name)}</strong>${emp ? `<span class="hp-emp"> · ${esc(emp)}</span>` : ""}`
+            )
+            .addTo(map);
+        });
+        map.on("mouseleave", "hist-fill", () => histPopup.remove());
+
         map.addSource("route-full", { type: "geojson", data: lineFeature(full) });
         map.addSource("route-done", { type: "geojson", data: lineFeature([]) });
 
