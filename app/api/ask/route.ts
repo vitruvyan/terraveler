@@ -3,56 +3,49 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const GEMINI = process.env.GEMINI_API_KEY ?? "";
 const OPENAI = process.env.OPENAI_API_KEY ?? "";
-const SB_URL = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY =
-  process.env.SUPABASE_SERVICE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1";
 
-// Embed the question with the SAME model used at ingestion (768-d), query task.
-async function embedQuery(text: string): Promise<number[]> {
-  const r = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${GEMINI}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "models/gemini-embedding-001",
-        content: { parts: [{ text }] },
-        taskType: "RETRIEVAL_QUERY",
-        outputDimensionality: 768,
-      }),
-    }
-  );
-  if (!r.ok) throw new Error("embed " + r.status + ": " + (await r.text()).slice(0, 200));
-  return (await r.json()).embedding.values;
-}
+// Self-hosted RAG backend (nomic embeddings + pgvector on the VPS). The URL is
+// not a secret; the bearer token is. Retrieval — embedding + vector search —
+// now happens entirely on our own infra (zero embedding tokens).
+const RAG_URL = process.env.TERRAVELER_RAG_URL ?? "http://161.97.140.157:6003";
+const RAG_TOKEN = process.env.TERRAVELER_RAG_TOKEN ?? "";
+const DEFAULT_VOYAGE = "boudeuse-1766";
 
-async function retrieve(embedding: number[], k = 8) {
-  const r = await fetch(`${SB_URL}/rest/v1/rpc/match_rag_docs`, {
+type Source = {
+  title: string;
+  content: string;
+  source_url: string | null;
+  type: string;
+  media_url: string | null;
+  credit: string | null;
+  similarity: number;
+};
+
+async function retrieve(question: string, voyage: string, k = 8): Promise<Source[]> {
+  const r = await fetch(`${RAG_URL.replace(/\/$/, "")}/rag/search`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
+      Authorization: `Bearer ${RAG_TOKEN}`,
     },
-    body: JSON.stringify({ query_embedding: embedding, match_count: k, voyage: "boudeuse-1766" }),
+    body: JSON.stringify({ question, voyage, k }),
   });
-  if (!r.ok) throw new Error("retrieve " + r.status + ": " + (await r.text()).slice(0, 200));
-  return (await r.json()) as any[];
+  if (!r.ok) throw new Error("rag " + r.status + ": " + (await r.text()).slice(0, 200));
+  return ((await r.json()).sources ?? []) as Source[];
 }
 
-async function generate(question: string, docs: any[]): Promise<string> {
+async function generate(question: string, docs: Source[]): Promise<string> {
   const context = docs
     .map((d, i) => `[${i + 1}] (${d.title})\n${d.content}`)
     .join("\n\n");
   const system =
     "You are Antonio Pigafetta, chronicler of great voyages. Answer the user's " +
-    "question ONLY from the numbered sources below, which concern Bougainville's " +
-    "1766–1769 circumnavigation. Cite the sources you use inline as [n]. If the " +
-    "answer is not in the sources, say plainly that the sources do not tell. " +
-    "Reply in the user's language. Be concise, accurate and vivid.";
+    "question ONLY from the numbered sources below, which come from the ship's " +
+    "journals and reference works for the voyage in question. Cite the sources " +
+    "you use inline as [n]. If the answer is not in the sources, say plainly that " +
+    "the sources do not tell. Reply in the user's language. Be concise, accurate and vivid.";
   const user = `Sources:\n${context}\n\nQuestion: ${question}`;
   const r = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -72,18 +65,17 @@ async function generate(question: string, docs: any[]): Promise<string> {
 
 export async function POST(req: Request) {
   try {
-    if (!GEMINI || !OPENAI || !SB_URL || !SB_KEY) {
+    if (!OPENAI || !RAG_TOKEN) {
       return NextResponse.json(
-        { error: "Server not configured (missing GEMINI_API_KEY / OPENAI_API_KEY / SUPABASE_URL / SUPABASE_SERVICE_KEY)." },
+        { error: "Server not configured (missing OPENAI_API_KEY / TERRAVELER_RAG_TOKEN)." },
         { status: 500 }
       );
     }
-    const { question } = await req.json();
+    const { question, voyage } = await req.json();
     if (!question || typeof question !== "string") {
       return NextResponse.json({ error: "Missing question." }, { status: 400 });
     }
-    const emb = await embedQuery(question);
-    const docs = await retrieve(emb, 8);
+    const docs = await retrieve(question, typeof voyage === "string" ? voyage : DEFAULT_VOYAGE, 8);
     const answer = await generate(question, docs);
     const sources = docs.map((d) => ({
       title: d.title,
