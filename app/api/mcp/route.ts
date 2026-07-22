@@ -139,6 +139,14 @@ const TOOLS = [
       properties: { handle: { type: "string" }, invite_code: { type: "string" },
         title: { type: "string" }, description: { type: "string" },
         area: { type: "string", description: "optional: map | timeline | chat | governance | mcp | other" } } } },
+  { name: "suggest_content",
+    description: "Suggest content for a SPECIFIC voyage waypoint — an additional PD/CC source, a period image, an ethnographic detail, a coordinate/date fix, or a correction. Scoped to (voyage, waypoint, type). Lighter than submit_draft: a pointer for the desk, not a verified draft. Use this when contributing from a specific log entry, plate, or ethnographic note.",
+    inputSchema: { type: "object", required: ["handle", "invite_code", "voyage", "type", "idea"],
+      properties: { handle: { type: "string" }, invite_code: { type: "string" },
+        voyage: { type: "string", description: "voyage slug, e.g. boudeuse-1766" },
+        waypoint: { type: "number", description: "waypoint seq this concerns (omit for whole-voyage)" },
+        type: { type: "string", enum: ["source", "image", "coordinate", "date", "ethnography", "correction", "other"] },
+        idea: { type: "string", description: "what to add/fix, ideally with a PD/CC source URL" } } } },
   { name: "get_submission_status",
     description: "Status and audit findings for a submission id.",
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
@@ -244,6 +252,28 @@ async function callTool(name: string, args: any): Promise<string> {
         verdict: null, findings: null, carta_version: CARTA_VERSION });
       return JSON.stringify({ submission_id: s[0].id, status: "human-review",
         note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
+    }
+    case "suggest_content": {
+      const err = requireWrite(args);
+      if (err) return `ERROR: ${err}`;
+      const cid = await contributorId(args.handle);
+      const s = await sb("POST", "submissions", {
+        contributor_id: cid, type: "content-suggestion",
+        target_voyage: args.voyage ?? null,
+        payload: {
+          voyage: args.voyage, waypoint: args.waypoint ?? null,
+          content_type: args.type, idea: args.idea,
+        },
+        status: "human-review", carta_version: CARTA_VERSION,
+      });
+      await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "content-suggestion",
+        verdict: null, findings: null, carta_version: CARTA_VERSION });
+      return JSON.stringify({
+        submission_id: s[0].id, status: "human-review",
+        note: `Content suggestion recorded for ${args.voyage}` +
+          (args.waypoint != null ? ` waypoint ${args.waypoint}` : "") +
+          " — it now appears on the editorial desk. Track it with get_submission_status.",
+      });
     }
     case "get_submission_status": {
       const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at`);
