@@ -72,15 +72,14 @@ function buildPrompt(opts: {
   gapSentence: string;
   type: SuggestType;
 }): string {
-  return `You are connected to the Terraveler MCP. Contribute to the "${opts.voyageTitle}" voyage,
-stop ${opts.seq} — ${opts.place}.
+  return `Help me contribute to the "${opts.voyageTitle}" voyage, stop ${opts.seq} — ${opts.place}.
 What's needed: ${opts.gapSentence}.
-Find a public-domain or CC source that supplies this, then call the MCP tool
-suggest_content with:
-  { voyage: "${opts.voyageSlug}", waypoint: ${opts.seq}, type: "${opts.type}", idea: "<your finding + the source URL>" }
-Rules: PD/CC sources only (Gutenberg, Wikisource, Wikipedia, Wikimedia Commons,
-Wikidata, archive.org, Gallica, loc.gov). Quote verbatim, cite the source URL,
-never fabricate. If the gap is a coordinate, propose lat/lng with the gazetteer source.`;
+Find ONE public-domain or CC source that supplies this — from Gutenberg, Wikisource,
+Wikipedia, Wikimedia Commons, Wikidata, archive.org, Gallica, or loc.gov only.
+Quote verbatim, cite the exact source URL, never fabricate. If the gap is a
+coordinate, propose lat/lng with the gazetteer source.
+Then give me a short suggestion I can paste back, in this form:
+  <what to add, 1-2 sentences> — Source: <the source URL>`;
 }
 
 /**
@@ -106,6 +105,10 @@ export default function ContributePanel({
   onClose: () => void;
 }) {
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
+  const [idea, setIdea] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [sendErr, setSendErr] = useState<string | null>(null);
 
   const place =
     waypoint.place_historical &&
@@ -174,6 +177,31 @@ export default function ContributePanel({
       flash("Couldn't copy — use “Copy prompt” below, then paste into Gemini.", 4000);
     }
     window.open("https://gemini.google.com/app", "_blank", "noopener,noreferrer");
+  }
+
+  async function submit() {
+    if (!idea.trim() || sending) return;
+    setSending(true);
+    setSendErr(null);
+    try {
+      const r = await fetch("/api/contribute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voyage: voyageSlug,
+          waypoint: waypoint.seq,
+          type: chosen.type,
+          idea,
+        }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Could not submit.");
+      setSent(true);
+    } catch (e: any) {
+      setSendErr(String(e?.message || e));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -247,11 +275,58 @@ export default function ContributePanel({
           </button>
           {copyMsg && <span className="contrib-toast">{copyMsg}</span>}
         </div>
+        <div style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 6, lineHeight: 1.4 }}>
+          Opens your AI to find a public-domain source — then paste its answer below.
+        </div>
+      </div>
+
+      {/* Seamless submit — no MCP needed */}
+      <div style={{ marginTop: 12 }}>
+        <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brass)" }}>
+          Then paste it back
+        </div>
+        {sent ? (
+          <div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 6, lineHeight: 1.45 }}>
+            Thank you — your suggestion is on the editor&rsquo;s desk. It&rsquo;s reviewed before anything goes live.
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={idea}
+              onChange={(e) => setIdea(e.target.value)}
+              placeholder="Paste your AI's finding here (or write your own) — include a PD/CC source URL."
+              rows={3}
+              style={{
+                width: "100%", marginTop: 6, boxSizing: "border-box", resize: "vertical",
+                fontSize: 12.5, lineHeight: 1.4, padding: 8, borderRadius: 6,
+                border: "1px solid rgba(120,90,60,0.28)", background: "rgba(255,255,255,0.55)",
+                color: "var(--ink)", fontFamily: "inherit",
+              }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={sending || !idea.trim()}
+                style={{
+                  padding: "6px 14px", borderRadius: 6, border: "none",
+                  cursor: sending || !idea.trim() ? "default" : "pointer",
+                  background: "var(--btn, #c98977)", color: "#fff", fontSize: 13,
+                  opacity: sending || !idea.trim() ? 0.6 : 1,
+                }}
+              >
+                {sending ? "Sending…" : "Submit suggestion"}
+              </button>
+              {sendErr && <span style={{ fontSize: 11.5, color: "#b0715d" }}>{sendErr}</span>}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="contrib-note">
-        Your AI must be connected to the Terraveler MCP (set up once in your account). It will
-        submit through the pipeline; the Editor authorises before anything goes live.
+        The machine drafts, a human authorises: your suggestion lands on the editor&rsquo;s desk and is
+        reviewed before it goes live. (Power users: if you&rsquo;ve connected the Terraveler MCP, your AI
+        can submit directly instead.)
       </div>
     </DraggableWindow>
   );
