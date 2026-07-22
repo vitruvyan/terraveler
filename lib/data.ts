@@ -1,12 +1,13 @@
 import { supabase } from "./supabase";
-import type { Navigator, Voyage, Waypoint } from "./types";
+import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
 import laperouse from "@/data/laperouse.json";
+import voyager2 from "@/data/voyager2.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
   voyage: Voyage;
-  waypoints: Waypoint[];
+  waypoints: Waypoint[] | SpaceWaypoint[];
 }
 
 function hasSupabase(): boolean {
@@ -19,6 +20,7 @@ function hasSupabase(): boolean {
 const LOCAL: Record<string, unknown> = {
   "boudeuse-1766": bougainville,
   "boussole-1785": laperouse,
+  "voyager-2": voyager2,
 };
 
 export function knownVoyages(): string[] {

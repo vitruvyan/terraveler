@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import VoyageExperience from "@/components/VoyageExperience";
+import SpaceVoyageExperience from "@/components/SpaceVoyageExperience";
 import Pigafetta from "@/components/Pigafetta";
 import { getVoyageBundle, knownVoyages } from "@/lib/data";
+import type { SpaceWaypoint, Waypoint } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,15 @@ export default async function VoyagePage({
   const { navigator, voyage, waypoints } = await getVoyageBundle(slug);
   return (
     <>
-      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints} />
+      {voyage.kind === "space" ? (
+        <SpaceVoyageExperience
+          navigator={navigator}
+          voyage={voyage}
+          waypoints={waypoints as SpaceWaypoint[]}
+        />
+      ) : (
+        <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]} />
+      )}
       {/* Pigafetta's corpus covers Bougainville for now. */}
       {slug === "boudeuse-1766" && <Pigafetta />}
     </>

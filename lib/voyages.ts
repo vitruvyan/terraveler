@@ -1,3 +1,5 @@
+import type { VoyageKind } from "./types";
+
 /** The atlas index — one entry per published voyage. Used by the map's
  *  voyage picker, the cartouche, and the /voyages page. */
 export interface AtlasEntry {
@@ -7,6 +9,8 @@ export interface AtlasEntry {
   navigator: string;
   years: string;
   blurb: string;
+  /** Omitted means "earth" — see VoyageKind. Drives the Atlas panel's chips. */
+  kind?: VoyageKind;
 }
 
 export const ATLAS: AtlasEntry[] = [
@@ -27,5 +31,15 @@ export const ATLAS: AtlasEntry[] = [
     years: "1785–1788",
     blurb:
       "France's answer to Cook: Alaska to Kamchatka to Botany Bay — then silence, and the secret of the sea solved at Vanikoro forty years on.",
+  },
+  {
+    slug: "voyager-2",
+    href: "/voyage/voyager-2",
+    title: "Voyager 2: The Grand Tour of the Giant Planets",
+    navigator: "Voyager 2 (NASA / JPL)",
+    years: "1977–",
+    blurb:
+      "The only probe to fly all four giant planets: Jupiter, Saturn, Uranus, Neptune — then on past the heliopause into interstellar space, still transmitting.",
+    kind: "space",
   },
 ];

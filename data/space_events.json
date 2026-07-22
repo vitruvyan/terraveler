@@ -1,0 +1,66 @@
+[
+  {
+    "date": "1977-09-05",
+    "title": "Voyager 1 launches",
+    "blurb": "Sixteen days after Voyager 2, its twin lifts off on a faster path that will overtake it and reach Jupiter first.",
+    "category": "exploration",
+    "region": "Solar System",
+    "source_url": "https://en.wikipedia.org/wiki/Voyager_1"
+  },
+  {
+    "date": "1979-03-05",
+    "title": "Voyager 1 reaches Jupiter",
+    "blurb": "The faster-launched twin makes its own Jupiter flyby four months ahead of Voyager 2, discovering active volcanoes on Io.",
+    "category": "exploration",
+    "region": "Solar System",
+    "source_url": "https://en.wikipedia.org/wiki/Voyager_1"
+  },
+  {
+    "date": "1981-04-12",
+    "title": "First Space Shuttle flight",
+    "blurb": "Columbia launches on STS-1, opening the era of reusable American spacecraft.",
+    "category": "science",
+    "region": "United States",
+    "source_url": "https://en.wikipedia.org/wiki/STS-1"
+  },
+  {
+    "date": "1986-01-28",
+    "title": "Challenger disaster",
+    "blurb": "The Space Shuttle Challenger breaks apart 73 seconds after launch, killing all seven crew.",
+    "category": "science",
+    "region": "United States",
+    "source_url": "https://en.wikipedia.org/wiki/Space_Shuttle_Challenger_disaster"
+  },
+  {
+    "date": "1986-04-26",
+    "title": "Chernobyl disaster",
+    "blurb": "A reactor explosion at the Chernobyl nuclear plant in Soviet Ukraine releases massive radioactive fallout.",
+    "category": "science",
+    "region": "Soviet Union",
+    "source_url": "https://en.wikipedia.org/wiki/Chernobyl_disaster"
+  },
+  {
+    "date": "1989-11-09",
+    "title": "Fall of the Berlin Wall",
+    "blurb": "East Germany opens its borders; crowds tear down the wall that had divided the city for 28 years.",
+    "category": "politics",
+    "region": "Germany",
+    "source_url": "https://en.wikipedia.org/wiki/Fall_of_the_Berlin_Wall"
+  },
+  {
+    "date": "1990-02-14",
+    "title": "The \"Pale Blue Dot\" photograph",
+    "blurb": "Voyager 1, at Carl Sagan's urging, turns its camera back from 6 billion km out to photograph Earth as a single pixel.",
+    "category": "exploration",
+    "region": "Solar System",
+    "source_url": "https://en.wikipedia.org/wiki/Pale_Blue_Dot"
+  },
+  {
+    "date": "2012-08-25",
+    "title": "Voyager 1 enters interstellar space",
+    "blurb": "Its twin crosses the heliopause six years before Voyager 2, becoming the first human-made object beyond the Sun's influence.",
+    "category": "exploration",
+    "region": "Solar System",
+    "source_url": "https://en.wikipedia.org/wiki/Voyager_1"
+  }
+]

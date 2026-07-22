@@ -2,13 +2,19 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MediaItem, Navigator, Voyage, Waypoint } from "@/lib/types";
+import type { MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import { ATLAS } from "@/lib/voyages";
-
-const DAY = 86_400_000;
+import {
+  DAY,
+  parseHistoricalDate,
+  buildLegs as buildMotionLegs,
+  shipStateAt as motionShipStateAt,
+  traveledLine as motionTraveledLine,
+  type MotionLeg,
+} from "@/lib/voyage-motion";
 
 type Lens = "log" | "chart" | "carto" | "plates";
 
@@ -53,71 +59,35 @@ interface Leg {
   departure: number;
 }
 
-function parseHistoricalDate(s: string | null): number | null {
-  if (!s) return null;
-  const m = s.match(/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?/);
-  if (!m) return null;
-  const y = Number(m[1]);
-  const mo = m[2] ? Number(m[2]) - 1 : 0;
-  const d = m[3] ? Number(m[3]) : 1;
-  return Date.UTC(y, mo, d);
+function toLeg(l: MotionLeg<Waypoint>): Leg {
+  return { wp: l.wp, lng: l.x, lat: l.y, arrival: l.arrival, departure: l.departure };
 }
 
-function buildLegs(waypoints: Waypoint[]): Leg[] {
-  const sorted = [...waypoints].sort((a, b) => a.seq - b.seq);
-  const legs: Leg[] = [];
-  let prevLng: number | null = null;
-  let prevTime = -Infinity;
+function toMotionLeg(l: Leg): MotionLeg<Waypoint> {
+  return { wp: l.wp, x: l.lng, y: l.lat, arrival: l.arrival, departure: l.departure };
+}
 
-  for (const wp of sorted) {
+// Thin adapters over lib/voyage-motion: this is the Earth-only lng/lat
+// coordinate meaning, unwrapping longitude across the antimeridian for
+// continuity — identical logic to the pre-extraction inline version.
+function buildLegs(waypoints: Waypoint[]): Leg[] {
+  return buildMotionLegs(waypoints, (wp, prevLng) => {
     let lng = wp.longitude;
     if (prevLng !== null) {
       while (lng - prevLng > 180) lng -= 360;
       while (lng - prevLng < -180) lng += 360;
     }
-    let arrival = parseHistoricalDate(wp.arrival_date);
-    if (arrival === null) arrival = prevTime === -Infinity ? 0 : prevTime + 14 * DAY;
-    if (arrival < prevTime) arrival = prevTime + DAY;
-    let departure = parseHistoricalDate(wp.departure_date);
-    if (departure === null || departure < arrival) departure = arrival;
-
-    legs.push({ wp, lng, lat: wp.latitude, arrival, departure });
-    prevLng = lng;
-    prevTime = departure;
-  }
-  return legs;
+    return { x: lng, y: wp.latitude };
+  }).map(toLeg);
 }
 
 function shipStateAt(t: number, legs: Leg[]): { lng: number; lat: number; index: number } {
-  if (legs.length === 0) return { lng: 0, lat: 0, index: 0 };
-  if (t <= legs[0].arrival) return { lng: legs[0].lng, lat: legs[0].lat, index: 0 };
-
-  for (let i = 0; i < legs.length; i++) {
-    const leg = legs[i];
-    if (t <= leg.departure) return { lng: leg.lng, lat: leg.lat, index: i };
-    const next = legs[i + 1];
-    if (next && t < next.arrival) {
-      const f = (t - leg.departure) / (next.arrival - leg.departure);
-      return {
-        lng: leg.lng + (next.lng - leg.lng) * f,
-        lat: leg.lat + (next.lat - leg.lat) * f,
-        index: i,
-      };
-    }
-  }
-  const last = legs[legs.length - 1];
-  return { lng: last.lng, lat: last.lat, index: legs.length - 1 };
+  const s = motionShipStateAt(t, legs.map(toMotionLeg));
+  return { lng: s.x, lat: s.y, index: s.index };
 }
 
 function traveledLine(t: number, legs: Leg[]): [number, number][] {
-  const ship = shipStateAt(t, legs);
-  const coords: [number, number][] = [];
-  for (let i = 0; i <= ship.index; i++) coords.push([legs[i].lng, legs[i].lat]);
-  const last = coords[coords.length - 1];
-  if (!last || last[0] !== ship.lng || last[1] !== ship.lat) {
-    coords.push([ship.lng, ship.lat]);
-  }
-  return coords;
+  return motionTraveledLine(t, legs.map(toMotionLeg));
 }
 
 function lineFeature(coords: [number, number][]) {
@@ -218,6 +188,7 @@ export default function VoyageExperience({
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
+  const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
 
   useEffect(() => {
@@ -615,8 +586,21 @@ export default function VoyageExperience({
             <div className="cart-ships">{voyage.ships}</div>
           </div>
           <div className="atlas-chips">
-            <span className="atlas-chip cur">Age of Sail</span>
-            <span className="atlas-chip off" title="Coming soon — the probes kept logs too">Space voyages</span>
+            <button
+              type="button"
+              className={`atlas-chip ${atlasFilter === "earth" ? "cur" : ""}`}
+              onClick={() => setAtlasFilter("earth")}
+            >
+              Age of Sail
+            </button>
+            <button
+              type="button"
+              className={`atlas-chip ${atlasFilter === "space" ? "cur" : ""}`}
+              title="The probes kept logs too"
+              onClick={() => setAtlasFilter("space")}
+            >
+              Space voyages
+            </button>
           </div>
           <input
             className="desk-input"
@@ -626,7 +610,7 @@ export default function VoyageExperience({
             onChange={(e) => setPickerQ(e.target.value)}
             aria-label="Search voyages"
           />
-          {ATLAS.filter((v) =>
+          {ATLAS.filter((v) => (v.kind ?? "earth") === atlasFilter).filter((v) =>
             (v.title + v.navigator + v.years + v.blurb)
               .toLowerCase()
               .includes(pickerQ.toLowerCase())
