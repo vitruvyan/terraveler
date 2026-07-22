@@ -6,6 +6,7 @@ import type { MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/t
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
+import ContributePanel from "@/components/ContributePanel";
 import { ATLAS } from "@/lib/voyages";
 import {
   DAY,
@@ -190,6 +191,20 @@ export default function VoyageExperience({
   const [pickerQ, setPickerQ] = useState("");
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
+  const [contribute, setContribute] = useState<{
+    waypoint: Waypoint;
+    contentType: "log" | "image";
+    media?: MediaItem;
+  } | null>(null);
+
+  // Contribute buttons show only to signed-in users — same session check AccountPanel uses.
+  useEffect(() => {
+    fetch("/api/desk/me")
+      .then((r) => r.json())
+      .then((d) => setSignedIn(!!d?.signed_in))
+      .catch(() => setSignedIn(false));
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 680px)");
@@ -753,9 +768,21 @@ export default function VoyageExperience({
                 ) : (
                   plateWaypoints.map((wp) => (
                     <div className="plates-group" key={wp.id}>
-                      <h3 className="plates-place">
-                        {wp.place_historical || wp.place_modern}
-                      </h3>
+                      <div className="contrib-plates-head">
+                        <h3 className="plates-place">
+                          {wp.place_historical || wp.place_modern}
+                        </h3>
+                        {signedIn && (
+                          <button
+                            type="button"
+                            className="contrib-btn"
+                            onClick={() => setContribute({ waypoint: wp, contentType: "image" })}
+                            title={`Suggest an image or source for ${wp.place_historical || wp.place_modern}`}
+                          >
+                            ✒ Contribute
+                          </button>
+                        )}
+                      </div>
                       <div className="plates-grid">
                         {(wp.media ?? []).map((m, i) => (
                           <figure className="plates-thumb" key={i}>
@@ -775,16 +802,31 @@ export default function VoyageExperience({
                             <figcaption>
                               <div className="plates-caption">{m.caption}</div>
                               {m.credit && <div className="plates-credit">{m.credit}</div>}
-                              {m.source_url && (
-                                <a
-                                  href={m.source_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="plates-source"
-                                >
-                                  source
-                                </a>
-                              )}
+                              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                                {m.source_url && (
+                                  <a
+                                    href={m.source_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="plates-source"
+                                  >
+                                    source
+                                  </a>
+                                )}
+                                {signedIn && (
+                                  <button
+                                    type="button"
+                                    className="plates-contrib-mini"
+                                    onClick={() =>
+                                      setContribute({ waypoint: wp, contentType: "image", media: m })
+                                    }
+                                    aria-label={`Suggest a fix or replacement for: ${m.caption}`}
+                                    title="Suggest a fix or replacement for this image"
+                                  >
+                                    ✒
+                                  </button>
+                                )}
+                              </div>
                             </figcaption>
                           </figure>
                         ))}
@@ -805,6 +847,18 @@ export default function VoyageExperience({
 
                 {lens === "log" ? (
               <>
+                {signedIn && (
+                  <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 4px" }}>
+                    <button
+                      type="button"
+                      className="contrib-btn"
+                      onClick={() => setContribute({ waypoint: current, contentType: "log" })}
+                      title="Suggest a source, correction, or detail for this stop"
+                    >
+                      ✒ Contribute
+                    </button>
+                  </div>
+                )}
                 {current.place_modern &&
                   current.place_historical &&
                   current.place_modern !== current.place_historical && (
@@ -890,6 +944,17 @@ export default function VoyageExperience({
               </>
             )}
           </DraggableWindow>
+        )}
+
+        {contribute && (
+          <ContributePanel
+            voyageSlug={voyage.slug}
+            voyageTitle={voyage.title}
+            waypoint={contribute.waypoint}
+            contentType={contribute.contentType}
+            media={contribute.media}
+            onClose={() => setContribute(null)}
+          />
         )}
       </div>
 
