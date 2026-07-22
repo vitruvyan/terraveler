@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
 import spaceEventsData from "@/data/space_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
-import SolarSystemMap, { type MilestonePoint, type ScaleMode } from "@/components/SolarSystemMap";
+import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
+import type { CameraMode } from "@/components/SolarSystem3D";
 import { ATLAS } from "@/lib/voyages";
 import {
   DAY,
@@ -15,6 +17,17 @@ import {
   traveledLine,
   type MotionLeg,
 } from "@/lib/voyage-motion";
+
+// The immersive three.js orrery replaces the flat SVG map as the primary
+// renderer; it self-detects WebGL and falls back to rendering the retained
+// SolarSystemMap (SVG) internally if unavailable — so this is the ONLY map
+// import the parent needs now. ssr:false because it touches window/document
+// and builds a three.js scene; a starfield-colored skeleton (matching
+// SolarSystem3D's own "detecting" placeholder) fills the gap while it loads.
+const SolarSystem3D = dynamic(() => import("@/components/SolarSystem3D"), {
+  ssr: false,
+  loading: () => <div style={{ position: "absolute", inset: 0 }} />,
+});
 
 type Lens = "log" | "chart" | "carto" | "plates";
 
@@ -130,6 +143,7 @@ export default function SpaceVoyageExperience({
   const [showOrbits, setShowOrbits] = useState(true);
   const [showLabels, setShowLabels] = useState(true);
   const [scaleMode, setScaleMode] = useState<ScaleMode>("log");
+  const [cameraMode, setCameraMode] = useState<CameraMode>("cinematic");
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -485,7 +499,7 @@ export default function SpaceVoyageExperience({
 
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <SolarSystemMap
+          <SolarSystem3D
             fullPath={fullPath}
             donePath={donePath}
             shipAu={{ x: shipNow.x, y: shipNow.y }}
@@ -495,6 +509,10 @@ export default function SpaceVoyageExperience({
             showOrbits={showOrbits}
             showLabels={showLabels}
             onWaypointClick={openLog}
+            t={t}
+            cameraMode={cameraMode}
+            onCameraModeChange={setCameraMode}
+            playing={playing}
           />
         </div>
 
@@ -543,6 +561,27 @@ export default function SpaceVoyageExperience({
                     onClick={() => setScaleMode("linear")}
                   >
                     Linear scale
+                  </button>
+                </div>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-soft)", margin: "10px 0 4px" }}>
+                  Cinematic mode holds a slow orbiting camera on the probe, pulling in close at
+                  each flyby. Free look lets you drag to orbit and scroll to zoom — drag to
+                  switch, or wait a few seconds / press play to hand the camera back.
+                </p>
+                <div className="scale-toggle" role="radiogroup" aria-label="Camera mode">
+                  <button
+                    type="button"
+                    className={`scale-opt ${cameraMode === "cinematic" ? "active" : ""}`}
+                    onClick={() => setCameraMode("cinematic")}
+                  >
+                    Cinematic
+                  </button>
+                  <button
+                    type="button"
+                    className={`scale-opt ${cameraMode === "free" ? "active" : ""}`}
+                    onClick={() => setCameraMode("free")}
+                  >
+                    Free look
                   </button>
                 </div>
               </>
