@@ -1,0 +1,192 @@
+{
+  "_note": "The first surface voyage: a walking traverse instead of a sailing/orbital one. Coordinates are planetocentric selenographic (east-positive longitude), near Tranquility Base at 0.674°N, 23.473°E. Waypoint-to-waypoint offsets follow the approximate distances/directions from the Lunar Module noted in the Apollo Lunar Surface Journal (ALSJ) traverse maps — a schematic reconstruction of the EVA's geography, not surveyed positions. Times are UTC, 20-21 July 1969.",
+  "navigator": {
+    "id": 4,
+    "slug": "apollo-11",
+    "name": "Apollo 11",
+    "nationality": "NASA (United States)",
+    "birth_year": 1969,
+    "death_year": null,
+    "portrait_url": "https://images-assets.nasa.gov/image/S69-34875/S69-34875~large.jpg",
+    "bio": "Apollo 11 was the spaceflight that first landed humans on the Moon. Commander Neil Armstrong and Lunar Module Pilot Edwin 'Buzz' Aldrin touched down in the Lunar Module Eagle in the Sea of Tranquility on 20 July 1969, while Command Module Pilot Michael Collins orbited overhead in Columbia. Armstrong and Aldrin spent about two and a half hours outside the spacecraft — the first humans ever to walk on another world — deploying scientific instruments, planting the American flag, collecting 21.5 kg of lunar samples, and speaking by telephone with President Richard Nixon, before lifting off to rejoin Collins and returning safely to Earth on 24 July 1969."
+  },
+  "voyage": {
+    "id": 4,
+    "navigator_id": 4,
+    "slug": "apollo-11",
+    "title": "Apollo 11: The First Moonwalk",
+    "ships": "Lunar Module \"Eagle\" (Command Module \"Columbia\" remained in lunar orbit)",
+    "sponsor": "NASA / United States of America",
+    "purpose": "Fulfil President Kennedy's 1961 goal of landing a man on the Moon and returning him safely to Earth before the decade's end; conduct the first human exploration of another world, deploying scientific instruments and collecting samples at the Sea of Tranquility.",
+    "start_date": "1969-07-20",
+    "end_date": "1969-07-21",
+    "summary": "Eagle touched down in the Sea of Tranquility at 20:17:40 UTC on 20 July 1969. After a rest period, Armstrong and Aldrin depressurized the cabin and opened the hatch at 02:39 UTC on 21 July; Armstrong stepped onto the surface at 02:56:15 UTC, followed by Aldrin about nineteen minutes later. Over roughly two and a half hours the two astronauts planted the American flag, unveiled a commemorative plaque, spoke by telephone with President Nixon, deployed the Early Apollo Scientific Experiments Package (a seismometer and a laser-ranging retroreflector), collected 21.5 kg of rock and soil samples, and — in Armstrong's own unscheduled excursion — walked to the rim of a small crater east of the LM that mission controllers came to call Little West Crater, his farthest point from Eagle. They re-entered the Lunar Module and closed the hatch at about 05:11 UTC, ending the EVA at 2 hours 31 minutes 40 seconds.",
+    "kind": "surface",
+    "render": "surface",
+    "body": "moon"
+  },
+  "waypoints": [
+    {
+      "id": 401,
+      "voyage_id": 4,
+      "seq": 1,
+      "place_historical": "Tranquility Base",
+      "place_modern": "Statio Tranquillitatis, Sea of Tranquility, the Moon",
+      "latitude": 0.674,
+      "longitude": 23.473,
+      "arrival_date": "1969-07-20",
+      "departure_date": "1969-07-21",
+      "date_note": "Eagle touched down at 20:17:40 UTC on 20 July 1969 (Ground Elapsed Time 102:45:40), with about 25 seconds of descent fuel remaining. The crew then rested before beginning the EVA the following day.",
+      "event": "Armstrong and Aldrin, having separated from Michael Collins in Columbia and flown the Lunar Module down through the final \"1201\"/\"1202\" program-alarm-interrupted descent, set Eagle down in the southwestern Sea of Tranquility — the first crewed landing on another world.",
+      "diary_excerpt": "Houston, Tranquility Base here. The Eagle has landed.",
+      "diary_source_citation": "Armstrong, radio transmission at touchdown, Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/as11-40-5915/as11-40-5915~large.jpg",
+          "caption": "AS11-40-5915 — the Lunar Module Eagle on the surface of the Sea of Tranquility",
+          "credit": "NASA / Apollo 11 crew",
+          "source_url": "https://images.nasa.gov/details-as11-40-5915",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    },
+    {
+      "id": 402,
+      "voyage_id": 4,
+      "seq": 2,
+      "place_historical": "The ladder foot & MESA — first steps",
+      "place_modern": "~5 m west of the LM footpad, Statio Tranquillitatis",
+      "latitude": 0.674,
+      "longitude": 23.4728,
+      "arrival_date": "1969-07-21",
+      "departure_date": "1969-07-21",
+      "date_note": "Cabin depressurization and hatch opening began the EVA at 02:39 UTC. Armstrong descended Eagle's ladder and stepped onto the surface at 02:56:15 UTC, 21 July 1969. Within the first few minutes he collected a contingency soil sample with a bagged sampler on a pole, in case an emergency recall cut the EVA short.",
+      "event": "Neil Armstrong became the first human being to stand on another world, near the Lunar Module's Modular Equipment Stowage Assembly (MESA), the fold-down surface camera and equipment locker on Eagle's descent stage.",
+      "diary_excerpt": "That's one small step for [a] man, one giant leap for mankind.",
+      "diary_source_citation": "Armstrong, first step onto the lunar surface, Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/as11-40-5877/as11-40-5877~large.jpg",
+          "caption": "AS11-40-5877 — a close-up of an astronaut's bootprint in the lunar soil, photographed for a soil-mechanics study",
+          "credit": "NASA / Apollo 11 crew",
+          "source_url": "https://images.nasa.gov/details-as11-40-5877",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    },
+    {
+      "id": 403,
+      "voyage_id": 4,
+      "seq": 3,
+      "place_historical": "The flag & the television camera",
+      "place_modern": "~5 m north of the LM, Statio Tranquillitatis",
+      "latitude": 0.6742,
+      "longitude": 23.473,
+      "arrival_date": "1969-07-21",
+      "departure_date": "1969-07-21",
+      "date_note": "Aldrin joined Armstrong on the surface about nineteen minutes after the first step, around 03:15 UTC — descending past the black-and-white television camera the two had positioned to broadcast the EVA live. The flag and commemorative plaque followed shortly after, circa 03:41 UTC.",
+      "event": "With the television camera already broadcasting live to an estimated 600 million viewers on Earth, Armstrong and Aldrin planted the aluminum-staffed American flag — its horizontal rod keeping it 'flying' in the airless vacuum — and read the plaque fixed to Eagle's descent stage: 'Here men from the planet Earth first set foot upon the Moon... We came in peace for all mankind.'",
+      "diary_excerpt": "Beautiful view. [...] Magnificent desolation.",
+      "diary_source_citation": "Aldrin, on reaching the surface, Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/as11-40-5875/as11-40-5875~large.jpg",
+          "caption": "AS11-40-5875 — Aldrin poses beside the deployed United States flag; the Lunar Module Eagle is at left",
+          "credit": "NASA / Neil A. Armstrong",
+          "source_url": "https://images.nasa.gov/details-as11-40-5875",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    },
+    {
+      "id": 404,
+      "voyage_id": 4,
+      "seq": 4,
+      "place_historical": "EASEP — seismometer & laser reflector",
+      "place_modern": "~17 m south-southwest of the LM, Statio Tranquillitatis",
+      "latitude": 0.6734,
+      "longitude": 23.4727,
+      "arrival_date": "1969-07-21",
+      "departure_date": "1969-07-21",
+      "date_note": "Aldrin deployed the Early Apollo Scientific Experiments Package (EASEP) in the roughly hour between the Nixon telephone call and the end of the EVA, circa 04:00-04:45 UTC on 21 July 1969.",
+      "event": "Aldrin off-loaded and deployed the EASEP: the Passive Seismic Experiment Package (PSEP), which recorded moonquakes and meteoroid impacts for three weeks until its battery failed, and the Laser Ranging Retro-Reflector (LR-3), a corner-cube mirror array that is still used today — over half a century later — to measure the Earth-Moon distance to centimetre precision by timing reflected laser pulses from observatories on Earth.",
+      "diary_excerpt": "The passive seismometer has been deployed manually.",
+      "diary_source_citation": "Aldrin, reporting the PSEP's deployment, Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/as11-40-5948/as11-40-5948~large.jpg",
+          "caption": "AS11-40-5948 — the deployed EASEP: the Passive Seismic Experiment Package in the foreground, the Laser Ranging Retro-Reflector beyond it, the flag and TV camera behind, and the LM at right",
+          "credit": "NASA / Neil A. Armstrong",
+          "source_url": "https://images.nasa.gov/details-as11-40-5948",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    },
+    {
+      "id": 405,
+      "voyage_id": 4,
+      "seq": 5,
+      "place_historical": "Little West Crater",
+      "place_modern": "~60 m east of the LM, Statio Tranquillitatis",
+      "latitude": 0.6735,
+      "longitude": 23.475,
+      "arrival_date": "1969-07-21",
+      "departure_date": "1969-07-21",
+      "date_note": "In the EVA's closing minutes, shortly before the 05:11 UTC hatch closing, Armstrong made a brief, unscheduled excursion on foot to the southwest rim of the crater mission control informally named 'Little West' — the same 30 m crater he had side-stepped moments before touchdown to avoid its boulder field. It marked the farthest either astronaut travelled from Eagle during the EVA.",
+      "event": "Armstrong walked alone to the rim of Little West Crater and photographed a panorama down into it and back toward the distant Lunar Module, satisfying his own curiosity about the obstacle that had nearly forced him to fly the final seconds of the landing by eye rather than by the planned trajectory.",
+      "diary_excerpt": "I went the farthest. While Buzz was returning from the EASEP, I went back to a big crater behind us... I ran there and ran back because I didn't want to spend much time doing that... It just took a few minutes to lope back there, take those pictures, and then come back.",
+      "diary_source_citation": "Armstrong, Apollo 11 Technical Debrief, quoted in the Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/jsc2008e040725/jsc2008e040725~large.jpg",
+          "caption": "Panorama built from Armstrong's frames AS11-40-5954 through 5961, taken at the rim of Little West Crater looking back toward Eagle",
+          "credit": "NASA / Neil A. Armstrong (panorama assembly: NASA JSC, 2008)",
+          "source_url": "https://images.nasa.gov/details-jsc2008e040725",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    },
+    {
+      "id": 406,
+      "voyage_id": 4,
+      "seq": 6,
+      "place_historical": "Return & ingress",
+      "place_modern": "At the LM ladder, Statio Tranquillitatis",
+      "latitude": 0.674,
+      "longitude": 23.473,
+      "arrival_date": "1969-07-21",
+      "departure_date": "1969-07-21",
+      "date_note": "Armstrong and Aldrin climbed back up Eagle's ladder and closed the hatch at about 05:11 UTC on 21 July 1969, ending the EVA at 2 hours 31 minutes 40 seconds after it began. They lifted off from Tranquility Base the following day, 21 July 1969 at 17:54 UTC, to rejoin Michael Collins in Columbia.",
+      "event": "With 21.5 kg of samples, film magazines and the EASEP left running behind them, Armstrong and Aldrin ended the first human moonwalk and sealed themselves back inside Eagle to rest before the ascent.",
+      "diary_excerpt": "Be advised there's lots of smiling faces in this room, and all over the world.",
+      "diary_source_citation": "CAPCOM Charlie Duke, Mission Control, to the crew after the EVA, Apollo Lunar Surface Journal (ALSJ), NASA History Office",
+      "diary_source_url": "https://history.nasa.gov/alsj/a11/a11.html",
+      "confidence": "certain",
+      "media_url": null,
+      "media": [
+        {
+          "url": "https://images-assets.nasa.gov/image/as11-40-5903/as11-40-5903~large.jpg",
+          "caption": "AS11-40-5903 — Aldrin walks back near a leg of the Lunar Module; Armstrong and Eagle are reflected in his visor",
+          "credit": "NASA / Neil A. Armstrong",
+          "source_url": "https://images.nasa.gov/details-as11-40-5903",
+          "license": "Public domain (NASA)"
+        }
+      ]
+    }
+  ]
+}

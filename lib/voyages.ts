@@ -1,5 +1,21 @@
 import type { VoyageKind } from "./types";
 
+/**
+ * Resolves which renderer a voyage uses. Explicit `render` wins; otherwise
+ * derived from the legacy `kind` field so every voyage bundle written before
+ * `render` existed (no field at all) keeps behaving exactly as before:
+ * `kind:"space"` ⇒ the SVG orrery ("orbital"), anything else ⇒ MapLibre
+ * ("earth"). `kind:"surface"` bundles that predate this field would also
+ * fall through to "earth" here, which is why new surface voyages should set
+ * `render:"surface"` explicitly (see data/apollo-11.json).
+ */
+export function resolveRender(v: {
+  render?: string;
+  kind?: string;
+}): "earth" | "surface" | "orbital" {
+  return (v.render as any) ?? (v.kind === "space" ? "orbital" : "earth");
+}
+
 /** The atlas index — one entry per published voyage. Used by the map's
  *  voyage picker, the cartouche, and the /voyages page. */
 export interface AtlasEntry {
@@ -41,5 +57,15 @@ export const ATLAS: AtlasEntry[] = [
     blurb:
       "The only probe to fly all four giant planets: Jupiter, Saturn, Uranus, Neptune — then on past the heliopause into interstellar space, still transmitting.",
     kind: "space",
+  },
+  {
+    slug: "apollo-11",
+    href: "/voyage/apollo-11",
+    title: "Apollo 11: The First Moonwalk",
+    navigator: "Apollo 11 (NASA)",
+    years: "1969",
+    blurb:
+      "Two and a half hours on the Sea of Tranquility: the Eagle's landing, the first bootprint, the flag, the seismometer left running, and a walk out to Little West Crater before the climb back up the ladder.",
+    kind: "surface",
   },
 ];

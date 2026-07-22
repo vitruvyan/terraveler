@@ -1,9 +1,15 @@
 export type Confidence = "certain" | "approximate" | "reconstructed";
 
-/** "earth" (the default, an Age-of-Sail voyage on a MapLibre map) or "space"
- *  (a probe's journey, rendered on the SVG orrery). Absent ⇒ "earth", so
- *  every existing voyage bundle stays backward compatible without edits. */
-export type VoyageKind = "earth" | "space";
+/** "earth" (the default, an Age-of-Sail voyage on a MapLibre map), "surface"
+ *  (a walking/rover traverse on another body's surface, also rendered on
+ *  MapLibre via lib/basemaps.ts), or "space" (a probe's journey, rendered on
+ *  the SVG orrery). Absent ⇒ "earth", so every existing voyage bundle stays
+ *  backward compatible without edits. */
+export type VoyageKind = "earth" | "surface" | "space";
+
+/** The celestial body a voyage takes place on/around. Drives which basemap
+ *  lib/basemaps.ts serves. Absent ⇒ "earth". */
+export type BodyId = "earth" | "moon" | "mars" | "venus" | "mercury" | "titan";
 
 export interface Navigator {
   id: number;
@@ -29,6 +35,13 @@ export interface Voyage {
   summary: string | null;
   /** Omitted/undefined means "earth" — see VoyageKind. */
   kind?: VoyageKind;
+  /** Explicit renderer selection: "earth"|"surface" both use VoyageExperience
+   *  (MapLibre), "orbital" uses SpaceVoyageExperience (SVG orrery). Omitted ⇒
+   *  derived from `kind` by resolveRender() in lib/voyages.ts, so existing
+   *  bundles (no `render` field) keep working unchanged. */
+  render?: "earth" | "surface" | "orbital";
+  /** The body this voyage takes place on. Omitted ⇒ "earth". */
+  body?: BodyId;
 }
 
 export interface MediaItem {

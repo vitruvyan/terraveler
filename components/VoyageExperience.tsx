@@ -2,12 +2,13 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
+import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import ContributePanel from "@/components/ContributePanel";
 import { ATLAS } from "@/lib/voyages";
+import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION } from "@/lib/basemaps";
 import {
   DAY,
   parseHistoricalDate,
@@ -99,12 +100,21 @@ function lineFeature(coords: [number, number][]) {
   };
 }
 
-function formatRange(wp: Waypoint): string {
+// `showDates` defaults true so every existing (Earth) call site is unchanged.
+// Surface voyages whose stops all fall on the same calendar day (a single
+// multi-hour EVA, e.g. Apollo 11) pass false: lib/voyage-motion.ts only
+// resolves position at day granularity, so those waypoints are given
+// distinct synthetic calendar days purely to keep them individually
+// reachable on the scrubber — showing that synthetic date here would be
+// misleading, so the real clock time (already in date_note) is shown alone.
+function formatRange(wp: Waypoint, showDates: boolean = true): string {
   const parts: string[] = [];
-  if (wp.arrival_date && wp.departure_date && wp.departure_date !== wp.arrival_date) {
-    parts.push(`${wp.arrival_date} → ${wp.departure_date}`);
-  } else if (wp.arrival_date) {
-    parts.push(wp.arrival_date);
+  if (showDates) {
+    if (wp.arrival_date && wp.departure_date && wp.departure_date !== wp.arrival_date) {
+      parts.push(`${wp.arrival_date} → ${wp.departure_date}`);
+    } else if (wp.arrival_date) {
+      parts.push(wp.arrival_date);
+    }
   }
   if (wp.date_note) parts.push(wp.date_note);
   return parts.join(" · ");
@@ -128,6 +138,13 @@ function fmtNm(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " nm";
 }
 
+// Same distance (haversineNm returns nautical miles) shown as km for
+// non-Earth bodies, where "nautical miles" reads wrong — surface traverses
+// are on foot/rover, not at sea.
+function fmtKm(nm: number): string {
+  return Math.round(nm * 1.852).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + " km";
+}
+
 function fmtLat(lat: number): string {
   return `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? "N" : "S"}`;
 }
@@ -136,11 +153,14 @@ export default function VoyageExperience({
   navigator,
   voyage,
   waypoints,
+  body = "earth",
 }: {
   navigator: Navigator;
   voyage: Voyage;
   waypoints: Waypoint[];
+  body?: BodyId;
 }) {
+  const isEarth = body === "earth";
   const legs = useMemo(() => buildLegs(waypoints), [waypoints]);
   const minTime = legs.length ? legs[0].arrival : 0;
   const maxTime = legs.length ? legs[legs.length - 1].departure : 1;
@@ -253,26 +273,7 @@ export default function VoyageExperience({
       const L = legsRef.current;
       map = new gl.Map({
         container: containerRef.current,
-        style: {
-          version: 8,
-          sources: {
-            carto: {
-              type: "raster",
-              tiles: [
-                "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-                "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-                "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-                "https://d.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: "© OpenStreetMap contributors © CARTO",
-            },
-          },
-          layers: [
-            { id: "bg", type: "background", paint: { "background-color": "#dfe4e6" } },
-            { id: "carto", type: "raster", source: "carto", paint: { "raster-opacity": 1 } },
-          ],
-        },
+        style: basemapStyle(body),
         center: [L[0]?.lng ?? 0, L[0]?.lat ?? 0],
         zoom: 2,
         renderWorldCopies: true,
@@ -283,51 +284,53 @@ export default function VoyageExperience({
         if (!map) return;
         const full = L.map((l) => [l.lng, l.lat] as [number, number]);
 
-        // Political world at Bougainville's time — borders c. 1715, the closest
-        // available to 1766 (a mid-18th-century reconstruction).
-        map.addSource("hist", { type: "geojson", data: "/world_1715.geojson" });
-        const empireColor: any = ["match", ["get", "EMPIRE"]];
-        EMPIRE_COLORS.forEach(([k, c]) => empireColor.push(k, c));
-        empireColor.push(OTHER_COLOR);
-        map.addLayer({
-          id: "hist-fill",
-          type: "fill",
-          source: "hist",
-          paint: { "fill-color": empireColor, "fill-opacity": 0.5 },
-        });
-        map.addLayer({
-          id: "hist-line",
-          type: "line",
-          source: "hist",
-          paint: { "line-color": "#6b4a2a", "line-width": 0.8, "line-opacity": 0.55 },
-        });
+        if (body === "earth") {
+          // Political world at Bougainville's time — borders c. 1715, the closest
+          // available to 1766 (a mid-18th-century reconstruction).
+          map.addSource("hist", { type: "geojson", data: "/world_1715.geojson" });
+          const empireColor: any = ["match", ["get", "EMPIRE"]];
+          EMPIRE_COLORS.forEach(([k, c]) => empireColor.push(k, c));
+          empireColor.push(OTHER_COLOR);
+          map.addLayer({
+            id: "hist-fill",
+            type: "fill",
+            source: "hist",
+            paint: { "fill-color": empireColor, "fill-opacity": 0.5 },
+          });
+          map.addLayer({
+            id: "hist-line",
+            type: "line",
+            source: "hist",
+            paint: { "line-color": "#6b4a2a", "line-width": 0.8, "line-opacity": 0.55 },
+          });
 
-        // Hover a territory to reveal its name and sovereign of the era.
-        const esc = (s: string) =>
-          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-        const histPopup = new gl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          className: "hist-popup",
-          offset: 8,
-        });
-        map.on("mousemove", "hist-fill", (e: any) => {
-          const f = e.features && e.features[0];
-          const p = (f && f.properties) || {};
-          const name = String(p.NAME || "").trim();
-          if (!name) {
-            histPopup.remove();
-            return;
-          }
-          const emp = p.EMPIRE && p.EMPIRE !== "Other" ? String(p.EMPIRE) : "";
-          histPopup
-            .setLngLat(e.lngLat)
-            .setHTML(
-              `<strong>${esc(name)}</strong>${emp ? `<span class="hp-emp"> · ${esc(emp)}</span>` : ""}`
-            )
-            .addTo(map);
-        });
-        map.on("mouseleave", "hist-fill", () => histPopup.remove());
+          // Hover a territory to reveal its name and sovereign of the era.
+          const esc = (s: string) =>
+            s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+          const histPopup = new gl.Popup({
+            closeButton: false,
+            closeOnClick: false,
+            className: "hist-popup",
+            offset: 8,
+          });
+          map.on("mousemove", "hist-fill", (e: any) => {
+            const f = e.features && e.features[0];
+            const p = (f && f.properties) || {};
+            const name = String(p.NAME || "").trim();
+            if (!name) {
+              histPopup.remove();
+              return;
+            }
+            const emp = p.EMPIRE && p.EMPIRE !== "Other" ? String(p.EMPIRE) : "";
+            histPopup
+              .setLngLat(e.lngLat)
+              .setHTML(
+                `<strong>${esc(name)}</strong>${emp ? `<span class="hp-emp"> · ${esc(emp)}</span>` : ""}`
+              )
+              .addTo(map);
+          });
+          map.on("mouseleave", "hist-fill", () => histPopup.remove());
+        }
 
         map.addSource("route-full", { type: "geojson", data: lineFeature(full) });
         map.addSource("route-done", { type: "geojson", data: lineFeature([]) });
@@ -429,15 +432,16 @@ export default function VoyageExperience({
     if (playing && t >= maxTime) setPlaying(false);
   }, [t, playing, maxTime]);
 
-  // Toggle the 1715 political overlay.
+  // Toggle the 1715 political overlay (Earth only — non-Earth bodies never
+  // add the "hist-*" layers, see the map.on("load") block above).
   useEffect(() => {
     const map = mapRef.current;
-    if (!ready || !map) return;
+    if (!isEarth || !ready || !map) return;
     const vis = showHist ? "visible" : "none";
     ["hist-fill", "hist-line"].forEach((id) => {
       if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", vis);
     });
-  }, [showHist, ready]);
+  }, [showHist, ready, isEarth]);
 
   // Ship state + navigation figures for the current instant.
   const shipNow = shipStateAt(t, legs);
@@ -610,6 +614,14 @@ export default function VoyageExperience({
             </button>
             <button
               type="button"
+              className={`atlas-chip ${atlasFilter === "surface" ? "cur" : ""}`}
+              title="Boots on other worlds"
+              onClick={() => setAtlasFilter("surface")}
+            >
+              Worlds
+            </button>
+            <button
+              type="button"
               className={`atlas-chip ${atlasFilter === "space" ? "cur" : ""}`}
               title="The probes kept logs too"
               onClick={() => setAtlasFilter("space")}
@@ -710,14 +722,17 @@ export default function VoyageExperience({
       <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-        <div className="hist-note">
-          World c.&nbsp;1715 (nearest to the voyage) — great powers coloured; open the
-          Cartographer lens for the key. A reconstruction; precision varies.
-        </div>
+        {isEarth && (
+          <div className="hist-note">
+            World c.&nbsp;1715 (nearest to the voyage) — great powers coloured; open the
+            Cartographer lens for the key. A reconstruction; precision varies.
+          </div>
+        )}
 
         {current && panelOpen && (
           <DraggableWindow title={panelTitle} onClose={() => setPanelOpen(false)}>
             {lens === "carto" ? (
+              isEarth ? (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
@@ -752,6 +767,25 @@ export default function VoyageExperience({
                   Show period borders &amp; territories
                 </label>
               </>
+              ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                    Map key
+                  </span>
+                  <span className="conf-badge" style={{ textTransform: "capitalize" }}>{body}</span>
+                </div>
+                <h2 style={{ margin: "4px 0 6px", fontSize: "1.3rem" }}>
+                  {body === "moon" ? "The Moon" : body === "mars" ? "Mars" : body}
+                </h2>
+                <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink-soft)", margin: "0 0 10px" }}>
+                  {bodyBlurb(body)}
+                </p>
+                <p style={{ fontSize: 12, color: "var(--ink-soft)", fontStyle: "italic" }}>
+                  {TILE_ATTRIBUTION[body]}
+                </p>
+              </>
+              )
             ) : lens === "plates" ? (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -867,7 +901,7 @@ export default function VoyageExperience({
                     </div>
                   )}
                 <div style={{ color: "var(--ink-soft)", fontSize: 13, margin: "6px 0" }}>
-                  {formatRange(current)}
+                  {formatRange(current, isEarth)}
                 </div>
                 {current.event && <p style={{ margin: "8px 0", lineHeight: 1.5 }}>{current.event}</p>}
 
@@ -914,19 +948,19 @@ export default function VoyageExperience({
                     <strong>{fmtLat(shipNow.lat)}</strong>
                   </div>
                   <div>
-                    <span>Days at sea</span>
+                    <span>{isEarth ? "Days at sea" : "Days on the surface"}</span>
                     <strong>{daysAtSea}</strong>
                   </div>
                   <div>
-                    <span>Sailed so far</span>
-                    <strong>{fmtNm(totalNm)}</strong>
+                    <span>{isEarth ? "Sailed so far" : "Traveled so far"}</span>
+                    <strong>{isEarth ? fmtNm(totalNm) : fmtKm(totalNm)}</strong>
                   </div>
                   <div>
                     <span>Last passage</span>
-                    <strong>{legNm ? fmtNm(legNm) : "—"}</strong>
+                    <strong>{legNm ? (isEarth ? fmtNm(legNm) : fmtKm(legNm)) : "—"}</strong>
                   </div>
                   <div>
-                    <span>Ports made</span>
+                    <span>{isEarth ? "Ports made" : "Stops made"}</span>
                     <strong>
                       {idx + 1} / {legs.length}
                     </strong>

@@ -3,6 +3,7 @@ import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
 import laperouse from "@/data/laperouse.json";
 import voyager2 from "@/data/voyager2.json";
+import apollo11 from "@/data/apollo-11.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -21,6 +22,7 @@ const LOCAL: Record<string, unknown> = {
   "boudeuse-1766": bougainville,
   "boussole-1785": laperouse,
   "voyager-2": voyager2,
+  "apollo-11": apollo11,
 };
 
 export function knownVoyages(): string[] {
