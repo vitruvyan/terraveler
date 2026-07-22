@@ -563,7 +563,12 @@ export default function VoyageExperience({
 
       {/* The Atlas panel: current voyage identity + ready voyages + search */}
       {pickerOpen && (
-        <DraggableWindow title="The Atlas" onClose={() => setPickerOpen(false)} width={350}>
+        <DraggableWindow
+          title="The Atlas"
+          onClose={() => setPickerOpen(false)}
+          width={350}
+          initial={{ left: 14, top: 64 }}
+        >
           <div className="atlas-id">
             <span className="cart-kicker">Now sailing</span>
             <div className="cart-title">{voyage.title}</div>

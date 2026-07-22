@@ -13,11 +13,14 @@ export default function DraggableWindow({
   children,
   onClose,
   width = 360,
+  initial,
 }: {
   title: ReactNode;
   children: ReactNode;
   onClose?: () => void;
   width?: number;
+  /** Initial anchor before any drag (e.g. { left: 14, top: 64 }). Defaults to top-right. */
+  initial?: { left?: number; top?: number; right?: number; bottom?: number };
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
@@ -66,7 +69,7 @@ export default function DraggableWindow({
 
   const style: CSSProperties = pos
     ? { left: pos.left, top: pos.top, width }
-    : { right: 16, top: 16, width };
+    : { ...(initial ?? { right: 16, top: 16 }), width };
 
   return (
     <div ref={ref} className="win" style={{ position: "absolute", ...style }}>
