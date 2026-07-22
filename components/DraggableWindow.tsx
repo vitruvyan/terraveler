@@ -31,6 +31,7 @@ export default function DraggableWindow({
 
   function onPointerDown(e: RPointerEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest(".win-btn")) return; // let controls click
+    if (window.innerWidth <= 680) return; // mobile: fixed bottom sheet, no dragging
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();

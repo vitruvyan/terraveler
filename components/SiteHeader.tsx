@@ -17,7 +17,7 @@ export default function SiteHeader() {
             <span className="sh-tagline">An atlas of geo-history, written in tandem</span>
           </div>
           <nav className="sh-nav">
-            <Link href="/">The voyage</Link>
+            <Link href="/voyages">The Atlas</Link>
             <Link href="/about">About</Link>
             <Link href="/contribute">Contribute</Link>
             <Link href="/how-it-works">How it works</Link>

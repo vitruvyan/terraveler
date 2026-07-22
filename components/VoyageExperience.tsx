@@ -6,6 +6,7 @@ import type { Navigator, Voyage, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
+import { ATLAS } from "@/lib/voyages";
 
 const DAY = 86_400_000;
 
@@ -205,6 +206,18 @@ export default function VoyageExperience({
   const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [railOpen, setRailOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerQ, setPickerQ] = useState("");
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 680px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   // Cartouche: remember collapsed state; start collapsed on small screens.
   useEffect(() => {
@@ -509,49 +522,115 @@ export default function VoyageExperience({
             🧭
           </button>
         )}
-        {/* Lens switcher — icons only, hover reveals what they are */}
-        <div className="lens-switch" role="group" aria-label="View lens">
-          <button
-            className={`lens-btn lens-btn-ico ${lens === "log" ? "active" : ""}`}
-            title="Ship's Log — the journal at each landfall"
-            aria-label="Ship's Log"
-            onClick={() => {
-              setLens("log");
-              setPanelOpen(true);
-            }}
-          >
-            ⚓
-          </button>
-          <button
-            className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}
-            title="Navigation Chart — the voyage's instruments"
-            aria-label="Navigation Chart"
-            onClick={() => {
-              setLens("chart");
-              setPanelOpen(true);
-            }}
-          >
-            🗺
-          </button>
-          <button
-            className={`lens-btn lens-btn-ico ${lens === "carto" ? "active" : ""}`}
-            title="Cartographer — map layers and legend"
-            aria-label="Cartographer"
-            onClick={() => {
-              setLens("carto");
-              setPanelOpen(true);
-            }}
-          >
-            🧭
-          </button>
-          <button className="lens-btn lens-btn-ico" disabled title="Art — coming soon" aria-label="Art (coming soon)">
-            🎨
-          </button>
-          <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
-            🪶
-          </button>
-        </div>
       </div>
+
+      {/* Vertical lens rail — left edge, vertically centred. On mobile it
+          collapses to a single small button showing the active lens. */}
+      <div className="lens-rail" role="group" aria-label="View lens">
+        {isMobile && !railOpen ? (
+          <button
+            className="lens-btn lens-btn-ico rail-toggle"
+            aria-label="Open tools"
+            title="Tools"
+            onClick={() => setRailOpen(true)}
+          >
+            {lens === "log" ? "⚓" : lens === "chart" ? "🗺" : "🧭"}
+          </button>
+        ) : (
+          <>
+            <button
+              className={`lens-btn lens-btn-ico ${lens === "log" ? "active" : ""}`}
+              title="Ship's Log — the journal at each landfall"
+              aria-label="Ship's Log"
+              onClick={() => {
+                setLens("log");
+                setPanelOpen(true);
+                setRailOpen(false);
+              }}
+            >
+              ⚓
+            </button>
+            <button
+              className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}
+              title="Navigation Chart — the voyage's instruments"
+              aria-label="Navigation Chart"
+              onClick={() => {
+                setLens("chart");
+                setPanelOpen(true);
+                setRailOpen(false);
+              }}
+            >
+              🗺
+            </button>
+            <button
+              className={`lens-btn lens-btn-ico ${lens === "carto" ? "active" : ""}`}
+              title="Cartographer — map layers and legend"
+              aria-label="Cartographer"
+              onClick={() => {
+                setLens("carto");
+                setPanelOpen(true);
+                setRailOpen(false);
+              }}
+            >
+              🧭
+            </button>
+            <button className="lens-btn lens-btn-ico" disabled title="Art — coming soon" aria-label="Art (coming soon)">
+              🎨
+            </button>
+            <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
+              🪶
+            </button>
+            <div className="rail-div" />
+            <button
+              className="lens-btn lens-btn-ico"
+              title="The Atlas — choose a voyage"
+              aria-label="The Atlas — choose a voyage"
+              onClick={() => {
+                setPickerOpen(true);
+                setRailOpen(false);
+              }}
+            >
+              ⛵
+            </button>
+            {isMobile && (
+              <button
+                className="lens-btn lens-btn-ico rail-close"
+                aria-label="Collapse tools"
+                title="Collapse"
+                onClick={() => setRailOpen(false)}
+              >
+                ×
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Voyage picker */}
+      {pickerOpen && (
+        <DraggableWindow title="The Atlas" onClose={() => setPickerOpen(false)} width={330}>
+          <input
+            className="desk-input"
+            style={{ width: "100%", marginBottom: 10 }}
+            placeholder="Search voyages, navigators…"
+            value={pickerQ}
+            onChange={(e) => setPickerQ(e.target.value)}
+            aria-label="Search voyages"
+          />
+          {ATLAS.filter((v) =>
+            (v.title + v.navigator + v.years + v.blurb)
+              .toLowerCase()
+              .includes(pickerQ.toLowerCase())
+          ).map((v) => (
+            <a key={v.slug} className={`voy-card ${v.slug === voyage.slug ? "cur" : ""}`} href={v.href}>
+              <strong>{v.title}</strong>
+              <span className="voy-meta">{v.navigator} · {v.years}</span>
+              <span className="voy-blurb">{v.blurb}</span>
+            </a>
+          ))}
+          <div className="voy-more">More voyages are on the way — see <a href="/contribute">what the atlas is looking for</a>.</div>
+        </DraggableWindow>
+      )}
 
       {/* Top-right: account + compass menu */}
       <div className="tr-cluster">
@@ -561,6 +640,7 @@ export default function VoyageExperience({
           </button>
           {menuOpen && (
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+              <a href="/voyages">The Atlas</a>
               <a href="/about">About</a>
               <a href="/contribute">Contribute</a>
               <a href="/how-it-works">How it works</a>

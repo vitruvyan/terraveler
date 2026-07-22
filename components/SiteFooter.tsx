@@ -21,7 +21,7 @@ export default function SiteFooter() {
         </div>
         <div className="sf-col">
           <h4>Explore</h4>
-          <Link href="/">The voyage</Link>
+          <Link href="/voyages">The Atlas</Link>
           <Link href="/about">About</Link>
           <Link href="/contribute">Contribute</Link>
         </div>
