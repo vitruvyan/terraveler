@@ -61,6 +61,27 @@ a { color: var(--ink); text-decoration-color: var(--brass); }
 .wp-dot.conf-approximate { background: #c9a24a; }
 .wp-dot.conf-reconstructed { background: transparent; border-style: dashed; }
 
+/* Small framed badge marking landfalls with photographic plates. */
+.wp-dot.has-media { position: relative; }
+.wp-dot.has-media::after {
+  content: "📷";
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  line-height: 1;
+  background: var(--parchment);
+  border: 1px solid var(--brass);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(43, 33, 23, 0.35);
+  pointer-events: none;
+}
+
 /* --- Moving ship marker --- */
 .ship-marker {
   color: var(--route);
@@ -228,6 +249,88 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink-soft);
   cursor: pointer;
 }
+
+/* --- Plates lens: photo gallery grouped by landfall + lightbox --- */
+.plates-group { margin-bottom: 18px; }
+.plates-group:last-child { margin-bottom: 4px; }
+.plates-place {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--parchment-deep);
+}
+.plates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.plates-thumb { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.plates-thumb-btn {
+  padding: 0;
+  border: 1px solid var(--parchment-deep);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  line-height: 0;
+}
+.plates-thumb-btn:hover { border-color: var(--brass); }
+.plates-thumb-btn img { display: block; width: 100%; height: 90px; object-fit: cover; max-width: 100%; }
+.plates-caption { font-size: 11px; line-height: 1.35; color: var(--ink); }
+.plates-credit { font-size: 10px; color: var(--ink-soft); font-style: italic; }
+.plates-source { font-size: 10px; color: var(--brass); text-decoration: none; }
+.plates-source:hover { text-decoration: underline; }
+
+.plates-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(20, 15, 10, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.plates-lightbox-inner {
+  position: relative;
+  max-width: min(90vw, 900px);
+  max-height: 90vh;
+  background: var(--parchment);
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+.plates-lightbox-inner img {
+  display: block;
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.plates-lightbox-cap { margin-top: 10px; font-size: 13px; color: var(--ink); line-height: 1.45; }
+.plates-lightbox-cap strong { font-family: var(--font-display); }
+.plates-lightbox-credit { font-size: 11px; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
+.plates-lightbox-cap a { font-size: 11px; color: var(--brass); }
+.plates-lightbox-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(43, 33, 23, 0.1);
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.plates-lightbox-close:hover { background: rgba(43, 33, 23, 0.2); }
 .hist-toggle input { cursor: pointer; }
 
 /* --- Territory hover tooltip --- */
@@ -961,6 +1064,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 
   .lens-rail { left: 8px; padding: 4px; border-radius: 12px; }
   .lens-rail .lens-btn-ico { font-size: 17px; padding: 7px 8px; }
+
+  .plates-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .plates-thumb-btn img { height: 76px; }
+  .plates-lightbox { padding: 12px; }
+  .plates-lightbox-inner { padding: 10px; max-height: 85vh; }
+  .plates-lightbox-inner img { max-height: 55vh; }
 
   .transport-bar { padding: 7px 10px; gap: 8px 10px; }
   .transport-bar .play-btn { width: 36px; height: 36px; font-size: 13px; }

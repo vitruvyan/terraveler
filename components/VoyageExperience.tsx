@@ -2,7 +2,7 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Navigator, Voyage, Waypoint } from "@/lib/types";
+import type { MediaItem, Navigator, Voyage, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
@@ -10,7 +10,7 @@ import { ATLAS } from "@/lib/voyages";
 
 const DAY = 86_400_000;
 
-type Lens = "log" | "chart" | "carto";
+type Lens = "log" | "chart" | "carto" | "plates";
 
 type WorldEvent = {
   date: string;
@@ -174,6 +174,15 @@ export default function VoyageExperience({
   const minTime = legs.length ? legs[0].arrival : 0;
   const maxTime = legs.length ? legs[legs.length - 1].departure : 1;
 
+  // Waypoints with photographic plates, in voyage order — feeds the Plates lens.
+  const plateWaypoints = useMemo(
+    () =>
+      [...waypoints]
+        .filter((w) => w.media && w.media.length > 0)
+        .sort((a, b) => a.seq - b.seq),
+    [waypoints]
+  );
+
   // Cumulative sailed distance (nm) up to the start of each leg.
   const cumNm = useMemo(() => {
     const arr: number[] = [0];
@@ -209,6 +218,7 @@ export default function VoyageExperience({
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerQ, setPickerQ] = useState("");
+  const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 680px)");
@@ -217,6 +227,16 @@ export default function VoyageExperience({
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  // Esc closes the plate lightbox.
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox]);
 
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -349,7 +369,8 @@ export default function VoyageExperience({
         // Waypoint markers (click to jump there in time).
         L.forEach((l) => {
           const el = document.createElement("div");
-          el.className = `wp-dot conf-${l.wp.confidence}`;
+          const hasMedia = !!l.wp.media && l.wp.media.length > 0;
+          el.className = `wp-dot conf-${l.wp.confidence}${hasMedia ? " has-media" : ""}`;
           el.title = l.wp.place_historical ?? l.wp.place_modern ?? "";
           el.addEventListener("click", () => openLogRef.current(l.arrival));
           new gl.Marker({ element: el }).setLngLat([l.lng, l.lat]).addTo(map!);
@@ -474,7 +495,13 @@ export default function VoyageExperience({
 
   const placeName = current?.place_historical || current?.place_modern || "";
   const panelTitle =
-    lens === "log" ? "Ship's Log" : lens === "chart" ? "Navigation Chart" : "Cartographer";
+    lens === "log"
+      ? "Ship's Log"
+      : lens === "chart"
+      ? "Navigation Chart"
+      : lens === "plates"
+      ? "Plates"
+      : "Cartographer";
 
   return (
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
@@ -501,7 +528,7 @@ export default function VoyageExperience({
             title="Tools"
             onClick={() => setRailOpen(true)}
           >
-            {lens === "log" ? "⚓" : lens === "chart" ? "🗺" : "🧭"}
+            {lens === "log" ? "⚓" : lens === "chart" ? "🗺" : lens === "plates" ? "🖼" : "🧭"}
           </button>
         ) : (
           <>
@@ -541,8 +568,17 @@ export default function VoyageExperience({
             >
               🧭
             </button>
-            <button className="lens-btn lens-btn-ico" disabled title="Art — coming soon" aria-label="Art (coming soon)">
-              🎨
+            <button
+              className={`lens-btn lens-btn-ico ${lens === "plates" ? "active" : ""}`}
+              title="Plates — period images from the log"
+              aria-label="Plates"
+              onClick={() => {
+                setLens("plates");
+                setPanelOpen(true);
+                setRailOpen(false);
+              }}
+            >
+              🖼
             </button>
             <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
               🪶
@@ -717,6 +753,62 @@ export default function VoyageExperience({
                   Show period borders &amp; territories
                 </label>
               </>
+            ) : lens === "plates" ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                    The plates
+                  </span>
+                  <span className="conf-badge">{plateWaypoints.length} landfalls</span>
+                </div>
+                <h2 style={{ margin: "4px 0 6px", fontSize: "1.3rem" }}>Images from the log</h2>
+                {plateWaypoints.length === 0 ? (
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", fontStyle: "italic" }}>
+                    No plates recorded for this voyage yet.
+                  </div>
+                ) : (
+                  plateWaypoints.map((wp) => (
+                    <div className="plates-group" key={wp.id}>
+                      <h3 className="plates-place">
+                        {wp.place_historical || wp.place_modern}
+                      </h3>
+                      <div className="plates-grid">
+                        {(wp.media ?? []).map((m, i) => (
+                          <figure className="plates-thumb" key={i}>
+                            <button
+                              type="button"
+                              className="plates-thumb-btn"
+                              onClick={() =>
+                                setLightbox({
+                                  item: m,
+                                  place: wp.place_historical || wp.place_modern || "",
+                                })
+                              }
+                              aria-label={`View larger: ${m.caption}`}
+                            >
+                              <img src={m.url} alt={m.caption} loading="lazy" />
+                            </button>
+                            <figcaption>
+                              <div className="plates-caption">{m.caption}</div>
+                              {m.credit && <div className="plates-credit">{m.credit}</div>}
+                              {m.source_url && (
+                                <a
+                                  href={m.source_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="plates-source"
+                                >
+                                  source
+                                </a>
+                              )}
+                            </figcaption>
+                          </figure>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </>
             ) : (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
@@ -865,6 +957,35 @@ export default function VoyageExperience({
           Pause at each stop &amp; event
         </label>
       </div>
+
+      {lightbox && (
+        <div className="plates-lightbox" onClick={() => setLightbox(null)}>
+          <div className="plates-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="plates-lightbox-close"
+              onClick={() => setLightbox(null)}
+              aria-label="Close"
+              title="Close"
+            >
+              ×
+            </button>
+            <img src={lightbox.item.url} alt={lightbox.item.caption} />
+            <div className="plates-lightbox-cap">
+              <div>
+                <strong>{lightbox.place}</strong> — {lightbox.item.caption}
+              </div>
+              {lightbox.item.credit && (
+                <div className="plates-lightbox-credit">{lightbox.item.credit}</div>
+              )}
+              {lightbox.item.source_url && (
+                <a href={lightbox.item.source_url} target="_blank" rel="noreferrer">
+                  source
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -24,6 +24,14 @@ export interface Voyage {
   summary: string | null;
 }
 
+export interface MediaItem {
+  url: string;            // image URL (Wikimedia Commons / upload.wikimedia.org)
+  caption: string;
+  credit: string | null;
+  source_url: string | null;  // Commons description page
+  license: string;
+}
+
 export interface Waypoint {
   id: number;
   voyage_id: number;
@@ -41,4 +49,5 @@ export interface Waypoint {
   diary_source_url: string | null;
   confidence: Confidence;
   media_url: string | null;
+  media?: MediaItem[];
 }
