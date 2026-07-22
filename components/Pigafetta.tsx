@@ -38,7 +38,7 @@ function dedupe(sources: Source[]): Source[] {
   return out.slice(0, 6);
 }
 
-export default function Pigafetta() {
+export default function Pigafetta({ voyage }: { voyage?: string }) {
   const [open, setOpen] = useState(false);
   const [docked, setDocked] = useState(false);
   const [hover, setHover] = useState(false);
@@ -61,7 +61,7 @@ export default function Pigafetta() {
       const r = await fetch("/api/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify({ question: q, voyage }),
       });
       const j = await r.json();
       setMsgs((m) => [

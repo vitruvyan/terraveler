@@ -49,6 +49,15 @@ export const ATLAS: AtlasEntry[] = [
       "France's answer to Cook: Alaska to Kamchatka to Botany Bay — then silence, and the secret of the sea solved at Vanikoro forty years on.",
   },
   {
+    slug: "cook-1768",
+    href: "/voyage/cook-1768",
+    title: "The First Voyage of Captain Cook",
+    navigator: "Lieutenant James Cook",
+    years: "1768–1771",
+    blurb:
+      "The Endeavour to Tahiti for the Transit of Venus, then south under sealed orders: the charting of New Zealand and the east coast of New Holland — the first voyage auto-extracted by Terraveler from Cook's own journal.",
+  },
+  {
     slug: "voyager-2",
     href: "/voyage/voyager-2",
     title: "Voyager 2: The Grand Tour of the Giant Planets",

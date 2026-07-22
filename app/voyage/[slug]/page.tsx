@@ -33,8 +33,8 @@ export default async function VoyagePage({
           body={voyage.body ?? "earth"}
         />
       )}
-      {/* Pigafetta's corpus covers Bougainville for now. */}
-      {slug === "boudeuse-1766" && <Pigafetta />}
+      {/* Pigafetta answers where a RAG corpus exists (Bougainville, Cook). */}
+      {(slug === "boudeuse-1766" || slug === "cook-1768") && <Pigafetta voyage={slug} />}
     </>
   );
 }
