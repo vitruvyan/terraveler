@@ -202,7 +202,6 @@ export default function VoyageExperience({
   const [showHist, setShowHist] = useState(true);
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
@@ -219,18 +218,6 @@ export default function VoyageExperience({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Cartouche: remember collapsed state; start collapsed on small screens.
-  useEffect(() => {
-    try {
-      if (localStorage.getItem("cartouche") === "min" || window.innerWidth < 680) {
-        setCartOpen(false);
-      }
-    } catch { /* ignore */ }
-  }, []);
-  function toggleCart(open: boolean) {
-    setCartOpen(open);
-    try { localStorage.setItem("cartouche", open ? "open" : "min"); } catch { /* ignore */ }
-  }
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
@@ -491,37 +478,17 @@ export default function VoyageExperience({
 
   return (
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-      {/* Cartouche — the map's own title box, per voyage. Doubles as the future voyage picker. */}
+      {/* The compass — the site opens minimal: this alone. It opens the Atlas. */}
+      <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
       <div className="left-stack">
-        {cartOpen ? (
-          <div className="cartouche">
-            <div className="cart-head">
-              <span className="cart-kicker">Terraveler · Chrono-diary</span>
-              <button className="win-btn" onClick={() => toggleCart(false)} aria-label="Minimize" title="Minimize">
-                –
-              </button>
-            </div>
-            <h1 className="cart-title">{voyage.title}</h1>
-            <div className="cart-nav">
-              <strong>{navigator.name}</strong>
-              {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
-            </div>
-            <div className="cart-ships">{voyage.ships}</div>
-            <div className="cart-atlas">
-              <span className="cart-atlas-label">Atlas</span>
-              <a href="/" className={voyage.slug === "boudeuse-1766" ? "cur" : ""}>
-                Bougainville 1766
-              </a>
-              <a href="/voyage/boussole-1785" className={voyage.slug === "boussole-1785" ? "cur" : ""}>
-                La Pérouse 1785
-              </a>
-            </div>
-          </div>
-        ) : (
-          <button className="cart-emblem" onClick={() => toggleCart(true)} title={voyage.title} aria-label="Voyage title">
-            🧭
-          </button>
-        )}
+        <button
+          className="cart-emblem"
+          onClick={() => setPickerOpen((o) => !o)}
+          title={`${voyage.title} — open the Atlas`}
+          aria-label="Open the Atlas"
+        >
+          🧭
+        </button>
       </div>
 
       {/* Vertical lens rail — left edge, vertically centred. On mobile it
@@ -580,18 +547,6 @@ export default function VoyageExperience({
             <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
               🪶
             </button>
-            <div className="rail-div" />
-            <button
-              className="lens-btn lens-btn-ico"
-              title="The Atlas — choose a voyage"
-              aria-label="The Atlas — choose a voyage"
-              onClick={() => {
-                setPickerOpen(true);
-                setRailOpen(false);
-              }}
-            >
-              ⛵
-            </button>
             {isMobile && (
               <button
                 className="lens-btn lens-btn-ico rail-close"
@@ -606,9 +561,22 @@ export default function VoyageExperience({
         )}
       </div>
 
-      {/* Voyage picker */}
+      {/* The Atlas panel: current voyage identity + ready voyages + search */}
       {pickerOpen && (
-        <DraggableWindow title="The Atlas" onClose={() => setPickerOpen(false)} width={330}>
+        <DraggableWindow title="The Atlas" onClose={() => setPickerOpen(false)} width={350}>
+          <div className="atlas-id">
+            <span className="cart-kicker">Now sailing</span>
+            <div className="cart-title">{voyage.title}</div>
+            <div className="cart-nav">
+              <strong>{navigator.name}</strong>
+              {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
+            </div>
+            <div className="cart-ships">{voyage.ships}</div>
+          </div>
+          <div className="atlas-chips">
+            <span className="atlas-chip cur">Age of Sail</span>
+            <span className="atlas-chip off" title="Coming soon — the probes kept logs too">Space voyages</span>
+          </div>
           <input
             className="desk-input"
             style={{ width: "100%", marginBottom: 10 }}
