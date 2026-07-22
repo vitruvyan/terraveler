@@ -15,9 +15,15 @@ type Msg = { role: "user" | "assistant"; content: string; sources?: Source[] };
 const GREETING: Msg = {
   role: "assistant",
   content:
-    "I am Antonio Pigafetta, chronicler of the voyage. Ask me about Bougainville's " +
-    "circumnavigation — I answer only from the ship's journals and sources, and cite them.",
+    "I am Antonio Pigafetta, chronicler of voyages. Ask me anything about this " +
+    "voyage — I answer only from the ship's journals and sources, and cite them.",
 };
+
+const SUGGESTIONS = [
+  "Why was Tahiti called New Cythera?",
+  "What happened in the Strait of Magellan?",
+  "Who was Jeanne Barret?",
+];
 
 function dedupe(sources: Source[]): Source[] {
   const seen = new Set<string>();
@@ -45,8 +51,8 @@ export default function Pigafetta() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs, busy, open, docked]);
 
-  async function send() {
-    const q = input.trim();
+  async function send(preset?: string) {
+    const q = (preset ?? input).trim();
     if (!q || busy) return;
     setInput("");
     setMsgs((m) => [...m, { role: "user", content: q }]);
@@ -94,6 +100,15 @@ export default function Pigafetta() {
             )}
           </div>
         ))}
+        {msgs.length === 1 && !busy && (
+          <div className="pig-suggs">
+            {SUGGESTIONS.map((s) => (
+              <button key={s} className="pig-sugg" onClick={() => send(s)}>
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
         {busy && (
           <div className="pig-msg pig-assistant">
             <div className="pig-bubble pig-typing">Pigafetta is consulting the logs…</div>

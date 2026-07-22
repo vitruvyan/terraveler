@@ -354,7 +354,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* --- Draggable window (reusable panel chrome) --- */
 .win {
-  z-index: 6;
+  z-index: 12;
   max-width: 86vw;
   background: rgba(242, 230, 207, 0.96);
   border: 1px solid var(--parchment-deep);
@@ -893,20 +893,20 @@ input[type="range"].scrubber::-moz-range-thumb {
 /* ============ Vertical lens rail + voyage picker + mobile ad-hoc ============ */
 .lens-rail {
   position: absolute;
-  left: 12px;
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 7;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   background: rgba(242, 230, 207, 0.95);
   border: 1px solid var(--parchment-deep);
-  border-radius: 14px;
-  padding: 6px;
+  border-radius: 12px;
+  padding: 4px;
   box-shadow: 0 6px 20px rgba(43, 33, 23, 0.2);
 }
-.lens-rail .lens-btn-ico { font-size: 20px; padding: 9px 10px; }
+.lens-rail .lens-btn-ico { font-size: 18px; padding: 8px 8px; }
 .rail-div { height: 1px; background: var(--parchment-deep); margin: 3px 5px; }
 .rail-toggle { font-size: 16px !important; padding: 7px 9px !important; }
 .rail-close { font-size: 15px !important; color: var(--ink-soft); }
@@ -1000,3 +1000,18 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .atlas-chip.cur { border-color: var(--brass); color: var(--ink); background: rgba(169, 119, 47, 0.12); }
 .atlas-chip.off { opacity: 0.55; }
+
+/* --- Pigafetta suggested questions --- */
+.pig-suggs { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.pig-sugg {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 12px;
+  padding: 6px 11px;
+  cursor: pointer;
+  text-align: left;
+}
+.pig-sugg:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
