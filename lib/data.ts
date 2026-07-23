@@ -5,6 +5,7 @@ import laperouse from "@/data/laperouse.json";
 import voyager2 from "@/data/voyager2.json";
 import apollo11 from "@/data/apollo-11.json";
 import cook from "@/data/cook.json";
+import cortes from "@/data/cortes.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -25,6 +26,7 @@ const LOCAL: Record<string, unknown> = {
   "voyager-2": voyager2,
   "apollo-11": apollo11,
   "cook-1768": cook,
+  "cortes-1519": cortes,
 };
 
 export function knownVoyages(): string[] {

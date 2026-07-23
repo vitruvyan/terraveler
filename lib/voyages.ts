@@ -58,6 +58,15 @@ export const ATLAS: AtlasEntry[] = [
       "The Endeavour to Tahiti for the Transit of Venus, then south under sealed orders: the charting of New Zealand and the east coast of New Holland — the first voyage auto-extracted by Terraveler from Cook's own journal.",
   },
   {
+    slug: "cortes-1519",
+    href: "/voyage/cortes-1519",
+    title: "The Conquest of Mexico by Hernán Cortés",
+    navigator: "Hernán Cortés",
+    years: "1519–1521",
+    blurb:
+      "From the Veracruz sands to the causeways of Tenochtitlan: the alliance with Tlaxcala, the massacre at Cholula, the seizure of Moctezuma, the flight of the Noche Triste, and the siege that ended the Aztec empire — extracted from Bernal Díaz's eyewitness memoir.",
+  },
+  {
     slug: "voyager-2",
     href: "/voyage/voyager-2",
     title: "Voyager 2: The Grand Tour of the Giant Planets",

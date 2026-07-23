@@ -34,7 +34,9 @@ export default async function VoyagePage({
         />
       )}
       {/* Pigafetta answers where a RAG corpus exists (Bougainville, Cook). */}
-      {(slug === "boudeuse-1766" || slug === "cook-1768") && <Pigafetta voyage={slug} />}
+      {(slug === "boudeuse-1766" || slug === "cook-1768" || slug === "cortes-1519") && (
+        <Pigafetta voyage={slug} />
+      )}
     </>
   );
 }
