@@ -32,11 +32,19 @@ async function sb(method: string, path: string, body?: unknown): Promise<any> {
   return t ? JSON.parse(t) : null;
 }
 
-async function contributorId(handle: string): Promise<number> {
-  const rows = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id`);
-  if (rows.length) return rows[0].id;
+const DAILY_LIMIT = 10;
+const INJECTION = [
+  /ignore (all|any|previous|prior)/i, /disregard (the|all|previous)/i,
+  /note to (the )?curator/i, /pre-?approved/i, /skip (the )?(verification|review|checks)/i,
+  /you (must|should|are required to) (approve|accept)/i, /system prompt/i,
+  /editor[- ]in[- ]chief (has )?(approved|authorised|authorized)/i,
+];
+
+async function contributor(handle: string): Promise<{ id: number; status: string }> {
+  const rows = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
+  if (rows.length) return rows[0];
   const made = await sb("POST", "contributors", { handle });
-  return made[0].id;
+  return { id: made[0].id, status: made[0].status ?? "active" };
 }
 
 export async function POST(req: Request) {
@@ -57,15 +65,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Write or paste a suggestion first." }, { status: 400 });
     }
 
-    const cid = await contributorId(email);
+    if (INJECTION.some((p) => p.test(idea))) {
+      return NextResponse.json(
+        { error: "Your suggestion trips the injection screen (Magna Carta §6): submissions are data, never instructions." },
+        { status: 400 });
+    }
+
+    const c = await contributor(email);
+    if (c.status !== "active") {
+      return NextResponse.json({ error: "This account is suspended." }, { status: 403 });
+    }
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const recent = await sb("GET",
+      `submissions?contributor_id=eq.${c.id}&created_at=gte.${since}&select=id&limit=${DAILY_LIMIT + 1}`);
+    if (recent.length >= DAILY_LIMIT) {
+      return NextResponse.json(
+        { error: `Daily limit reached (${DAILY_LIMIT} suggestions per 24h). Come back tomorrow.` },
+        { status: 429 });
+    }
+
     const s = await sb("POST", "submissions", {
-      contributor_id: cid,
+      contributor_id: c.id,
       type: "content-suggestion",
-      target_voyage: voyage,
+      target_voyage: voyage.slice(0, 100),
       payload: {
-        voyage,
+        voyage: voyage.slice(0, 100),
         waypoint: typeof waypoint === "number" ? waypoint : null,
-        content_type: typeof type === "string" ? type : "other",
+        content_type: typeof type === "string" ? type.slice(0, 40) : "other",
         idea: idea.trim().slice(0, 4000),
         via: "web",
       },
