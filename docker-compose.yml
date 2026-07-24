@@ -1,0 +1,92 @@
+name: terraveler
+
+networks:
+  terraveler_net:
+    name: terraveler_net
+
+volumes:
+  terraveler_pgdata:
+  terraveler_hf_cache:
+
+services:
+  terraveler_postgres:
+    image: pgvector/pgvector:pg16
+    container_name: terraveler_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: terraveler
+      POSTGRES_USER: terraveler
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:6000:5432"   # localhost only; services talk via terraveler_net
+    volumes:
+      - terraveler_pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - terraveler_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U terraveler -d terraveler"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  terraveler_embedding:
+    build:
+      context: ./embedding
+    image: terraveler-embedding
+    container_name: terraveler_embedding
+    restart: unless-stopped
+    environment:
+      EMBEDDING_MODEL: nomic-ai/nomic-embed-text-v1.5
+      EMBEDDING_VISION_MODEL: nomic-ai/nomic-embed-vision-v1.5
+      EMBEDDING_VISION_REVISION: 9e4269d0524e
+      HF_HOME: /cache/hf
+      PORT: 8010
+    ports:
+      - "127.0.0.1:6002:8010"   # localhost only; rag/ingest reach it via terraveler_net
+    volumes:
+      - terraveler_hf_cache:/cache/hf
+    networks:
+      - terraveler_net
+
+  terraveler_ingest:
+    build:
+      context: ./ingest
+    image: terraveler-ingest
+    container_name: terraveler_ingest
+    profiles: ["jobs"]          # not started by `up`; run on demand
+    environment:
+      EMBED_URL: http://terraveler_embedding:8010
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CURATOR_MODEL: ${CURATOR_MODEL:-gpt-4.1}
+      PGHOST: terraveler_postgres
+      PGPORT: 5432
+      PGDATABASE: terraveler
+      PGUSER: terraveler
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./traces:/app/traces
+      - ./out:/app/out
+    networks:
+      - terraveler_net
+
+  terraveler_rag:
+    build:
+      context: ./rag
+    image: terraveler-rag
+    container_name: terraveler_rag
+    restart: unless-stopped
+    environment:
+      EMBED_URL: http://terraveler_embedding:8010
+      RAG_TOKEN: ${RAG_TOKEN}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      PGHOST: terraveler_postgres
+      PGPORT: 5432
+      PGDATABASE: terraveler
+      PGUSER: terraveler
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "6003:8000"             # PUBLIC — Vercel calls this (bearer-token gated)
+    networks:
+      - terraveler_net

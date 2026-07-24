@@ -9,3 +9,10 @@
 .vercel
 *.tsbuildinfo
 next-env.d.ts
+
+# VPS backend (docker-compose stack): runtime artefacts, never the code
+*.log
+/traces
+__pycache__/
+*.pyc
+*.bak-*

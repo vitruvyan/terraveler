@@ -1,0 +1,8 @@
+sentence-transformers==5.0.0
+transformers==4.54.1
+tokenizers==0.21.4
+einops>=0.7.0
+pillow>=10.0.0
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
