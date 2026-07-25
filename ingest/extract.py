@@ -569,6 +569,15 @@ def geocode_node(ctx, corpus):
                 w["latitude"], w["longitude"] = g["lat"], g["lng"]
                 provenance = f"gazetteer:{g['gazetteer']}:{g.get('provenance')}"
                 w["confidence"] = "approximate" if retried else "certain"
+                # Keep the identity, not just the position. g["provenance"] is
+                # "wikidata:Q42000" — the fact that this landfall IS Tahiti, which
+                # was being resolved and then thrown away on every run. It is what
+                # lets the atlas notice that Cook's King George's Island and
+                # Bougainville's Taïti are one island. Retried hits are recorded
+                # too but marked, since the first name failed to anchor.
+                if str(g.get("provenance", "")).startswith("wikidata:"):
+                    w["wikidata_qid"] = g["provenance"].split(":", 1)[1]
+                    w["identity_confidence"] = "approximate" if retried else "certain"
             elif has_approx:
                 w["latitude"], w["longitude"] = approx[0], approx[1]
                 provenance = "model-estimate (gazetteer unanchored/mismatched)"

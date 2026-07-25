@@ -1,0 +1,2172 @@
+{
+ "generated_from": "scripts/build_gazetteer.py",
+ "source": "Wikidata (CC0), verified against each voyage's own recorded coordinates",
+ "tolerance_km": {
+  "certain": 60,
+  "accepted": 250
+ },
+ "places": [
+  {
+   "qid": "Q46197",
+   "name": "Ascension Island",
+   "description": "equatorial island in the Atlantic Ocean, a British overseas territory belonging to the United Kingdom",
+   "latitude": -7.95,
+   "longitude": -14.35,
+   "instance_of": [
+    "island",
+    "British Overseas Territories",
+    "administrative territorial entity of the United Kingdom"
+   ],
+   "aliases": [
+    "ac",
+    "AC",
+    "Ascension"
+   ],
+   "names_in_the_atlas": [
+    "Ascension Island",
+    "Ascension Island, British Overseas Territory, South Atlantic Ocean"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 31,
+     "called_it": "Ascension Island",
+     "distance_km": 2.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q46197",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1199713",
+   "name": "Batavia",
+   "description": "capital of the Dutch East Indies (1619–1949), now the city of Jakarta",
+   "latitude": -6.13484,
+   "longitude": 106.81322,
+   "instance_of": [
+    "ancient city"
+   ],
+   "aliases": [
+    "Betawi",
+    "Jakarta",
+    "Djakarta",
+    "Betuwe"
+   ],
+   "names_in_the_atlas": [
+    "Batavia",
+    "Jakarta, Indonesia",
+    "Jakarta, Java, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 12,
+     "called_it": "Batavia",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 26,
+     "called_it": "Batavia",
+     "distance_km": 9.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1199713",
+   "voyages": [
+    "boudeuse-1766",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q183113",
+   "name": "Bora Bora",
+   "description": "island in French Polynesia",
+   "latitude": -16.498,
+   "longitude": -151.736,
+   "instance_of": [
+    "island group",
+    "human settlement"
+   ],
+   "aliases": [
+    "Bora Bora, French Polynesia"
+   ],
+   "names_in_the_atlas": [
+    "Bolabola",
+    "Bora Bora, Society Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 12,
+     "called_it": "Bolabola",
+     "distance_km": 1.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q183113",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q894682",
+   "name": "Botany Bay",
+   "description": "bay in Sydney",
+   "latitude": -33.98333,
+   "longitude": 151.18333,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [
+    "Botany Bay, New South Wales",
+    "Kamay"
+   ],
+   "names_in_the_atlas": [
+    "Botany Bay",
+    "Botany Bay, New South Wales, Australia",
+    "Botany Bay, Sydney, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 10,
+     "called_it": "Botany Bay",
+     "distance_km": 3.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 18,
+     "called_it": "Botany Bay",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q894682",
+   "voyages": [
+    "boussole-1785",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q12193",
+   "name": "Brest",
+   "description": "port city in the Finistère department, Brittany, France",
+   "latitude": 48.39,
+   "longitude": -4.48694,
+   "instance_of": [
+    "commune of France",
+    "big city",
+    "port city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Brest (departure from Nantes)",
+    "Brest, France",
+    "Brest"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 1,
+     "called_it": "Brest (departure from Nantes)",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "boussole-1785",
+     "seq": 1,
+     "called_it": "Brest",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q12193",
+   "voyages": [
+    "boudeuse-1766",
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q21915221",
+   "name": "Bustard Bay",
+   "description": "bay in Australia",
+   "latitude": -24.10611,
+   "longitude": 151.81889,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Bustard Bay",
+    "Bustard Bay, Queensland, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 20,
+     "called_it": "Bustard Bay",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21915221",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q5465",
+   "name": "Cape Town",
+   "description": "city in the Western Cape, South Africa",
+   "latitude": -33.92528,
+   "longitude": 18.42389,
+   "instance_of": [
+    "port city",
+    "statistical territorial entity",
+    "big city",
+    "legislative capital",
+    "national capital",
+    "administrative territorial entity"
+   ],
+   "aliases": [
+    "iKapa",
+    "Kaap",
+    "Cape",
+    "Cape Town, South Africa",
+    "Mother City",
+    "Tavern of the Seas",
+    "West side"
+   ],
+   "names_in_the_atlas": [
+    "Cape of Good Hope (Table Bay)",
+    "Cape Town, South Africa",
+    "Table Bay",
+    "Cape Town, Western Cape, South Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 14,
+     "called_it": "Cape of Good Hope (Table Bay)",
+     "distance_km": 2.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 29,
+     "called_it": "Table Bay",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5465",
+   "voyages": [
+    "boudeuse-1766",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1728345",
+   "name": "Cape York",
+   "description": "cape in Queensland, Australia",
+   "latitude": -10.68722,
+   "longitude": 142.53139,
+   "instance_of": [
+    "cape",
+    "headland"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "the extremity of New Wales",
+    "Cape York, Queensland, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 24,
+     "called_it": "the extremity of New Wales",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1728345",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1696230",
+   "name": "Castle of San Juan de Ulúa",
+   "description": "colonial Spanish group of defensive military settlements in Veracruz, Mexico",
+   "latitude": 19.20917,
+   "longitude": -96.13139,
+   "instance_of": [
+    "museum",
+    "fortress",
+    "monument",
+    "shipyard",
+    "prison"
+   ],
+   "aliases": [
+    "San Juan de Ulua",
+    "Castle of San Juan de Ulua",
+    "San Juan de Ulúa"
+   ],
+   "names_in_the_atlas": [
+    "San Juan de Ulua",
+    "San Juan de Ulúa, Veracruz, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 4,
+     "called_it": "San Juan de Ulua",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1696230",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1053364",
+   "name": "Cempoala",
+   "description": "Mesoamerican archaeological site in Veracruz, Mexico",
+   "latitude": 19.44708,
+   "longitude": -96.40411,
+   "instance_of": [
+    "archaeological site"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Cempoalá",
+    "Cempoala, Veracruz, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 6,
+     "called_it": "Cempoalá",
+     "distance_km": 48.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1053364",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q867864",
+   "name": "Choiseul Island",
+   "description": "island in Solomon Islands",
+   "latitude": -7.0,
+   "longitude": 156.96667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Lauru"
+   ],
+   "names_in_the_atlas": [
+    "Golfe de la Louisiade; Isle & Bay of Choiseul",
+    "Louisiade Archipelago (PNG) & Solomon Islands (Choiseul)"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 10,
+     "called_it": "Golfe de la Louisiade; Isle & Bay of Choiseul",
+     "distance_km": 5.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q867864",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q7380613",
+   "name": "Cholula",
+   "description": "important city of pre-Columbian Mesoamerica",
+   "latitude": 19.06,
+   "longitude": -98.31,
+   "instance_of": [
+    "archaeological site"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Cholulla",
+    "Cholula, Puebla, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 9,
+     "called_it": "Cholulla",
+     "distance_km": 0.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q7380613",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1880",
+   "name": "Concepción",
+   "description": "city in Chile",
+   "latitude": -36.82694,
+   "longitude": -73.05028,
+   "instance_of": [
+    "city in Chile",
+    "big city",
+    "commune of Chile"
+   ],
+   "aliases": [
+    "Concepcion",
+    "Conception",
+    "Concepcion, Chile"
+   ],
+   "names_in_the_atlas": [
+    "Concepción, Chili",
+    "Concepción, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 2,
+     "called_it": "Concepción, Chili",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1880",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q661315",
+   "name": "Coyoacán",
+   "description": "territorial demarcation of Mexico City",
+   "latitude": 19.35,
+   "longitude": -99.16222,
+   "instance_of": [
+    "territorial demarcation of Mexico City"
+   ],
+   "aliases": [
+    "Coyoacan"
+   ],
+   "names_in_the_atlas": [
+    "Mexico",
+    "Coyoacán, Mexico City, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 21,
+     "called_it": "Mexico",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q661315",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q20119933",
+   "name": "Cozumel Island",
+   "description": "island in Quintana Roo, Mexico",
+   "latitude": 20.41667,
+   "longitude": -86.91667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "island Cozumel",
+    "Cozumel Island, Quintana Roo, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 2,
+     "called_it": "island Cozumel",
+     "distance_km": 1.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q20119933",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1011096",
+   "name": "Deal",
+   "description": "town in Kent, England, UK",
+   "latitude": 51.2226,
+   "longitude": 1.4006,
+   "instance_of": [
+    "town",
+    "civil parish"
+   ],
+   "aliases": [
+    "Deal, Kent"
+   ],
+   "names_in_the_atlas": [
+    "Deal",
+    "Deal, Kent, England"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 33,
+     "called_it": "Deal",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1011096",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q2308650",
+   "name": "Deptford",
+   "description": "district of south-east London, England",
+   "latitude": 51.478,
+   "longitude": -0.0265,
+   "instance_of": [
+    "area of London"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Deptford",
+    "Deptford, London, England, United Kingdom"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 34,
+     "called_it": "Deptford",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2308650",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q14452",
+   "name": "Easter Island",
+   "description": "Polynesian island and special territory of Chile",
+   "latitude": -27.12,
+   "longitude": -109.35,
+   "instance_of": [
+    "island",
+    "administrative territorial entity"
+   ],
+   "aliases": [
+    "Te pito o te kainga a Hau Maka"
+   ],
+   "names_in_the_atlas": [
+    "Easter Island",
+    "Rapa Nui (Easter Island), Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 3,
+     "called_it": "Easter Island",
+     "distance_km": 0.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q14452",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q527474",
+   "name": "Endeavour River",
+   "description": "river in Queensland, Australia",
+   "latitude": -15.45833,
+   "longitude": 145.23333,
+   "instance_of": [
+    "river"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Endeavour River",
+    "Endeavour River, Cooktown, Queensland, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 23,
+     "called_it": "Endeavour River",
+     "distance_km": 2.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q527474",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q337524",
+   "name": "Espiritu Santo",
+   "description": "largest island in the nation of Vanuatu",
+   "latitude": -15.41667,
+   "longitude": 166.9,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Santo",
+    "Espíritu Santo Island",
+    "Marina Island",
+    "Santo Island"
+   ],
+   "names_in_the_atlas": [
+    "Archipel des Grandes Cyclades (Tierra Austral del Espíritu Santo)",
+    "Vanuatu (Espiritu Santo)"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 8,
+     "called_it": "Archipel des Grandes Cyclades (Tierra Austral del Espíritu Santo)",
+     "distance_km": 32.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q337524",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q657187",
+   "name": "Faial Island",
+   "description": "Portuguese island of the Central Group of the Azores",
+   "latitude": 38.57694,
+   "longitude": -28.70278,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Fayal"
+   ],
+   "names_in_the_atlas": [
+    "Fayal",
+    "Faial Island, Azores, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 32,
+     "called_it": "Fayal",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q657187",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q134983322",
+   "name": "Funchal",
+   "description": "city and seat of Funchal municipality, Portugal",
+   "latitude": 32.65096,
+   "longitude": -16.90847,
+   "instance_of": [
+    "city of Portugal",
+    "big city",
+    "municipality seat"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Funchall",
+    "Funchal, Madeira, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 2,
+     "called_it": "Funchall",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q134983322",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q521020",
+   "name": "Huahine",
+   "description": "island in French Polynesia",
+   "latitude": -16.73333,
+   "longitude": -151.03333,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Huahine",
+    "Huahine, Society Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 10,
+     "called_it": "Huahine",
+     "distance_km": 2.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q521020",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q5923757",
+   "name": "Iztapalapa de Cuitláhuac",
+   "description": "central historical city of Iztapalapa, Mexico City",
+   "latitude": 19.35738,
+   "longitude": -99.0671,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [
+    "Iztapalapa",
+    "Iztapalapa de Cuitlahuac"
+   ],
+   "names_in_the_atlas": [
+    "Iztapalapan",
+    "Iztapalapa, Mexico City, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 10,
+     "called_it": "Iztapalapan",
+     "distance_km": 2.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cortes-1519",
+     "seq": 18,
+     "called_it": "Iztapalapan",
+     "distance_km": 2.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5923757",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1086178",
+   "name": "Lituya Bay",
+   "description": "fjord on the southeast coast of Alaska, United States",
+   "latitude": 58.63694,
+   "longitude": -137.57306,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Port des Français",
+    "Lituya Bay, Alaska"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 5,
+     "called_it": "Port des Français",
+     "distance_km": 6.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1086178",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q14773",
+   "name": "Macau",
+   "description": "city and special administrative region of China",
+   "latitude": 22.19,
+   "longitude": 113.53806,
+   "instance_of": [
+    "special administrative region of China",
+    "city-state",
+    "big city",
+    "human settlement",
+    "tourist destination",
+    "dependent territory",
+    "customs territory of China"
+   ],
+   "aliases": [
+    "Macau Special Administrative Region",
+    "Macau Special Administrative Region of the People's Republic of China",
+    "Aomen",
+    "Macao Special Administrative Region",
+    "Macao Special Administrative Region of the People's Republic of China",
+    "Macau SAR",
+    "Macau SAR, China",
+    "Macao SAR",
+    "Macao SAR, China",
+    "Macao S.A.R."
+   ],
+   "names_in_the_atlas": [
+    "Macao",
+    "Macau, China"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 7,
+     "called_it": "Macao",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q14773",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q188705",
+   "name": "Maui",
+   "description": "second-largest of the Hawaiian Islands, in the United States",
+   "latitude": 20.77024,
+   "longitude": -156.26816,
+   "instance_of": [
+    "volcanic island",
+    "island"
+   ],
+   "aliases": [
+    "Island of Maui"
+   ],
+   "names_in_the_atlas": [
+    "Sandwich Islands (Mowee)",
+    "Maui, Hawaii"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 4,
+     "called_it": "Sandwich Islands (Mowee)",
+     "distance_km": 7.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q188705",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q1489",
+   "name": "Mexico City",
+   "description": "capital and largest city of Mexico",
+   "latitude": 19.35377,
+   "longitude": -99.13589,
+   "instance_of": [
+    "federative entity of Mexico",
+    "big city",
+    "city",
+    "metropolis",
+    "largest city",
+    "megacity",
+    "federal capital",
+    "primate city"
+   ],
+   "aliases": [
+    "Mexico D.F.",
+    "City of Mexico",
+    "Mexico City, Mexico",
+    "Mexico"
+   ],
+   "names_in_the_atlas": [
+    "Mexico",
+    "Mexico City, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 11,
+     "called_it": "Mexico",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cortes-1519",
+     "seq": 12,
+     "called_it": "Mexico",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cortes-1519",
+     "seq": 19,
+     "called_it": "Mexico",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cortes-1519",
+     "seq": 22,
+     "called_it": "Mexico",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1489",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q487315",
+   "name": "Monterey",
+   "description": "city in Monterey County, California, United States",
+   "latitude": 36.60024,
+   "longitude": -121.89468,
+   "instance_of": [
+    "city of California",
+    "charter city"
+   ],
+   "aliases": [
+    "City of Monterey",
+    "Monterey, California",
+    "Monterey, CA",
+    "Monterey, Calif."
+   ],
+   "names_in_the_atlas": [
+    "Monterey, New Spain",
+    "Monterey, California"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 6,
+     "called_it": "Monterey, New Spain",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q487315",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q1335",
+   "name": "Montevideo",
+   "description": "capital and largest city of Uruguay",
+   "latitude": -34.90592,
+   "longitude": -56.19131,
+   "instance_of": [
+    "administrative territorial entity",
+    "national capital",
+    "largest city",
+    "primate city",
+    "million city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Montevideo, Río de la Plata",
+    "Montevideo, Uruguay",
+    "Monte Video"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 2,
+     "called_it": "Montevideo, Río de la Plata",
+     "distance_km": 2.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 5,
+     "called_it": "Monte Video",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1335",
+   "voyages": [
+    "boudeuse-1766",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q673400",
+   "name": "Moorea",
+   "description": "island in French Polynesia",
+   "latitude": -17.51667,
+   "longitude": -149.81667,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [
+    "Moʻorea",
+    "Moʻoreʻa"
+   ],
+   "names_in_the_atlas": [
+    "Eimeo",
+    "Moorea, Society Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 9,
+     "called_it": "Eimeo",
+     "distance_km": 2.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q673400",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q118863",
+   "name": "North Island",
+   "description": "more northern, and smaller, of the two main islands of New Zealand",
+   "latitude": -39.0,
+   "longitude": 176.0,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "North Island of New Zealand",
+    "New Zealand North Island",
+    "North Island, New Zealand",
+    "New Ulster",
+    "North Island, NZ",
+    "Te Ika-a-Māui",
+    "Te Ika a Māui"
+   ],
+   "names_in_the_atlas": [
+    "North Island of New Zealand",
+    "North Island, New Zealand"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 15,
+     "called_it": "North Island of New Zealand",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q118863",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q2675109",
+   "name": "Onrust Island",
+   "description": "island in Thousand Islands Regency, Jakarta Province, Indonesia",
+   "latitude": -6.03373,
+   "longitude": 106.73489,
+   "instance_of": [
+    "islet"
+   ],
+   "aliases": [
+    "Pulau Onrust",
+    "Eiland Onrust Island",
+    "Pulu Kapel",
+    "Pulu Kapal Island",
+    "Pulu Kapal",
+    "Pulau Pulu Kapal",
+    "Onrust Island"
+   ],
+   "names_in_the_atlas": [
+    "Onrust",
+    "Onrust Island, Kepulauan Seribu, Jakarta, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 27,
+     "called_it": "Onrust",
+     "distance_km": 1.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2675109",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q16242828",
+   "name": "Otumba de Gómez Farías",
+   "description": "municipal seat of Otumba, State of México, Mexico",
+   "latitude": 19.69694,
+   "longitude": -98.75472,
+   "instance_of": [
+    "locality of Mexico"
+   ],
+   "aliases": [
+    "Otumba de Gomez Farias",
+    "Otumba"
+   ],
+   "names_in_the_atlas": [
+    "Otumpan",
+    "Otumba, State of Mexico, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 14,
+     "called_it": "Otumpan",
+     "distance_km": 4.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q16242828",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1861129",
+   "name": "Panaitan Island",
+   "description": "island in Pandeglang Regency, Banten Province, Indonesia",
+   "latitude": -6.59127,
+   "longitude": 105.20903,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Prinsen",
+    "Princess Island",
+    "Pontangh",
+    "Prinsen-eiland",
+    "Pulau Panaitan",
+    "Prince's Island",
+    "Princes Island",
+    "Panaitan Island"
+   ],
+   "names_in_the_atlas": [
+    "Princes Island",
+    "Panaitan Island, Banten, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 28,
+     "called_it": "Princes Island",
+     "distance_km": 4.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1861129",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q7951",
+   "name": "Petropavlovsk-Kamchatsky",
+   "description": "city in far-eastern Russia",
+   "latitude": 53.01667,
+   "longitude": 158.65,
+   "instance_of": [
+    "city or town",
+    "big city",
+    "port city"
+   ],
+   "aliases": [
+    "Petropavlovsk"
+   ],
+   "names_in_the_atlas": [
+    "Petropavlovsk, Kamchatka",
+    "Petropavlovsk-Kamchatsky, Russia"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 8,
+     "called_it": "Petropavlovsk, Kamchatka",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q7951",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q43382",
+   "name": "Plymouth",
+   "description": "city in Devon, England",
+   "latitude": 50.37139,
+   "longitude": -4.14222,
+   "instance_of": [
+    "city",
+    "big city",
+    "civil parish"
+   ],
+   "aliases": [
+    "Plymouth (parish)",
+    "Plymouth Devon, England",
+    "Plymouth, England"
+   ],
+   "names_in_the_atlas": [
+    "Plymouth",
+    "Plymouth, England, United Kingdom"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 1,
+     "called_it": "Plymouth",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q43382",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q54504",
+   "name": "Port Jackson",
+   "description": "natural harbour of Sydney, New South Wales, Australia",
+   "latitude": -33.85833,
+   "longitude": 151.23333,
+   "instance_of": [
+    "ria",
+    "bay",
+    "natural harbor",
+    "roadstead"
+   ],
+   "aliases": [
+    "Sydney Harbour"
+   ],
+   "names_in_the_atlas": [
+    "Port Jackson",
+    "Sydney Harbour, New South Wales, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 19,
+     "called_it": "Port Jackson",
+     "distance_km": 2.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q54504",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q3435209",
+   "name": "Port Louis",
+   "description": "settlement on northeastern East Falkland",
+   "latitude": -51.53261,
+   "longitude": -58.13167,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [
+    "Port Louis, Falkland Islands",
+    "Port Saint Louis",
+    "Port Soledad",
+    "Puerto Luis",
+    "Port Luis",
+    "Anson's Harbour"
+   ],
+   "names_in_the_atlas": [
+    "Isles Malouines (Falkland Islands), Port Louis",
+    "Falkland Islands (Port Louis, East Falkland)"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 3,
+     "called_it": "Isles Malouines (Falkland Islands), Port Louis",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3435209",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q3929",
+   "name": "Port Louis",
+   "description": "capital city of Mauritius",
+   "latitude": -20.16194,
+   "longitude": 57.49889,
+   "instance_of": [
+    "city",
+    "port city",
+    "first-level administrative division",
+    "big city"
+   ],
+   "aliases": [
+    "Port-Louis",
+    "Porlwi",
+    "Polwi"
+   ],
+   "names_in_the_atlas": [
+    "Isle de France",
+    "Mauritius (Port Louis)"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 13,
+     "called_it": "Isle de France",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3929",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q25473",
+   "name": "Queen Charlotte Sound / Tōtaranui",
+   "description": "part of Marlborough Sounds, in New Zealand's South Island",
+   "latitude": -41.25,
+   "longitude": 174.01588,
+   "instance_of": [
+    "bay",
+    "ria"
+   ],
+   "aliases": [
+    "Queen Charlotte Sound",
+    "Tōtaranui",
+    "Totaranui",
+    "Queen Charlotte Sound (Totaranui)"
+   ],
+   "names_in_the_atlas": [
+    "Queen Charlotte's Sound",
+    "Queen Charlotte Sound, South Island, New Zealand"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 17,
+     "called_it": "Queen Charlotte's Sound",
+     "distance_km": 9.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q25473",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q847008",
+   "name": "Raiatea",
+   "description": "island part of the group of Leeward Islands in the Society Islands, French Polynesia; subdivided in three municipalities",
+   "latitude": -16.82,
+   "longitude": -151.44,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [
+    "Ulietea"
+   ],
+   "names_in_the_atlas": [
+    "Ulietea",
+    "Raiatea, Society Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 11,
+     "called_it": "Ulietea",
+     "distance_km": 7.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q847008",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q8678",
+   "name": "Rio de Janeiro",
+   "description": "city of Rio de Janeiro state, Brazil",
+   "latitude": -22.91111,
+   "longitude": -43.20556,
+   "instance_of": [
+    "municipality of Brazil",
+    "big city",
+    "megacity",
+    "federal capital",
+    "former national capital"
+   ],
+   "aliases": [
+    "Rio de Janeiro city",
+    "Río de Janeiro City",
+    "City of Río de Janeiro"
+   ],
+   "names_in_the_atlas": [
+    "Rio-Janeiro",
+    "Rio de Janeiro, Brazil",
+    "Rio de Janeiro"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 4,
+     "called_it": "Rio-Janeiro",
+     "distance_km": 3.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 4,
+     "called_it": "Rio de Janeiro",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q8678",
+   "voyages": [
+    "boudeuse-1766",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q224943",
+   "name": "Rurutu",
+   "description": "island in French Polynesia",
+   "latitude": -22.45,
+   "longitude": -151.33333,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Ohetiroa",
+    "Rurutu, Austral Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 13,
+     "called_it": "Ohetiroa",
+     "distance_km": 3.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q224943",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1469472",
+   "name": "Sabu Island",
+   "description": "island in Sabu Raijua Regency, East Nusa Tenggara Province, Indonesia",
+   "latitude": -10.54222,
+   "longitude": 121.84667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Sawu Island",
+    "Sawu",
+    "Pulau Sawu",
+    "Havu",
+    "Hawoe",
+    "Hawu",
+    "Raehawoe",
+    "Rai Hwau",
+    "Raihawoe",
+    "Sabu",
+    "Savoe",
+    "Savu",
+    "Sawoe",
+    "Sawoe Island",
+    "Havu Island",
+    "Sabu Island",
+    "Hawoe Island",
+    "Savu Island",
+    "Hawu Island"
+   ],
+   "names_in_the_atlas": [
+    "Savu",
+    "Savu (Sawu), East Nusa Tenggara, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 25,
+     "called_it": "Savu",
+     "distance_km": 6.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1469472",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q34497",
+   "name": "Saint Helena",
+   "description": "island in the South Atlantic Ocean",
+   "latitude": -15.95,
+   "longitude": -5.71667,
+   "instance_of": [
+    "island",
+    "British Overseas Territories",
+    "crown colony"
+   ],
+   "aliases": [
+    "SH-HL"
+   ],
+   "names_in_the_atlas": [
+    "St. Helena",
+    "Saint Helena, British Overseas Territory"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 30,
+     "called_it": "St. Helena",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q34497",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q163108",
+   "name": "Saint-Malo",
+   "description": "commune in Ille-et-Vilaine, France",
+   "latitude": 48.64944,
+   "longitude": -2.02611,
+   "instance_of": [
+    "commune of France"
+   ],
+   "aliases": [
+    "Reginca",
+    "Aletum",
+    "Mont-Mamet",
+    "Port-Malo",
+    "Commune-de-la-Victoire"
+   ],
+   "names_in_the_atlas": [
+    "St. Maloes",
+    "Saint-Malo, France"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 15,
+     "called_it": "St. Maloes",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q163108",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q162126",
+   "name": "Samoan Islands",
+   "description": "archipelago covering 3,030 km² (1,170 sq mi) in the central South Pacific, forming part of Polynesia and the wider region of Oceania",
+   "latitude": -14.0,
+   "longitude": -171.0,
+   "instance_of": [
+    "archipelago"
+   ],
+   "aliases": [
+    "Samoa Islands",
+    "Samoa",
+    "Navigators' Islands"
+   ],
+   "names_in_the_atlas": [
+    "Archipel des Navigateurs (Isles of the Navigators)",
+    "Samoan Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 7,
+     "called_it": "Archipel des Navigateurs (Isles of the Navigators)",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q162126",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q14328",
+   "name": "Santa Cruz de Tenerife",
+   "description": "municipality in Canary Islands, Spain",
+   "latitude": 28.46667,
+   "longitude": -16.25,
+   "instance_of": [
+    "municipality of Spain"
+   ],
+   "aliases": [
+    "Santa Cruz, Tenerife",
+    "Santa Cruz"
+   ],
+   "names_in_the_atlas": [
+    "Santa Cruz",
+    "Santa Cruz de Tenerife, Canary Islands, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 3,
+     "called_it": "Santa Cruz",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q14328",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q117040",
+   "name": "Santiago de Cuba",
+   "description": "city and capital of the province of Santiago de Cuba, Cuba",
+   "latitude": 20.02167,
+   "longitude": -75.82944,
+   "instance_of": [
+    "city",
+    "municipality of Cuba",
+    "big city"
+   ],
+   "aliases": [
+    "Santiago, Cuba",
+    "Santiago"
+   ],
+   "names_in_the_atlas": [
+    "Cuba",
+    "Santiago de Cuba, Cuba"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 1,
+     "called_it": "Cuba",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q117040",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q48365",
+   "name": "Strait of Magellan",
+   "description": "body of water in Chile connecting Atlantic and Pacific Oceans",
+   "latitude": -54.0,
+   "longitude": -71.0,
+   "instance_of": [
+    "strait"
+   ],
+   "aliases": [
+    "Magellan Strait",
+    "Strait of Victoria",
+    "Victoria Strait"
+   ],
+   "names_in_the_atlas": [
+    "Straits of Magalhaens (Port Galant / Cape Pillar)",
+    "Strait of Magellan, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 5,
+     "called_it": "Straits of Magalhaens (Port Galant / Cape Pillar)",
+     "distance_km": 75.8,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q48365",
+   "voyages": [
+    "boudeuse-1766"
+   ]
+  },
+  {
+   "qid": "Q7674191",
+   "name": "Tacuba",
+   "description": "Mexico City colonia",
+   "latitude": 19.4559,
+   "longitude": -99.1857,
+   "instance_of": [
+    "colonia of Mexico"
+   ],
+   "aliases": [
+    "Colonia Tacuba"
+   ],
+   "names_in_the_atlas": [
+    "Tlacupa",
+    "Tacuba, Mexico City, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 13,
+     "called_it": "Tlacupa",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q7674191",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q42000",
+   "name": "Tahiti",
+   "description": "island in the Southern Pacific Ocean",
+   "latitude": -17.66667,
+   "longitude": -149.46667,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [
+    "Otaheitee"
+   ],
+   "names_in_the_atlas": [
+    "Taïti (New Cythera / Nouvelle-Cythère)",
+    "Tahiti, French Polynesia",
+    "King George's Island",
+    "Tahiti, Society Islands, French Polynesia"
+   ],
+   "visits": [
+    {
+     "voyage": "boudeuse-1766",
+     "seq": 6,
+     "called_it": "Taïti (New Cythera / Nouvelle-Cythère)",
+     "distance_km": 18.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cook-1768",
+     "seq": 8,
+     "called_it": "King George's Island",
+     "distance_km": 5.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q42000",
+   "voyages": [
+    "boudeuse-1766",
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1048789",
+   "name": "Tamatea / Dusky Sound",
+   "description": "fiord in New Zealand",
+   "latitude": -45.766,
+   "longitude": 166.593,
+   "instance_of": [
+    "fjord",
+    "sound"
+   ],
+   "aliases": [
+    "Dusky Sound",
+    "Tamatea"
+   ],
+   "names_in_the_atlas": [
+    "Dusky Bay",
+    "Dusky Sound, South Island, New Zealand"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 16,
+     "called_it": "Dusky Bay",
+     "distance_km": 20.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1048789",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q20232353",
+   "name": "Tepeaca",
+   "description": "municipal seat of Tepeaca, State of Puebla, Mexico",
+   "latitude": 18.96923,
+   "longitude": -97.90074,
+   "instance_of": [
+    "locality of Mexico"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Tepeaca",
+    "Tepeaca, Puebla, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 16,
+     "called_it": "Tepeaca",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q20232353",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q2047652",
+   "name": "Texcoco",
+   "description": "pre-Columbian city-state",
+   "latitude": 19.52944,
+   "longitude": -98.89667,
+   "instance_of": [
+    "city-state",
+    "altepetl"
+   ],
+   "aliases": [
+    "Tezcuco"
+   ],
+   "names_in_the_atlas": [
+    "Tezcuco",
+    "Texcoco, State of Mexico, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 17,
+     "called_it": "Tezcuco",
+     "distance_km": 7.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2047652",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q21900556",
+   "name": "Thirsty Sound",
+   "description": "sound in Australia",
+   "latitude": -22.16667,
+   "longitude": 149.96667,
+   "instance_of": [
+    "sound"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Thirsty Sound",
+    "Thirsty Sound, Queensland, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 21,
+     "called_it": "Thirsty Sound",
+     "distance_km": 7.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21900556",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q796925",
+   "name": "Tlatelolco",
+   "description": "pre-Columban city (altepetl) in Mexico",
+   "latitude": 19.45108,
+   "longitude": -99.1375,
+   "instance_of": [
+    "altepetl"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Tlatelolco",
+    "Tlatelolco, Mexico City, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 20,
+     "called_it": "Tlatelolco",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q796925",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q689987",
+   "name": "Tlaxcala de Xicoténcatl",
+   "description": "capital of the Mexican state of Tlaxcala",
+   "latitude": 19.31514,
+   "longitude": -98.23615,
+   "instance_of": [
+    "locality of Mexico"
+   ],
+   "aliases": [
+    "Tlaxcala",
+    "Tlaxcala de Xicotencatl",
+    "Tlaxcala de Xicohténcatl"
+   ],
+   "names_in_the_atlas": [
+    "Tlascalla",
+    "Tlaxcala, Tlaxcala, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 8,
+     "called_it": "Tlascalla",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cortes-1519",
+     "seq": 15,
+     "called_it": "Tlascalla",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q689987",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q269205",
+   "name": "Tutuila",
+   "description": "largest island in American Samoa",
+   "latitude": -14.29972,
+   "longitude": -170.7225,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [
+    "Tutuila Island",
+    "Tootooellah",
+    "Tutyella"
+   ],
+   "names_in_the_atlas": [
+    "Maouna (Tutuila), Navigator Islands",
+    "Tutuila, American Samoa"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 9,
+     "called_it": "Maouna (Tutuila), Navigator Islands",
+     "distance_km": 2.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q269205",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q498841",
+   "name": "Tūranganui-a-Kiwa / Poverty Bay",
+   "description": "bay in New Zealand",
+   "latitude": -38.71616,
+   "longitude": 177.99145,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [
+    "Poverty Bay",
+    "Tūranganui-a-Kiwa"
+   ],
+   "names_in_the_atlas": [
+    "Poverty Bay",
+    "Poverty Bay, Gisborne District, North Island, New Zealand"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 14,
+     "called_it": "Poverty Bay",
+     "distance_km": 4.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q498841",
+   "voyages": [
+    "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1536424",
+   "name": "Vanikoro",
+   "description": "island",
+   "latitude": -11.61667,
+   "longitude": 166.96667,
+   "instance_of": [
+    "island",
+    "volcanic island"
+   ],
+   "aliases": [
+    "Vanikolo"
+   ],
+   "names_in_the_atlas": [
+    "Mannicolo (Vanikoro)",
+    "Vanikoro, Solomon Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "boussole-1785",
+     "seq": 11,
+     "called_it": "Mannicolo (Vanikoro)",
+     "distance_km": 9.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1536424",
+   "voyages": [
+    "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q173270",
+   "name": "Veracruz",
+   "description": "city of Veracruz, Mexico",
+   "latitude": 19.19028,
+   "longitude": -96.15333,
+   "instance_of": [
+    "city",
+    "port city",
+    "big city",
+    "locality of Mexico"
+   ],
+   "aliases": [
+    "Veracruz, Mexico",
+    "Veracruz, Veracruz, Mexico",
+    "Vera Cruz"
+   ],
+   "names_in_the_atlas": [
+    "Villa Rica de la Vera Cruz",
+    "Veracruz, Veracruz, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "cortes-1519",
+     "seq": 7,
+     "called_it": "Villa Rica de la Vera Cruz",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q173270",
+   "voyages": [
+    "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q21899019",
+   "name": "Whitsunday Passage",
+   "description": "river in Australia",
+   "latitude": -20.36667,
+   "longitude": 148.88333,
+   "instance_of": [
+    "river"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Whitsunday Passage",
+    "Whitsunday Passage, Queensland, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "cook-1768",
+     "seq": 22,
+     "called_it": "Whitsunday Passage",
+     "distance_km": 7.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21899019",
+   "voyages": [
+    "cook-1768"
+   ]
+  }
+ ]
+}

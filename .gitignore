@@ -16,3 +16,4 @@ next-env.d.ts
 __pycache__/
 *.pyc
 *.bak-*
+.gazetteer-cache.json

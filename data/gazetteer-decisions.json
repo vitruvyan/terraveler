@@ -1,0 +1,907 @@
+{
+ "note": "Which Wikidata entity each landfall is. Judged by comparing the candidates the coordinates left standing; content-addressed by the question asked, so re-runs and new voyages reuse them. null means no candidate was the place.",
+ "decisions": [
+  {
+   "key": "1980ddfd6d2eb10e",
+   "atlas_name": "Archipel des Grandes Cyclades (Tierra Austral del Espíritu Santo)",
+   "candidates": [
+    "Q337524",
+    "Q686",
+    "Q19399831"
+   ],
+   "qid": "Q337524",
+   "reason": "Espiritu Santo, the island reached; Vanuatu as a state did not exist and the New Hebrides name came later.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "2610872e11c75e7b",
+   "atlas_name": "Archipel des Navigateurs (Isles of the Navigators)",
+   "candidates": [
+    "Q162126"
+   ],
+   "qid": "Q162126",
+   "reason": "The archipelago Bougainville named for its navigators.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "36781f04218b51c2",
+   "atlas_name": "Ascension Island",
+   "candidates": [
+    "Q46197"
+   ],
+   "qid": "Q46197",
+   "reason": "Ascension Island.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "7a967eceefe5ffbc",
+   "atlas_name": "Batavia",
+   "candidates": [
+    "Q3630",
+    "Q10109",
+    "Q10114",
+    "Q1199713",
+    "Q10111",
+    "Q10116"
+   ],
+   "qid": "Q1199713",
+   "reason": "Batavia, capital of the Dutch East Indies — the colonial city both voyages actually called at, rather than the modern province or one of its present-day boroughs.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "e1aaede25eb5ee73",
+   "atlas_name": "Bolabola",
+   "candidates": [
+    "Q183113",
+    "Q602937"
+   ],
+   "qid": "Q183113",
+   "reason": "Bora Bora, the island.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "8c55f3f1626294a0",
+   "atlas_name": "Botany Bay",
+   "candidates": [
+    "Q894682"
+   ],
+   "qid": "Q894682",
+   "reason": "Botany Bay — the same bay Cook charted in 1770 and La Pérouse entered in 1788.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "1e2ddcaabfd49f8d",
+   "atlas_name": "Brest",
+   "candidates": [
+    "Q12193"
+   ],
+   "qid": "Q12193",
+   "reason": "Brest, as for Bougainville nineteen years earlier.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "0c22209e3da695d0",
+   "atlas_name": "Brest (departure from Nantes)",
+   "candidates": [
+    "Q12193"
+   ],
+   "qid": "Q12193",
+   "reason": "The Breton naval port the expedition sailed from.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "6207a54bb455f682",
+   "atlas_name": "Bustard Bay",
+   "candidates": [
+    "Q21915221"
+   ],
+   "qid": "Q21915221",
+   "reason": "Bustard Bay, named for the bird shot there.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "3a35889b6fe7a913",
+   "atlas_name": "Cape of Good Hope (Table Bay)",
+   "candidates": [
+    "Q5465",
+    "Q951305",
+    "Q531909",
+    "Q1185115",
+    "Q4092",
+    "Q370736"
+   ],
+   "qid": "Q5465",
+   "reason": "Cape Town, the settlement under Table Mountain where ships watered; the Cape of Good Hope proper is a headland 50 km south.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "72fd6aba92b79063",
+   "atlas_name": "Cempoalá",
+   "candidates": [
+    "Q1053364"
+   ],
+   "qid": "Q1053364",
+   "reason": "Cempoala, the Totonac city whose ruins carry the name; the distance reflects an approximate recorded position.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "789b75eb5943a111",
+   "atlas_name": "Cholulla",
+   "candidates": [
+    "Q1007232",
+    "Q7380613",
+    "Q20241486"
+   ],
+   "qid": "Q7380613",
+   "reason": "Cholula the pre-Columbian city, site of the massacre — not the modern municipal seat beside it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "7f741bb42ac18caa",
+   "atlas_name": "Concepción, Chili",
+   "candidates": [
+    "Q1880"
+   ],
+   "qid": "Q1880",
+   "reason": "Concepción, the Chilean port.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "dc509caa1d1b34fc",
+   "atlas_name": "Cuba",
+   "candidates": [
+    "Q117040",
+    "Q23789251",
+    "Q234200"
+   ],
+   "qid": "Q117040",
+   "reason": "Santiago de Cuba, the port the expedition sailed from, not the province.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "b2fce6be747afb2c",
+   "atlas_name": "Deal",
+   "candidates": [
+    "Q1011096"
+   ],
+   "qid": "Q1011096",
+   "reason": "Deal, the Kentish town where Cook landed.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "634996f3edccaf36",
+   "atlas_name": "Deptford",
+   "candidates": [
+    "Q2308650",
+    "Q1191937",
+    "Q19788853"
+   ],
+   "qid": "Q2308650",
+   "reason": "Deptford, the naval yard on the Thames; the railway station of the same name is modern.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "d11129762d22d3ab",
+   "atlas_name": "Dusky Bay",
+   "candidates": [
+    "Q1131956",
+    "Q1048789"
+   ],
+   "qid": "Q1048789",
+   "reason": "Dusky Sound, the fiord Cook sheltered in. The other candidate is a 2009 earthquake — an event, not a place.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "5eb21b23ccb6adaa",
+   "atlas_name": "Easter Island",
+   "candidates": [
+    "Q14452",
+    "Q36746",
+    "Q115116609",
+    "Q20350",
+    "Q9009773"
+   ],
+   "qid": "Q14452",
+   "reason": "Easter Island. The Rapa Nui language and the moai are of the island, not the island.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "de8d2b78de90dad8",
+   "atlas_name": "Eimeo",
+   "candidates": [
+    "Q673400",
+    "Q120326"
+   ],
+   "qid": "Q673400",
+   "reason": "Moorea, the island; not its airstrip.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "55769ba5156fa3c5",
+   "atlas_name": "Endeavour River",
+   "candidates": [
+    "Q527474",
+    "Q1340299",
+    "Q139755630"
+   ],
+   "qid": "Q527474",
+   "reason": "The river where the Endeavour was beached and repaired, not the national park later created around it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "9e635fbd284a1333",
+   "atlas_name": "Fayal",
+   "candidates": [
+    "Q657187"
+   ],
+   "qid": "Q657187",
+   "reason": "Faial, the Azorean island Cook watered at.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "30db31600a6d26b1",
+   "atlas_name": "Funchall",
+   "candidates": [
+    "Q134983322",
+    "Q25444",
+    "Q1813683",
+    "Q2652604",
+    "Q2078801"
+   ],
+   "qid": "Q134983322",
+   "reason": "Funchal the city, not one of its parishes.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "d6d3eed72b577176",
+   "atlas_name": "Golfe de la Louisiade; Isle & Bay of Choiseul",
+   "candidates": [
+    "Q867864"
+   ],
+   "qid": "Q867864",
+   "reason": "Choiseul, the island Bougainville named and coasted.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "591bbed5500aa6c9",
+   "atlas_name": "Huahine",
+   "candidates": [
+    "Q31929712",
+    "Q521020",
+    "Q1431508",
+    "Q968977",
+    "Q31929715"
+   ],
+   "qid": "Q521020",
+   "reason": "Huahine, the island of the Leeward group.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "e71cb73653290b29",
+   "atlas_name": "island Cozumel",
+   "candidates": [
+    "Q20119933"
+   ],
+   "qid": "Q20119933",
+   "reason": "Cozumel, the island where the fleet mustered.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "c250a2b73ff746cc",
+   "atlas_name": "Isle de France",
+   "candidates": [
+    "Q3929",
+    "Q960645",
+    "Q1027",
+    "Q12060804",
+    "Q2656389"
+   ],
+   "qid": "Q3929",
+   "reason": "Port Louis, the harbour of the Isle de France where they refitted; 'Isle de France' itself is recorded as a former name, not a place.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "c8c352491b5efcfe",
+   "atlas_name": "Isles Malouines (Falkland Islands), Port Louis",
+   "candidates": [
+    "Q3435209",
+    "Q48249",
+    "Q5535263",
+    "Q9648"
+   ],
+   "qid": "Q3435209",
+   "reason": "Port Louis itself, the settlement they anchored at; the archipelago is wider than the stop, and a 1982 war and an encyclopaedia article are not places.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "a2b7f7d1336cc08e",
+   "atlas_name": "Iztapalapan",
+   "candidates": [
+    "Q741771",
+    "Q4204314",
+    "Q15265616",
+    "Q5923757",
+    "Q136214127"
+   ],
+   "qid": "Q5923757",
+   "reason": "Iztapalapa's historic town on the lake causeway, rather than the modern borough, a metro station, a passion play or a 2025 explosion.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "d295e82a774cb488",
+   "atlas_name": "King George's Island",
+   "candidates": [
+    "Q42000",
+    "Q34128",
+    "Q1049719"
+   ],
+   "qid": "Q42000",
+   "reason": "Cook's King George's Island is Tahiti — the same island Bougainville called New Cythera.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "bf230cf82d06a117",
+   "atlas_name": "Macao",
+   "candidates": [
+    "Q14773",
+    "Q1334373",
+    "Q3916279"
+   ],
+   "qid": "Q14773",
+   "reason": "Macau, the Portuguese entrepôt where the expedition sold its furs.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "2cf7ab41ba8a638b",
+   "atlas_name": "Mannicolo (Vanikoro)",
+   "candidates": [
+    "Q1536424"
+   ],
+   "qid": "Q1536424",
+   "reason": "Vanikoro, where the expedition was wrecked.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "9c0cac34d6d11010",
+   "atlas_name": "Maouna (Tutuila), Navigator Islands",
+   "candidates": [
+    "Q269205",
+    "Q7890803"
+   ],
+   "qid": "Q269205",
+   "reason": "Tutuila, the island of the massacre at Maouna; a US naval base occupied the same shore a century later.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "1e33eb4e86008868",
+   "atlas_name": "Mexico",
+   "candidates": [
+    "Q1489",
+    "Q735042",
+    "Q16978314",
+    "Q82112"
+   ],
+   "qid": "Q1489",
+   "reason": "Mexico City, the continuous place built over Tenochtitlan; the metro and the state of Mexico are neither.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "e59b9461bcc17574",
+   "atlas_name": "Mexico",
+   "candidates": [
+    "Q661315",
+    "Q20135344",
+    "Q3366731",
+    "Q1489",
+    "Q82112",
+    "Q20135353"
+   ],
+   "qid": "Q661315",
+   "reason": "Coyoacán, where Cortés established himself after the fall of the city.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "66dc7832687047e8",
+   "atlas_name": "Monte Video",
+   "candidates": [
+    "Q1335",
+    "Q16594"
+   ],
+   "qid": "Q1335",
+   "reason": "The city, not the department.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "ed905fb328e11a58",
+   "atlas_name": "Monterey, New Spain",
+   "candidates": [
+    "Q487315",
+    "Q1946110",
+    "Q108072"
+   ],
+   "qid": "Q487315",
+   "reason": "Monterey, the Spanish presidio town.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "3526a6baadda8ea3",
+   "atlas_name": "Montevideo, Río de la Plata",
+   "candidates": [
+    "Q1335",
+    "Q16594"
+   ],
+   "qid": "Q1335",
+   "reason": "The city, not the department that now surrounds it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "126b91d666a5ba98",
+   "atlas_name": "North Island of New Zealand",
+   "candidates": [
+    "Q118863"
+   ],
+   "qid": "Q118863",
+   "reason": "The North Island of New Zealand.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "62b404533aeab098",
+   "atlas_name": "Ohetiroa",
+   "candidates": [
+    "Q1585966",
+    "Q224943",
+    "Q3501121"
+   ],
+   "qid": "Q224943",
+   "reason": "Rurutu the island, rather than the modern commune or its airstrip.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "1b215ec33e881bf8",
+   "atlas_name": "Onrust",
+   "candidates": [
+    "Q2675109"
+   ],
+   "qid": "Q2675109",
+   "reason": "Onrust, the Dutch careening island in Batavia roads — a distinct landfall from the city.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "f8c1b6614e81c55c",
+   "atlas_name": "Otumpan",
+   "candidates": [
+    "Q2641440",
+    "Q16242828"
+   ],
+   "qid": "Q16242828",
+   "reason": "Otumba town, near the plain where the battle was fought.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "82bb05eb4d79f565",
+   "atlas_name": "Petropavlovsk, Kamchatka",
+   "candidates": [
+    "Q7951",
+    "Q2074948"
+   ],
+   "qid": "Q7951",
+   "reason": "Petropavlovsk-Kamchatsky, the Russian port; not its airport.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "5ec898aa80178d1c",
+   "atlas_name": "Plymouth",
+   "candidates": [
+    "Q43382"
+   ],
+   "qid": "Q43382",
+   "reason": "Plymouth, the Devon port the Endeavour sailed from.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "5654f675caea9a28",
+   "atlas_name": "Port des Français",
+   "candidates": [
+    "Q1086178",
+    "Q64143738",
+    "Q10745598"
+   ],
+   "qid": "Q1086178",
+   "reason": "Lituya Bay, the inlet named Port des Français where twenty-one men drowned; a glacier and a 1958 megatsunami share the name.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "966dc2762f48beec",
+   "atlas_name": "Port Jackson",
+   "candidates": [
+    "Q54504",
+    "Q3130",
+    "Q746452"
+   ],
+   "qid": "Q54504",
+   "reason": "Port Jackson, the harbour Cook named in passing; Sydney was founded eighteen years later.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "77ea4b31915d6d2e",
+   "atlas_name": "Port Praslin, New Britain",
+   "candidates": [
+    "Q117006723"
+   ],
+   "qid": null,
+   "reason": "The only candidate is a bay 42 km from the recorded position under an unrelated name; Port Praslin's identity is better left open than asserted on that.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "298da8c8b1af5047",
+   "atlas_name": "Poverty Bay",
+   "candidates": [
+    "Q79303638",
+    "Q498841"
+   ],
+   "qid": "Q498841",
+   "reason": "The bay Cook named Poverty Bay; a clubhouse in Gisborne is not it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "8938a9359b5edd33",
+   "atlas_name": "Princes Island",
+   "candidates": [
+    "Q1861129"
+   ],
+   "qid": "Q1861129",
+   "reason": "Princes Island, today Panaitan, in the Sunda Strait.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "51ca80e566be2cd4",
+   "atlas_name": "Queen Charlotte's Sound",
+   "candidates": [
+    "Q25473"
+   ],
+   "qid": "Q25473",
+   "reason": "Queen Charlotte Sound, Cook's careening station.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "0ded8a9b5f8ccd09",
+   "atlas_name": "Rio de Janeiro",
+   "candidates": [
+    "Q8678",
+    "Q41428"
+   ],
+   "qid": "Q8678",
+   "reason": "The city, not the state.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "0587e2ee0bb7231b",
+   "atlas_name": "Rio-Janeiro",
+   "candidates": [
+    "Q8678",
+    "Q41428"
+   ],
+   "qid": "Q8678",
+   "reason": "The city they anchored at, not the modern state of the same name.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "c2ea2bdfa339755a",
+   "atlas_name": "San Juan de Ulua",
+   "candidates": [
+    "Q1696230"
+   ],
+   "qid": "Q1696230",
+   "reason": "San Juan de Ulúa, the islet fortification off Veracruz. It is also catalogued as a museum today, which does not stop it being the landing place.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "2758214f11245dba",
+   "atlas_name": "Sandwich Islands (Mowee)",
+   "candidates": [
+    "Q188705",
+    "Q192626",
+    "Q111409"
+   ],
+   "qid": "Q188705",
+   "reason": "Maui, the island La Pérouse called Mowee.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "5f474236cc533c3a",
+   "atlas_name": "Santa Cruz",
+   "candidates": [
+    "Q14328",
+    "Q24014650",
+    "Q99976",
+    "Q7419451"
+   ],
+   "qid": "Q14328",
+   "reason": "Santa Cruz de Tenerife the town; the province and an electoral district are administrative abstractions.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "610c66a06cd990e1",
+   "atlas_name": "Savu",
+   "candidates": [
+    "Q15059730",
+    "Q1469472",
+    "Q2319877",
+    "Q24631891"
+   ],
+   "qid": "Q1469472",
+   "reason": "Savu island itself, where the Endeavour traded for provisions; the language and a village 190 km away are not it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "f68ebe4d24716013",
+   "atlas_name": "St. Helena",
+   "candidates": [
+    "Q34497",
+    "Q192184"
+   ],
+   "qid": "Q34497",
+   "reason": "The island of Saint Helena, not the three-island territory administered from it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "492aa1d17491b79d",
+   "atlas_name": "St. Maloes",
+   "candidates": [
+    "Q163108",
+    "Q128095",
+    "Q128340",
+    "Q654765",
+    "Q775568"
+   ],
+   "qid": "Q163108",
+   "reason": "Saint-Malo, the corsair port; the other communes merely share the name.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "1751b88049b9a3ec",
+   "atlas_name": "Straits of Magalhaens (Port Galant / Cape Pillar)",
+   "candidates": [
+    "Q48365"
+   ],
+   "qid": "Q48365",
+   "reason": "The strait itself; Port Galant and Cape Pillar are anchorages within it.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "5f40fce4f32533f9",
+   "atlas_name": "Tabasco",
+   "candidates": [
+    "Q80914"
+   ],
+   "qid": null,
+   "reason": "The landfall was the Grijalva river mouth; the only candidate is the modern state of Tabasco, an administrative unit 39 km away that is not the place.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "1bd0d53fc6f8d15c",
+   "atlas_name": "Table Bay",
+   "candidates": [
+    "Q5465",
+    "Q951305",
+    "Q531909",
+    "Q1185115"
+   ],
+   "qid": "Q5465",
+   "reason": "Cape Town, as for Bougainville's call in Table Bay two years earlier.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "9e4227afe54c8ef9",
+   "atlas_name": "Taïti (New Cythera / Nouvelle-Cythère)",
+   "candidates": [
+    "Q42000",
+    "Q34128",
+    "Q1049719"
+   ],
+   "qid": "Q42000",
+   "reason": "The island. The Tahitian language is not a place and the airport postdates the voyage by two centuries.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "851cdd9c228a653a",
+   "atlas_name": "Tepeaca",
+   "candidates": [
+    "Q20232353",
+    "Q942512"
+   ],
+   "qid": "Q20232353",
+   "reason": "Tepeaca, the town Cortés fortified after the retreat.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "05802685f920564d",
+   "atlas_name": "Terra del Fuego",
+   "candidates": [
+    "Q44832",
+    "Q117476938"
+   ],
+   "qid": null,
+   "reason": "Both candidates are modern Argentine administrative units 239 km from the Staten Island anchorage; the archipelago itself was not among them, so the stop stays unidentified.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "7e3a18fd2bde4247",
+   "atlas_name": "Tezcuco",
+   "candidates": [
+    "Q2115196",
+    "Q1141799",
+    "Q2047652",
+    "Q13700"
+   ],
+   "qid": "Q2047652",
+   "reason": "Texcoco as the pre-Columbian city-state, the ally from which the siege was launched.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "00619c2fdf086885",
+   "atlas_name": "the extremity of New Wales",
+   "candidates": [
+    "Q1728345"
+   ],
+   "qid": "Q1728345",
+   "reason": "Cape York, the northern extremity Cook claimed.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "c9ede572ac801282",
+   "atlas_name": "Thirsty Sound",
+   "candidates": [
+    "Q21900556"
+   ],
+   "qid": "Q21900556",
+   "reason": "Thirsty Sound, so named for want of fresh water.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "29e5eb435fd20470",
+   "atlas_name": "Tlacupa",
+   "candidates": [
+    "Q7674191",
+    "Q3356901",
+    "Q2744158"
+   ],
+   "qid": "Q7674191",
+   "reason": "Tacuba, the town at the end of the causeway of the Noche Triste; the metro station named after it is modern.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "ffc8f605c2a4a72c",
+   "atlas_name": "Tlascalla",
+   "candidates": [
+    "Q6147713",
+    "Q689987",
+    "Q877367",
+    "Q614072",
+    "Q82681"
+   ],
+   "qid": "Q689987",
+   "reason": "The city of Tlaxcala, where Cortés was received; the diocese was founded in 1959 and the state is modern.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "e9af6d00c954bfb3",
+   "atlas_name": "Tlatelolco",
+   "candidates": [
+    "Q796925",
+    "Q14623034",
+    "Q14623011",
+    "Q3431323",
+    "Q136693907"
+   ],
+   "qid": "Q796925",
+   "reason": "Tlatelolco, the twin altepetl where the last defence ended; a metro station and a bus stop bear the name today.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "ff8935e6c4434c8b",
+   "atlas_name": "Ulietea",
+   "candidates": [
+    "Q1432553",
+    "Q847008"
+   ],
+   "qid": "Q847008",
+   "reason": "Raiatea, the island; an airport cannot be a landfall of 1769.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "41bcb09ec8acf8f9",
+   "atlas_name": "Villa Rica de la Vera Cruz",
+   "candidates": [
+    "Q173270",
+    "Q20270915",
+    "Q60130"
+   ],
+   "qid": "Q173270",
+   "reason": "Veracruz, the town founded on that coast; the state of the same name is a later abstraction.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  },
+  {
+   "key": "78d53bc6e2c8ee2e",
+   "atlas_name": "Whitsunday Passage",
+   "candidates": [
+    "Q21899019"
+   ],
+   "qid": "Q21899019",
+   "reason": "The Whitsunday Passage. Wikidata files it as a river, which is wrong, but the entity is the passage Cook sailed.",
+   "decided_by": "ai-review",
+   "decided_at": "2026-07-25"
+  }
+ ]
+}

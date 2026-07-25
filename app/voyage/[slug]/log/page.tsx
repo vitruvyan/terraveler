@@ -4,7 +4,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { getVoyageBundle, knownVoyages } from "@/lib/data";
 import { voyageDescription } from "@/lib/seo";
-import { voyagePath } from "@/lib/voyages";
+import { voyagePath, voyageLogPath, ATLAS } from "@/lib/voyages";
+import { alsoVisited } from "@/lib/gazetteer";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -125,6 +126,11 @@ export default async function VoyageLog({
             const anyW = w as any;
             const arrival = fmtDate(w.arrival_date);
             const departure = fmtDate(w.departure_date);
+            // The same landfall under other flags: the gazetteer resolved this
+            // stop to a real place, so the voyages that also called there can
+            // be named — the link that makes this an atlas and not a shelf of
+            // separate voyages.
+            const also = alsoVisited(slug, w.seq);
             return (
               <li key={w.seq} id={`stage-${w.seq}`}
                   style={{ borderLeft: "2px solid var(--parchment-deep)", paddingLeft: 16, marginBottom: 26 }}>
@@ -165,6 +171,28 @@ export default async function VoyageLog({
                   <p style={{ fontSize: 13, color: "var(--ink-soft)", fontStyle: "italic", margin: 0 }}>
                     No verified journal excerpt for this stage yet —{" "}
                     <a href="/contribute">help us find one</a>.
+                  </p>
+                )}
+                {also && (
+                  <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "10px 0 0" }}>
+                    Also called at by{" "}
+                    {also.visits.map((v, i) => {
+                      const other = ATLAS.find((a) => a.slug === v.voyage);
+                      return (
+                        <span key={v.voyage + v.seq}>
+                          {i > 0 && ", "}
+                          <a href={`${voyageLogPath(v.voyage)}#stage-${v.seq}`}>
+                            {other?.navigator ?? v.voyage}
+                          </a>
+                          {v.called_it && v.called_it !== place(w) && <> — who called it “{v.called_it}”</>}
+                        </span>
+                      );
+                    })}
+                    {". "}
+                    <a href={also.place.source_url} target="_blank" rel="noreferrer"
+                       style={{ fontSize: 12.5 }}>
+                      Identified as {also.place.name}
+                    </a>
                   </p>
                 )}
               </li>

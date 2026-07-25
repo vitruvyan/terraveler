@@ -13,6 +13,7 @@
 import { ATLAS } from "./voyages";
 import { getVoyageBundle } from "./data";
 import { voyageLogPath, voyagePath } from "./voyages";
+import { placeForStop, searchNames } from "./gazetteer";
 import type { SpaceWaypoint, Waypoint } from "./types";
 
 export type EntryType = "voyage" | "navigator" | "place";
@@ -94,13 +95,21 @@ export async function searchIndex(): Promise<IndexEntry[]> {
       const dedupe = `${v.slug}:${normalize(name)}`;
       if (seenPlace.has(dedupe)) continue;
       seenPlace.add(dedupe);
+      // A landfall answers to every name its place ever had, not just the one
+      // this voyage wrote down: the gazetteer contributes Wikidata's aliases
+      // and the names other voyages used, so "Otaheite" finds Tahiti.
+      const place = placeForStop(v.slug, w.seq);
+      const shared = place && place.voyages.length > 1;
       entries.push({
         type: "place",
         label: name,
-        sublabel: `${v.title}${anyW.arrival_date ? ` · ${String(anyW.arrival_date).slice(0, 4)}` : ""}`,
+        sublabel:
+          `${v.title}${anyW.arrival_date ? ` · ${String(anyW.arrival_date).slice(0, 4)}` : ""}` +
+          (shared ? ` · ${place!.voyages.length} voyages called here` : ""),
         href: `${voyageLogPath(v.slug)}#wp-${w.seq}`,
         key: normalize(
-          [name, anyW.place_modern, anyW.event, anyW.arrival_date, v.navigator].filter(Boolean).join(" ")
+          [name, anyW.place_modern, anyW.event, anyW.arrival_date, v.navigator,
+           ...(place ? searchNames(place) : [])].filter(Boolean).join(" ")
         ),
         voyage: v.slug,
       });
