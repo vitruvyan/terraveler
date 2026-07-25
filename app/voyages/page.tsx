@@ -20,13 +20,20 @@ export default function Voyages() {
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {ATLAS.map((v) => (
-            <a key={v.slug} className="voy-card" href={v.href} style={{ padding: "16px 18px" }}>
-              <strong style={{ fontSize: 17 }}>{v.title}</strong>
-              <span className="voy-meta" style={{ fontSize: 13.5 }}>
-                {v.navigator} · {v.years}
-              </span>
-              <span className="voy-blurb" style={{ fontSize: 13.5 }}>{v.blurb}</span>
-            </a>
+            <div key={v.slug}>
+              <a className="voy-card" href={v.href} style={{ padding: "16px 18px" }}>
+                <strong style={{ fontSize: 17 }}>{v.title}</strong>
+                <span className="voy-meta" style={{ fontSize: 13.5 }}>
+                  {v.navigator} · {v.years}
+                </span>
+                <span className="voy-blurb" style={{ fontSize: 13.5 }}>{v.blurb}</span>
+              </a>
+              <div style={{ fontSize: 13, marginTop: 4, paddingLeft: 2 }}>
+                <a href={`${v.href === "/" ? "/voyage/boudeuse-1766" : v.href}/log`}>
+                  Read the log as text →
+                </a>
+              </div>
+            </div>
           ))}
         </div>
         <p style={{ marginTop: 26, fontSize: 14, color: "var(--ink-soft)" }}>
