@@ -1485,3 +1485,18 @@ input[type="range"].scrubber::-moz-range-thumb {
   .welcome-actions { gap: 6px; }
   .welcome-btn { padding: 8px 12px; font-size: 12.5px; }
 }
+
+/* --- Link to the plain-text log, from the Atlas panel and the Ship's Log --- */
+.log-full-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--parchment-deep);
+  padding-bottom: 1px;
+}
+.log-full-link:hover { color: var(--ink); border-bottom-color: var(--brass); }
+.space .log-full-link { color: #d8b25c; }

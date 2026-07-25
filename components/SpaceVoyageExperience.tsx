@@ -8,7 +8,7 @@ import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
-import { ATLAS } from "@/lib/voyages";
+import { ATLAS, voyageLogPath } from "@/lib/voyages";
 import {
   DAY,
   parseHistoricalDate,
@@ -386,6 +386,9 @@ export default function SpaceVoyageExperience({
               {navigator.birth_year ? ` (launched ${navigator.birth_year})` : ""}
             </div>
             <div className="cart-ships">{voyage.ships}</div>
+            <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
+              📜 Read this voyage&rsquo;s log as text →
+            </a>
           </div>
           <div className="atlas-chips">
             <button
