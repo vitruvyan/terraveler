@@ -13,6 +13,9 @@ export async function GET(req: Request) {
     const contributors = await sb("GET", "contributors?select=id,handle,rank");
     const audit = await sb("GET",
       "audit_log?order=id.asc&select=submission_id,actor,action,verdict,findings,created_at");
+    const reviews = await sb("GET",
+      "reviews?order=id.asc&select=submission_id,reviewer_id,verdict,findings,created_at")
+      .catch(() => []); // table may predate the peer-review migration
     const byId: Record<number, any> = {};
     for (const c of contributors) byId[c.id] = c;
     const auditBySub: Record<number, any[]> = {};
@@ -20,11 +23,16 @@ export async function GET(req: Request) {
       if (a.submission_id == null) continue;
       (auditBySub[a.submission_id] ??= []).push(a);
     }
+    const reviewsBySub: Record<number, any[]> = {};
+    for (const r of reviews) {
+      (reviewsBySub[r.submission_id] ??= []).push({ ...r, reviewer: byId[r.reviewer_id] ?? null });
+    }
     return NextResponse.json({
       submissions: subs.map((s: any) => ({
         ...s,
         contributor: byId[s.contributor_id] ?? null,
         audit: auditBySub[s.id] ?? [],
+        reviews: reviewsBySub[s.id] ?? [],
       })),
     });
   } catch (e: any) {

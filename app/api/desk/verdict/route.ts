@@ -4,7 +4,7 @@ import { requireEditor, sb } from "@/lib/deskAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CARTA_VERSION = "0.1";
+const CARTA_VERSION = "0.2";
 const STATUS: Record<string, string> = {
   approve: "approved",
   reject: "rejected",
