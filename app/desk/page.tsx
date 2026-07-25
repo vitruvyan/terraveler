@@ -29,6 +29,8 @@ type CrewMember = {
   created_at: string | null;
 };
 
+type Demand = { id: number; query: string; hits: number; first_seen: string; last_seen: string };
+
 type Overview = {
   counts: {
     submissions: Record<string, number>;
@@ -37,6 +39,7 @@ type Overview = {
     reviews_total: number;
   };
   feed: { submission_id: number | null; actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
+  demand?: Demand[];
 };
 
 const STATUS_COLOR: Record<string, string> = {
@@ -113,6 +116,21 @@ export default function Desk() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ submission_id: id, verdict: v, note: note[id] || undefined }),
+    });
+    setBusy(false);
+    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
+    load();
+  }
+
+  async function demandAction(id: number, action: "promote" | "dismiss", query: string) {
+    if (!confirm(action === "promote"
+      ? `Add “${query}” to the editorial roadmap as an open gap?`
+      : `Dismiss “${query}” as out of scope? It stops appearing here.`)) return;
+    setBusy(true);
+    const r = await fetch("/api/desk/demand", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action }),
     });
     setBusy(false);
     if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
@@ -220,6 +238,44 @@ export default function Desk() {
               </div>
             ))}
           </div>
+
+          {overview.demand && overview.demand.length > 0 && (
+            <>
+              <h2 style={{ fontSize: "1.1rem", margin: "26px 0 4px" }}>Asked for, not held</h2>
+              <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 12px" }}>
+                Searches that returned nothing. Promote one and it becomes an open gap
+                on the public roadmap, for Scribes to claim.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {overview.demand.map((d) => (
+                  <div key={d.id} style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center",
+                    gap: 10, flexWrap: "wrap", border: "1px solid var(--parchment-deep)",
+                    borderRadius: 9, background: "rgba(255,255,255,0.35)", padding: "9px 12px",
+                  }}>
+                    <span>
+                      <strong style={{ fontFamily: "var(--font-display)" }}>{d.query}</strong>
+                      <span style={{ color: "var(--ink-soft)", fontSize: 12.5 }}>
+                        {" "}· {d.hits} search{d.hits === 1 ? "" : "es"} · last {new Date(d.last_seen).toLocaleDateString()}
+                      </span>
+                    </span>
+                    <span style={{ display: "flex", gap: 6 }}>
+                      <button className="desk-btn desk-btn-approve" disabled={busy}
+                        style={{ padding: "4px 10px", fontSize: 12 }}
+                        onClick={() => demandAction(d.id, "promote", d.query)}>
+                        Add to roadmap
+                      </button>
+                      <button className="desk-btn" disabled={busy}
+                        style={{ padding: "4px 10px", fontSize: 12 }}
+                        onClick={() => demandAction(d.id, "dismiss", d.query)}>
+                        Dismiss
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           <h2 style={{ fontSize: "1.1rem", margin: "26px 0 10px" }}>Ship&apos;s log — latest activity</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>

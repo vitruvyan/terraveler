@@ -11,12 +11,16 @@ export async function GET(req: Request) {
   const auth = await requireEditor(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
-    const [subs, gaps, contributors, reviews, audit] = await Promise.all([
+    const [subs, gaps, contributors, reviews, audit, demand] = await Promise.all([
       sb("GET", "submissions?select=status&limit=1000"),
       sb("GET", "editorial_gaps?select=status&limit=1000"),
       sb("GET", "contributors?select=status&limit=1000"),
       sb("GET", "reviews?select=id&limit=1000").catch(() => []),
       sb("GET", "audit_log?order=id.desc&limit=40&select=submission_id,actor,action,verdict,findings,created_at"),
+      // What readers looked for and the atlas lacked — roadmap written by
+      // demand rather than guesswork. Optional: absent before the migration.
+      sb("GET", "search_misses?status=eq.open&order=hits.desc,last_seen.desc&limit=12&select=id,query,hits,first_seen,last_seen")
+        .catch(() => []),
     ]);
     const tally = (rows: any[]) =>
       rows.reduce((acc: Record<string, number>, r: any) => {
@@ -32,6 +36,7 @@ export async function GET(req: Request) {
         reviews_total: reviews.length,
       },
       feed: audit,
+      demand,
     });
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
