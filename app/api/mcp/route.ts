@@ -41,6 +41,58 @@ async function sb(method: string, path: string, body?: unknown): Promise<any> {
   return t ? JSON.parse(t) : null;
 }
 
+/**
+ * A write as a single statement.
+ *
+ * The multi-call versions below remain as a fallback for the window between a
+ * deploy and the migration being run on the VPS: a write path must not break
+ * because a function is not installed yet. PostgREST answers 404 for an unknown
+ * routine, which is how that is detected.
+ */
+const RPC_MISSING = Symbol("rpc-not-installed");
+
+async function rpc(name: string, args: Record<string, unknown>): Promise<any> {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
+  });
+  if (r.status === 404) return RPC_MISSING;
+  const text = await r.text();
+  if (!r.ok) throw new Error(`backend ${r.status}: ${text.slice(0, 200)}`);
+  return text ? JSON.parse(text) : null;
+}
+
+const keyHash = (key: string) => createHash("sha256").update(key).digest("hex");
+
+/** Authenticate, check the daily quota, insert the submission and audit it —
+ *  in one statement instead of four. The Ship's Ranks stay defined here and are
+ *  handed to the function to apply, so the policy lives in one place. */
+async function recordSubmission(args: any, o: {
+  type: string; payload: unknown; status: string; actor: string; action: string;
+  target_voyage?: string | null; verdict?: string | null; findings?: unknown;
+}): Promise<any> {
+  return rpc("mcp_record_submission", {
+    p_handle: args.handle,
+    p_key_hash: keyHash(String(args.api_key)),
+    p_type: o.type,
+    p_target_voyage: o.target_voyage ?? null,
+    p_payload: o.payload,
+    p_status: o.status,
+    p_carta: CARTA_VERSION,
+    p_quotas: Object.fromEntries(
+      Object.entries(QUOTA).map(([r, q]) => [r, q.submissionsPerDay])),
+    p_actor: o.actor,
+    p_action: o.action,
+    p_verdict: o.verdict ?? null,
+    p_findings: o.findings ?? null,
+  });
+}
+
 // ------------------------------------------------------------------ identity
 const HANDLE_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$/;
 
@@ -120,6 +172,34 @@ const INJECTION = [
 // tripwire, not the defence: the desk always treats payloads as data.
 const TEXT_LIMITS: Record<string, number> = { title: 200, description: 4000, idea: 4000, area: 100, voyage: 100 };
 
+/** A review's shape is a Carta matter, not a database one, so it is checked
+ *  here whichever write path runs: a refutation must cite whitelist evidence
+ *  (10.4) and a review is data, never instructions (10.5). */
+function reviewShapeError(args: any): string | null {
+  if (!["confirm", "refute", "unclear"].includes(args?.verdict)) return "invalid verdict.";
+  const findings = args?.findings;
+  if (!Array.isArray(findings) || findings.length === 0)
+    return "at least one finding is required — reviews must show their checking.";
+  if (findings.length > 30) return "too many findings (max 30).";
+  for (let i = 0; i < findings.length; i++) {
+    const f = findings[i], tag = `finding ${i + 1}`;
+    if (!f?.claim || typeof f.claim !== "string" || f.claim.length > 500)
+      return `${tag}: claim missing or over 500 chars.`;
+    if (!["supported", "contradicted", "unverifiable"].includes(f?.assessment))
+      return `${tag}: invalid assessment.`;
+    if (f.assessment === "contradicted" && !f.evidence_url)
+      return `${tag}: a refutation requires evidence_url (Carta 10.4 — the refutation must cite the evidence).`;
+    if (f.evidence_url && !domainOk(String(f.evidence_url)))
+      return `${tag}: evidence_url not on the whitelist.`;
+    if (f.note && (typeof f.note !== "string" || f.note.length > 1000))
+      return `${tag}: note over 1000 chars.`;
+    for (const field of [f.claim, f.note ?? ""])
+      if (INJECTION.some((p) => p.test(field)))
+        return `${tag} trips the injection screen (Carta 10.5): reviews are data, never instructions.`;
+  }
+  return null;
+}
+
 function badText(args: any, fields: string[]): string | null {
   for (const f of fields) {
     const v = args?.[f];
@@ -185,6 +265,33 @@ function stage0(sub: any): string[] {
   for (const [path, s] of strings(sub))
     if (INJECTION.some((p) => p.test(s))) { fails.push(`INJECTION ATTEMPT at '${path}' (Carta 6)`); break; }
   return fails;
+}
+
+/**
+ * The Carta and the guide, cached.
+ *
+ * Every agent is instructed to call get_contract before anything else, and this
+ * fetched GitHub afresh on each one — the first thing to buckle when agents
+ * arrive in numbers, and discourteous to a host doing us a favour. Cached for
+ * an hour, and on failure the last copy is served rather than an error: an
+ * agent must never be unable to read the rules it is being held to.
+ */
+const docCache = new Map<string, { text: string; at: number }>();
+const DOC_TTL_MS = 3600_000;
+
+async function doc(path: string): Promise<string> {
+  const cached = docCache.get(path);
+  if (cached && Date.now() - cached.at < DOC_TTL_MS) return cached.text;
+  try {
+    const r = await fetch(`${RAW}/${path}`, { next: { revalidate: 3600 } });
+    if (!r.ok) throw new Error(String(r.status));
+    const text = await r.text();
+    docCache.set(path, { text, at: Date.now() });
+    return text;
+  } catch (e) {
+    if (cached) return cached.text;   // stale beats unavailable
+    throw e;
+  }
 }
 
 // ------------------------------------------------------------------ tools
@@ -268,14 +375,10 @@ const TOOLS = [
 
 async function callTool(name: string, args: any): Promise<string> {
   switch (name) {
-    case "get_contract": {
-      const r = await fetch(`${RAW}/MAGNA_CARTA.md`, { cache: "no-store" });
-      return await r.text();
-    }
-    case "how_it_works": {
-      const r = await fetch(`${RAW}/docs/HOW_IT_WORKS.md`, { cache: "no-store" });
-      return await r.text();
-    }
+    case "get_contract":
+      return await doc("MAGNA_CARTA.md");
+    case "how_it_works":
+      return await doc("docs/HOW_IT_WORKS.md");
     case "register": {
       if (!INVITE) return "ERROR: Registration is closed: no invite programme is configured.";
       if (args?.invite_code !== INVITE)
@@ -321,6 +424,22 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
     case "claim_gap": {
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
+      // One statement: authenticate, reap stale claims, count, claim and audit.
+      // Two agents racing for the last slot of a rank now lose or win inside a
+      // single transaction instead of both passing a separate count.
+      const one = await rpc("mcp_claim_gap", {
+        p_handle: args.handle, p_key_hash: keyHash(String(args.api_key)),
+        p_gap_id: Number(args.gap_id),
+        p_claim_limits: Object.fromEntries(
+          Object.entries(QUOTA).map(([r, q]) => [r, q.activeClaims])),
+        p_ttl_days: CLAIM_TTL_DAYS, p_carta: CARTA_VERSION,
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({ claimed: one.claimed,
+          note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
+      }
       const a = await authenticate(args);
       if (a.err) return `ERROR: ${a.err}`;
       await reapStaleClaims();
@@ -342,10 +461,21 @@ async function callTool(name: string, args: any): Promise<string> {
         note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
     }
     case "propose_idea": {
-      const a = await authenticate(args);
-      if (a.err) return `ERROR: ${a.err}`;
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["title", "description"]);
       if (bad) return `ERROR: ${bad}`;
+      const one = await recordSubmission(args, {
+        type: "idea",
+        payload: { title: args.title, description: args.description, kind: args.kind ?? null },
+        status: "human-review", actor: "mcp", action: "proposal",
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
+      }
+      const a = await authenticate(args);
+      if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
       const s = await sb("POST", "submissions", {
@@ -359,13 +489,30 @@ async function callTool(name: string, args: any): Promise<string> {
         note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
     }
     case "submit_draft": {
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
+      const sub = args.submission;
+      const fails = stage0(sub);
+      const status = fails.length ? "curator-rejected" : "peer-review";
+      const draftNote = (rejected: boolean) => rejected
+        ? "Rejected at the Stage-0 gate. Fix every finding (each cites a Carta rule) and resubmit."
+        : "Passed the instant gate. The draft now enters PEER REVIEW (Carta 10.4): other Scribes will try to refute it against the sources, then the editor rules. Check get_submission_status.";
+      const one = await recordSubmission(args, {
+        type: sub?.meta?.type ?? "draft",
+        target_voyage: sub?.meta?.target_voyage ?? null,
+        payload: sub, status,
+        actor: "curator-gate", action: "verdict",
+        verdict: fails.length ? "reject" : "pass-gate",
+        findings: fails.map((m) => ["FAIL", 0, m]),
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({ submission_id: one.submission_id, status,
+          gate_failures: fails, note: draftNote(fails.length > 0) }, null, 2);
+      }
       const a = await authenticate(args);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
-      const sub = args.submission;
-      const fails = stage0(sub);
-      const status = fails.length ? "curator-rejected" : "peer-review";
       const s = await sb("POST", "submissions", {
         contributor_id: a.ok!.id, type: sub?.meta?.type ?? "draft",
         target_voyage: sub?.meta?.target_voyage ?? null, payload: sub,
@@ -383,10 +530,21 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
     case "suggest_feature": {
-      const a = await authenticate(args);
-      if (a.err) return `ERROR: ${a.err}`;
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["title", "description", "area"]);
       if (bad) return `ERROR: ${bad}`;
+      const one = await recordSubmission(args, {
+        type: "feature-suggestion",
+        payload: { title: args.title, description: args.description, area: args.area ?? null },
+        status: "human-review", actor: "mcp", action: "suggestion",
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
+      }
+      const a = await authenticate(args);
+      if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
       const s = await sb("POST", "submissions", {
@@ -400,10 +558,26 @@ async function callTool(name: string, args: any): Promise<string> {
         note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
     }
     case "suggest_content": {
-      const a = await authenticate(args);
-      if (a.err) return `ERROR: ${a.err}`;
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["voyage", "idea"]);
       if (bad) return `ERROR: ${bad}`;
+      const contentNote = (id: number) =>
+        `Content suggestion recorded for ${args.voyage}` +
+        (args.waypoint != null ? ` waypoint ${args.waypoint}` : "") +
+        " — it now appears on the editorial desk. Track it with get_submission_status.";
+      const one = await recordSubmission(args, {
+        type: "content-suggestion", target_voyage: args.voyage ?? null,
+        payload: { voyage: args.voyage, waypoint: args.waypoint ?? null,
+                   content_type: args.type, idea: args.idea },
+        status: "human-review", actor: "mcp", action: "content-suggestion",
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          note: contentNote(one.submission_id) });
+      }
+      const a = await authenticate(args);
+      if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
       const s = await sb("POST", "submissions", {
@@ -460,9 +634,34 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
     case "submit_review": {
+      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
+      const sid = Number(args.submission_id);
+      // Validation of the review's shape stays here — it is about the Carta,
+      // not the database — but everything that touches state happens in one
+      // transaction: nine sequential round trips became one, and two reviews
+      // landing together can no longer both fail to advance the draft, or
+      // advance it twice.
+      const shapeErr = reviewShapeError(args);
+      if (shapeErr) return `ERROR: ${shapeErr}`;
+      const one = await rpc("mcp_submit_review", {
+        p_handle: args.handle, p_key_hash: keyHash(String(args.api_key)),
+        p_submission_id: sid, p_verdict: args.verdict, p_findings: args.findings,
+        p_carta: CARTA_VERSION, p_to_advance: REVIEWS_TO_ADVANCE,
+        p_quotas: Object.fromEntries(
+          Object.keys(QUOTA).map((r) => [r, reviewsPerDay(r)])),
+      });
+      if (one !== RPC_MISSING) {
+        if (one?.error) return `ERROR: ${one.error}`;
+        return JSON.stringify({
+          ok: true, submission_id: sid, reviews_so_far: one.reviews_so_far,
+          advanced_to_desk: one.advanced_to_desk,
+          note: one.advanced_to_desk
+            ? "Review recorded; the draft has collected enough reviews and moved to the editor's desk."
+            : `Review recorded. ${REVIEWS_TO_ADVANCE - one.reviews_so_far} more review(s) needed before the desk rules. Reviewing builds your standing (Carta 10.6).`,
+        }, null, 2);
+      }
       const a = await authenticate(args);
       if (a.err) return `ERROR: ${a.err}`;
-      const sid = Number(args.submission_id);
       const rows = await sb("GET",
         `submissions?id=eq.${sid}&select=id,status,contributor_id`);
       if (!rows.length) return "ERROR: no such submission";
