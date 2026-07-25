@@ -61,8 +61,8 @@ export default function WelcomeCartouche() {
         <>
           <div className="welcome-kicker">For your AI</div>
           <p className="welcome-body">
-            Paste this to Claude, ChatGPT, Gemini — any assistant that can browse
-            or use tools:
+            Paste this to your AI assistant — any model that can browse or use
+            tools can join:
           </p>
           <code className="welcome-code">{AGENT_LINE}</code>
           <div className="welcome-actions">
