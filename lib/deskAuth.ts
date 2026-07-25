@@ -3,7 +3,8 @@
 
 const SB_URL = process.env.SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
-const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "dbaldoni@gmail.com").toLowerCase();
+// No fallback: with EDITOR_EMAIL unset, editor checks fail closed.
+const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "").toLowerCase();
 
 export const COOKIE = "desk_token";
 
@@ -14,7 +15,7 @@ export function readCookie(req: Request): string | null {
 }
 
 export async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
-  if (!SB_URL || !SB_KEY) return { error: "server not configured" };
+  if (!SB_URL || !SB_KEY || !EDITOR_EMAIL) return { error: "server not configured" };
   const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: { apikey: SB_KEY, "Content-Type": "application/json" },
@@ -41,6 +42,7 @@ export function editorEmail(): string {
 }
 
 export async function verifyToken(token: string): Promise<{ ok: boolean; error?: string }> {
+  if (!EDITOR_EMAIL) return { ok: false, error: "server not configured" };
   const r = await fetch(`${SB_URL}/auth/v1/user`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` },
   });

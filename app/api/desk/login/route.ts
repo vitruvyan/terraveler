@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (!token) return NextResponse.json({ error }, { status: 401 });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE, token, {
-    httpOnly: true, secure: true, sameSite: "lax", path: "/", maxAge: 3600,
+    httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
   });
   return res;
 }
