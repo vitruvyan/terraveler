@@ -1,5 +1,6 @@
 import VoyageExperience from "@/components/VoyageExperience";
 import Pigafetta from "@/components/Pigafetta";
+import WelcomeCartouche from "@/components/WelcomeCartouche";
 import { getVoyageBundle } from "@/lib/data";
 import type { Waypoint } from "@/lib/types";
 
@@ -12,6 +13,7 @@ export default async function Home() {
     <>
       <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]} />
       <Pigafetta />
+      <WelcomeCartouche />
     </>
   );
 }

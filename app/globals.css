@@ -1380,3 +1380,108 @@ input[type="range"].scrubber::-moz-range-thumb {
 .space .atlas-chip { background: rgba(255, 255, 255, 0.05); }
 .space .voy-card:hover { background: rgba(255, 255, 255, 0.09); }
 .space .atlas-chip.cur { background: rgba(216, 178, 92, 0.16); }
+
+/* --- Welcome cartouche: first-visit onboarding, docked over the map --- */
+.welcome-cart {
+  position: fixed;
+  left: 18px;
+  bottom: 92px;               /* clears the transport bar */
+  z-index: 45;
+  width: min(360px, calc(100vw - 36px));
+  padding: 16px 18px 15px;
+  background: rgba(242, 230, 207, 0.97);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 12px;
+  box-shadow: 0 10px 32px rgba(43, 33, 23, 0.28), inset 0 0 0 1px rgba(169, 119, 47, 0.25);
+  animation: welcome-rise 0.45s ease both;
+}
+@keyframes welcome-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-cart { animation: none; }
+}
+.welcome-x {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: none;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px;
+}
+.welcome-x:hover { color: var(--ink); }
+.welcome-kicker {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 4px;
+}
+.welcome-title {
+  font-size: 1.15rem;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.welcome-body {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+.welcome-code {
+  display: block;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin: 0 0 12px;
+  word-break: break-all;
+  user-select: all;
+}
+.welcome-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.welcome-btn {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--ink-soft);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+.welcome-btn:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
+.welcome-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent-deep);
+  color: var(--parchment);
+}
+.welcome-btn.primary:hover { background: var(--accent-deep); }
+.welcome-btn.ghost { border-color: transparent; background: none; color: var(--ink-soft); }
+.welcome-btn.ghost:hover { color: var(--ink); }
+
+@media (max-width: 680px) {
+  /* Bottom sheet: may briefly sit over the transport bar, never over the map. */
+  .welcome-cart {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    padding: 14px 15px 13px;
+  }
+  .welcome-title { font-size: 1.05rem; }
+  .welcome-actions { gap: 6px; }
+  .welcome-btn { padding: 8px 12px; font-size: 12.5px; }
+}
