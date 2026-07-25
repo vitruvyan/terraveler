@@ -15,9 +15,12 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const SB_URL = process.env.SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
-const INVITE = process.env.MCP_INVITE_CODE ?? "";
+// trim() + strip trailing slash: env values pasted from a phone keyboard can
+// carry an invisible trailing space (even U+00A0) that breaks URL parsing.
+const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
+const SB_URL = cleanEnv(process.env.SUPABASE_URL);
+const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
+const INVITE = (process.env.MCP_INVITE_CODE ?? "").trim();
 const CARTA_VERSION = "0.1";
 const RAW = "https://raw.githubusercontent.com/vitruvyan/terraveler/main";
 

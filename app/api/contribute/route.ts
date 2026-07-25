@@ -12,8 +12,9 @@ export const dynamic = "force-dynamic";
  * Lands as a `content-suggestion` submission on the editorial desk, exactly
  * like the MCP `suggest_content` tool.
  */
-const SB_URL = process.env.SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
+const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
+const SB_URL = cleanEnv(process.env.SUPABASE_URL);
+const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 const CARTA_VERSION = "0.1";
 
 async function sb(method: string, path: string, body?: unknown): Promise<any> {

@@ -1,10 +1,11 @@
 /** Editor-desk auth helpers: Supabase Auth via server-side REST, token in an
  *  httpOnly cookie. Only the allowlisted editor email may pass. */
 
-const SB_URL = process.env.SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY ?? "";
+const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
+const SB_URL = cleanEnv(process.env.SUPABASE_URL);
+const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 // No fallback: with EDITOR_EMAIL unset, editor checks fail closed.
-const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "").toLowerCase();
+const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "").trim().toLowerCase();
 
 export const COOKIE = "desk_token";
 
