@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { getVoyageBundle, knownVoyages } from "@/lib/data";
 import { voyageDescription } from "@/lib/seo";
+import { voyagePath } from "@/lib/voyages";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -73,7 +74,7 @@ export default async function VoyageLog({
   if (!knownVoyages().includes(slug)) notFound();
   const { navigator, voyage, waypoints } = await getVoyageBundle(slug);
   const wps = waypoints as (Waypoint | SpaceWaypoint)[];
-  const mapHref = slug === "boudeuse-1766" ? "/" : `/voyage/${slug}`;
+  const mapHref = voyagePath(slug);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`

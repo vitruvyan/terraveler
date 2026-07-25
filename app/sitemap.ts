@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { ATLAS } from "@/lib/voyages";
+import { ATLAS, voyageLogPath, voyageMapPath } from "@/lib/voyages";
 
 const BASE = "https://www.terraveler.com";
 
@@ -15,13 +15,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/magna-carta`, changeFrequency: "monthly", priority: 0.4 },
   ];
 
-  const voyagePages: MetadataRoute.Sitemap = ATLAS.flatMap((v) => {
-    const href = v.href === "/" ? "/voyage/boudeuse-1766" : v.href;
-    return [
-      { url: `${BASE}${href}`, changeFrequency: "monthly" as const, priority: 0.85 },
-      { url: `${BASE}${href}/log`, changeFrequency: "monthly" as const, priority: 0.8 },
-    ];
-  });
+  const voyagePages: MetadataRoute.Sitemap = ATLAS.flatMap((v) => [
+    { url: `${BASE}${voyageMapPath(v.slug)}`, changeFrequency: "monthly" as const, priority: 0.85 },
+    { url: `${BASE}${voyageLogPath(v.slug)}`, changeFrequency: "monthly" as const, priority: 0.8 },
+  ]);
 
   return [...staticPages, ...voyagePages];
 }

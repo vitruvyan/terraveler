@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { ATLAS } from "@/lib/voyages";
+import { ATLAS, voyageLogPath } from "@/lib/voyages";
 
 export const metadata: Metadata = {
   title: "The Atlas — Terraveler",
@@ -29,9 +29,7 @@ export default function Voyages() {
                 <span className="voy-blurb" style={{ fontSize: 13.5 }}>{v.blurb}</span>
               </a>
               <div style={{ fontSize: 13, marginTop: 4, paddingLeft: 2 }}>
-                <a href={`${v.href === "/" ? "/voyage/boudeuse-1766" : v.href}/log`}>
-                  Read the log as text →
-                </a>
+                <a href={voyageLogPath(v.slug)}>Read the log as text →</a>
               </div>
             </div>
           ))}

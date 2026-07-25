@@ -29,7 +29,13 @@ export interface AtlasEntry {
   kind?: VoyageKind;
 }
 
-export const ATLAS: AtlasEntry[] = [
+/** `as const satisfies` (not a plain annotation) so each slug keeps its
+ *  literal type: VoyageSlug below is derived from it, and lib/data.ts keys
+ *  its bundle registry by that type — so a voyage added to one place and
+ *  forgotten in the other fails the build instead of shipping half-visible.
+ *  Consumers read the widened ATLAS export below, which keeps `kind` optional
+ *  as before. */
+const ATLAS_ENTRIES = [
   {
     slug: "boudeuse-1766",
     href: "/",
@@ -86,4 +92,30 @@ export const ATLAS: AtlasEntry[] = [
       "Two and a half hours on the Sea of Tranquility: the Eagle's landing, the first bootprint, the flag, the seismometer left running, and a walk out to Little West Crater before the climb back up the ladder.",
     kind: "surface",
   },
-];
+] as const satisfies readonly AtlasEntry[];
+
+/** The atlas index as the rest of the app sees it. */
+export const ATLAS: readonly AtlasEntry[] = ATLAS_ENTRIES;
+
+/** Every published voyage's slug, as a union — the atlas is the one list. */
+export type VoyageSlug = (typeof ATLAS_ENTRIES)[number]["slug"];
+
+export function isVoyageSlug(slug: string): slug is VoyageSlug {
+  return ATLAS.some((v) => v.slug === slug);
+}
+
+/** Where a voyage lives. Bougainville is served at the site root, so the
+ *  mapping lives here once instead of being special-cased at each call site. */
+export function voyagePath(slug: string): string {
+  return slug === "boudeuse-1766" ? "/" : `/voyage/${slug}`;
+}
+
+/** The canonical, linkable path — the root voyage still needs an explicit
+ *  address in the sitemap and in its own log's "back to the map" link. */
+export function voyageMapPath(slug: string): string {
+  return `/voyage/${slug}`;
+}
+
+export function voyageLogPath(slug: string): string {
+  return `/voyage/${slug}/log`;
+}

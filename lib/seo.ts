@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { voyagePath } from "./voyages";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 
 /** Shared metadata + JSON-LD builders for the home voyage and every
@@ -20,7 +21,7 @@ export function voyageMetadata(
   navigator: Navigator
 ): Metadata {
   const description = voyageDescription(voyage, navigator);
-  const path = slug === "boudeuse-1766" ? "/" : `/voyage/${slug}`;
+  const path = voyagePath(slug);
   return {
     title: voyage.title,
     description,
@@ -38,7 +39,7 @@ export function voyageJsonLd(
   navigator: Navigator,
   waypointCount: number
 ) {
-  const path = slug === "boudeuse-1766" ? "/" : `/voyage/${slug}`;
+  const path = voyagePath(slug);
   return {
     "@context": "https://schema.org",
     "@type": "Article",

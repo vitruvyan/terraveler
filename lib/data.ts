@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { ATLAS, isVoyageSlug, type VoyageSlug } from "./voyages";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
 import laperouse from "@/data/laperouse.json";
@@ -19,8 +20,16 @@ function hasSupabase(): boolean {
   );
 }
 
-// The local atlas: bundled voyages by slug (DB takes precedence when present).
-const LOCAL: Record<string, unknown> = {
+/**
+ * The local atlas: bundled voyage data by slug.
+ *
+ * Keyed by VoyageSlug (derived from ATLAS), which is what keeps the two
+ * registries honest: publish a voyage in ATLAS without adding its data here
+ * and TypeScript reports the missing key; add data for a slug that isn't in
+ * ATLAS — so it would never appear in the Atlas page or the sitemap — and it
+ * reports the unknown one. Neither mistake can reach production.
+ */
+const LOCAL: Record<VoyageSlug, unknown> = {
   "boudeuse-1766": bougainville,
   "boussole-1785": laperouse,
   "voyager-2": voyager2,
@@ -29,13 +38,14 @@ const LOCAL: Record<string, unknown> = {
   "cortes-1519": cortes,
 };
 
-export function knownVoyages(): string[] {
-  return Object.keys(LOCAL);
+export function knownVoyages(): readonly string[] {
+  return ATLAS.map((v) => v.slug);
 }
 
 // Bundled at build time — reliable on Vercel with no runtime filesystem access.
 function fromJson(slug: string): VoyageBundle {
-  return (LOCAL[slug] ?? bougainville) as VoyageBundle;
+  const bundle = isVoyageSlug(slug) ? LOCAL[slug] : undefined;
+  return (bundle ?? bougainville) as VoyageBundle;
 }
 
 /**
