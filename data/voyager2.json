@@ -21,7 +21,9 @@
     "start_date": "1977-08-20",
     "end_date": null,
     "summary": "Launched 20 August 1977 on a Titan IIIE-Centaur, Voyager 2 used gravity assists at Jupiter (July 1979) and Saturn (August 1981) to bend its path on to Uranus (January 1986) and Neptune (August 1989) — the only spacecraft ever to visit either ice giant. It returned the first, and so far only, close-up images of their rings, atmospheres and moon systems, discovering new moons and rings at each stop. It continued outward past Neptune and crossed the heliopause into interstellar space on 5 November 2018. More than four and a half decades after launch, it is still operating and still transmitting.",
-    "kind": "space"
+    "kind": "space",
+    "evidence_basis": "contemporary-journal",
+    "what_was_lost": "The telemetry and imaging survive in full and were recorded as the encounters happened. What no record can supply is any account of these places from someone who was there: nobody was aboard."
   },
   "waypoints": [
     {

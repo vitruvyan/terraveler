@@ -42,6 +42,16 @@ export interface Voyage {
   render?: "earth" | "surface" | "orbital";
   /** The body this voyage takes place on. Omitted ⇒ "earth". */
   body?: BodyId;
+  /** What kind of record this voyage survives through — see lib/evidence.ts.
+   *  Omitted/null means "not yet classified": the log page then falls back to
+   *  its original wording rather than asserting a journal that may not exist. */
+  evidence_basis?: import("./evidence").EvidenceBasis | null;
+  /** One sentence naming what is missing from the record and how it went —
+   *  "the Portuguese maritime archive burned in the Lisbon earthquake of
+   *  1755". Editorially this is not a disclaimer to be tucked away; for a
+   *  voyage whose sources were destroyed it is frequently the most interesting
+   *  fact on the page, and it is rendered as content. */
+  what_was_lost?: string | null;
 }
 
 export interface MediaItem {

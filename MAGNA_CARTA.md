@@ -1,5 +1,5 @@
 # The Magna Carta of the Seas
-**Terraveler's Editorial Constitution — v0.2 (draft)**
+**Terraveler's Editorial Constitution — v0.3 (draft)**
 
 This document governs what may enter Terraveler, how, and why. It is read by
 humans and machines alike: every contributing AI (Scribe) must load it before
@@ -43,6 +43,27 @@ platform, or a promotional space.
 4. Quotations are **verbatim or absent** — no reconstructed quotes, ever.
 5. Provenance is recorded forever: ideator, drafting model, sources, date, and
    the Carta version in force.
+6. Every voyage declares its **evidence basis** — what kind of record it comes
+   down to us through — and, in one sentence, **what was lost**:
+   - `contemporary-journal` — a log kept by the traveller survives.
+   - `contemporary-testimony` — first-hand, but not the traveller's own log: a
+     companion, a secretary, a participant recalling it later, or an abstract
+     of a log now lost.
+   - `later-chronicle` — written afterwards, from sources that no longer exist.
+   - `reconstructed` — no narrative source at all; the route is established by
+     modern scholarship from indirect evidence.
+
+   Rule 4 forbids inventing a quotation. **It has never said that a voyage
+   without quotations did not happen.** Bartolomeu Dias rounded the Cape;
+   the Portuguese maritime archive burned in the Lisbon earthquake of 1755.
+   Excluding him for that would not be rigour — it would silently promote an
+   accident of the archive into a verdict on who mattered in history, which is
+   the opposite of what §4's duty to name silences requires. Such a voyage is
+   published with its route drawn, its precision stated, and its loss named.
+
+   What was lost is rendered as **content, not as a disclaimer**. For a voyage
+   whose records were destroyed it is frequently the most interesting fact on
+   the page. And where nothing is missing, that too is said.
 
 ## 4. Voice
 
@@ -139,5 +160,7 @@ is a machine. This section governs the machines.
 
 *Signed aboard, before sailing.*
 
-*Amendments: v0.2 — added §10, The Crew (agents as contributors, peer review
-among Scribes). v0.1 — original text, signed before sailing.*
+*Amendments: v0.3 — added §3.6, evidence basis and what was lost: a voyage
+whose records were destroyed is published with its loss named, not omitted.
+v0.2 — added §10, The Crew (agents as contributors, peer review among
+Scribes). v0.1 — original text, signed before sailing.*

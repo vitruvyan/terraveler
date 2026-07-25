@@ -64,6 +64,22 @@ EXTRACT_MODEL = os.getenv("EXTRACT_MODEL", "gpt-4.1")
 PLAN_MODEL = os.getenv("PLAN_MODEL", EXTRACT_MODEL)
 UA = "terraveler-extract/0.1 (contact: dbaldoni@gmail.com)"
 
+# What kind of record a voyage survives through. Mirrors lib/evidence.ts and
+# the check constraint in supabase/evidence_basis.sql — keep the three in step.
+#
+# This is required of every voyage, and validated before the graph runs rather
+# than at assembly time, so a missing declaration costs a second instead of an
+# hour of model calls. The point is that it must be decided by a person, up
+# front: it is the difference between "we haven't pulled this passage yet" and
+# "the records burned in 1755", and the log page says different things to the
+# reader depending on the answer.
+EVIDENCE_BASES = (
+    "contemporary-journal",    # the traveller's own log survives
+    "contemporary-testimony",  # first-hand, but not the traveller's log
+    "later-chronicle",         # written afterwards, from sources now lost
+    "reconstructed",           # no narrative source; route from indirect evidence
+)
+
 VOYAGE_META = {
     "cook-1768": {
         "title": "The First Voyage of Captain James Cook (1768-1771)",
@@ -80,6 +96,13 @@ VOYAGE_META = {
                     "then home by way of Batavia, the Cape of Good Hope, and "
                     "St Helena to England.",
         "date_window": (1768, 1771),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Cook's journal survives complete. What is absent is "
+                         "the other side of every encounter in it: the Māori, "
+                         "Aboriginal Australian and Pacific Islander peoples he "
+                         "met kept no written records, and their own accounts of "
+                         "these meetings were not collected until long "
+                         "afterwards, if at all.",
         # rag_docs' primary journal source for this voyage is the Wharton 1893
         # edition ("Captain Cook's Journal During His First Voyage Round the
         # World", Project Gutenberg ebook 8106) — the FULL first-voyage journal,
@@ -108,6 +131,14 @@ VOYAGE_META = {
                    "retreat of La Noche Triste, the victory at Otumba, and the final "
                    "siege and fall of Tenochtitlan in 1521.",
         "date_window": (1519, 1521),
+        # Testimony, not a log: Bernal Díaz was present, but wrote in old age.
+        "evidence_basis": "contemporary-testimony",
+        "what_was_lost": "The account followed here is Bernal Díaz del "
+                         "Castillo's — a soldier who was present, writing some "
+                         "four decades later from memory, in old age, to correct "
+                         "historians he thought had flattered Cortés. The Mexica "
+                         "side of these events survives only in compilations made "
+                         "after the conquest, under Spanish supervision.",
         # Multi-volume primary source (Bernal Díaz's Memoirs, Vols I & II): chunk_index
         # restarts per volume, so no single narrative range applies — defaults to the
         # whole PD span; per-stop pgvector retrieval + the canonical-itinerary plan
@@ -700,6 +731,8 @@ def assemble_node(ctx, corpus):
                 "ships": meta["ships"],
                 "sponsor": meta["sponsor"],
                 "summary": meta["summary"],
+                "evidence_basis": meta["evidence_basis"],
+                "what_was_lost": meta["what_was_lost"],
             },
             "waypoints": waypoints_out,
         }
@@ -743,6 +776,17 @@ def main():
     ap.add_argument("--chunk-limit", type=int, default=0,
                      help="cap PD chunks fed to the planner sample (0 = all) — for smoke tests")
     args = ap.parse_args()
+
+    # Fail before the graph runs, not after: an unclassified voyage would
+    # otherwise reach the desk claiming a journal it may not have.
+    _m = VOYAGE_META[args.voyage]
+    if _m.get("evidence_basis") not in EVIDENCE_BASES:
+        sys.exit(f"{args.voyage}: VOYAGE_META needs an 'evidence_basis' from "
+                 f"{list(EVIDENCE_BASES)}, got {_m.get('evidence_basis')!r}")
+    if not (_m.get("what_was_lost") or "").strip():
+        sys.exit(f"{args.voyage}: VOYAGE_META needs 'what_was_lost' — one sentence "
+                 f"naming what is missing from the record and how it went. If "
+                 f"genuinely nothing is missing, say that in a sentence.")
 
     ctx = argparse.Namespace(
         voyage=args.voyage,

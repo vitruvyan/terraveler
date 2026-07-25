@@ -23,7 +23,9 @@
     "summary": "Eagle touched down in the Sea of Tranquility at 20:17:40 UTC on 20 July 1969. After a rest period, Armstrong and Aldrin depressurized the cabin and opened the hatch at 02:39 UTC on 21 July; Armstrong stepped onto the surface at 02:56:15 UTC, followed by Aldrin about nineteen minutes later. Over roughly two and a half hours the two astronauts planted the American flag, unveiled a commemorative plaque, spoke by telephone with President Nixon, deployed the Early Apollo Scientific Experiments Package (a seismometer and a laser-ranging retroreflector), collected 21.5 kg of rock and soil samples, and — in Armstrong's own unscheduled excursion — walked to the rim of a small crater east of the LM that mission controllers came to call Little West Crater, his farthest point from Eagle. They re-entered the Lunar Module and closed the hatch at about 05:11 UTC, ending the EVA at 2 hours 31 minutes 40 seconds.",
     "kind": "surface",
     "render": "surface",
-    "body": "moon"
+    "body": "moon",
+    "evidence_basis": "contemporary-journal",
+    "what_was_lost": "Nothing. The air-to-ground transcript, the onboard recorders and the telemetry all survive in full, and the crew were narrating as it happened. It is the only voyage in this atlas of which that can be said."
   },
   "waypoints": [
     {

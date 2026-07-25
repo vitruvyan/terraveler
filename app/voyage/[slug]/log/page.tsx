@@ -6,6 +6,7 @@ import { getVoyageBundle, knownVoyages } from "@/lib/data";
 import { voyageDescription } from "@/lib/seo";
 import { voyagePath, voyageLogPath, ATLAS } from "@/lib/voyages";
 import { alsoVisited } from "@/lib/gazetteer";
+import { evidenceBasisOf, evidenceCopy, noExcerptCopy } from "@/lib/evidence";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -86,6 +87,10 @@ export default async function VoyageLog({
   const { navigator, voyage, waypoints } = await getVoyageBundle(slug);
   const wps = waypoints as (Waypoint | SpaceWaypoint)[];
   const mapHref = voyagePath(slug);
+  // What kind of record this voyage comes down to us through. It decides what
+  // a stage with no excerpt is allowed to say — see lib/evidence.ts.
+  const basis = evidenceBasisOf(voyage);
+  const gap = noExcerptCopy(basis);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`
@@ -105,6 +110,37 @@ export default async function VoyageLog({
           {voyage.ships ? ` · ${voyage.ships}` : ""}
         </p>
         {voyage.summary && <p style={{ margin: "14px 0" }}>{voyage.summary}</p>}
+
+        {/* How we know this. Deliberately placed above the itinerary rather
+            than in a footnote: for a voyage whose records were destroyed, what
+            was lost and when is not a caveat on the history — it frequently is
+            the history, and burying it would repeat the omission. */}
+        {basis && (
+          <aside
+            aria-label="How this voyage is documented"
+            style={{
+              margin: "22px 0 4px",
+              padding: "14px 16px",
+              borderLeft: "3px solid var(--brass)",
+              background: "rgba(255,255,255,0.4)",
+              borderRadius: "0 8px 8px 0",
+            }}
+          >
+            <div style={{
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              fontSize: 11, color: "var(--brass)", marginBottom: 5,
+            }}>
+              {evidenceCopy(basis).label}
+            </div>
+            <p style={{ margin: 0, fontSize: 14.5 }}>{evidenceCopy(basis).blurb}</p>
+            {voyage.what_was_lost && (
+              <p style={{ margin: "9px 0 0", fontSize: 14.5, color: "var(--ink-soft)" }}>
+                {voyage.what_was_lost}
+              </p>
+            )}
+          </aside>
+        )}
+
         <p style={{ margin: "18px 0 30px" }}>
           <a
             href={mapHref}
@@ -178,9 +214,18 @@ export default async function VoyageLog({
                     </figcaption>
                   </figure>
                 ) : (
+                  // What an absent excerpt means depends entirely on what
+                  // survives. Where a journal exists the gap is ours and a
+                  // reader can close it; where the records burned there is
+                  // nothing to find, and asking anyway would be a small
+                  // falsehood repeated on every stage of the voyage.
                   <p style={{ fontSize: 13, color: "var(--ink-soft)", fontStyle: "italic", margin: 0 }}>
-                    No verified journal excerpt for this stage yet —{" "}
-                    <a href="/contribute">help us find one</a>.
+                    {gap.text}
+                    {gap.invitesContribution ? (
+                      <> — <a href="/contribute">help us find one</a>.</>
+                    ) : (
+                      "."
+                    )}
                   </p>
                 )}
                 {also && (
