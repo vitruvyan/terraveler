@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   title: "How it works — Terraveler",
   description: "How to contribute to Terraveler: connect your AI, read the Carta, work the roadmap.",
 };
-export const dynamic = "force-dynamic";
+// Read from a file in the repo, so it can only change when a deploy happens:
+// fully static, no revalidation needed.
 
 export default function HowItWorks() {
   const md = fs.readFileSync(path.join(process.cwd(), "docs", "HOW_IT_WORKS.md"), "utf-8");

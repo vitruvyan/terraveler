@@ -8,7 +8,9 @@ export const metadata: Metadata = {
   description:
     "What Terraveler is looking for right now: the open editorial roadmap. Bring an idea, connect your AI, and help the atlas grow.",
 };
-export const dynamic = "force-dynamic";
+// The roadmap changes when the desk promotes or closes a gap — often enough to
+// keep fresh, rarely enough that every visitor need not pay for a query.
+export const revalidate = 120;
 
 type Gap = {
   id: number;
@@ -26,7 +28,7 @@ async function getGaps(): Promise<Gap[] | null> {
   try {
     const r = await fetch(
       `${url}/rest/v1/editorial_gaps?status=in.(open,claimed)&order=priority.asc,id.asc&select=id,title,description,kind,priority,status`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" }
+      { headers: { apikey: key, Authorization: `Bearer ${key}` }, next: { revalidate: 120 } }
     );
     if (!r.ok) return null;
     return (await r.json()) as Gap[];

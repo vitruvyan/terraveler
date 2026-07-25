@@ -8,7 +8,17 @@ import { resolveRender } from "@/lib/voyages";
 import { voyageJsonLd, voyageMetadata } from "@/lib/seo";
 import type { SpaceWaypoint, Waypoint } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// Editorial content: it changes when the desk publishes, not per request.
+// Served from Vercel's edge and regenerated in the background, which is also
+// what makes it resilient — if the backend is unreachable at revalidation
+// time the last good page keeps being served instead of erroring.
+export const revalidate = 300;
+
+/** Prerendered at build time, so the first reader of a voyage is served from
+ *  the edge rather than waiting for it to be rendered. */
+export async function generateStaticParams() {
+  return knownVoyages().map((slug) => ({ slug }));
+}
 
 export async function generateMetadata({
   params,

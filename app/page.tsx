@@ -6,7 +6,11 @@ import { getVoyageBundle } from "@/lib/data";
 import { voyageJsonLd, voyageMetadata } from "@/lib/seo";
 import type { Waypoint } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// Editorial content: it changes when the desk publishes, not per request.
+// Served from Vercel's edge and regenerated in the background, which is also
+// what makes it resilient — if the backend is unreachable at revalidation
+// time the last good page keeps being served instead of erroring.
+export const revalidate = 300;
 
 export async function generateMetadata(): Promise<Metadata> {
   const { voyage, navigator } = await getVoyageBundle();

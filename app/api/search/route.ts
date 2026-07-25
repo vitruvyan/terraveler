@@ -3,7 +3,23 @@ import { rank, searchIndex, topics, type EntryType } from "@/lib/search-index";
 import { ATLAS, voyagePath } from "@/lib/voyages";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+
+/**
+ * Cached at the edge, with one deliberate exception.
+ *
+ * A search result is a pure function of the atlas's content, so the same query
+ * need not wake a lambda for every reader: Vercel's CDN can answer it, and
+ * `stale-while-revalidate` means even an expired entry is served instantly
+ * while it refreshes behind the reader's back — which is both faster and more
+ * resilient than any cache we could run ourselves.
+ *
+ * The exception is a query that found nothing: that response carries a side
+ * effect (it records what the atlas was asked for and lacked), and caching it
+ * would silence exactly the signal the editorial roadmap is meant to hear. So
+ * hits are cached and misses are not — see below.
+ */
+const CACHE_HIT = "public, s-maxage=600, stale-while-revalidate=86400";
+const CACHE_MISS = "no-store";
 
 const SB_URL = (process.env.SUPABASE_URL ?? "").replace(/[\s​-‍﻿]+/g, "").replace(/\/+$/, "");
 const SB_KEY = (process.env.SUPABASE_SERVICE_KEY ?? "").replace(/[\s​-‍﻿]+/g, "").replace(/\/+$/, "");
@@ -75,7 +91,7 @@ export async function GET(req: Request) {
           sublabel: `${v.navigator} · ${v.years}`,
           href: voyagePath(v.slug),
         })),
-    });
+    }, { headers: { "Cache-Control": CACHE_HIT } });
   }
 
   const hits = rank(idx, q);
@@ -103,5 +119,7 @@ export async function GET(req: Request) {
     // The dead end becomes the contribution funnel: nothing here yet, but the
     // atlas grows by exactly this route.
     missing: hits.length === 0 ? { query: q.trim() } : null,
+  }, {
+    headers: { "Cache-Control": hits.length ? CACHE_HIT : CACHE_MISS },
   });
 }
