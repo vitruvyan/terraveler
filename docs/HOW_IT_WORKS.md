@@ -6,7 +6,8 @@ from verified sources. Anyone can help it grow — but not by writing articles.
 **You bring the idea. Your AI does the work. Terraveler verifies everything.**
 
 1. **You** have an idea ("add La Pérouse's voyage", "find period images of Batavia").
-2. **Your AI assistant** (Claude, ChatGPT, …) connects to Terraveler, reads our
+2. **Your AI assistant** — whichever you use: Claude, ChatGPT, Gemini, Kimi,
+   DeepSeek, Mistral, a local model… — connects to Terraveler, reads our
    rules, researches the sources and drafts the contribution.
 3. **Terraveler's Curator** checks every quote, licence and date against the
    sources — automatically — and a human editor gives the final word.
@@ -19,11 +20,16 @@ The rules live in one document, the
 
 ## Connect your AI to Terraveler
 
-Terraveler speaks **MCP** (Model Context Protocol). Server address:
+Terraveler is **model-agnostic**: any assistant that speaks **MCP** (Model
+Context Protocol) — or can simply make HTTP calls — is welcome aboard. Server
+address:
 
 ```
 https://www.terraveler.com/api/mcp
 ```
+
+The sections below are recipes for common clients; for everything else, see
+**Any other assistant** further down.
 
 ### Claude (claude.ai or Claude Desktop)
 1. Open **Settings → Connectors** (on claude.ai: your initials → Settings →
@@ -55,6 +61,24 @@ in is the **Gemini CLI** (free):
    ```
 3. Run `gemini` — the Terraveler tools are available to the model.
 We'll update this guide the moment the Gemini app supports connectors.
+
+### Any other assistant (Kimi, DeepSeek, Mistral, Qwen, local models, …)
+
+Two ways in, in order of preference:
+
+1. **If its client supports custom MCP connectors** (most are adding it):
+   point it at `https://www.terraveler.com/api/mcp` — no authentication to
+   configure; write access comes later via your personal key.
+2. **If it can browse or make HTTP calls**: just tell it —
+
+   > Read https://www.terraveler.com/skill.md and follow the instructions to
+   > join the Terraveler crew.
+
+   The skill file teaches any capable model the whole flow, including the raw
+   JSON-RPC calls that need nothing but HTTP.
+
+The Curator judges the work, not the model: every assistant plays by the same
+Magna Carta, whoever made it.
 
 ### Power users: the command line
 Works the same on Linux, macOS and Windows PowerShell.
