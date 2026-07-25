@@ -1500,3 +1500,49 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .log-full-link:hover { color: var(--ink); border-bottom-color: var(--brass); }
 .space .log-full-link { color: #d8b25c; }
+
+/* --- Atlas search: autocomplete + the "not yet in the atlas" funnel --- */
+.atlas-search { display: block; }
+.atlas-search-input { width: 100%; margin-bottom: 8px; }
+.atlas-search-count {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin: 2px 0 8px;
+}
+.atlas-search-grouphead {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin: 8px 0 4px;
+}
+.atlas-search-group { margin-bottom: 4px; }
+.atlas-search-hit {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.35;
+}
+.atlas-search-hit:hover { background: rgba(255, 255, 255, 0.55); }
+.atlas-search-hit strong { display: block; font-weight: 600; }
+.atlas-search-ico { flex: 0 0 auto; font-size: 12px; opacity: 0.8; }
+.atlas-search-sub { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.atlas-search-results { max-height: 52vh; overflow-y: auto; }
+.atlas-search-missing {
+  border: 1px dashed var(--parchment-deep);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  background: rgba(255, 255, 255, 0.4);
+}
+.atlas-search-missing p { font-size: 12.5px; line-height: 1.5; margin: 0 0 10px; }
+.atlas-search-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.atlas-search-actions .welcome-btn { font-size: 12px; padding: 7px 11px; }
+.space .atlas-search-hit:hover { background: rgba(255, 255, 255, 0.08); }
+.space .atlas-search-missing { background: rgba(255, 255, 255, 0.05); }

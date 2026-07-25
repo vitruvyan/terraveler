@@ -8,6 +8,7 @@ import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import ContributePanel from "@/components/ContributePanel";
 import { ATLAS, voyageLogPath } from "@/lib/voyages";
+import AtlasSearch from "@/components/AtlasSearch";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
 import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION } from "@/lib/basemaps";
 import {
@@ -202,7 +203,7 @@ export default function VoyageExperience({
   const [isMobile, setIsMobile] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerQ, setPickerQ] = useState("");
+  const [searching, setSearching] = useState(false);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -623,26 +624,23 @@ export default function VoyageExperience({
               Space voyages
             </button>
           </div>
-          <input
-            className="desk-input"
-            style={{ width: "100%", marginBottom: 10 }}
-            placeholder="Search voyages, navigators…"
-            value={pickerQ}
-            onChange={(e) => setPickerQ(e.target.value)}
-            aria-label="Search voyages"
+          {/* Server-backed search: the index never reaches the browser, so this
+              holds up when the atlas is thousands of voyages deep. The chip
+              list below stays as the browse view for the current handful. */}
+          <AtlasSearch
+            placeholder="Search voyages, navigators, places…"
+            onActiveChange={setSearching}
           />
-          {ATLAS.filter((v) => (v.kind ?? "earth") === atlasFilter).filter((v) =>
-            (v.title + v.navigator + v.years + v.blurb)
-              .toLowerCase()
-              .includes(pickerQ.toLowerCase())
-          ).map((v) => (
+          {!searching && ATLAS.filter((v) => (v.kind ?? "earth") === atlasFilter).map((v) => (
             <a key={v.slug} className={`voy-card ${v.slug === voyage.slug ? "cur" : ""}`} href={v.href}>
               <strong>{v.title}</strong>
               <span className="voy-meta">{v.navigator} · {v.years}</span>
               <span className="voy-blurb">{v.blurb}</span>
             </a>
           ))}
-          <div className="voy-more">More voyages are on the way — see <a href="/contribute">what the atlas is looking for</a>.</div>
+          {!searching && (
+            <div className="voy-more">More voyages are on the way — see <a href="/contribute">what the atlas is looking for</a>.</div>
+          )}
         </DraggableWindow>
       )}
 
@@ -654,6 +652,7 @@ export default function VoyageExperience({
           </button>
           {menuOpen && (
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+              <a href="/search">Search</a>
               <a href="/voyages">The Atlas</a>
               <a href="/about">About</a>
               <a href="/contribute">Contribute</a>

@@ -440,6 +440,7 @@ export default function SpaceVoyageExperience({
           </button>
           {menuOpen && (
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+              <a href="/search">Search</a>
               <a href="/voyages">The Atlas</a>
               <a href="/about">About</a>
               <a href="/contribute">Contribute</a>
