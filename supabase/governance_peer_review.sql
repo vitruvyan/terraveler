@@ -25,6 +25,18 @@ create table if not exists reviews (
 
 alter table reviews enable row level security;  -- service-role only, like submissions
 
+-- ---------------------------------------------------------------- grants
+-- On the self-hosted PostgREST, table privileges are granted per-object at
+-- setup time: new tables/views arrive privilege-less for the service role
+-- (BYPASSRLS skips row security, never table ACLs). After any DDL, PostgREST
+-- must also reload its schema cache: `docker restart terraveler_postgrest`.
+grant select, insert on reviews to terraveler_service;
+grant usage, select on all sequences in schema public to terraveler_service;
+alter default privileges in schema public
+  grant select, insert, update, delete on tables to terraveler_service;
+alter default privileges in schema public
+  grant usage, select on sequences to terraveler_service;
+
 -- ------------------------------------------------------- standing with reviews
 -- Recreated (not replaced) because the column list grows: reviewing now
 -- builds standing alongside authored work (Carta 10.6).
@@ -39,3 +51,6 @@ select c.id, c.handle, c.rank,
     where s.contributor_id = c.id and a.actor = 'curator-v0' and a.verdict = 'human-review') as passed_curator,
   (select count(*) from reviews r where r.reviewer_id = c.id)                                as reviews_given
 from contributors c;
+
+-- The recreated view loses its previous grants — restore them.
+grant select on contributor_standing to terraveler_service;
