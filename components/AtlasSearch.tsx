@@ -20,7 +20,8 @@ type Result = {
   groups: Group[];
   total: number;
   topics?: Topic[];
-  counts?: { voyages: number; places: number };
+  counts?: { voyages: number; places: number; kind?: number };
+  featured?: Item[];
   missing?: { query: string } | null;
 };
 
@@ -47,10 +48,19 @@ export default function AtlasSearch({
   placeholder = "Search voyages, navigators, places…",
   initialQuery = "",
   onActiveChange,
+  kind,
+  excludeSlug,
+  browseAll = true,
 }: {
   autoFocus?: boolean;
   placeholder?: string;
   initialQuery?: string;
+  /** Restricts the browse list to one family of voyages (earth/surface/space). */
+  kind?: string;
+  /** The voyage being read — left out of "also in the atlas". */
+  excludeSlug?: string;
+  /** Show the link out to the full atlas (off on the atlas page itself). */
+  browseAll?: boolean;
   /** Fires when the field goes from empty to searching and back, so a host
    *  panel can hide its own browse list instead of stacking it under the
    *  results. */
@@ -67,7 +77,10 @@ export default function AtlasSearch({
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+        const params = new URLSearchParams({ q });
+        if (kind) params.set("kind", kind);
+        if (excludeSlug) params.set("exclude", excludeSlug);
+        const r = await fetch(`/api/search?${params}`);
         const j = await r.json();
         if (mine === seq.current) setRes(j);
       } catch {
@@ -77,7 +90,7 @@ export default function AtlasSearch({
       }
     }, q ? 180 : 0);   // debounce typing; load the browse view immediately
     return () => clearTimeout(t);
-  }, [q]);
+  }, [q, kind, excludeSlug]);
 
   useEffect(() => {
     onActiveChange?.(Boolean(q.trim()));
@@ -125,6 +138,31 @@ export default function AtlasSearch({
                 ))}
               </div>
             </>
+          )}
+
+          {/* A bounded handful, never the whole atlas — the rest is one click
+              away rather than an endless scroll inside a 350px panel. */}
+          {res.featured && res.featured.length > 0 && (
+            <>
+              <div className="atlas-search-grouphead">
+                {excludeSlug ? "Also in the atlas" : "In the atlas"}
+              </div>
+              {res.featured.map((it) => (
+                <a key={it.href} className="atlas-search-hit" href={it.href}>
+                  <span className="atlas-search-ico" aria-hidden="true">⚓</span>
+                  <span>
+                    <strong>{it.label}</strong>
+                    <span className="atlas-search-sub">{it.sublabel}</span>
+                  </span>
+                </a>
+              ))}
+            </>
+          )}
+
+          {browseAll && (
+            <a className="atlas-search-browseall" href="/voyages">
+              Browse all {res.counts?.kind ?? res.counts?.voyages ?? ""} voyages →
+            </a>
           )}
         </div>
       )}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rank, searchIndex, topics, type EntryType } from "@/lib/search-index";
+import { ATLAS, voyagePath } from "@/lib/voyages";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,12 +41,19 @@ const GROUP_LABEL: Record<EntryType, string> = {
 };
 
 export async function GET(req: Request) {
-  const q = (new URL(req.url).searchParams.get("q") ?? "").slice(0, 120);
+  const url = new URL(req.url);
+  const q = (url.searchParams.get("q") ?? "").slice(0, 120);
+  const kind = url.searchParams.get("kind") ?? "";
+  const exclude = url.searchParams.get("exclude") ?? "";
   const idx = await searchIndex();
 
-  // Empty query: hand back what the atlas holds, so the reader can browse
-  // rather than guess. This is what scales past a hand-written shortlist.
+  // Empty query: hand back a bounded slice of what the atlas holds, so the
+  // reader can browse rather than guess — and so the panel never lists every
+  // voyage. The featured list is served from here rather than from a
+  // client-side copy of the atlas index, which keeps the browser's bundle flat
+  // however many voyages exist.
   if (!q.trim()) {
+    const all = ATLAS.filter((v) => (v.kind ?? "earth") === (kind || "earth"));
     return NextResponse.json({
       q: "",
       groups: [],
@@ -54,7 +62,19 @@ export async function GET(req: Request) {
       counts: {
         voyages: idx.filter((e) => e.type === "voyage").length,
         places: idx.filter((e) => e.type === "place").length,
+        kind: all.length,
       },
+      // Curated order — ATLAS is the desk's own ordering. When the atlas is
+      // large this becomes an explicit editorial "featured" choice.
+      featured: all
+        .filter((v) => v.slug !== exclude)
+        .slice(0, 5)
+        .map((v) => ({
+          type: "voyage",
+          label: v.title,
+          sublabel: `${v.navigator} · ${v.years}`,
+          href: voyagePath(v.slug),
+        })),
     });
   }
 

@@ -8,7 +8,8 @@ import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
-import { ATLAS, voyageLogPath } from "@/lib/voyages";
+import { voyageLogPath } from "@/lib/voyages";
+import AtlasSearch from "@/components/AtlasSearch";
 import {
   DAY,
   parseHistoricalDate,
@@ -152,7 +153,6 @@ export default function SpaceVoyageExperience({
   const [isMobile, setIsMobile] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerQ, setPickerQ] = useState("");
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "space");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
 
@@ -406,30 +406,9 @@ export default function SpaceVoyageExperience({
               Space voyages
             </button>
           </div>
-          <input
-            className="desk-input"
-            style={{ width: "100%", marginBottom: 10 }}
-            placeholder="Search voyages, navigators…"
-            value={pickerQ}
-            onChange={(e) => setPickerQ(e.target.value)}
-            aria-label="Search voyages"
-          />
-          {ATLAS.filter((v) => (v.kind ?? "earth") === atlasFilter)
-            .filter((v) =>
-              (v.title + v.navigator + v.years + v.blurb).toLowerCase().includes(pickerQ.toLowerCase())
-            )
-            .map((v) => (
-              <a key={v.slug} className={`voy-card ${v.slug === voyage.slug ? "cur" : ""}`} href={v.href}>
-                <strong>{v.title}</strong>
-                <span className="voy-meta">
-                  {v.navigator} · {v.years}
-                </span>
-                <span className="voy-blurb">{v.blurb}</span>
-              </a>
-            ))}
-          <div className="voy-more">
-            More voyages are on the way — see <a href="/contribute">what the atlas is looking for</a>.
-          </div>
+          {/* Search and browse are both server-fed (see AtlasSearch): the panel
+              never lists the whole atlas, and ATLAS stays out of the bundle. */}
+          <AtlasSearch kind={atlasFilter} excludeSlug={voyage.slug} />
         </DraggableWindow>
       )}
 

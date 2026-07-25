@@ -1546,3 +1546,17 @@ input[type="range"].scrubber::-moz-range-thumb {
 .atlas-search-actions .welcome-btn { font-size: 12px; padding: 7px 11px; }
 .space .atlas-search-hit:hover { background: rgba(255, 255, 255, 0.08); }
 .space .atlas-search-missing { background: rgba(255, 255, 255, 0.05); }
+
+/* Link out of the panel's bounded list to the full atlas page. */
+.atlas-search-browseall {
+  display: inline-block;
+  margin: 10px 0 2px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--parchment-deep);
+}
+.atlas-search-browseall:hover { color: var(--ink); border-bottom-color: var(--brass); }
+.space .atlas-search-browseall { color: #d8b25c; }

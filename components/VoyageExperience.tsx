@@ -7,7 +7,7 @@ import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import ContributePanel from "@/components/ContributePanel";
-import { ATLAS, voyageLogPath } from "@/lib/voyages";
+import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
 import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION } from "@/lib/basemaps";
@@ -203,7 +203,6 @@ export default function VoyageExperience({
   const [isMobile, setIsMobile] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -627,20 +626,16 @@ export default function VoyageExperience({
           {/* Server-backed search: the index never reaches the browser, so this
               holds up when the atlas is thousands of voyages deep. The chip
               list below stays as the browse view for the current handful. */}
+          {/* Search and browse are both server-fed (see AtlasSearch): the panel
+              never lists the whole atlas, and ATLAS stays out of the bundle. */}
           <AtlasSearch
             placeholder="Search voyages, navigators, places…"
-            onActiveChange={setSearching}
+            kind={atlasFilter}
+            excludeSlug={voyage.slug}
           />
-          {!searching && ATLAS.filter((v) => (v.kind ?? "earth") === atlasFilter).map((v) => (
-            <a key={v.slug} className={`voy-card ${v.slug === voyage.slug ? "cur" : ""}`} href={v.href}>
-              <strong>{v.title}</strong>
-              <span className="voy-meta">{v.navigator} · {v.years}</span>
-              <span className="voy-blurb">{v.blurb}</span>
-            </a>
-          ))}
-          {!searching && (
-            <div className="voy-more">More voyages are on the way — see <a href="/contribute">what the atlas is looking for</a>.</div>
-          )}
+          <div className="voy-more">
+            Missing one? <a href="/contribute">See what the atlas is looking for</a>.
+          </div>
         </DraggableWindow>
       )}
 
