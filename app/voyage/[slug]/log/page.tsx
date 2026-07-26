@@ -10,6 +10,7 @@ import { evidenceBasisOf, evidenceCopy, noExcerptCopy } from "@/lib/evidence";
 import { notesForVoyage } from "@/lib/marginalia";
 import StageNotes from "@/components/StageNotes";
 import Notebook from "@/components/Notebook";
+import LogHint from "@/components/LogHint";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -176,10 +177,11 @@ export default async function VoyageLog({
         <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: "0 0 20px" }}>
           {wps.length} stages. Journal excerpts are verbatim from public-domain
           sources, each with its citation; where no verified quote exists, the
-          entry says so rather than inventing one. Select any passage to keep it
-          with its source, or open a stage&rsquo;s own questions in the margin.
+          entry says so rather than inventing one.
         </p>
         </div>
+
+        <LogHint />
 
         <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {wps.map((w) => {

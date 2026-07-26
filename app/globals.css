@@ -1773,3 +1773,57 @@ input[type="range"].scrubber::-moz-range-thumb {
 /* The log's prose keeps a readable measure even though the page is wide
    enough to hold a margin: only the stage rows use the full width. */
 .tv-log-prose { max-width: 700px; }
+
+/* --- Making the annotation layer findable -------------------------------
+   The question chips are deliberately rare: an explanation repeated on forty
+   stages is noise, so most stages carry none, and on Bougainville exactly one
+   appears in fifteen. That is the right rule and it leaves the layer looking
+   like it is not there — the person who commissioned it could not find it.
+
+   So discovery has to come from the quotations themselves. A sourced passage
+   now says quietly that it can be taken: a dotted rule under it, a text cursor,
+   and a marker tint while selecting. Nothing moves, nothing is added to the
+   page, and a reader who never selects anything sees a slightly warmer
+   quotation and no instruction. */
+.tv-stage-col blockquote[data-tv-source] {
+  cursor: text;
+  border-bottom: 1px dotted transparent;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+.tv-stage-col blockquote[data-tv-source]:hover {
+  border-bottom-color: var(--brass);
+}
+.tv-stage-col blockquote[data-tv-source]::selection,
+.tv-stage-col blockquote[data-tv-source] *::selection {
+  background: rgba(70, 96, 138, 0.22);
+}
+
+/* Said once, on the first log a reader opens, then never again. The pattern
+   the welcome cartouche already uses — an instruction that outstays its
+   welcome is worse than none. */
+.tv-hint {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 9px 13px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: rgba(70, 96, 138, 0.07);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 7px 7px 0;
+}
+.tv-hint b { color: var(--accent-deep); font-weight: 600; }
+.tv-hint button {
+  margin-left: auto;
+  flex: none;
+  background: none;
+  border: 0;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.tv-hint button:hover { color: var(--ink); }
