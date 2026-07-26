@@ -561,8 +561,16 @@ export default function VoyageExperience({
             >
               🖼
             </button>
+            {/* A moai rather than a feather. The feather is pan-ethnic shorthand
+                that belongs to no actual people — it says "native" the way a
+                silhouette says "person". The moai belongs to Rapa Nui and to
+                nobody else, and it carries what this lens is for: Roggeveen
+                found the statues already standing in 1722, no European ever saw
+                one raised, and the people who raised them explained themselves
+                in stone because no journal of theirs survives. Art outliving
+                the record is the whole argument. See issue #11. */}
             <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
-              🪶
+              🗿
             </button>
             {isMobile && (
               <button
