@@ -254,6 +254,24 @@ VOYAGE_META = {
                    "the Galápagos, Tahiti, New Zealand, Australia and the coral atolls "
                    "of the Keeling Islands.",
         "date_window": (1831, 1836),
+        # Calibrated against the corpus after the first load (2026-07-26).
+        # 1996 public-domain chunks from Gutenberg #944. Front matter runs 0-9:
+        # the online-edition notes, the dedication to FitzRoy, the
+        # acknowledgements, and at chunk 9 the first chapter's contents line.
+        # That line is not hypothetical — a smoke run quoted it as Bahia's diary
+        # excerpt ("Fernando Noronha--Bahia--Burnished Rocks--Habits of a
+        # Diodon…"), verbatim and therefore past the integrity gate, but it is
+        # paratext rather than narrative. Chunk 1995 is the Gutenberg end
+        # marker. retrieve_chunks() honours this range as well as the planner,
+        # so both stop seeing them.
+        #
+        # KNOWN LIMITATION: this edition opens every chapter with a contents
+        # line, so the same shape recurs inside the range at 150, 241, 414, 479,
+        # 691 and beyond. A range cannot exclude those without cutting the
+        # narrative around them. One excerpt in twenty-four was affected, so it
+        # is a real but not epidemic risk; the durable fix is for the extractor
+        # to recognise a contents line structurally and decline to quote it.
+        "narrative_chunk_range": (10, 1994),
         "evidence_basis": "contemporary-journal",
         "what_was_lost": "Darwin's journal and FitzRoy's survey records survive "
                          "complete. What the voyage never recorded is the other half "
