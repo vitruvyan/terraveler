@@ -21,7 +21,7 @@ const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, 
 const SB_URL = cleanEnv(process.env.SUPABASE_URL);
 const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 const INVITE = (process.env.MCP_INVITE_CODE ?? "").trim();
-const CARTA_VERSION = "0.2";
+const CARTA_VERSION = "0.3";
 const RAW = "https://raw.githubusercontent.com/vitruvyan/terraveler/main";
 
 // ------------------------------------------------------------------ helpers

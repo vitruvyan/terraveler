@@ -64,6 +64,17 @@ EXTRACT_MODEL = os.getenv("EXTRACT_MODEL", "gpt-4.1")
 PLAN_MODEL = os.getenv("PLAN_MODEL", EXTRACT_MODEL)
 UA = "terraveler-extract/0.1 (contact: dbaldoni@gmail.com)"
 
+# The Carta a draft is produced under. Stamped into every submission, and the
+# MCP gate rejects a draft whose version does not match its own — which is
+# correct, and is why this must not drift.
+#
+# It drifted anyway. The Carta was amended to v0.3 (evidence basis, §3.6) while
+# app/api/mcp/route.ts still said "0.2" and this file still stamped "0.1", so
+# three places disagreed about which constitution was in force and every draft
+# this pipeline produced would have been refused at the gate. test/carta.test.ts
+# now fails the build if the three ever separate again.
+CARTA_VERSION = "0.3"
+
 # What kind of record a voyage survives through. Mirrors lib/evidence.ts and
 # the check constraint in supabase/evidence_basis.sql — keep the three in step.
 #
@@ -883,7 +894,7 @@ def assemble_node(ctx, corpus):
                 "ideator": "terraveler-implementer",
                 "contributor_rank": "cabin-boy",
                 "scribe_model": EXTRACT_MODEL,
-                "carta_version": "0.1",
+                "carta_version": CARTA_VERSION,
             },
             "voyage": {
                 "slug": ctx.voyage,
