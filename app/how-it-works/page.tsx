@@ -6,7 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "How it works — Terraveler",
+  title: "How it works",
   description: "How to contribute to Terraveler: connect your AI, read the Carta, work the roadmap.",
 };
 // Read from a file in the repo, so it can only change when a deploy happens:

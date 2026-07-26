@@ -4,7 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { ATLAS, voyageLogPath, type AtlasEntry } from "@/lib/voyages";
 
 export const metadata: Metadata = {
-  title: "The Atlas — Terraveler",
+  title: "The Atlas",
   description: "Every voyage published on Terraveler: choose a route and sail it through time.",
 };
 

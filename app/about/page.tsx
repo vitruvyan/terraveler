@@ -1,112 +1,50 @@
+import fs from "fs";
+import path from "path";
+import { marked } from "marked";
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "About — Terraveler",
+  title: "About",
   description:
-    "What Terraveler is: an authoritative, AI-written and human-directed atlas of geo-history, governed by the Magna Carta of the Seas.",
+    "An atlas of geo-history where every entry declares what it is made of: verbatim quotations, open sources, declared confidence, and the evidence each voyage survives through.",
+  alternates: { canonical: "/about" },
 };
 
-const S = {
-  page: {
-    maxWidth: 760,
-    margin: "0 auto",
-    padding: "40px 22px 80px",
-    lineHeight: 1.65,
-  } as const,
-  kicker: {
-    letterSpacing: "0.2em",
-    textTransform: "uppercase",
-    fontSize: 12,
-    color: "var(--brass)",
-  } as const,
-  h2: { marginTop: 36, fontSize: "1.35rem" } as const,
-  quote: {
-    margin: "18px 0",
-    paddingLeft: 14,
-    borderLeft: "3px solid var(--brass)",
-    fontStyle: "italic",
-    color: "var(--ink-soft)",
-  } as const,
-};
+/** The README *is* this page.
+ *
+ *  Keeping a second copy of "what Terraveler is" in JSX guaranteed the two would
+ *  drift, and they had: this page still described a single Bougainville voyage
+ *  and promised voyages beyond Earth as future work, months after Apollo 11 and
+ *  Voyager 2 were published. One file, edited in one place, rendered in both.
+ *
+ *  Everything after the sentinel is developer documentation — stack, migrations,
+ *  ingestion commands — which belongs in the repository and not in front of a
+ *  reader who came to find out what this is. */
+const SENTINEL = "<!-- ABOUT-PAGE-ENDS";
 
+// Read from a file in the repo, so it can only change when a deploy happens:
+// fully static, no revalidation needed.
 export default function About() {
+  const readme = fs.readFileSync(path.join(process.cwd(), "README.md"), "utf-8");
+  const [reader] = readme.split(SENTINEL);
+  const html = String(marked.parse(reader.trim()));
+
   return (
     <>
-    <SiteHeader />
-    <main style={S.page}>
-      <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>
-        An atlas of geo-history, written in tandem
-      </h1>
-      <p style={S.quote}>
-        Terraveler makes the geographic history of humankind explorable — across
-        space and time — with the rigour of sources and the creative power of AI.
-      </p>
-
-      <p>
-        Terraveler tells the great voyages as living charts: the route unfolds on
-        the map as time advances, the navigator&rsquo;s own journal speaks at every
-        landfall, the political world of the era colours the land, and a second
-        timeline whispers what was happening <em>meanwhile, elsewhere in the
-        world</em>. Every quotation is verbatim and cited; every claim carries its
-        source and its degree of certainty. Where history is uncertain or
-        contested, we say so — declaring doubt is part of being trustworthy.
-      </p>
-
-      <h2 style={S.h2}>The tandem: humans direct, AI writes</h2>
-      <p>
-        Terraveler is an open project, but not an anarchic one. Contributors do
-        not write articles: they bring <strong>ideas</strong> — a voyage to add, a
-        perspective to explore, a gap to fill. Their <strong>AI</strong> (connected
-        through Terraveler&rsquo;s MCP interface) researches the sources and drafts
-        the content. A <strong>Curator AI</strong> then verifies every submission —
-        claim by claim, source by source — before anything is published, and a
-        human editor-in-chief holds final authority. Nothing enters the site
-        without passing this process. Nothing.
-      </p>
-
-      <h2 style={S.h2}>The Magna Carta of the Seas</h2>
-      <p>
-        The whole process is governed by our editorial constitution, the{" "}
-        <Link href="/magna-carta">Magna Carta of the Seas</Link>
-        : the standard of evidence (no source, no entry), the voice (sober,
-        vivid, multi-perspective), the ranks contributors earn through verified
-        work, and the open licence (CC&nbsp;BY-SA) under which all approved
-        content is published. Like the ship&rsquo;s articles of the age of sail, you
-        sign it before you sail.
-      </p>
-
-      <h2 style={S.h2}>What you can do today</h2>
-      <p>
-        Follow Bougainville&rsquo;s circumnavigation (1766–1769) — scrub the
-        timeline, read the journals, switch lenses (Log, Chart, Cartographer),
-        hover the empires of 1715 — and ask <strong>Antonio Pigafetta</strong>,
-        our chronicler, anything about the voyage: he answers only from the
-        sources, and cites them.
-      </p>
-
-      <h2 style={S.h2}>Where this is going</h2>
-      <p>
-        More voyages, more lenses (Art, Peoples), voyages beyond Earth — the
-        probes that crossed the Solar System kept logs too — and the opening of
-        contributions under the Carta. Terraveler is built in the open:{" "}
-        <a
-          href="https://github.com/vitruvyan/terraveler"
-          target="_blank"
-          rel="noreferrer"
-        >
-          github.com/vitruvyan/terraveler
-        </a>
-        .
-      </p>
-
-      <p style={{ marginTop: 40 }}>
-        <Link href="/contribute">See what the atlas is looking for →</Link>
-      </p>
-    </main>
-    <SiteFooter />
+      <SiteHeader />
+      <main className="prose">
+        <div dangerouslySetInnerHTML={{ __html: html }} />
+        <p style={{ marginTop: 40 }}>
+          <Link href="/voyages">Browse the atlas →</Link>
+          <Link href="/contribute" style={{ marginLeft: 20 }}>
+            See what the atlas is looking for →
+          </Link>
+        </p>
+      </main>
+      <SiteFooter />
     </>
   );
 }

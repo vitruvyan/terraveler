@@ -4,7 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Contribute — Terraveler",
+  title: "Contribute",
   description:
     "What Terraveler is looking for right now: the open editorial roadmap. Bring an idea, connect your AI, and help the atlas grow.",
 };

@@ -4,7 +4,7 @@ import SiteFooter from "@/components/SiteFooter";
 import AtlasSearch from "@/components/AtlasSearch";
 
 export const metadata: Metadata = {
-  title: "Search the atlas — Terraveler",
+  title: "Search the atlas",
   description:
     "Search Terraveler's voyages, navigators and landfalls. If the atlas doesn't hold it yet, propose it: your AI researches it from public-domain sources and the editorial desk verifies it.",
   alternates: { canonical: "/search" },

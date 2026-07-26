@@ -6,7 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "The Magna Carta of the Seas — Terraveler",
+  title: "The Magna Carta of the Seas",
   description: "Terraveler's editorial constitution: the rules that govern what may enter the atlas, how, and why.",
 };
 // Read from a file in the repo, so it can only change when a deploy happens:
