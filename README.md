@@ -238,7 +238,20 @@ documents:
 schema.sql → seed.sql → rag_schema.sql → governance_schema.sql
   → governance_hardening.sql → governance_peer_review.sql
   → search_misses.sql → mcp_write_functions.sql → evidence_basis.sql
+  → voyage_kinds_and_media.sql
 ```
+
+Then load the published voyages from the bundles:
+
+```bash
+PGHOST=127.0.0.1 PGPORT=6000 PGUSER=terraveler PGDATABASE=terraveler \
+  PGPASSWORD=… python3 scripts/load_bundles.py --dry-run
+```
+
+Note the port: the container publishes Postgres on **6000**, and the VPS host
+runs a *different* Postgres on 5432 that does not have this database. Connecting
+to 5432 fails with a password error rather than anything informative, and it has
+cost more than one debugging session.
 
 PostgREST caches the schema, so after any migration:
 `docker restart terraveler_postgrest`. New tables and views arrive
