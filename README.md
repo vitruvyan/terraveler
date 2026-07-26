@@ -219,6 +219,23 @@ refuses to start unless the voyage declares `evidence_basis` and `what_was_lost`
 better to lose a second than an hour of model calls to a voyage that reaches the
 desk claiming a journal it does not have.
 
+That produces a **draft file**, and nothing more — `extract.py` touches nothing
+public by design. To put it in front of the editorial desk:
+
+```bash
+set -a; . .env; set +a          # TERRAVELER_MCP_HANDLE + TERRAVELER_MCP_KEY
+python3 ingest/submit_draft.py out/<slug>.submission.json --dry-run
+python3 ingest/submit_draft.py out/<slug>.submission.json
+```
+
+It submits through MCP as an ordinary contributor rather than writing to
+`submissions` directly. The direct write would be three lines and a second
+private entrance to the review queue — the shape that already let three
+in-copyright editions past the licence gate, because the curated path was
+trusted for having been vetted by a human. The pipeline gets the same Stage-0
+gate, the same peer review and the same verdict as anyone else, and a draft it
+cannot get past the gate is information rather than an obstacle.
+
 Every source passes `whitelist.verify_source()` first, curated ones included.
 `gutenberg.org` is trusted wholesale because everything it serves is public
 domain; **`archive.org` is not**, because it serves lending-restricted books from
