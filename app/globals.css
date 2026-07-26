@@ -1560,3 +1560,216 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .atlas-search-browseall:hover { color: var(--ink); border-bottom-color: var(--brass); }
 .space .atlas-search-browseall { color: #d8b25c; }
+
+/* =====================================================================
+   The annotation layer — the log's marginalia, and the notebook.
+   ---------------------------------------------------------------------
+   The one colour rule that makes this legible: the naval --accent belongs
+   to the annotation layer and to nothing else on this page, while --brass
+   stays the document's own voice. So the reader can tell what the atlas
+   asserts from what they asked, without either shouting.
+   ===================================================================== */
+
+/* Two columns per stage: the passage, and the margin its answers open in.
+   Explicit grid placement rather than source order, so the chips sit under
+   the stage while a note can span the full height of the row beside it. */
+.tv-stage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  column-gap: 34px;
+  margin-bottom: 26px;
+}
+.tv-stage-col { grid-column: 1; grid-row: 1; }
+.tv-chips     { grid-column: 1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; padding-left: 18px; }
+.tv-gutter    { grid-column: 2; grid-row: 1 / span 2; }
+
+/* Below the breakpoint the margin becomes the next thing you read, rather
+   than a second layout: same order, stacked. */
+@media (max-width: 1080px) {
+  .tv-stage-row { grid-template-columns: minmax(0, 1fr); }
+  .tv-stage-col, .tv-chips { grid-column: 1; }
+  .tv-gutter { grid-column: 1; grid-row: auto; }
+  .tv-chips { grid-row: auto; }
+}
+
+.tv-ask {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--accent-deep);
+  background: rgba(70, 96, 138, 0.09);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 5px 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.tv-ask:hover { border-color: var(--accent); background: transparent; }
+.tv-ask[aria-expanded="true"] { border-color: var(--accent); background: transparent; font-style: italic; }
+
+.tv-note {
+  border-left: 2px solid var(--accent);
+  padding-left: 14px;
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+@media (max-width: 1080px) {
+  .tv-note { margin: 14px 0 6px 18px; border-left-width: 3px; }
+}
+.tv-note-q { font-family: var(--font-display); color: var(--accent); margin: 0 0 5px; }
+.tv-note-a { margin: 0 0 7px; }
+.tv-note-cite { font-size: 12px; color: var(--ink-soft); margin: 0 0 3px; }
+.tv-note-cite a { color: var(--ink-soft); }
+.tv-note-actions { display: flex; gap: 8px; margin-top: 9px; }
+
+/* A dead end the reader could close is a different thing from an answer, and
+   is coloured as the contribution path rather than as information. */
+.tv-note-gap { border-left-color: var(--btn); }
+.tv-note-gap .tv-note-q { color: var(--btn-deep); }
+.tv-note-contribute {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--btn-deep);
+  text-decoration-color: var(--btn);
+}
+
+.tv-mini {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--parchment-deep);
+  color: var(--ink-soft);
+  border-radius: 5px;
+  padding: 4px 9px;
+  cursor: pointer;
+}
+.tv-mini:hover { border-color: var(--accent); color: var(--accent); }
+.tv-mini[disabled] { opacity: 0.55; cursor: default; }
+
+/* ------------------------------------------------ selection affordance */
+.tv-selbar {
+  position: absolute;
+  z-index: 60;
+  transform: translate(-50%, calc(-100% - 9px));
+  background: var(--ink);
+  border-radius: 7px;
+  padding: 3px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+}
+.tv-selbar button {
+  font-family: var(--font-body);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: none;
+  border: 0;
+  color: var(--parchment);
+  padding: 7px 11px;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tv-selbar button:hover { background: var(--accent); }
+
+/* ------------------------------------------------------------ notebook */
+.tv-book {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 55;
+  width: min(370px, calc(100vw - 32px));
+  background: var(--parchment);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 12px;
+  box-shadow: 0 10px 34px rgba(43, 33, 23, 0.2);
+  overflow: hidden;
+}
+.tv-book-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  background: none;
+  border: 0;
+  color: var(--ink);
+  text-align: left;
+  font-family: var(--font-display);
+  font-size: 15px;
+  cursor: pointer;
+}
+.tv-book-count {
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  background: var(--accent);
+  color: var(--parchment);
+  border-radius: 999px;
+  padding: 2px 8px;
+  min-width: 24px;
+  text-align: center;
+}
+.tv-book-chev { margin-left: auto; color: var(--ink-soft); font-size: 11px; }
+.tv-book-body {
+  border-top: 1px solid var(--parchment-deep);
+  padding: 12px 14px 14px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.tv-book-empty { color: var(--ink-soft); font-size: 13px; margin: 0; }
+.tv-book-list { margin: 0; padding-left: 18px; font-size: 13px; }
+.tv-book-list li { margin-bottom: 12px; }
+.tv-book-src { display: block; color: var(--ink-soft); font-size: 11.5px; margin-top: 2px; }
+.tv-book-drop {
+  background: none; border: 0; padding: 2px 0; margin-top: 2px;
+  font-family: var(--font-body); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-soft); cursor: pointer;
+  text-decoration: underline; text-decoration-color: var(--parchment-deep);
+}
+.tv-book-drop:hover { color: var(--btn-deep); }
+.tv-book-actions { display: flex; gap: 8px; align-items: center; margin-top: 13px; }
+.tv-book-export {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 11.5px; letter-spacing: 0.09em; text-transform: uppercase;
+  background: var(--btn); color: #33231c;
+  border: 1px solid var(--btn-deep); border-radius: 8px;
+  padding: 10px; cursor: pointer;
+}
+.tv-book-export:hover { background: var(--btn-deep); color: var(--parchment); }
+.tv-book-fine { font-size: 11.5px; color: var(--ink-soft); margin: 9px 0 0; line-height: 1.5; }
+
+/* --------------------------------------------------- the dossier, printed */
+.tv-dossier { display: none; }
+
+@media print {
+  /* The browser's own print-to-PDF is the export: it works on every phone,
+     needs no dependency, and nothing the reader collected leaves the device. */
+  body { background: #fff; color: #000; }
+  body > *, .tv-book, .tv-selbar { display: none !important; }
+  .tv-dossier {
+    display: block !important;
+    max-width: none;
+    padding: 0;
+    font-family: var(--font-body);
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  .tv-dossier h1 { font-size: 18pt; margin: 0 0 2pt; }
+  .tv-dossier h2 { font-size: 12pt; margin: 18pt 0 6pt; border-bottom: 0.5pt solid #999; padding-bottom: 2pt; }
+  .tv-dossier-sub { font-size: 9.5pt; color: #444; margin: 0 0 6pt; }
+  .tv-dossier ol, .tv-dossier ul { padding-left: 16pt; }
+  .tv-dossier li { margin-bottom: 9pt; break-inside: avoid; }
+  .tv-dossier blockquote { margin: 0 0 3pt; padding-left: 9pt; border-left: 1.5pt solid #bbb; font-style: italic; }
+  .tv-dossier-src { font-size: 9pt; color: #333; margin: 0; }
+  .tv-dossier-note { margin-top: 18pt; font-size: 9pt; color: #333; border-top: 0.5pt solid #999; padding-top: 6pt; }
+  a { color: #000; text-decoration: none; }
+}
+
+/* The log's prose keeps a readable measure even though the page is wide
+   enough to hold a margin: only the stage rows use the full width. */
+.tv-log-prose { max-width: 700px; }

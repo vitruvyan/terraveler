@@ -7,6 +7,9 @@ import { voyageDescription } from "@/lib/seo";
 import { voyagePath, voyageLogPath, ATLAS } from "@/lib/voyages";
 import { alsoVisited } from "@/lib/gazetteer";
 import { evidenceBasisOf, evidenceCopy, noExcerptCopy } from "@/lib/evidence";
+import { notesForVoyage } from "@/lib/marginalia";
+import StageNotes from "@/components/StageNotes";
+import Notebook from "@/components/Notebook";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -91,6 +94,11 @@ export default async function VoyageLog({
   // a stage with no excerpt is allowed to say — see lib/evidence.ts.
   const basis = evidenceBasisOf(voyage);
   const gap = noExcerptCopy(basis);
+  // The questions each stage asks about itself, answered from the atlas's own
+  // verified fields — no model involved, so they cannot drift from what a reader
+  // can check. Computed for the whole voyage at once so an explanation that
+  // would read identically on forty stages is asked only on the first.
+  const marginalia = notesForVoyage(voyage, navigator, wps);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`
@@ -99,7 +107,11 @@ export default async function VoyageLog({
   return (
     <>
       <SiteHeader />
-      <main className="prose" style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
+      {/* Wider than a plain article, because the itinerary now has a margin to
+          open answers into. The prose keeps its own readable measure via
+          .tv-log-prose; only the stage rows use the full width. */}
+      <main className="prose" style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
+        <div className="tv-log-prose">
         <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
           The log
         </span>
@@ -164,8 +176,10 @@ export default async function VoyageLog({
         <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: "0 0 20px" }}>
           {wps.length} stages. Journal excerpts are verbatim from public-domain
           sources, each with its citation; where no verified quote exists, the
-          entry says so rather than inventing one.
+          entry says so rather than inventing one. Select any passage to keep it
+          with its source, or open a stage&rsquo;s own questions in the margin.
         </p>
+        </div>
 
         <ol style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {wps.map((w) => {
@@ -177,9 +191,12 @@ export default async function VoyageLog({
             // be named — the link that makes this an atlas and not a shelf of
             // separate voyages.
             const also = alsoVisited(slug, w.seq);
+            const notes = marginalia.get(w.seq) ?? [];
+            const stageLabel = `${w.seq}. ${place(w)}`;
             return (
-              <li key={w.seq} id={`stage-${w.seq}`}
-                  style={{ borderLeft: "2px solid var(--parchment-deep)", paddingLeft: 16, marginBottom: 26 }}>
+              <li key={w.seq} id={`stage-${w.seq}`} className="tv-stage-row">
+              <div className="tv-stage-col"
+                   style={{ borderLeft: "2px solid var(--parchment-deep)", paddingLeft: 16 }}>
                 <h3 style={{ fontSize: "1.05rem", margin: "0 0 2px" }}>
                   {w.seq}. {place(w)}
                 </h3>
@@ -197,10 +214,19 @@ export default async function VoyageLog({
                 {w.event && <p style={{ margin: "0 0 8px" }}>{w.event}</p>}
                 {anyW.diary_excerpt ? (
                   <figure style={{ margin: "8px 0 0" }}>
-                    <blockquote style={{
-                      margin: 0, padding: "10px 14px", background: "rgba(255,255,255,0.45)",
-                      borderRadius: 8, fontStyle: "italic",
-                    }}>
+                    {/* The provenance travels with the text: selecting inside
+                        this block is what lets a reader keep the quotation with
+                        its citation already attached, which is the step people
+                        otherwise skip and cannot reconstruct later. */}
+                    <blockquote
+                      data-tv-source={anyW.diary_source_citation ?? "Source not recorded"}
+                      data-tv-source-url={anyW.diary_source_url ?? undefined}
+                      data-tv-stage={stageLabel}
+                      style={{
+                        margin: 0, padding: "10px 14px", background: "rgba(255,255,255,0.45)",
+                        borderRadius: 8, fontStyle: "italic",
+                      }}
+                    >
                       {anyW.diary_excerpt}
                     </blockquote>
                     <figcaption style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 4 }}>
@@ -250,18 +276,21 @@ export default async function VoyageLog({
                     </a>
                   </p>
                 )}
+              </div>
+              <StageNotes notes={notes} stageLabel={stageLabel} voyageTitle={voyage.title} />
               </li>
             );
           })}
         </ol>
 
-        <p style={{ marginTop: 30, fontSize: 13.5, color: "var(--ink-soft)" }}>
+        <p className="tv-log-prose" style={{ marginTop: 30, fontSize: 13.5, color: "var(--ink-soft)" }}>
           Published under{" "}
           <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noreferrer" target="_blank">CC BY-SA 4.0</a>.
           Sources keep their own open licences. See{" "}
           <a href="/magna-carta">the Magna Carta of the Seas</a> for how this was verified.
         </p>
       </main>
+      <Notebook voyageTitle={voyage.title} />
       <SiteFooter />
       <script
         type="application/ld+json"
