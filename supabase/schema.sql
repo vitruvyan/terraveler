@@ -74,3 +74,16 @@ create policy "public read navigators" on navigators for select using (true);
 create policy "public read voyages"    on voyages    for select using (true);
 create policy "public read waypoints"  on waypoints  for select using (true);
 create policy "public read sources"    on sources    for select using (true);
+
+-- PostgREST grants. RLS decides which ROWS a role may see; the grant decides
+-- whether it may touch the TABLE at all, and the two are independent. This file
+-- was written for Supabase, where the anon role carries default grants — on the
+-- self-hosted stack it does not, so without these every read returns
+-- 42501 "permission denied for table voyages" while the policies above look
+-- perfectly correct. It is the only migration in this directory that was
+-- missing them, and it cost an evening of believing the database was empty.
+--
+-- New objects arrive privilege-less, so re-run this block after adding a table.
+grant select on navigators, voyages, waypoints, sources to terraveler_anon;
+grant select, insert, update, delete
+  on navigators, voyages, waypoints, sources to terraveler_service;
