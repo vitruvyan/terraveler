@@ -88,8 +88,18 @@ def load_sources_node(ctx, corpus):
                     state = state.with_rejection(Rejection(
                         s.get("title", s["url"]), f"licence gate: {lic}", _now()))
                     continue
-                body = (F.fetch_gutenberg(s["url"]) if s["kind"] == "gutenberg"
-                        else F.fetch_archive_text(s["url"]))
+                # A fetch that fails must say so. Under Policy.EXPLORATION an
+                # exception here was swallowed whole, so a 504 from Gutenberg
+                # produced a run with no sources, no rejections, and a cheerful
+                # summary — the quietest possible way to lose a corpus.
+                try:
+                    body = (F.fetch_gutenberg(s["url"]) if s["kind"] == "gutenberg"
+                            else F.fetch_archive_text(s["url"]))
+                except Exception as e:
+                    state = state.with_rejection(Rejection(
+                        s.get("title", s["url"]),
+                        f"FETCH FAILED: {type(e).__name__}: {str(e)[:160]}", _now()))
+                    continue
                 corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, lic))
                 n_txt += 1
             elif s["kind"] == "wikipedia":
@@ -187,6 +197,33 @@ def embed_node(ctx, corpus):
 def upsert_node(ctx, corpus):
     def node(state):
         rows = [d for d in corpus.docs if d.get("embedding")]
+        # An empty corpus is never a legitimate result, and combined with --wipe
+        # it is destructive: Gutenberg answered 504 for Magellan, the fetch
+        # failure was swallowed, and the run deleted 312 existing chunks and
+        # reported success with zero documents. A transient network error must
+        # not be able to empty a corpus and call it a job well done.
+        if not rows:
+            raise RuntimeError(
+                f"refusing to upsert an empty corpus for {ctx.voyage} — "
+                f"{len(corpus.raw_texts)} source(s) loaded, {len(corpus.docs)} docs, "
+                f"0 embedded. Existing rows left untouched. Check the rejections "
+                f"above for a failed fetch before re-running with --wipe.")
+
+        # Wikipedia surviving is not the corpus surviving. extract.py quotes
+        # only from public-domain text, so a voyage whose journal failed to
+        # fetch while its encyclopaedia articles came through looks healthy —
+        # 353 chunks for Magellan, not one of them Pigafetta — and then yields
+        # an itinerary with nothing to quote. The primary source is the point;
+        # the rest is context.
+        pd_text = [d for d in rows
+                   if d.get("type") == "text"
+                   and str(d.get("license", "")).strip().lower() == "public domain"]
+        if not pd_text:
+            raise RuntimeError(
+                f"refusing to upsert a corpus for {ctx.voyage} with no "
+                f"public-domain text: {len(rows)} docs embedded, all of them "
+                f"CC or images. The primary source did not arrive — see the "
+                f"rejections above. Existing rows left untouched.")
         conn = psycopg2.connect(
             host=ctx.pg_host, port=ctx.pg_port, dbname=ctx.pg_db,
             user=ctx.pg_user, password=ctx.pg_pass)
