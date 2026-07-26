@@ -869,6 +869,27 @@ def assemble_node(ctx, corpus):
             }
             claim_confidence = w["confidence"] if w.get("diary_excerpt") else (
                 "reconstructed" if w["confidence"] == "certain" else w["confidence"])
+            # A claim whose quote the verify node could not confirm has a source
+            # and nothing to stand on it — and the Stage-0 gate refuses it,
+            # rightly, as "evidence incomplete". Darwin's departure from
+            # Devonport is the case: the itinerary is certain, no verbatim
+            # passage describes it, and emitting a sourced claim with an empty
+            # excerpt asserts more than we can show.
+            #
+            # So the stage keeps its place in the route and simply carries no
+            # claim. That is the same thing the log page already says out loud —
+            # "no verified journal excerpt for this stage yet" — and it is a gap
+            # a reader can close, rather than a claim nobody can check.
+            claims = [{
+                "text": w.get("event") or "",
+                "confidence": claim_confidence,
+                "evidence": evidence,
+            }] if evidence["excerpt"] and evidence["source_url"] else []
+            if not claims:
+                state = state.with_rejection(Rejection(
+                    f"wp{w['seq']} '{w.get('place_historical') or w['place_historical_raw']}'",
+                    "no verbatim excerpt confirmed — stage kept, claim omitted "
+                    "(Carta 3.4: verbatim or absent)", _now()))
             waypoints_out.append({
                 "seq": w["seq"],
                 "place_historical": w.get("place_historical") or w["place_historical_raw"],
@@ -878,11 +899,7 @@ def assemble_node(ctx, corpus):
                 "arrival_date": w.get("arrival_date"),
                 "confidence": w["confidence"],
                 "coord_provenance": w.get("coord_provenance"),
-                "claims": [{
-                    "text": w.get("event") or "",
-                    "confidence": claim_confidence,
-                    "evidence": evidence,
-                }],
+                "claims": claims,
             })
         for i, w in enumerate(waypoints_out):
             w["seq"] = i + 1
