@@ -180,6 +180,21 @@ VOYAGE_META = {
                    "Pacific, the Philippines and Magellan's death at Mactan, and the "
                    "return of a single ship under Juan Sebastián Elcano.",
         "date_window": (1519, 1522),
+        # Calibrated against the corpus (2026-07-26). 1,022 public-domain chunks
+        # from Gutenberg #74723. The Stanley volume is a COMPILATION, not
+        # Pigafetta alone: chunks 0-172 are the title page, the dedication, the
+        # contents and Stanley's own long introduction on Magellan's motives;
+        # 173 opens the Genoese pilot's "Navigation and voyage which Fernando de
+        # Magalhães made from Seville"; Pigafetta's own account begins at 255
+        # ("I have reduced into this small book"); further testimonies follow,
+        # including the Portuguese companion of Odoardo Barbosa at 241 and
+        # Gaspar Correa. Footnotes run from 1010 to the Gutenberg boilerplate.
+        #
+        # Quotes may therefore come from any of several eyewitnesses rather than
+        # from Pigafetta alone. That is legitimate — all are contemporary — but
+        # the citation must name whose words they are, which the source_title
+        # cannot do for a compilation. Worth an editorial pass before publishing.
+        "narrative_chunk_range": (173, 1009),
         "evidence_basis": "contemporary-journal",
         "what_was_lost": "Pigafetta kept his journal throughout, but his own "
                          "manuscript is gone; the account survives in four early "

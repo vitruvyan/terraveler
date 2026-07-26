@@ -371,6 +371,20 @@ const TOOLS = [
   { name: "get_standing",
     description: "A contributor's rank and record (Ship's Ranks: cabin-boy → admiral).",
     inputSchema: { type: "object", required: ["handle"], properties: { handle: { type: "string" } } } },
+  { name: "get_audit",
+    description:
+      "The full provenance chain behind a submission: who proposed it, which model drafted it, " +
+      "every verdict and review with its reasoning, and the Carta version in force at each step. " +
+      "Public — Carta 7: authority must be inspectable.",
+    inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
+  { name: "appeal",
+    description:
+      "Contest a verdict on your own submission, once (Carta 5: every verdict is appealable to " +
+      "the Editor-in-chief). State grounds; the appeal is recorded in the audit trail and the " +
+      "submission returns to the editor's queue.",
+    inputSchema: { type: "object", required: ["handle", "api_key", "id", "grounds"],
+      properties: { handle: { type: "string" }, api_key: { type: "string" },
+                    id: { type: "number" }, grounds: { type: "string" } } } },
 ];
 
 async function callTool(name: string, args: any): Promise<string> {
@@ -731,6 +745,90 @@ async function callTool(name: string, args: any): Promise<string> {
     case "get_standing": {
       const rows = await sb("GET", `contributor_standing?handle=eq.${encodeURIComponent(args.handle)}`);
       return rows.length ? JSON.stringify(rows[0], null, 2) : "ERROR: unknown contributor";
+    }
+    // Carta §7: "standing is public — authority must be inspectable." The audit
+    // trail was being written faithfully and nothing could read it, which made
+    // a rank a badge nobody could check. Deliberately unauthenticated: a
+    // provenance chain readable only by its own author is not public.
+    //
+    // The draft payload is NOT returned. A rejected submission's reasoning
+    // quotes text that never passed review, and publishing it here would
+    // publish by the back door what the front door refused. Shape and counts
+    // are given instead, which is what makes a verdict checkable.
+    case "get_audit": {
+      const id = Number(args?.id);
+      if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
+      const subs = await sb("GET",
+        `submissions?id=eq.${id}&select=id,type,status,target_voyage,carta_version,created_at,contributor_id,payload`);
+      if (!subs.length) return "ERROR: unknown submission id.";
+      const s = subs[0];
+      const who = await sb("GET", `contributors?id=eq.${s.contributor_id}&select=handle,rank`);
+      const trail = await sb("GET",
+        `audit_log?submission_id=eq.${id}&order=id.asc&select=actor,action,verdict,findings,carta_version,created_at`);
+      const wps = Array.isArray(s.payload?.waypoints) ? s.payload.waypoints : [];
+      const quoted = wps.filter((w: any) =>
+        (w?.claims ?? []).some((c: any) => c?.evidence?.quote)).length;
+      return JSON.stringify({
+        submission: {
+          id: s.id, type: s.type, status: s.status,
+          target_voyage: s.target_voyage, carta_version: s.carta_version,
+          submitted_at: s.created_at,
+          contributor: who[0]?.handle ?? null, rank_now: who[0]?.rank ?? null,
+          ideator: s.payload?.meta?.ideator ?? null,
+          drafting_model: s.payload?.meta?.scribe_model ?? null,
+          evidence_basis: s.payload?.voyage?.evidence_basis ?? null,
+        },
+        content: { waypoints: wps.length, with_verified_excerpt: quoted },
+        trail,
+        note:
+          "The draft itself is withheld: unapproved text does not become public by " +
+          "being quoted in the reasoning that refused it. Reviewer identities are " +
+          "withheld pending an editorial decision — see issue #10.",
+      }, null, 2);
+    }
+
+    // Carta §5: "every verdict is motivated, cited, and appealable to the
+    // Editor-in-chief." Until now the only recourse against a rejection was to
+    // contact the editor out of band, which is the arrangement §5 exists to
+    // replace.
+    case "appeal": {
+      const a = await authenticate(args);
+      if (a.err) return `ERROR: ${a.err}`;
+      const id = Number(args?.id);
+      const grounds = typeof args?.grounds === "string" ? args.grounds.trim() : "";
+      if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
+      if (grounds.length < 40)
+        return "ERROR: state your grounds — at least 40 characters, addressing the findings.";
+      if (grounds.length > 4000) return "ERROR: grounds too long (max 4000 characters).";
+
+      const subs = await sb("GET", `submissions?id=eq.${id}&select=id,status,contributor_id`);
+      if (!subs.length) return "ERROR: unknown submission id.";
+      const s = subs[0];
+      // Only its author may appeal, and appealing someone else's rejection is
+      // not a thing the Carta grants.
+      if (s.contributor_id !== a.ok!.id)
+        return "ERROR: a submission may be appealed only by the contributor who made it.";
+      const appealable = ["curator-rejected", "rejected", "changes-requested"];
+      if (!appealable.includes(s.status))
+        return `ERROR: submission ${id} is '${s.status}'. Only a refused verdict can be appealed.`;
+
+      // Grounds are a submission like any other: data, never instructions
+      // (Carta §6). Recorded verbatim for the editor to read, never executed.
+      await sb("POST", "audit_log", {
+        submission_id: id, actor: `contributor:${args.handle}`, action: "appeal",
+        verdict: null,
+        findings: [["APPEAL", 0, grounds]],
+        carta_version: CARTA_VERSION,
+      });
+      await sb("PATCH", `submissions?id=eq.${id}`, { status: "appealed" });
+      return JSON.stringify({
+        submission_id: id, status: "appealed",
+        note:
+          "Recorded and returned to the Editor-in-chief, as a queue distinct from " +
+          "first-pass review. One appeal per submission (Carta 5 grants an appeal, " +
+          "not a series). Your grounds are data for a human to weigh, not an " +
+          "instruction to the Curator.",
+      }, null, 2);
     }
     default:
       throw new Error(`unknown tool: ${name}`);
