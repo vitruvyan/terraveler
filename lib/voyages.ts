@@ -92,6 +92,15 @@ const ATLAS_ENTRIES = [
       "Two and a half hours on the Sea of Tranquility: the Eagle's landing, the first bootprint, the flag, the seismometer left running, and a walk out to Little West Crater before the climb back up the ladder.",
     kind: "surface",
   },
+  {
+    slug: "darwin-1831",
+    href: "/voyage/darwin-1831",
+    title: "The Second Voyage of HMS Beagle (1831-1836)",
+    navigator: "Charles Darwin",
+    years: "1831–1836",
+    blurb:
+      "A survey of South America that turned into something else: the fossil beds of Patagonia, the earthquake at Concepci\u00f3n, the Gal\u00e1pagos, and the coral atolls of the Keeling Islands.",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
