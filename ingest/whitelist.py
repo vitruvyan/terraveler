@@ -161,6 +161,27 @@ def verify_archive_item(url: str, fetch_json=None):
     return True, f"Public domain (published {yr})"
 
 
+def canonical_license(lic: str) -> str:
+    """The label a corpus row stores, as opposed to the sentence a human reads.
+
+    verify_source returns a *reason* — "Public domain (published 1924)" — which
+    is right for a trace and wrong for a column that gets filtered on.
+    extract.py selects `license ILIKE 'public domain'`, so an archive.org
+    source was ingested under a label the extractor could never match: the
+    corpus loaded, the run reported success, and every quote-bearing chunk was
+    invisible to the only thing that reads them. The whole archive.org path —
+    Cartier, Pizarro — was broken end to end and silent about it.
+
+    So the reason stays in the trace and the label is normalised here.
+    """
+    l = (lic or "").strip()
+    if re.match(r"^public domain", l, re.I) or "publicdomain" in l.lower():
+        return "Public domain"
+    if "creativecommons.org" in l.lower():
+        return "CC (see source)"
+    return l
+
+
 def verify_source(url: str, fetch_json=None):
     """The single gate every text passes through — curated as well as discovered.
 

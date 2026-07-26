@@ -100,7 +100,13 @@ def load_sources_node(ctx, corpus):
                         s.get("title", s["url"]),
                         f"FETCH FAILED: {type(e).__name__}: {str(e)[:160]}", _now()))
                     continue
-                corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, lic))
+                # The gate's answer is a reason, not a column value. Stored as a
+                # reason it becomes unfilterable — see canonical_license().
+                label = W.canonical_license(lic)
+                state = state.with_decision(Decision(
+                    f"licence gate passed: {s.get('title', s['url'])[:60]} — "
+                    f"{lic} → stored as '{label}'", _now()))
+                corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, label))
                 n_txt += 1
             elif s["kind"] == "wikipedia":
                 for t in s["titles"]:

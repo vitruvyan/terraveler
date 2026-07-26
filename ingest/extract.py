@@ -911,6 +911,24 @@ def assemble_node(ctx, corpus):
         for w in corpus.waypoints:
             if w.get("latitude") is None:
                 continue  # unanchored — drop from submission, kept only in trace/rejections
+            # Undated stages get the same treatment as unanchored ones, and for
+            # the same reason. This is a chrono-diary: the timeline is how a
+            # reader moves through a voyage, and a stage that cannot be placed
+            # in time cannot be scrubbed to. The Stage-0 gate refuses them —
+            # Magellan came back with two — so emitting them only produces a
+            # submission that will be rejected wholesale for the sake of a
+            # stage the reader could never have reached.
+            #
+            # Dropped, not dated. Pigafetta does not date every landfall, and
+            # interpolating one from the stages either side would be inventing
+            # the single thing the reader most relies on.
+            if not w.get("arrival_date"):
+                state = state.with_rejection(Rejection(
+                    f"wp{w['seq']} '{w.get('place_historical') or w['place_historical_raw']}'",
+                    "no arrival date in the source — dropped from the submission "
+                    "(a chrono-diary cannot place an undated stage on the timeline)",
+                    _now()))
+                continue
             src = w.get("evidence_source") or {}
             evidence = {
                 "quote": w.get("diary_excerpt"),

@@ -111,3 +111,28 @@ class LicenceGate(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CanonicalLicence(unittest.TestCase):
+    """The gate's answer is a sentence for a human; the corpus stores a label
+    that gets filtered on. Conflating them made every archive.org source
+    invisible to extract.py, which selects `license ILIKE 'public domain'`."""
+
+    def test_the_archive_reason_becomes_a_filterable_label(self):
+        self.assertEqual(W.canonical_license("Public domain (published 1924)"), "Public domain")
+        self.assertEqual(W.canonical_license("Public domain (published 1872)"), "Public domain")
+
+    def test_a_plain_label_is_left_alone(self):
+        self.assertEqual(W.canonical_license("Public domain"), "Public domain")
+        self.assertEqual(W.canonical_license("CC BY-SA 4.0"), "CC BY-SA 4.0")
+
+    def test_a_creative_commons_url_is_not_stored_as_a_url(self):
+        self.assertEqual(
+            W.canonical_license("http://creativecommons.org/publicdomain/mark/1.0/"),
+            "Public domain")
+
+    def test_what_extract_py_filters_on_actually_matches(self):
+        """extract.py: WHERE license ILIKE 'public domain'."""
+        for reason in ["Public domain", "Public domain (published 1924)",
+                       "public domain (published 1829)"]:
+            self.assertEqual(W.canonical_license(reason).lower(), "public domain", reason)
