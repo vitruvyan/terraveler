@@ -38,6 +38,17 @@ def fetch_gutenberg(url):
     return txt.strip()
 
 
+def fetch_archive_text(url):
+    """An archive.org OCR text (…_djvu.txt). No Gutenberg-style markers to
+    strip; the scan carries the library's own front matter, which the
+    narrative_chunk_range in VOYAGE_META is there to skip.
+
+    Licence is NOT established here — whitelist.verify_source() must have
+    cleared the item first, because archive.org serves lending-restricted
+    books from URLs of exactly this shape."""
+    return get_text(url).strip()
+
+
 def fetch_wikipedia(lang, title):
     api = f"https://{lang}.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
         "action": "query", "prop": "extracts", "explaintext": 1,

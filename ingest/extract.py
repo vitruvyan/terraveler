@@ -144,6 +144,149 @@ VOYAGE_META = {
         # whole PD span; per-stop pgvector retrieval + the canonical-itinerary plan
         # carry completeness across both volumes.
     },
+
+    # -----------------------------------------------------------------------
+    # The second wave. Sources verified in docs/LIBRARY_QUEUE.md; the licence
+    # is re-checked at fetch time by whitelist.verify_source().
+    #
+    # None of these carries a narrative_chunk_range yet: the range can only be
+    # set by reading the corpus rows after the first load, which is how Cook's
+    # was established. Until then the whole PD span is used, and per-stop
+    # pgvector retrieval plus the canonical-itinerary plan carry completeness —
+    # the same arrangement Cortés runs under. Calibrate after the first run:
+    #   select chunk_index, left(content, 90) from documents
+    #    where voyage = '<slug>' order by chunk_index limit 40;
+    # -----------------------------------------------------------------------
+
+    "magellan-1519": {
+        "title": "The First Circumnavigation: Magellan and Elcano (1519-1522)",
+        "navigator": "Ferdinand Magellan",
+        "ships": "Trinidad, San Antonio, Concepción, Victoria and Santiago",
+        "sponsor": "sailing from Sanlúcar de Barrameda for King Charles I of Spain",
+        "summary": "The first voyage to circle the world: south along the Brazilian "
+                   "coast, the mutiny at Port San Julián, the passage of the strait "
+                   "that now carries Magellan's name, ninety-eight days of open "
+                   "Pacific, the Philippines and Magellan's death at Mactan, and the "
+                   "return of a single ship under Juan Sebastián Elcano.",
+        "date_window": (1519, 1522),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Pigafetta kept his journal throughout, but his own "
+                         "manuscript is gone; the account survives in four early "
+                         "copies that disagree with one another. Of roughly 260 men "
+                         "who sailed, eighteen came home, and none of the dead left a "
+                         "word. Lapulapu, who defeated and killed Magellan at Mactan, "
+                         "appears only as his enemies described him.",
+    },
+
+    "columbus-1492": {
+        "title": "The Voyages of Christopher Columbus (1492-1504)",
+        "navigator": "Christopher Columbus",
+        "ships": "Santa María, Pinta and Niña, and the fleets of the later voyages",
+        "sponsor": "sailing from Palos de la Frontera for the Crown of Castile",
+        "summary": "The crossing of 1492 and the three voyages that followed: the "
+                   "landfall at Guanahaní, the coasts of Cuba and Hispaniola, the "
+                   "wreck of the Santa María and the garrison left at La Navidad, and "
+                   "the return voyages that turned a discovery into a colony.",
+        "date_window": (1492, 1504),
+        # The log is lost. What survives is Las Casas's abstract of it, and the
+        # atlas must not present those words as Columbus's own.
+        "evidence_basis": "contemporary-testimony",
+        "what_was_lost": "Columbus's log is lost — both the original and the copy "
+                         "made for him. What survives is Bartolomé de las Casas's "
+                         "abstract, written half a century later, quoting in places "
+                         "and summarising in others, so even the most famous "
+                         "sentences reach us at one remove. The Taíno who met the "
+                         "ships left no written record, and within two generations "
+                         "disease and forced labour had destroyed the society that "
+                         "might have preserved one.",
+    },
+
+    "cartier-1534": {
+        "title": "Jacques Cartier and the St Lawrence (1534-1542)",
+        "navigator": "Jacques Cartier",
+        "ships": "La Grande Hermine and the ships of three voyages from Saint-Malo",
+        "sponsor": "sailing from Saint-Malo for King Francis I of France",
+        "summary": "Three voyages into the Gulf of St Lawrence and up the river: the "
+                   "cross raised at Gaspé, the winter at Stadacona and the scurvy that "
+                   "was cured by an Iroquoian remedy, the journey to Hochelaga beneath "
+                   "the mountain Cartier named Mont Royal, and the failed colony of "
+                   "Charlesbourg-Royal.",
+        "date_window": (1534, 1542),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Cartier wrote the relations of the first two voyages "
+                         "himself; the third survives only through Hakluyt's English "
+                         "translation of an original now lost. The St Lawrence "
+                         "Iroquoians who met him left no account — not Donnacona, whom "
+                         "Cartier carried to France where he died, nor the people of "
+                         "Stadacona and Hochelaga, who had vanished from the valley "
+                         "before Champlain arrived sixty years later, for reasons no "
+                         "surviving document explains.",
+    },
+
+    "pizarro-1532": {
+        "title": "Pizarro and the Fall of Tawantinsuyu (1532-1533)",
+        "navigator": "Francisco Pizarro",
+        "ships": "the expedition from Panama, landing at Tumbes",
+        "sponsor": "acting under royal capitulation for King Charles I of Spain",
+        "summary": "The march inland from Tumbes to Cajamarca, the ambush and capture "
+                   "of Atahualpa in the square, the ransom room filled with gold and "
+                   "silver from Cusco and Pachacamac, Atahualpa's execution, and the "
+                   "advance on Cusco through Jauja.",
+        "date_window": (1532, 1533),
+        "evidence_basis": "contemporary-testimony",
+        "what_was_lost": "Francisco de Xerez was Pizarro's secretary and stood in the "
+                         "square at Cajamarca, but he wrote to justify the conquest to "
+                         "the Crown that had licensed it. Against that there is almost "
+                         "nothing: the Inca kept records on khipu rather than in "
+                         "script, the khipu of Tawantinsuyu were destroyed, and "
+                         "Atahualpa's account of his own capture does not exist in any "
+                         "form.",
+    },
+
+    "darwin-1831": {
+        "title": "The Second Voyage of HMS Beagle (1831-1836)",
+        "navigator": "Charles Darwin",
+        "ships": "HMS Beagle, under Robert FitzRoy",
+        "sponsor": "sailing from Plymouth on an Admiralty survey of South America",
+        "summary": "A survey voyage that became something else: the Brazilian forest, "
+                   "the fossil beds of Patagonia, Tierra del Fuego and the returning "
+                   "of three Fuegians taken to England, the earthquake at Concepción, "
+                   "the Galápagos, Tahiti, New Zealand, Australia and the coral atolls "
+                   "of the Keeling Islands.",
+        "date_window": (1831, 1836),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Darwin's journal and FitzRoy's survey records survive "
+                         "complete. What the voyage never recorded is the other half "
+                         "of one of its own purposes: Jemmy Button, York Minster and "
+                         "Fuegia Basket were taken to England, displayed, taught, and "
+                         "carried home again, written about constantly and never asked "
+                         "to write. Their account of what was done to them does not "
+                         "exist.",
+    },
+
+    "shackleton-1914": {
+        "title": "The Imperial Trans-Antarctic Expedition (1914-1917)",
+        "navigator": "Ernest Shackleton",
+        "ships": "Endurance, the boat James Caird, and Aurora in the Ross Sea",
+        "sponsor": "sailing from Plymouth and South Georgia to cross the Antarctic continent",
+        "summary": "A crossing that never began: Endurance beset in the Weddell Sea "
+                   "and crushed, the drift on the floes through Ocean Camp and Patience "
+                   "Camp, the boat journey to Elephant Island, Shackleton's eight "
+                   "hundred miles to South Georgia in the James Caird, the crossing of "
+                   "its unmapped interior to Stromness, and the rescue of every man "
+                   "left behind.",
+        "date_window": (1914, 1917),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Shackleton, Worsley and Hurley all kept diaries, and "
+                         "Worsley's navigational log survives — which is why the "
+                         "positions here are exact for a voyage that spent most of "
+                         "itself without a ship. What was lost was physical: Hurley "
+                         "smashed more than three hundred of his own glass plates on "
+                         "the ice, keeping only what could be carried. The Ross Sea "
+                         "party, which lost three men laying depots for a crossing that "
+                         "never came, is the half of this expedition almost nobody "
+                         "recorded.",
+    },
 }
 
 

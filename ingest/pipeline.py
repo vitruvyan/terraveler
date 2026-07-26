@@ -24,6 +24,7 @@ from axis.state import Fact, Decision, Rejection
 import fetch as F
 import oculus
 import curate
+import whitelist as W
 from sources import VOYAGE_SOURCES, IMAGES_PER_QUERY
 
 BATCH = 32
@@ -76,9 +77,20 @@ def load_sources_node(ctx, corpus):
             raise ValueError(f"unknown voyage: {ctx.voyage}")
         n_txt = 0
         for s in cfg["texts"]:
-            if s["kind"] == "gutenberg":
-                body = F.fetch_gutenberg(s["url"])
-                corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, s["license"]))
+            if s["kind"] in ("gutenberg", "archive"):
+                # The licence gate, applied to curated sources and not only to
+                # discovered ones. This config is exactly where in-copyright
+                # editions get in: every one that has been proposed so far was
+                # a famous book someone had good reason to trust — a 1989
+                # Columbus, a 2012 Ibn Battuta reprint. Trust is not a licence.
+                ok, lic = W.verify_source(s["url"])
+                if not ok:
+                    state = state.with_rejection(Rejection(
+                        s.get("title", s["url"]), f"licence gate: {lic}", _now()))
+                    continue
+                body = (F.fetch_gutenberg(s["url"]) if s["kind"] == "gutenberg"
+                        else F.fetch_archive_text(s["url"]))
+                corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, lic))
                 n_txt += 1
             elif s["kind"] == "wikipedia":
                 for t in s["titles"]:

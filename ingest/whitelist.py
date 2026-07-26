@@ -1,7 +1,32 @@
 """The trusted-source whitelist — the guardrail that keeps auto-ingestion inside
 the Magna Carta guarantee (PD/CC only). Anything off this list is refused and
 recorded as a Rejection in the Axis trace. This is NOT an open-web spider.
+
+Two classes of domain
+---------------------
+Most entries here are *domain-guaranteed*: everything gutenberg.org serves is
+public domain, so knowing the host is enough. archive.org is not like that. It
+hosts public-domain scans and in-copyright lending books side by side, under
+the same URL shape, and the catalogue title gives no hint which is which.
+
+That distinction is not theoretical. Three of the first source proposals for
+the voyage queue were famous books in unusable editions, and all three were on
+archive.org:
+
+  - Columbus's Diario — Dunn & Kelley, University of Oklahoma Press, 1989,
+    access-restricted-item: true.
+  - Ibn Battuta — a Cambridge UP reprint of 2012, lending only, carrying an
+    1829 title.
+  - Cartier — the open Biggar 1924 sits beside restricted modern editions.
+
+An author dead six centuries says nothing about the copyright of the volume in
+front of you: the translator, the editor and the scanning library each start
+their own clock. So archive.org is admitted *per item*, verified against the
+item's own metadata at fetch time, and never on trust.
 """
+import json
+import re
+import urllib.request
 from urllib.parse import urlparse
 
 # domain → licence guarantee for the whole domain
@@ -16,8 +41,34 @@ ALLOWED_DOMAINS = {
     "fr.wikisource.org": "Public domain",
     "commons.wikimedia.org": "per-file (PD/CC, verified)",
     "upload.wikimedia.org": "per-file (PD/CC, verified)",
-    # planned: "gallica.bnf.fr", "archive.org", "www.biodiversitylibrary.org"
+    # planned: "gallica.bnf.fr", "www.biodiversitylibrary.org"
 }
+
+# Domains admitted only after per-item verification — see verify_archive_item.
+VERIFIED_DOMAINS = {"archive.org", "www.archive.org"}
+
+# US copyright on a published work runs 95 years from publication, so in 2026
+# everything published through 1930 has entered the public domain. The margin
+# below is deliberate: publication year is a proxy for copyright status, not a
+# proof of it, and it is a weaker proxy outside the US, where the term runs
+# from the *translator's* death. Anything later must be cleared by a human and
+# recorded with an explicit licence rather than inferred from a date.
+PD_PUBLICATION_CUTOFF = 1929
+
+# A scan cannot have been published before printing. archive.org items often
+# carry the date the *work* was composed rather than the date the volume was
+# printed — Ibn Battuta's travels are filed under 1354 — and a work date proves
+# nothing about the translation being scanned.
+EARLIEST_PLAUSIBLE_PUBLICATION = 1450
+
+# archive.org's `community` and `opensource` collections are unvetted user
+# uploads, where the uploader picks the licence field themselves. That is not
+# evidence of anything: H. A. R. Gibb's Ibn Battuta (Hakluyt Society,
+# 1958–1994, firmly in copyright) sits in `community` under a self-applied
+# "public domain mark" and a date of 1354. Institutional scans — a university
+# library, the Internet Archive's own book programme, Google Books — carry
+# provenance a stranger's checkbox does not.
+UNVETTED_COLLECTIONS = {"community", "opensource"}
 
 
 def domain_of(url: str) -> str:
@@ -25,8 +76,102 @@ def domain_of(url: str) -> str:
 
 
 def is_allowed(url: str) -> bool:
+    """True only for domains whose licence is guaranteed wholesale. archive.org
+    is deliberately excluded here: it needs verify_source()."""
     return domain_of(url) in ALLOWED_DOMAINS
 
 
 def license_for(url: str):
     return ALLOWED_DOMAINS.get(domain_of(url))
+
+
+def archive_identifier(url: str):
+    """The item id from any archive.org URL shape we use:
+    /details/<id>, /download/<id>/<file>, /stream/<id>/..., /metadata/<id>."""
+    m = re.match(r"^/(?:details|download|stream|metadata|compress)/([^/?#]+)",
+                 urlparse(url).path or "")
+    return m.group(1) if m else None
+
+
+def _open_licence(meta: dict) -> bool:
+    lic = " ".join(str(meta.get(k) or "") for k in ("licenseurl", "rights", "usage"))
+    return bool(re.search(r"creativecommons\.org|publicdomain|public domain", lic, re.I))
+
+
+def _year(meta: dict):
+    m = re.search(r"(1[0-9]{3}|20[0-9]{2})", str(meta.get("date") or ""))
+    return int(m.group(1)) if m else None
+
+
+def verify_archive_item(url: str, fetch_json=None):
+    """Check one archive.org item against its own metadata.
+
+    Returns (ok, licence_or_reason). The two failure modes that matter are
+    distinct, and both are refused:
+
+      - access-restricted-item: the scan exists but is lending-only. Nothing
+        about that text is ours to ingest.
+      - a modern publication date: an 1829 translation reprinted in 2012 is a
+        2012 book. The reprint's own clock is the one that counts.
+    """
+    ident = archive_identifier(url)
+    if not ident:
+        return False, f"not an archive.org item URL: {url}"
+    api = f"https://archive.org/metadata/{ident}"
+    try:
+        if fetch_json is not None:
+            meta = fetch_json(api)
+        else:
+            with urllib.request.urlopen(api, timeout=30) as r:
+                meta = json.loads(r.read().decode("utf-8", "replace"))
+        meta = (meta or {}).get("metadata") or {}
+    except Exception as e:                       # network, 404, malformed JSON
+        return False, f"{ident}: metadata unavailable ({str(e)[:80]}) — refusing on the safe side"
+
+    if not meta:
+        return False, f"{ident}: no metadata — the item may not exist"
+    if str(meta.get("access-restricted-item", "")).lower() == "true":
+        return False, (f"{ident}: access-restricted-item (lending only) — Carta 3.2 "
+                       f"permits linking and brief quotation, never ingestion")
+
+    colls = meta.get("collection") or []
+    if isinstance(colls, str):
+        colls = [colls]
+    colls = {str(c).lower() for c in colls}
+    if colls & UNVETTED_COLLECTIONS:
+        return False, (f"{ident}: user upload ({'/'.join(sorted(colls & UNVETTED_COLLECTIONS))}) — "
+                       f"the licence field is self-declared by the uploader and is not evidence. "
+                       f"Find an institutional scan of the same edition.")
+
+    # Only now is an open-licence claim worth anything: it is being made by a
+    # scanning library rather than by whoever uploaded the file.
+    if _open_licence(meta):
+        return True, str(meta.get("licenseurl") or "Public domain")
+
+    yr = _year(meta)
+    if yr is None:
+        return False, f"{ident}: no publication date in metadata — cannot establish public domain"
+    if yr < EARLIEST_PLAUSIBLE_PUBLICATION:
+        return False, (f"{ident}: date {yr} predates printing — that is the date of the "
+                       f"work, not of this volume, and says nothing about the edition scanned")
+    if yr > PD_PUBLICATION_CUTOFF:
+        return False, (f"{ident}: published {yr}, after the {PD_PUBLICATION_CUTOFF} "
+                       f"public-domain cutoff — clear it by hand or find an older edition "
+                       f"(publisher: {str(meta.get('publisher') or 'unknown')[:60]})")
+    return True, f"Public domain (published {yr})"
+
+
+def verify_source(url: str, fetch_json=None):
+    """The single gate every text passes through — curated as well as discovered.
+
+    Returns (ok, licence_or_reason). Curated configs used to bypass the
+    whitelist entirely, on the assumption that a human had vetted them. But a
+    human proposed all three in-copyright editions above, so the curated config
+    is precisely where the check was missing.
+    """
+    host = domain_of(url)
+    if host in ALLOWED_DOMAINS:
+        return True, ALLOWED_DOMAINS[host]
+    if host in VERIFIED_DOMAINS:
+        return verify_archive_item(url, fetch_json=fetch_json)
+    return False, f"off-whitelist domain: {host or url!r}"
