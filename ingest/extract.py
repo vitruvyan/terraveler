@@ -319,6 +319,43 @@ VOYAGE_META = {
 }
 
 
+def _year_of(date_str):
+    """The year from a date the pipeline produced, which may be '1834-04-13',
+    '1832-08' or None. Comparing years rather than full dates is deliberate: the
+    itinerary planner is confident about order and vague about days, so a
+    day-level comparison would flag noise the desk cannot act on."""
+    m = re.match(r"(\d{4})", str(date_str or ""))
+    return int(m.group(1)) if m else None
+
+
+def chronology_breaks(waypoints):
+    """Stages dated before the stage they follow, as (where, why) pairs.
+
+    A voyage runs forwards. Where it does not, something has gone wrong that no
+    model can be trusted to notice, and this is where it goes wrong: a place
+    visited twice takes whichever of its two dates the extractor met first.
+    Darwin's Berkeley Sound came back dated 1833 sitting after an 1834 stage,
+    because the Beagle called at the Falklands twice; the same run had Bahia in
+    the outbound position carrying the 1836 return date.
+
+    It flags and never repairs. Which of two real visits a stage refers to is an
+    editorial question, and a script that silently picked one would be inventing
+    the answer — which is the whole thing this project refuses to do.
+    """
+    out = []
+    for prev, cur in zip(waypoints, waypoints[1:]):
+        a, b = _year_of(prev.get("arrival_date")), _year_of(cur.get("arrival_date"))
+        if a and b and b < a:
+            out.append((
+                f"wp{cur.get('seq')} '{cur.get('place_historical')}'",
+                f"CHRONOLOGY: dated {b} but follows wp{prev.get('seq')} "
+                f"'{prev.get('place_historical')}' dated {a}. A place reached twice "
+                f"has probably taken the other visit's date — needs an editorial "
+                f"decision, not a guess",
+            ))
+    return out
+
+
 def _now():
     return datetime.now(timezone.utc)
 
@@ -903,6 +940,21 @@ def assemble_node(ctx, corpus):
             })
         for i, w in enumerate(waypoints_out):
             w["seq"] = i + 1
+
+        # A voyage runs forwards. Where a stage is dated before the one before
+        # it, something has gone wrong that no model can be trusted to notice —
+        # and this is where it goes wrong: a place visited twice gets whichever
+        # of its two dates the extractor found first. Darwin's Berkeley Sound
+        # came back dated 1833 sitting after an 1834 stage, because the Beagle
+        # called at the Falklands twice; the same run had Bahia in the outbound
+        # position carrying the 1836 return date.
+        #
+        # Deterministic and free, so it runs on every voyage rather than on the
+        # ones anyone thought to check. It flags rather than repairs: which of
+        # two real visits a stage refers to is an editorial question, and a
+        # script that silently picked one would be inventing an answer.
+        for where, why in chronology_breaks(waypoints_out):
+            state = state.with_rejection(Rejection(where, why, _now()))
 
         submission = {
             "meta": {
