@@ -21,7 +21,7 @@ const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, 
 const SB_URL = cleanEnv(process.env.SUPABASE_URL);
 const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 const INVITE = (process.env.MCP_INVITE_CODE ?? "").trim();
-const CARTA_VERSION = "0.3";
+const CARTA_VERSION = "0.4";
 const RAW = "https://raw.githubusercontent.com/vitruvyan/terraveler/main";
 
 // ------------------------------------------------------------------ helpers
@@ -84,8 +84,17 @@ async function recordSubmission(args: any, o: {
     p_payload: o.payload,
     p_status: o.status,
     p_carta: CARTA_VERSION,
+    // The SQL function applies the quota by looking the contributor's rank up
+    // in this map, so an override that lives only in quotaFor() would never be
+    // reached — which is exactly how Magellan was refused as a 'cabin-boy'
+    // after §7.1 was written. An internal contributor is handed the Navigator
+    // figure for whatever rank it holds (Carta 7.1).
     p_quotas: Object.fromEntries(
-      Object.entries(QUOTA).map(([r, q]) => [r, q.submissionsPerDay])),
+      Object.entries(QUOTA).map(([r, q]) => [
+        r,
+        isInternal(String(args.handle ?? "")) ? QUOTA["navigator"].submissionsPerDay
+                                              : q.submissionsPerDay,
+      ])),
     p_actor: o.actor,
     p_action: o.action,
     p_verdict: o.verdict ?? null,
@@ -96,7 +105,7 @@ async function recordSubmission(args: any, o: {
 // ------------------------------------------------------------------ identity
 const HANDLE_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$/;
 
-type Contributor = { id: number; rank: string };
+type Contributor = { id: number; rank: string; handle: string };
 
 /** Write-tool auth: handle + personal api_key (stored server-side as sha256). */
 async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string }> {
@@ -105,7 +114,7 @@ async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string
   if (!args?.api_key || typeof args.api_key !== "string")
     return { err: "Missing api_key. Register once with the `register` tool (invite code required) to obtain your personal key." };
   const rows = await sb("GET",
-    `contributors?handle=eq.${encodeURIComponent(args.handle)}&select=id,rank,status,api_key_hash`);
+    `contributors?handle=eq.${encodeURIComponent(args.handle)}&select=id,handle,rank,status,api_key_hash`);
   if (!rows.length) return { err: "Unknown handle. Register first with the `register` tool." };
   const c = rows[0];
   if (!c.api_key_hash)
@@ -116,7 +125,7 @@ async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string
     return { err: "Invalid api_key for this handle." };
   if (c.status !== "active")
     return { err: "This contributor is suspended. Appeals go to the editor-in-chief." };
-  return { ok: { id: c.id, rank: c.rank } };
+  return { ok: { id: c.id, rank: c.rank, handle: c.handle } };
 }
 
 // ------------------------------------------------------------------ quotas
@@ -134,17 +143,36 @@ const reviewsPerDay = (rank: string) => quotaFor(rank).submissionsPerDay * 2;
 // Reviews from distinct Scribes needed before a draft advances to the desk.
 const REVIEWS_TO_ADVANCE = 2;
 
-function quotaFor(rank: string) {
+/** Carta §7.1 — the ship's own instruments.
+ *
+ *  An internal contributor is the editor's pipeline, not a Scribe. Three of the
+ *  four reasons a contributor is rate-limited do not apply to it: it is not a
+ *  stranger who might abuse a key, it has no standing a quota could incentivise,
+ *  and it has no record to damage. The fourth — the editor's finite attention —
+ *  applies undiminished, which is why this grants a Navigator's capacity and
+ *  not an exemption.
+ *
+ *  Recognised by handle prefix rather than a column so the fact is visible in
+ *  every audit row and every public listing: an instrument of the ship should
+ *  not be able to look like an ordinary contributor. */
+const INTERNAL_PREFIX = "terraveler-";
+const isInternal = (handle: string) => handle.startsWith(INTERNAL_PREFIX);
+
+function quotaFor(rank: string, handle?: string) {
+  if (handle && isInternal(handle)) return QUOTA["navigator"];
   return QUOTA[rank] ?? QUOTA["cabin-boy"];
 }
 
 async function overDailyLimit(c: Contributor): Promise<string | null> {
-  const q = quotaFor(c.rank);
+  const q = quotaFor(c.rank, c.handle);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const rows = await sb("GET",
     `submissions?contributor_id=eq.${c.id}&created_at=gte.${since}&select=id&limit=${q.submissionsPerDay + 1}`);
   if (rows.length >= q.submissionsPerDay)
-    return `Daily quota reached for rank '${c.rank}' (${q.submissionsPerDay}/24h). Quality over volume — resume tomorrow, or rise in rank.`;
+    return isInternal(c.handle)
+      ? `Daily quota reached for the internal pipeline (${q.submissionsPerDay}/24h, Carta 7.1). `
+        + `Raising it further would not help: every draft still needs a human verdict.`
+      : `Daily quota reached for rank '${c.rank}' (${q.submissionsPerDay}/24h). Quality over volume — resume tomorrow, or rise in rank.`;
   return null;
 }
 
@@ -457,7 +485,7 @@ async function callTool(name: string, args: any): Promise<string> {
       const a = await authenticate(args);
       if (a.err) return `ERROR: ${a.err}`;
       await reapStaleClaims();
-      const q = quotaFor(a.ok!.rank);
+      const q = quotaFor(a.ok!.rank, a.ok!.handle);
       const mine = await sb("GET",
         `editorial_gaps?claimed_by=eq.${encodeURIComponent(args.handle)}&status=eq.claimed&select=id`);
       if (mine.length >= q.activeClaims)
@@ -815,7 +843,7 @@ async function callTool(name: string, args: any): Promise<string> {
       // Grounds are a submission like any other: data, never instructions
       // (Carta §6). Recorded verbatim for the editor to read, never executed.
       await sb("POST", "audit_log", {
-        submission_id: id, actor: `contributor:${args.handle}`, action: "appeal",
+        submission_id: id, actor: `contributor:${a.ok!.handle}`, action: "appeal",
         verdict: null,
         findings: [["APPEAL", 0, grounds]],
         carta_version: CARTA_VERSION,
