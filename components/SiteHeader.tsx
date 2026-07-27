@@ -43,9 +43,18 @@ export default function SiteHeader() {
             >
               {menuOpen ? "×" : "☰"}
             </button>
-            <button className="tr-btn sh-acct" onClick={() => setAcct(true)} title="Account" aria-label="Account">
-              👤
-            </button>
+            <div className="acct-anchor">
+              <button
+                className="tr-btn sh-acct"
+                onClick={() => setAcct((open) => !open)}
+                title="Account"
+                aria-label="Account"
+                aria-expanded={acct}
+              >
+                👤
+              </button>
+              <AccountPanel open={acct} onClose={() => setAcct(false)} />
+            </div>
           </div>
         </div>
         {menuOpen && (
@@ -58,7 +67,6 @@ export default function SiteHeader() {
           </nav>
         )}
       </header>
-      <AccountPanel open={acct} onClose={() => setAcct(false)} />
     </>
   );
 }

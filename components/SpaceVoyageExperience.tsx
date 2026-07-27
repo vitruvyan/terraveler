@@ -436,11 +436,19 @@ export default function SpaceVoyageExperience({
             </div>
           )}
         </div>
-        <button className="tr-btn" onClick={() => setAcctOpen(true)} title="Account" aria-label="Account">
-          👤
-        </button>
+        <div className="acct-anchor">
+          <button
+            className="tr-btn"
+            onClick={() => setAcctOpen((open) => !open)}
+            title="Account"
+            aria-label="Account"
+            aria-expanded={acctOpen}
+          >
+            👤
+          </button>
+          <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
+        </div>
       </div>
-      <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
 
       {events.length > 0 && (
         <div

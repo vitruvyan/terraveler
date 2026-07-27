@@ -395,6 +395,8 @@ VOYAGE_META = {
         "sponsor": 'sailing from Lisbon for King Manuel I of Portugal',
         "summary": 'The voyage that joined Europe to the Indian Ocean: a long arc into the open Atlantic to catch the westerlies, the Cape rounded ten years after Dias, up the Swahili coast past Mozambique and Mombasa to Malindi, and across to Calicut with a pilot who knew the monsoon.',
         "date_window": (1497, 1499),
+        # Calibrated against the corpus (2026-07-27). Ravenstein 1898, 826 PD chunks. Ravenstein's introduction runs to 67; the Roteiro proper opens at 68. 824-825 is Gutenberg boilerplate.
+        "narrative_chunk_range": (68, 823),
         "evidence_basis": 'contemporary-journal',
         "what_was_lost": "The Roteiro was kept during the voyage by someone aboard — and nobody knows who. It is signed by no one; Álvaro Velho is a guess. Da Gama's own report to the king is lost. Of roughly 170 men who sailed, some 55 came back, and the journal breaks off before the end.",
     },
@@ -406,6 +408,8 @@ VOYAGE_META = {
         "sponsor": 'sailing from Plymouth under a commission from Elizabeth I kept deliberately vague',
         "summary": 'The second circumnavigation and the first by a captain who survived it: south to Port San Julián and the execution of Thomas Doughty, through the Strait, up the Pacific coast raiding Spanish shipping, a landing on the California coast he called Nova Albion, then west across the Pacific and home by the Cape.',
         "date_window": (1577, 1580),
+        # Calibrated against the corpus (2026-07-27). Hakluyt 1854 via archive.org, 1,157 PD chunks. The Society's officer list, subscription terms and editorial preface run to about 29; the back index begins around 1151. Conservative at both ends: an OCR'd Hakluyt volume has no clean marker, and losing a few chunks costs less than quoting a subscription notice.
+        "narrative_chunk_range": (30, 1150),
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": "Drake published nothing. This account was compiled in 1628 by his nephew from the notes of Francis Fletcher, the chaplain — whose original manuscript is lost, and who quarrelled with Drake on the voyage. The queen ordered the expedition's charts and journals surrendered and kept secret, so what survives is a family's version of a state secret, fifty years late.",
     },
@@ -417,6 +421,15 @@ VOYAGE_META = {
         "sponsor": 'travelling with his father and uncle, merchants of Venice',
         "summary": "Twenty-four years out of Venice: through Persia and the Pamirs to Kublai Khan's court at Khanbaliq, years in the Khan's service across Cathay and the south, then home by sea through the Indies, Ceylon and Hormuz.",
         "date_window": (1271, 1295),
+        # NO narrative_chunk_range on purpose. Yule is two volumes and
+        # chunk_index restarts per source, so a single range would cut one
+        # volume and not the other — the same reason Cortes has none. Per-stop
+        # pgvector retrieval carries completeness across both.
+        # KNOWN LIMITATION: Yule carries roughly 2,300 footnote markers per
+        # volume and interleaves them with the text, so a minority of excerpts
+        # will be the editor's apparatus. No plain translation exists on
+        # Gutenberg; see docs/LIBRARY_QUEUE.md on why this is an editorial
+        # choice and not something the pipeline can filter.
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": 'Polo kept no journal. The book was dictated in a Genoese prison around 1298 to Rustichello of Pisa, a writer of Arthurian romances, more than two decades after the events. No original manuscript survives and the roughly 150 that do disagree with one another, some carrying episodes the others lack.',
     },
@@ -428,6 +441,8 @@ VOYAGE_META = {
         "sponsor": 'setting out from Tangier on the hajj, and not stopping for twenty-nine years',
         "summary": 'Perhaps 120,000 kilometres: Mecca by way of Egypt and Syria, then Persia, the Swahili coast, Anatolia, the Golden Horde, India and eight years in the service of the Sultan of Delhi, the Maldives, Ceylon, China — and later, from Morocco, across the Sahara to Mali.',
         "date_window": (1325, 1354),
+        # Calibrated against the corpus (2026-07-27). Lee 1829 via archive.org, 1,138 PD chunks. The Oriental Translation Fund's front matter is OCR'd so badly it is unreadable rather than merely wrong ('TBANtUlTW >nOM rilK AKKIDCKU ARABIC HANUSCRIFT'), which is itself the signal: the narrative is legible and the apparatus is not. Conservative at both ends.
+        "narrative_chunk_range": (30, 1130),
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": "Ibn Battuta wrote nothing down as he travelled, and said so: his notes were lost at sea. On his return the Sultan of Morocco had him dictate everything to Ibn Juzayy, who shaped it and borrowed passages from earlier travel writers. This English text is Lee's 1829 abridgement of an abridged manuscript — the complete Rihla in English exists only in a translation still in copyright.",
     },
@@ -439,6 +454,8 @@ VOYAGE_META = {
         "sponsor": 'travelling as a diplomat for the Sultan of Fez',
         "summary": 'North and West Africa described from inside it: Fez and Morocco, the Atlas passes, the Saharan crossings, Timbuktu and Gao under Songhai, the Niger, and eastward to Egypt — the account that gave Europe most of what it thought it knew about the interior for three hundred years.',
         "date_window": (1510, 1520),
+        # Calibrated against the corpus (2026-07-27). Pory 1600 / Brown 1896 via archive.org, 1,430 PD chunks. Google's scanning notice occupies 0-4, then the Hakluyt front matter and Brown's long introduction; Pory's translation is under way well before 288. The index runs from about 1421.
+        "narrative_chunk_range": (60, 1420),
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": "He was captured by Spanish corsairs, presented to the Pope, baptised, and wrote in Italy for a European readership — from memory, years afterwards, as a man whose freedom depended on being useful. His Arabic original is lost. What survives passed through Ramusio's Italian and then Pory's English of 1600: two removes from a man already writing in his captors' language.",
     },
@@ -450,6 +467,8 @@ VOYAGE_META = {
         "sponsor": "setting out from Chang'an at about sixty, to find the monastic rules India still held",
         "summary": 'Overland through Dunhuang and the desert to Khotan, over the Pamirs to Gandhara and the Ganges plain, years at Pataliputra copying texts, then Ceylon, and home by merchant ship through Java — shipwrecked twice and landing far north of where he meant to.',
         "date_window": (399, 414),
+        # Calibrated against the corpus (2026-07-27). Legge 1886, 500 PD chunks. Legge's preface and prolegomena run to 47; 'THE TRAVELS OF FA-HIEN' opens at 48. 498-499 is Gutenberg boilerplate.
+        "narrative_chunk_range": (48, 497),
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": "Faxian wrote his record after returning, in his seventies, from memory and the texts he had carried. It is short — a few dozen pages for fifteen years — and Legge's Victorian transliterations make its places hard to resolve. He travelled with companions who turned back, died, or stayed in India; none of them left an account.",
     },
@@ -461,6 +480,14 @@ VOYAGE_META = {
         "sponsor": 'sailing from Normandy for Francis I of France',
         "summary": 'The first recorded European survey of the North American coast between Florida and Newfoundland: a landfall near Cape Fear, the long run north, the narrows into what is now New York Bay, a fortnight in Narragansett Bay, and on past a coast whose people met him with less welcome the further he went.',
         "date_window": (1524, 1524),
+        # Calibrated against the corpus (2026-07-27). Murphy 1875, 563 PD chunks. 556-562 is Gutenberg boilerplate.
+        # KNOWN LIMITATION: this is not an edition of the letter but a book
+        # arguing the letter is a forgery, and it quotes the letter inside its own
+        # argument — the text at chunk 18 is Verrazzano's, the sentence before it
+        # is Murphy's. A range cannot separate a quotation from its rebuttal, so
+        # excerpts here may be the critic's words. Declared contested for exactly
+        # this reason.
+        "narrative_chunk_range": (10, 555),
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": 'The original letter to Francis I is lost; what survives are later copies, and the only public-domain English edition is a volume by Henry Cruse Murphy arguing at length that the letter is a forgery. Modern scholarship has largely moved back toward authenticity, but the atlas quotes it through the book that disputes it, and says so.',
     },
@@ -472,6 +499,8 @@ VOYAGE_META = {
         "sponsor": 'sent by the African Association of London to find the course of the Niger',
         "summary": 'Inland from the Gambia with two companions and a horse: imprisoned for four months by a Moorish chief, escaping alone across the Sahel, reaching the Niger at Segou to find it flowing east, and walking back destitute — carried the last stage by a slave caravan whose passage he recorded from inside it.',
         "date_window": (1795, 1797),
+        # Calibrated against the corpus (2026-07-27). 1799 first edition via archive.org, 1,461 PD chunks. Dedication, subscriber list and contents run to 13; the narrative follows. The appendix and geographical notes occupy the last chunks.
+        "narrative_chunk_range": (14, 1450),
         "evidence_basis": 'contemporary-journal',
         "what_was_lost": 'Park kept notes throughout and lost most of them; the narrative was written up in London afterwards, for a society that had paid for it. The people who kept him alive appear mostly without names. And the coffle he travelled with on the return is described by the one man in it who was not for sale.',
     },
@@ -483,6 +512,8 @@ VOYAGE_META = {
         "sponsor": 'sent by President Jefferson to find a water route across the continent',
         "summary": 'Up the Missouri from St Louis, a winter among the Mandan, over the Bitterroots with Shoshone horses and Nez Perce guidance, down the Snake and Columbia to the Pacific, a wet winter at Fort Clatsop, and back.',
         "date_window": (1804, 1806),
+        # Calibrated against the corpus (2026-07-27). Gutenberg #8419, 5,683 PD chunks. The journals begin almost at once — chunk 2 is already the roster of the party. 5681-5682 is Gutenberg boilerplate.
+        "narrative_chunk_range": (2, 5680),
         "evidence_basis": 'contemporary-journal',
         "what_was_lost": 'The journals are among the fullest of any expedition — and they are the record of the people who arrived. Sacagawea, without whom the party would not have crossed the mountains, is written about constantly and never quoted. The nations who fed, guided and tolerated them appear as the captains understood them, and the maps that resulted were used to dispossess those nations within two generations.',
     },
@@ -494,6 +525,8 @@ VOYAGE_META = {
         "sponsor": 'sailing from Bristol under letters patent from Henry VII',
         "summary": 'Thirty-five days west from Bristol to a landfall in North America, a single going-ashore to plant a flag and take on water, and a fast run home — the voyage that gave England its claim to the continent, and whose landfall nobody can locate.',
         "date_window": (1497, 1497),
+        # Calibrated against the corpus (2026-07-27). Olson & Bourne 1906, Gutenberg #18571 — the SAME volume as columbus-1492, and the reason this range is exact rather than generous. Chunks up to 1416 are Columbus's voyages; 'THE VOYAGES OF JOHN CABOT — LETTER OF LORENZO PASQUALIGO' begins at 1417. A wider range would have Cabot quoting Columbus's log, which is the one confusion this voyage cannot afford: Cabot's whole entry rests on there being no account by him.
+        "narrative_chunk_range": (1417, 1505),
         "evidence_basis": 'reconstructed',
         "what_was_lost": "Cabot left nothing. No log, no letter, no chart, and no account by anyone who sailed with him. Everything known comes from four documents by people who were not there: a merchant's letter from Lisbon, two despatches by the Duke of Milan's man in London, and a payment in the king's household book. Where he landed has been argued over for four centuries — Newfoundland, Cape Breton, Labrador, Maine — and this atlas draws a route it cannot prove, because the voyage happened and the silence is the archive's, not history's.",
     },
