@@ -31,7 +31,23 @@ export default function Image() {
             borderRadius: 14,
           }}
         />
-        <div style={{ fontSize: 92, marginBottom: 8 }}>🧭</div>
+        <div
+          style={{
+            width: 94,
+            height: 94,
+            borderRadius: "50%",
+            border: "3px solid #2b2117",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 46,
+            color: "#2b2117",
+            fontWeight: 700,
+            marginBottom: 18,
+          }}
+        >
+          N
+        </div>
         <div style={{ fontSize: 76, color: "#2b2117", letterSpacing: 2, fontWeight: 700 }}>
           TERRAVELER
         </div>

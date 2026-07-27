@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -51,56 +52,63 @@ export default async function Contribute() {
   return (
     <>
     <SiteHeader />
-    <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
-      <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>What the atlas is looking for</h1>
-      <p style={{ margin: "14px 0 6px", color: "var(--ink-soft)" }}>
+    <EditorialPage
+      eyebrow="Contribute"
+      title="What the atlas is looking for"
+      dek="The live editorial roadmap: open voyages, missing media, uncertain landfalls and source gaps ready for a Scribe."
+      background="/login-backgrounds/carta-marina.png"
+      credit="Carta Marina · 1539 · Olaus Magnus"
+      actions={[
+        { href: "/how-it-works", label: "Connect your AI" },
+        { href: "/magna-carta", label: "Read the rules", variant: "secondary" },
+      ]}
+      meta={["Live roadmap", "Curator verified", "Human authorized"]}
+    >
+    <section className="ed-panel">
+      <p>
         Terraveler grows through a simple tandem: <strong>you bring the idea, your AI does
         the work, our Curator verifies everything</strong> against the{" "}
         <Link href="/magna-carta">Magna Carta of the Seas</Link>. Below is the live
         editorial roadmap — the desk&rsquo;s current priorities. Connect your assistant
         and claim one: <Link href="/how-it-works">how it works</Link>.
       </p>
+    </section>
 
       {gaps === null ? (
-        <p style={{ fontStyle: "italic", color: "var(--ink-soft)" }}>
+        <p className="ed-muted">
           The roadmap is momentarily unavailable — ask your AI to call{" "}
           <code>list_gaps</code> on the Terraveler MCP server instead.
         </p>
       ) : (
-        <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div className="ed-card-list">
           {gaps.map((g) => (
             <div
               key={g.id}
-              style={{
-                border: "1px solid var(--parchment-deep)",
-                borderRadius: 10,
-                padding: "14px 16px",
-                background: "rgba(255,255,255,0.35)",
-                opacity: g.status === "claimed" ? 0.6 : 1,
-              }}
+              className="ed-roadmap-card"
+              data-claimed={g.status === "claimed" ? "true" : "false"}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                <strong style={{ fontFamily: "var(--font-display)", fontSize: "1.05rem" }}>{g.title}</strong>
-                <span style={{ display: "flex", gap: 6 }}>
+              <div className="ed-card-head">
+                <strong>{g.title}</strong>
+                <span className="ed-badges">
                   <span className="conf-badge">{KIND_LABEL[g.kind] ?? g.kind}</span>
                   <span className="conf-badge">{g.status === "claimed" ? "claimed" : `priority ${g.priority}`}</span>
                 </span>
               </div>
               {g.description && (
-                <p style={{ margin: "8px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>{g.description}</p>
+                <p>{g.description}</p>
               )}
             </div>
           ))}
         </div>
       )}
 
-      <p style={{ marginTop: 28 }}>
+      <p className="ed-muted">
         Beyond the list: our AI also computes, from the live data, which landfalls still
         lack period imagery, journal excerpts or firm dates — ask it via{" "}
         <code>list_gaps</code> once connected.
       </p>
 
-    </main>
+    </EditorialPage>
     <SiteFooter />
     </>
   );

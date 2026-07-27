@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 import { ATLAS, isVoyageSlug, type VoyageSlug } from "./voyages";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
@@ -24,7 +24,8 @@ export interface VoyageBundle {
 
 function hasSupabase(): boolean {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL
+    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) &&
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY)
   );
 }
 
@@ -73,6 +74,9 @@ export async function getVoyageBundle(
 ): Promise<VoyageBundle> {
   if (hasSupabase()) {
     try {
+      const supabase = getSupabase() as any;
+      if (!supabase) return fromJson(slug);
+
       const { data: voyage } = await supabase
         .from("voyages")
         .select("*")

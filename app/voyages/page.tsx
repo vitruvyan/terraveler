@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { ATLAS, voyageLogPath, type AtlasEntry } from "@/lib/voyages";
@@ -43,43 +44,47 @@ export default function Voyages() {
   return (
     <>
       <SiteHeader />
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
-        <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>The Atlas</h1>
-        <p style={{ color: "var(--ink-soft)", margin: "10px 0 6px" }}>
+      <EditorialPage
+        eyebrow="The Atlas"
+        title="Choose a route through time"
+        dek="Every voyage is a verified sequence of places, dates, documents and confidence marks, from ocean crossings to journeys beyond Earth."
+        background="/login-backgrounds/cellarius-scenographia-copernicani.jpg"
+        credit="Scenographia Systematis Copernicani · 1660 · Andreas Cellarius"
+        actions={[
+          { href: "/search", label: "Search the atlas" },
+          { href: "/contribute", label: "Suggest a voyage", variant: "secondary" },
+        ]}
+        meta={[`${ATLAS.length} voyages published`, "Earth and beyond", "Logs available"]}
+        wide
+      >
+        <section className="ed-panel">
+        <p>
           Every voyage on Terraveler is verified before it sails: real routes, the
           navigators&rsquo; own words, sources cited. Choose a route and scrub through time.
         </p>
-        <p style={{ margin: "0 0 26px", fontSize: 14 }}>
+        <p>
           {ATLAS.length} voyages published · <a href="/search">search the atlas</a> for a
           place, a navigator or an era.
         </p>
+        </section>
 
         {ordered.map(([key, g]) => (
-          <section key={key} style={{ marginBottom: 30 }}>
-            <h2
-              style={{
-                fontSize: "1.05rem",
-                letterSpacing: "0.04em",
-                margin: "0 0 12px",
-                paddingBottom: 6,
-                borderBottom: "1px solid var(--parchment-deep)",
-                color: "var(--ink-soft)",
-              }}
-            >
+          <section key={key} className="ed-index-section">
+            <h2>
               {g.label}
-              <span style={{ color: "var(--brass)", fontSize: 13 }}> · {g.items.length}</span>
+              <span> · {g.items.length}</span>
             </h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="ed-voyage-grid">
               {g.items.map((v) => (
-                <div key={v.slug}>
-                  <a className="voy-card" href={v.href} style={{ padding: "16px 18px" }}>
-                    <strong style={{ fontSize: 17 }}>{v.title}</strong>
-                    <span className="voy-meta" style={{ fontSize: 13.5 }}>
+                <div key={v.slug} className="ed-voyage-item">
+                  <a className="voy-card" href={v.href}>
+                    <strong>{v.title}</strong>
+                    <span className="voy-meta">
                       {v.navigator} · {v.years}
                     </span>
-                    <span className="voy-blurb" style={{ fontSize: 13.5 }}>{v.blurb}</span>
+                    <span className="voy-blurb">{v.blurb}</span>
                   </a>
-                  <div style={{ fontSize: 13, marginTop: 4, paddingLeft: 2 }}>
+                  <div className="ed-log-link">
                     <a href={voyageLogPath(v.slug)}>Read the log as text →</a>
                   </div>
                 </div>
@@ -88,11 +93,11 @@ export default function Voyages() {
           </section>
         ))}
 
-        <p style={{ color: "var(--ink-soft)", fontSize: 13.5, marginTop: 30 }}>
+        <p className="ed-muted">
           Missing a voyage? The atlas grows by request —{" "}
           <a href="/contribute">see what it is looking for</a>.
         </p>
-      </main>
+      </EditorialPage>
       <SiteFooter />
     </>
   );

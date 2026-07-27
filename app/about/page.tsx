@@ -3,6 +3,7 @@ import path from "path";
 import { marked } from "marked";
 import type { Metadata } from "next";
 import Link from "next/link";
+import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -35,15 +36,24 @@ export default function About() {
   return (
     <>
       <SiteHeader />
-      <main className="prose">
-        <div dangerouslySetInnerHTML={{ __html: html }} />
-        <p style={{ marginTop: 40 }}>
-          <Link href="/voyages">Browse the atlas →</Link>
-          <Link href="/contribute" style={{ marginLeft: 20 }}>
-            See what the atlas is looking for →
-          </Link>
-        </p>
-      </main>
+      <EditorialPage
+        eyebrow="About Terraveler"
+        title="An atlas that shows its evidence"
+        dek="Voyages, landfalls, documents and silences, presented as living charts with the provenance still visible."
+        background="/login-backgrounds/fra-mauro-map.jpg"
+        credit="Fra Mauro world map · c. 1450"
+        actions={[
+          { href: "/voyages", label: "Browse the atlas" },
+          { href: "/contribute", label: "Help it grow", variant: "secondary" },
+        ]}
+        meta={["Public-domain sources", "Human-authorized", "Evidence declared"]}
+      >
+        <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="ed-link-row">
+          <Link href="/voyages">Browse the atlas</Link>
+          <Link href="/contribute">See what the atlas is looking for</Link>
+        </div>
+      </EditorialPage>
       <SiteFooter />
     </>
   );

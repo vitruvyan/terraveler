@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { marked } from "marked";
 import type { Metadata } from "next";
+import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -18,7 +19,20 @@ export default function HowItWorks() {
   return (
     <>
       <SiteHeader />
-      <main className="prose" dangerouslySetInnerHTML={{ __html: html }} />
+      <EditorialPage
+        eyebrow="Contributor guide"
+        title="How the tandem works"
+        dek="A practical route from idea to source discovery, curator review, human authorization and public atlas entry."
+        background="/login-backgrounds/celestial-planisphere-1835.jpg"
+        credit="A celestial planisphere · 1835 · Library of Congress"
+        actions={[
+          { href: "/contribute", label: "View open gaps" },
+          { href: "/magna-carta", label: "Read the Carta", variant: "secondary" },
+        ]}
+        meta={["MCP-ready", "Audited workflow", "Desk reviewed"]}
+      >
+        <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
+      </EditorialPage>
       <SiteFooter />
     </>
   );

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import AtlasSearch from "@/components/AtlasSearch";
@@ -19,14 +20,23 @@ export default async function SearchPage({
   return (
     <>
       <SiteHeader />
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65, minHeight: "58vh" }}>
-        <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>Search the atlas</h1>
-        <p style={{ color: "var(--ink-soft)", margin: "10px 0 22px" }}>
+      <EditorialPage
+        eyebrow="Search"
+        title="Find a voyage, place or navigator"
+        dek="Search the atlas as it exists today. Empty results become editorial signal for what Terraveler should hold next."
+        background="/login-backgrounds/cellarius-planisphaerium-copernicanum.jpg"
+        credit="Planisphaerium Copernicanum · 1660 · Andreas Cellarius"
+        actions={[{ href: "/voyages", label: "Browse all voyages", variant: "secondary" }]}
+        meta={["Voyages", "Navigators", "Landfalls"]}
+      >
+      <section className="ed-search-panel">
+        <p>
           Voyages, navigators, landfalls. What isn&rsquo;t here yet can be
           requested — the atlas grows by exactly that route.
         </p>
         <AtlasSearch autoFocus initialQuery={q ?? ""} />
-      </main>
+      </section>
+      </EditorialPage>
       <SiteFooter />
     </>
   );
