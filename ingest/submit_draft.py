@@ -35,6 +35,7 @@ Credentials come from the environment and are never written to the repository:
 import argparse
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -70,6 +71,23 @@ def tool_text(resp: dict) -> str:
     return "\n".join(c.get("text", "") for c in content) or json.dumps(resp)
 
 
+def carta_version_in_force():
+    """The version the Carta itself declares, read through get_contract.
+
+    Not from a constant: a constant is what drifted three ways once already —
+    the document said 0.3, the MCP said 0.2 and the pipeline stamped 0.1, and
+    nothing errored because nobody was comparing them.
+    """
+    resp = rpc("tools/call", {"name": "get_contract", "arguments": {}})
+    text = tool_text(resp)
+    m = re.search(r"Editorial Constitution — v(\d+\.\d+)", text)
+    if not m:
+        print("  warning: could not read the Carta version from get_contract; "
+              "submitting the draft as stamped")
+        return None
+    return m.group(1)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path", help="the submission JSON written by extract.py")
@@ -103,6 +121,28 @@ def main():
     if not HANDLE or not KEY:
         sys.exit("set TERRAVELER_MCP_HANDLE and TERRAVELER_MCP_KEY "
                  "(the pipeline's own contributor credentials)")
+
+    # Call get_contract first, as the Carta requires of every Scribe, and take
+    # the version in force from the document rather than from a constant that
+    # can go stale.
+    #
+    # An amendment invalidates every draft in flight, because the gate refuses
+    # one that declares an old version. That is right when the amendment
+    # changes what a draft must contain — v0.3 added the evidence basis, and a
+    # draft written without it should not pass. It is pure friction when the
+    # amendment does not: v0.4 changed a quota, and re-running an extraction
+    # that costs money to alter one string would be waste dressed as rigour.
+    #
+    # So the draft is re-stamped and the fact is recorded, never hidden: meta
+    # keeps carta_version_drafted alongside the version it is submitted under,
+    # and the audit trail can always show it was produced before the amendment.
+    current = carta_version_in_force()
+    drafted = (sub.get("meta") or {}).get("carta_version")
+    if current and drafted and current != drafted:
+        print(f"  carta    drafted under {drafted}, in force is {current} — "
+              f"re-stamping and recording both")
+        sub["meta"]["carta_version_drafted"] = drafted
+        sub["meta"]["carta_version"] = current
 
     print(f"\nsubmitting to {MCP_URL} as '{HANDLE}' …")
     resp = rpc("tools/call", {
