@@ -714,94 +714,174 @@ input[type="range"].scrubber::-moz-range-thumb {
 .desk-btn-changes { background: #8a5a9a; border-color: #8a5a9a; color: #fff; }
 .desk-btn-reject { background: #a3402c; border-color: #a3402c; color: #fff; }
 
-.desk-login-shell {
+.auth-shell {
   position: relative;
-  min-height: calc(100svh - 76px);
+  min-height: 100svh;
   display: grid;
   place-items: center;
   overflow: hidden;
   padding: clamp(42px, 8vh, 92px) 22px;
   background: #18110c;
 }
-.desk-login-bg,
-.desk-login-slide,
-.desk-login-vignette {
+.auth-backdrop,
+.auth-backdrop-image,
+.auth-backdrop-vignette {
   position: absolute;
   inset: 0;
 }
-.desk-login-bg { z-index: 0; }
-.desk-login-slide {
+.auth-backdrop { z-index: 0; }
+.auth-backdrop-image {
   inset: -18px;
   background-size: cover;
   background-repeat: no-repeat;
-  opacity: 0;
-  transform: scale(1.035);
-  filter: saturate(0.88) contrast(1.04) brightness(0.88);
-  transition: opacity 1600ms ease, transform 9000ms ease;
-}
-.desk-login-slide.active {
   opacity: 1;
   transform: scale(1);
+  filter: saturate(0.88) contrast(1.04) brightness(0.88);
 }
-.desk-login-vignette {
+.auth-backdrop-vignette {
   background:
     linear-gradient(90deg, rgba(18, 11, 7, 0.68), rgba(18, 11, 7, 0.26) 48%, rgba(18, 11, 7, 0.54)),
     radial-gradient(circle at 50% 44%, rgba(242, 230, 207, 0.05), rgba(18, 11, 7, 0.58) 78%);
 }
-.desk-login-panel {
+.auth-panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 390px);
-  margin-right: min(46vw, 620px);
-  padding: 26px;
+  width: min(100%, 436px);
+  margin-right: min(42vw, 550px);
+  padding: 34px;
   border: 1px solid rgba(231, 213, 176, 0.72);
   border-radius: 8px;
   background: rgba(242, 230, 207, 0.92);
   box-shadow: 0 18px 55px rgba(18, 11, 7, 0.42);
   backdrop-filter: blur(8px);
 }
-.desk-login-kicker {
+.auth-account-panel {
+  border-color: rgba(231, 213, 176, 0.86);
+  box-shadow: 0 25px 70px rgba(18, 11, 7, 0.52);
+}
+.auth-desk-panel { width: min(100%, 400px); }
+.auth-wordmark {
   display: block;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.46rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.auth-kicker {
+  display: block;
+  margin-top: 18px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-size: 12px;
   color: var(--brass);
 }
-.desk-login-panel h1 {
-  margin: 6px 0 18px;
-  font-size: 1.72rem;
+.auth-panel h1 {
+  margin: 6px 0 10px;
+  font-size: clamp(2rem, 4vw, 2.55rem);
+  line-height: 1;
 }
-.desk-login-google {
-  display: block;
-  text-align: center;
+.auth-intro {
+  margin: 0 0 24px;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.auth-google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  border: 1px solid rgba(83, 68, 48, 0.32);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(18, 11, 7, 0.15);
+  color: #3c4043;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
   text-decoration: none;
-  margin-bottom: 15px;
 }
-.desk-login-divider {
+.auth-google-button:hover { background: #f8f8f8; }
+.auth-google-mark,
+.acct-google-cta .auth-google-mark {
+  width: 20px;
+  height: 20px;
+}
+.auth-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 12px;
+  margin: 20px 0;
   color: var(--ink-soft);
   font-size: 12px;
 }
-.desk-login-divider::before,
-.desk-login-divider::after {
+.auth-divider::before,
+.auth-divider::after {
   content: "";
   height: 1px;
   flex: 1;
   background: rgba(90, 74, 52, 0.26);
 }
-.desk-login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+.auth-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; }
+.auth-form input {
+  min-height: 44px;
+  padding: 9px 11px;
+  border: 1px solid rgba(90, 74, 52, 0.34);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--ink);
+  font: inherit;
+}
+.auth-form input:focus { outline: 2px solid rgba(176, 135, 58, 0.48); outline-offset: 1px; }
+.auth-submit,
+.auth-primary-link {
+  min-height: 46px;
+  border: 1px solid var(--btn);
+  border-radius: 6px;
+  background: var(--btn);
+  color: var(--parchment);
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 14px;
+  text-align: center;
+  text-decoration: none;
+}
+.auth-submit:hover,
+.auth-primary-link:hover { filter: brightness(0.95); }
+.auth-submit:disabled { cursor: wait; opacity: 0.7; }
 .desk-login-error {
   color: #a3402c;
   font-size: 13px;
 }
-.desk-login-credit {
+.auth-error {
+  margin: 12px 0 0;
+  color: #a3402c;
+  font-size: 13px;
+}
+.auth-switch,
+.auth-desk-link { margin: 20px 0 0; color: var(--ink-soft); font-size: 13px; text-align: center; }
+.auth-desk-link { margin-top: 9px; }
+.auth-switch a,
+.auth-desk-link a { color: var(--ink); font-weight: 700; }
+.auth-complete {
+  border: 1px solid rgba(79, 138, 91, 0.45);
+  border-radius: 6px;
+  background: rgba(241, 248, 238, 0.82);
+  padding: 18px;
+  color: #23482d;
+}
+.auth-complete p { margin: 8px 0 16px; color: var(--ink-soft); }
+.auth-primary-link { display: flex; align-items: center; justify-content: center; }
+.auth-image-credit {
   position: absolute;
   right: 18px;
   bottom: 14px;
@@ -817,23 +897,22 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1.35;
   text-align: right;
 }
-.desk-login-credit a {
+.auth-image-credit a {
   color: rgba(242, 230, 207, 0.95);
   text-decoration-color: rgba(242, 230, 207, 0.5);
 }
 
 @media (max-width: 820px) {
-  .desk-login-shell {
+  .auth-shell {
     place-items: center;
-    min-height: calc(100svh - 198px);
     padding: 28px 18px 48px;
   }
-  .desk-login-panel {
+  .auth-panel {
     margin-right: 0;
-    padding: 20px 22px;
+    padding: 26px 24px;
   }
-  .desk-login-panel h1 { font-size: 1.56rem; }
-  .desk-login-credit {
+  .auth-panel h1 { font-size: 2rem; }
+  .auth-image-credit {
     left: 12px;
     right: 12px;
     bottom: 10px;
@@ -842,8 +921,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .desk-login-slide {
-    transition: none;
+  .auth-backdrop-image {
     transform: none;
   }
 }
@@ -1203,11 +1281,6 @@ input[type="range"].scrubber::-moz-range-thumb {
 .acct-google-cta:hover {
   background: #fff;
   border-color: rgba(90, 74, 52, 0.34);
-}
-.acct-google-icon {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
 }
 .acct-desk-link {
   align-self: center;

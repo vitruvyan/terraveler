@@ -162,19 +162,14 @@ export default function Desk() {
   if (authed === null) return <main style={{ padding: 40 }}>…</main>;
 
   if (!authed) {
-    return (
-      <>
-      <SiteHeader />
-      <DeskLogin
-        email={email}
-        password={password}
-        error={err}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-        onSubmit={login}
-      />
-      </>
-    );
+    return <DeskLogin
+      email={email}
+      password={password}
+      error={err}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onSubmit={login}
+    />;
   }
 
   const openCount = (overview?.counts.submissions["human-review"] ?? 0) + (overview?.counts.submissions["peer-review"] ?? 0);

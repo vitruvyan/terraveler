@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   if (!email) return NextResponse.json({ error: "invalid or expired token" }, { status: 401 });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE, String(access_token), {
-    httpOnly: true, secure: true, sameSite: "strict", path: "/", maxAge: 3600,
+    httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/", maxAge: 3600,
   });
   return res;
 }

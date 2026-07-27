@@ -23,18 +23,57 @@ export function readCookie(req: Request): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-export async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
-  if (!AUTH_URL || !AUTH_KEY || !EDITOR_EMAIL) return { error: "server not configured" };
+type AuthResult = { token?: string; error?: string };
+
+function authConfigured(): boolean {
+  return Boolean(AUTH_URL && AUTH_KEY);
+}
+
+function authError(status: number, body: any, fallback: string): string {
+  if (status === 400 && typeof body?.msg === "string") return body.msg;
+  if (typeof body?.error_description === "string") return body.error_description;
+  if (typeof body?.message === "string") return body.message;
+  return fallback;
+}
+
+/** Regular Terraveler account login. Desk access is checked separately. */
+export async function signInAccount(email: string, password: string): Promise<AuthResult> {
+  if (!authConfigured()) return { error: "server not configured" };
+  if (!email || !password) return { error: "email and password required" };
   const r = await fetch(`${AUTH_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
-  if (!r.ok) return { error: "invalid credentials" };
-  const j = await r.json();
-  const mail = (j?.user?.email ?? "").toLowerCase();
-  if (mail !== EDITOR_EMAIL) return { error: "not an editor account" };
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { error: authError(r.status, j, "invalid credentials") };
   return { token: j.access_token as string };
+}
+
+/** Creates a regular account with the configured Supabase Auth provider. */
+export async function signUpAccount(email: string, password: string): Promise<AuthResult> {
+  if (!authConfigured()) return { error: "server not configured" };
+  if (!email || !password) return { error: "email and password required" };
+  const r = await fetch(`${AUTH_URL}/auth/v1/signup`, {
+    method: "POST",
+    headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return { error: authError(r.status, j, "could not create account") };
+  return { token: j.access_token as string | undefined };
+}
+
+export async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
+  if (!EDITOR_EMAIL) return { error: "server not configured" };
+  const { token, error } = await signInAccount(email, password);
+  if (!token) return { error };
+  const j = await fetch(`${AUTH_URL}/auth/v1/user`, {
+    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
+  }).then((r) => r.ok ? r.json() : null);
+  const mail = (j?.email ?? "").toLowerCase();
+  if (mail !== EDITOR_EMAIL) return { error: "not an editor account" };
+  return { token };
 }
 
 export async function getUserEmail(token: string): Promise<string | null> {

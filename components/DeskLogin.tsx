@@ -1,66 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-type LoginBackground = {
-  src: string;
-  title: string;
-  year: string;
-  credit: string;
-  sourceUrl: string;
-  position: string;
-};
-
-const LOGIN_BACKGROUNDS: LoginBackground[] = [
-  {
-    src: "/login-backgrounds/ortelius-world-map-1570.jpg",
-    title: "Typus Orbis Terrarum",
-    year: "1570",
-    credit: "Abraham Ortelius / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:OrteliusWorldMap1570.jpg",
-    position: "center 46%",
-  },
-  {
-    src: "/login-backgrounds/fra-mauro-map.jpg",
-    title: "Fra Mauro world map",
-    year: "c. 1450",
-    credit: "Fra Mauro / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:FraMauroDetailedMap.jpg",
-    position: "center",
-  },
-  {
-    src: "/login-backgrounds/carta-marina.png",
-    title: "Carta Marina",
-    year: "1539",
-    credit: "Olaus Magnus / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:CartaMarina.png",
-    position: "center 42%",
-  },
-  {
-    src: "/login-backgrounds/celestial-planisphere-1835.jpg",
-    title: "A celestial planisphere",
-    year: "1835",
-    credit: "Library of Congress / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:A_celestial_planisphere,_or_map_of_the_heavens_LOC_2013593157.jpg",
-    position: "center",
-  },
-  {
-    src: "/login-backgrounds/cellarius-planisphaerium-copernicanum.jpg",
-    title: "Planisphaerium Copernicanum",
-    year: "1660",
-    credit: "Andreas Cellarius / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cellarius_Harmonia_Macrocosmica_-_Planisphaerium_Copernicanum.jpg",
-    position: "center",
-  },
-  {
-    src: "/login-backgrounds/cellarius-scenographia-copernicani.jpg",
-    title: "Scenographia Systematis Copernicani",
-    year: "1660",
-    credit: "Andreas Cellarius / Wikimedia Commons",
-    sourceUrl: "https://commons.wikimedia.org/wiki/File:Cellarius_Harmonia_Macrocosmica_-_Scenographia_Systematis_Copernicani.jpg",
-    position: "center",
-  },
-];
+import Link from "next/link";
+import AuthBackdrop, { GoogleMark } from "@/components/AuthBackdrop";
 
 type DeskLoginProps = {
   email: string;
@@ -79,64 +20,37 @@ export default function DeskLogin({
   onPasswordChange,
   onSubmit,
 }: DeskLoginProps) {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    setActive(Math.floor(Math.random() * LOGIN_BACKGROUNDS.length));
-  }, []);
-
-  const current = LOGIN_BACKGROUNDS[active];
-
   return (
-    <main className="desk-login-shell">
-      <div className="desk-login-bg" aria-hidden="true">
-        <div
-          className="desk-login-slide active"
-          style={{ backgroundImage: `url(${current.src})`, backgroundPosition: current.position }}
-        />
-        <div className="desk-login-vignette" />
-      </div>
+    <AuthBackdrop variant="desk">
+      <section className="auth-panel auth-desk-panel" aria-labelledby="desk-login-title">
+        <Link href="/" className="auth-wordmark">Terraveler</Link>
+        <span className="auth-kicker">Editorial desk</span>
+        <h1 id="desk-login-title">Sign in to the desk</h1>
+        <p className="auth-intro">For the editor and the crew entrusted with Terraveler&rsquo;s record.</p>
 
-      <section className="desk-login-panel" aria-labelledby="desk-login-title">
-        <span className="desk-login-kicker">Terraveler · Editorial desk</span>
-        <h1 id="desk-login-title">Sign in</h1>
-
-        <a href="/api/desk/google" className="desk-btn desk-btn-primary desk-login-google">
-          Sign in with Google
+        <a href="/api/desk/google?next=/desk" className="auth-google-button">
+          <GoogleMark />
+          <span>Continue with Google</span>
         </a>
 
-        <div className="desk-login-divider">
-          <span>or with email</span>
+        <div className="auth-divider">
+          <span>or sign in with email</span>
         </div>
 
-        <form onSubmit={onSubmit} className="desk-login-form">
-          <input
-            value={email}
-            onChange={(event) => onEmailChange(event.target.value)}
-            placeholder="email"
-            type="email"
-            autoComplete="username"
-            className="desk-input"
-          />
-          <input
-            value={password}
-            onChange={(event) => onPasswordChange(event.target.value)}
-            placeholder="password"
-            type="password"
-            autoComplete="current-password"
-            className="desk-input"
-          />
-          <button type="submit" className="desk-btn desk-btn-primary">Enter the desk</button>
+        <form onSubmit={onSubmit} className="auth-form">
+          <label>
+            <span>Email address</span>
+            <input value={email} onChange={(event) => onEmailChange(event.target.value)} type="email" autoComplete="username" required />
+          </label>
+          <label>
+            <span>Password</span>
+            <input value={password} onChange={(event) => onPasswordChange(event.target.value)} type="password" autoComplete="current-password" required />
+          </label>
+          <button type="submit" className="auth-submit">Enter the desk</button>
           {error && <div className="desk-login-error">{error}</div>}
         </form>
+        <p className="auth-switch">Looking for your Terraveler account? <Link href="/login">Sign in here</Link></p>
       </section>
-
-      <p className="desk-login-credit">
-        <a href={current.sourceUrl} target="_blank" rel="noreferrer">
-          {current.title}
-        </a>
-        {" "}· {current.year} · {current.credit}
-      </p>
-    </main>
+    </AuthBackdrop>
   );
 }
