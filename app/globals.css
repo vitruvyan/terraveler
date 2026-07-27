@@ -1301,14 +1301,12 @@ input[type="range"].scrubber::-moz-range-thumb {
   padding-top: 20px;
   border-top: 1px solid var(--parchment-deep);
 }
-.ed-link-row a,
-.ed-log-link a {
+.ed-link-row a {
   color: var(--accent);
   text-decoration: none;
   border-bottom: 1px solid rgba(70, 96, 138, 0.28);
 }
-.ed-link-row a:hover,
-.ed-log-link a:hover {
+.ed-link-row a:hover {
   color: var(--ink);
   border-bottom-color: var(--brass);
 }
@@ -1352,14 +1350,14 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1.55;
 }
 .ed-index-section {
-  margin-bottom: 34px;
+  margin-bottom: 42px;
 }
 .ed-index-section h2 {
   display: flex;
   align-items: baseline;
   gap: 4px;
-  margin: 0 0 14px;
-  padding-bottom: 8px;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--parchment-deep);
   color: var(--ink-soft);
   font-size: 1.05rem;
@@ -1371,20 +1369,74 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .ed-voyage-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 16px;
+  align-items: stretch;
 }
-.ed-voyage-item .voy-card {
-  min-height: 100%;
-  padding: 17px 18px;
+.ed-voyage-card {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(231, 213, 176, 0.86);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.24)),
+    rgba(242, 230, 207, 0.72);
+  box-shadow: 0 10px 24px rgba(43, 33, 23, 0.07);
 }
-.ed-voyage-item .voy-card strong { font-size: 17px; }
-.ed-voyage-item .voy-meta,
-.ed-voyage-item .voy-blurb { font-size: 13.5px; }
-.ed-log-link {
-  margin-top: 5px;
-  padding-left: 2px;
+.ed-voyage-card:hover {
+  border-color: rgba(169, 119, 47, 0.7);
+  box-shadow: 0 14px 30px rgba(43, 33, 23, 0.11);
+}
+.ed-voyage-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 18px 18px 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.ed-voyage-kicker {
+  color: var(--brass);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.ed-voyage-main strong {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+.ed-voyage-main .voy-meta {
   font-size: 13px;
+  color: var(--ink-soft);
+}
+.ed-voyage-main .voy-blurb {
+  margin-top: 3px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.44;
+}
+.ed-voyage-footer {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 9px 18px;
+  border-top: 1px solid rgba(231, 213, 176, 0.78);
+  background: rgba(231, 213, 176, 0.32);
+  font-size: 13px;
+}
+.ed-voyage-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(70, 96, 138, 0.28);
+}
+.ed-voyage-footer a:hover {
+  color: var(--ink);
+  border-bottom-color: var(--brass);
 }
 .ed-search-panel {
   min-height: 38vh;

@@ -57,15 +57,15 @@ export default function Voyages() {
         meta={[`${ATLAS.length} voyages published`, "Earth and beyond", "Logs available"]}
         wide
       >
-        <section className="ed-panel">
-        <p>
-          Every voyage on Terraveler is verified before it sails: real routes, the
-          navigators&rsquo; own words, sources cited. Choose a route and scrub through time.
-        </p>
-        <p>
-          {ATLAS.length} voyages published · <a href="/search">search the atlas</a> for a
-          place, a navigator or an era.
-        </p>
+        <section className="ed-panel ed-atlas-panel">
+          <p>
+            Every voyage on Terraveler is verified before it sails: real routes, the
+            navigators&rsquo; own words, sources cited. Choose a route and scrub through time.
+          </p>
+          <p>
+            {ATLAS.length} voyages published · <a href="/search">search the atlas</a> for a
+            place, a navigator or an era.
+          </p>
         </section>
 
         {ordered.map(([key, g]) => (
@@ -76,18 +76,17 @@ export default function Voyages() {
             </h2>
             <div className="ed-voyage-grid">
               {g.items.map((v) => (
-                <div key={v.slug} className="ed-voyage-item">
-                  <a className="voy-card" href={v.href}>
+                <article key={v.slug} className="ed-voyage-card">
+                  <a className="ed-voyage-main" href={v.href}>
+                    <span className="ed-voyage-kicker">{KIND_LABEL[v.kind ?? "earth"] ?? "Voyage"}</span>
                     <strong>{v.title}</strong>
-                    <span className="voy-meta">
-                      {v.navigator} · {v.years}
-                    </span>
+                    <span className="voy-meta">{v.navigator} · {v.years}</span>
                     <span className="voy-blurb">{v.blurb}</span>
                   </a>
-                  <div className="ed-log-link">
+                  <div className="ed-voyage-footer">
                     <a href={voyageLogPath(v.slug)}>Read the log as text →</a>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           </section>
