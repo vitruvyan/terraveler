@@ -144,14 +144,24 @@ VOYAGE_META = {
                    "retreat of La Noche Triste, the victory at Otumba, and the final "
                    "siege and fall of Tenochtitlan in 1521.",
         "date_window": (1519, 1521),
-        # Testimony, not a log: Bernal Díaz was present, but wrote in old age.
-        "evidence_basis": "contemporary-testimony",
-        "what_was_lost": "The account followed here is Bernal Díaz del "
-                         "Castillo's — a soldier who was present, writing some "
-                         "four decades later from memory, in old age, to correct "
-                         "historians he thought had flattered Cortés. The Mexica "
-                         "side of these events survives only in compilations made "
-                         "after the conquest, under Spanish supervision.",
+        # Was contemporary-testimony while Bernal Díaz was the only source. With
+        # MacNutt's translation of the Cartas de Relación in the corpus, Cortés's
+        # own despatches — written during the campaign and sent to Charles V —
+        # are now the primary, which is the journal tier by any honest reading.
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "Cortés wrote his despatches during the campaign, to "
+                         "the emperor whose permission he did not have, while "
+                         "under charges from the governor who had sent him and "
+                         "then tried to recall him. They are an account and a "
+                         "legal defence at once, and they are silent wherever "
+                         "silence served him. Bernal Díaz, a soldier who was "
+                         "there, set down his own version four decades later in "
+                         "old age, partly to correct historians he thought had "
+                         "flattered Cortés — so the two disagree, and the atlas "
+                         "carries both. Against them there is almost nothing: "
+                         "the Mexica side survives only in compilations made "
+                         "after the conquest, under Spanish supervision, and the "
+                         "codices that were not made for Spaniards were burned.",
         # Multi-volume primary source (Bernal Díaz's Memoirs, Vols I & II): chunk_index
         # restarts per volume, so no single narrative range applies — defaults to the
         # whole PD span; per-stop pgvector retrieval + the canonical-itinerary plan

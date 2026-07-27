@@ -78,6 +78,26 @@ VOYAGE_SOURCES = {
              "url": "https://www.gutenberg.org/cache/epub/32475/pg32475.txt",
              "source_url": "https://www.gutenberg.org/ebooks/32475",
              "license": "Public domain"},
+            # Cortés in his own words. The Cartas de Relación are the despatches
+            # he sent to Charles V during the campaign, and the originals are
+            # held at the Archivo General de Indias in Seville — PARES publishes
+            # the catalogue and images of the public-domain holdings, requiring
+            # only that the AGI custody and the full signatura be cited. The
+            # manuscripts are in Spanish and the language gate would null every
+            # quotation from them, so the text here is MacNutt's 1908 English
+            # translation, both volumes, gate-verified and unrestricted.
+            #
+            # Until now this voyage was read entirely through Bernal Díaz.
+            {"kind": "archive",
+             "title": "Letters of Cortés: the Five Letters of Relation to the Emperor Charles V, Vol. I (trans. F. A. MacNutt, 1908)",
+             "url": "https://archive.org/download/lettersofcorts01cortuoft/lettersofcorts01cortuoft_djvu.txt",
+             "source_url": "https://archive.org/details/lettersofcorts01cortuoft",
+             "license": "Public domain"},
+            {"kind": "archive",
+             "title": "Letters of Cortés: the Five Letters of Relation to the Emperor Charles V, Vol. II (trans. F. A. MacNutt, 1908)",
+             "url": "https://archive.org/download/lettersofcorts02cortuoft/lettersofcorts02cortuoft_djvu.txt",
+             "source_url": "https://archive.org/details/lettersofcorts02cortuoft",
+             "license": "Public domain"},
             {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
              "titles": ["Hernán Cortés", "Spanish conquest of the Aztec Empire",
                         "Fall of Tenochtitlan", "Moctezuma II", "La Noche Triste",
