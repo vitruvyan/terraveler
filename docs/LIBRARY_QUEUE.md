@@ -11,6 +11,48 @@ Verified 2026-07-25. Re-check the URLs before a run: archive.org items are
 sometimes re-scanned under a new identifier, and an item that was open can be
 withdrawn into the lending collection.
 
+## Prefer a plain translation to an annotated scholarly edition
+
+The best edition for a scholar is often the worst for this pipeline, and the
+difference costs quotations.
+
+Beal's Xuanzang, Yule and Cordier's Marco Polo and Biggar's Cartier are the
+standard scholarly texts, and each interleaves its apparatus with the work it
+annotates — Yule carries roughly 2,300 footnote markers per volume. A
+`narrative_chunk_range` cannot separate what alternates page by page, so the
+extractor retrieves a chunk of commentary as readily as a chunk of narrative
+and the source-integrity gate confirms it happily: a citation is verbatim, and
+is not an account of anything. Xuanzang published with four excerpts that were
+editorial notes, one of them describing a different pilgrim two centuries
+earlier.
+
+**Three separate attempts to solve this automatically failed in one session**,
+and they are recorded here so nobody spends the afternoon again:
+
+1. *Score chunks as apparatus by typography* — bare numbers, roman numerals,
+   leader dots, few finite sentences. Finds tables of contents and indexes;
+   misses everything else, because front matter is frequently ordinary prose. A
+   dedication reads exactly like narrative.
+2. *Score by density of dates inside the voyage's window*. Cook's front matter
+   contains an editorial aside listing his second and third voyages' sailing
+   dates, so the signal fires before the journal begins.
+3. *Reject excerpts matching footnote patterns* — `op. cit.`, `vol. ii`,
+   bracketed markers, page references. Catches the shape of a citation and not
+   the substance of a note: "The frontier line of Kalinga cannot have extended
+   beyond the Gôdâvarî river" is a scholar's prose and pattern-indistinguishable
+   from a traveller's.
+
+All three fail the same way. The boundary between an account and a commentary
+on it is semantic, and no cheap signal knows the difference. Since a wrong
+answer here means publishing a footnote as a diary entry, a confident wrong
+answer is worse than none.
+
+**So it is an editorial choice, made when the source is picked.** Where a plain
+translation and an annotated edition both exist, take the plain one and lose the
+notes. Where only the scholarly edition exists — Xuanzang, Polo — expect a
+minority of excerpts to be apparatus, say so in the voyage's entry, and let the
+desk catch them at verdict.
+
 ## What "verbatim" can and cannot promise for a scan
 
 The extractor re-checks every quotation against the live source before keeping
@@ -136,7 +178,11 @@ These have a public-domain primary text with enough dated landfalls to run
 
 ### Marco Polo, 1271–1295
 - **Source:** *The Travels of Marco Polo*, ed. Henry Yule, rev. Henri Cordier.
-  Gutenberg #10636 (2.3 MB) and #10637 (392 KB), both live.
+  Gutenberg #10636 (vol. I, 2.3 MB) and #12410 (vol. II, 2.4 MB).
+  **Correction (2026-07-27):** an earlier draft of this file gave #10637 as the
+  second volume. It is not — #10637 is *The Uprising of a Great People*, an
+  unrelated book. The URL had been checked for a 200 and never for its content,
+  which is the same mistake as trusting a catalogue title.
 - **Problem:** not a log. Polo dictated to Rustichello da Pisa in a Genoese
   prison, decades after the fact, and the text is organised by place and
   wonder rather than by day. Roughly 10–15% of plausible stages will have no
