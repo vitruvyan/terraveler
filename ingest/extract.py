@@ -48,6 +48,7 @@ import time
 import argparse
 import unicodedata
 import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 
 import psycopg2
@@ -60,7 +61,8 @@ import fetch as F
 import oculus
 
 KEY = os.getenv("OPENAI_API_KEY", "")
-EXTRACT_MODEL = os.getenv("EXTRACT_MODEL", "gpt-4.1")
+ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+EXTRACT_MODEL = os.getenv("EXTRACT_MODEL", "claude-sonnet-5")
 PLAN_MODEL = os.getenv("PLAN_MODEL", EXTRACT_MODEL)
 UA = "terraveler-extract/0.1 (contact: dbaldoni@gmail.com)"
 
@@ -679,27 +681,78 @@ def haversine_km(a_lat, a_lng, b_lat, b_lng):
     return 2 * R * math.asin(math.sqrt(s))
 
 
-# ---------------------------------------------------------------- OpenAI call
-def _chat_json(model, system, user, temperature=0, timeout=120):
-    if not KEY:
-        raise RuntimeError("OPENAI_API_KEY not set")
-    body = {
-        "model": model, "temperature": temperature,
-        "response_format": {"type": "json_object"},
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-    }
-    req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {KEY}"})
+# ------------------------------------------------------------- model calls
+#
+# Two providers, chosen by the model name. The pipeline was written against
+# OpenAI and the account's quota ran out mid-batch — not a rate limit that would
+# pass, but the balance — which stopped four voyages with a 429 that looked like
+# throttling. A single provider is a single point of failure for a job that runs
+# for hours, so the call is now provider-agnostic and the model name decides.
+#
+# Both are asked for JSON and both are retried with the same backoff. The
+# difference is only in shape: OpenAI takes a system role in the message list
+# and can be told response_format=json_object; Anthropic takes system as its own
+# parameter and has to be asked for JSON in the prompt, so the caller's system
+# text is given a JSON instruction here rather than in every call site.
+
+
+def _post_json(url, headers, body, timeout):
+    req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        # The body says what is wrong; the status alone says only that
+        # something is. A 400 debugged from the status is guesswork.
+        detail = e.read().decode("utf-8", "replace")[:400]
+        raise RuntimeError(f"HTTP {e.code} from {url}: {detail}") from None
+
+
+def _extract_json(text):
+    """Anthropic returns prose around JSON often enough to matter. Take the
+    outermost object rather than trusting the whole response to parse."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.S)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        i, j = text.find("{"), text.rfind("}")
+        if i == -1 or j <= i:
+            raise
+        return json.loads(text[i:j + 1])
+
+
+def _chat_json(model, system, user, temperature=0, timeout=180):
+    anthropic = model.startswith("claude")
+    if anthropic:
+        if not ANTHROPIC_KEY:
+            raise RuntimeError("ANTHROPIC_API_KEY not set")
+        url = "https://api.anthropic.com/v1/messages"
+        headers = {"Content-Type": "application/json", "x-api-key": ANTHROPIC_KEY,
+                   "anthropic-version": "2023-06-01"}
+        # No temperature: the Claude 5 models reject it as deprecated, and the
+        # 400 says so — which is only useful if the error body is read, which is
+        # why _post_json surfaces it.
+        body = {"model": model, "max_tokens": 8192,
+                "system": system + "\n\nRespond with a single JSON object and nothing else.",
+                "messages": [{"role": "user", "content": user}]}
+    else:
+        if not KEY:
+            raise RuntimeError("OPENAI_API_KEY not set")
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {"Content-Type": "application/json", "Authorization": f"Bearer {KEY}"}
+        body = {"model": model, "temperature": temperature,
+                "response_format": {"type": "json_object"},
+                "messages": [{"role": "system", "content": system},
+                             {"role": "user", "content": user}]}
+
     for attempt in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                content = json.load(r)["choices"][0]["message"]["content"]
-            return json.loads(content)
+            data = _post_json(url, headers, body, timeout)
+            content = (data["content"][0]["text"] if anthropic
+                       else data["choices"][0]["message"]["content"])
+            return _extract_json(content)
         except Exception:
             if attempt == 3:
                 raise

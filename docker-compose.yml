@@ -57,7 +57,8 @@ services:
     profiles: ["jobs"]          # not started by `up`; run on demand
     environment:
       EMBED_URL: http://terraveler_embedding:8010
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CURATOR_MODEL: ${CURATOR_MODEL:-gpt-4.1}
       PGHOST: terraveler_postgres
       PGPORT: 5432
@@ -88,7 +89,8 @@ services:
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       RAG_TOKEN: ${RAG_TOKEN}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
       PGHOST: terraveler_postgres
       PGPORT: 5432
