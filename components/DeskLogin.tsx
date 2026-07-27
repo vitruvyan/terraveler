@@ -62,13 +62,6 @@ const LOGIN_BACKGROUNDS: LoginBackground[] = [
   },
 ];
 
-function nextRandomIndex(current: number) {
-  if (LOGIN_BACKGROUNDS.length < 2) return 0;
-  let next = Math.floor(Math.random() * LOGIN_BACKGROUNDS.length);
-  while (next === current) next = Math.floor(Math.random() * LOGIN_BACKGROUNDS.length);
-  return next;
-}
-
 type DeskLoginProps = {
   email: string;
   password: string;
@@ -89,10 +82,7 @@ export default function DeskLogin({
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActive((current) => nextRandomIndex(current));
-    }, 9000);
-    return () => window.clearInterval(timer);
+    setActive(Math.floor(Math.random() * LOGIN_BACKGROUNDS.length));
   }, []);
 
   const current = LOGIN_BACKGROUNDS[active];
@@ -100,13 +90,10 @@ export default function DeskLogin({
   return (
     <main className="desk-login-shell">
       <div className="desk-login-bg" aria-hidden="true">
-        {LOGIN_BACKGROUNDS.map((bg, index) => (
-          <div
-            key={bg.src}
-            className={`desk-login-slide${index === active ? " active" : ""}`}
-            style={{ backgroundImage: `url(${bg.src})`, backgroundPosition: bg.position }}
-          />
-        ))}
+        <div
+          className="desk-login-slide active"
+          style={{ backgroundImage: `url(${current.src})`, backgroundPosition: current.position }}
+        />
         <div className="desk-login-vignette" />
       </div>
 
