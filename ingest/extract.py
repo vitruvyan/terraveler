@@ -214,6 +214,10 @@ VOYAGE_META = {
                    "wreck of the Santa María and the garrison left at La Navidad, and "
                    "the return voyages that turned a discovery into a colony.",
         "date_window": (1492, 1504),
+        # Calibrated against the corpus (2026-07-27). Olson & Bourne 1906, Gutenberg #18571, 1,512 PD chunks. The volume opens with the Norse sagas and the Greenland documents — a different voyage entirely — and the Columbus material begins around 300, after the editors' notes on the translations. 1509-1511 is Gutenberg boilerplate.
+        # The excerpts are Las Casas's abstract, not Columbus's own log: see
+        # what_was_lost. Attribution must say so.
+        "narrative_chunk_range": (300, 1508),
         # The log is lost. What survives is Las Casas's abstract of it, and the
         # atlas must not present those words as Columbus's own.
         "evidence_basis": "contemporary-testimony",
@@ -238,6 +242,13 @@ VOYAGE_META = {
                    "the mountain Cartier named Mont Royal, and the failed colony of "
                    "Charlesbourg-Royal.",
         "date_window": (1534, 1542),
+        # Calibrated against the corpus (2026-07-27). Biggar 1924 via archive.org, 1,381 PD chunks. Front matter 0-11: the library stamp, title page, plate list and the editor's bibliographic notes. Index 1376-1379; 1380 is the library's date-due slip, scanned with the book.
+        # KNOWN LIMITATION: this edition prints the French original and the
+        # English translation on facing pages and the corpus interleaves them —
+        # about 975 English chunks against 365 French. A range cannot separate
+        # them and Carta 4 wants English, so quotes need a language check
+        # before this voyage is published.
+        "narrative_chunk_range": (12, 1375),
         "evidence_basis": "contemporary-journal",
         "what_was_lost": "Cartier wrote the relations of the first two voyages "
                          "himself; the third survives only through Hakluyt's English "
@@ -259,6 +270,8 @@ VOYAGE_META = {
                    "silver from Cusco and Pachacamac, Atahualpa's execution, and the "
                    "advance on Cusco through Jauja.",
         "date_window": (1532, 1533),
+        # Calibrated against the corpus (2026-07-27). Markham 1872 via archive.org, 495 PD chunks. Front matter 0-19: Hakluyt plates, contents, and Markham's introduction with its footnotes. Xerez's narrative is well under way by 128. Chunk 494 is the Berkeley library's circulation slip.
+        "narrative_chunk_range": (20, 492),
         "evidence_basis": "contemporary-testimony",
         "what_was_lost": "Francisco de Xerez was Pizarro's secretary and stood in the "
                          "square at Cajamarca, but he wrote to justify the conquest to "
@@ -322,6 +335,13 @@ VOYAGE_META = {
                    "by the southern desert route with six hundred and fifty-seven "
                    "Buddhist texts.",
         "date_window": (629, 645),
+        # Calibrated against the corpus (2026-07-27). Beal 1884, both volumes in one Digital Library of India scan, 2,728 PD chunks. Front matter 0-6 and Beal's introduction run to about 75; the alphabetical index occupies the last hundred-odd chunks.
+        # KNOWN LIMITATION: a scholarly edition whose OCR interleaves Beal's
+        # footnote apparatus with the text throughout, so a quotation may pick
+        # up an editorial note. Highest garbled-token density of the nine
+        # corpora (0.23%) — see docs/LIBRARY_QUEUE.md on what verbatim can
+        # promise for a scan.
+        "narrative_chunk_range": (76, 2600),
         # First-hand, but not a log kept on the road. The Records were composed
         # after his return, at the emperor's request, by his disciple Bianji
         # writing down what Xuanzang told him — which is the testimony tier's
@@ -350,6 +370,8 @@ VOYAGE_META = {
                    "its unmapped interior to Stromness, and the rescue of every man "
                    "left behind.",
         "date_window": (1914, 1917),
+        # Calibrated against the corpus (2026-07-27). Gutenberg #5199, 1,431 PD chunks. Front matter 0-7 is title, contents and plate list; the narrative opens at 8 with the preparations for a last great journey. 1428-1429 index, 1430 Gutenberg boilerplate.
+        "narrative_chunk_range": (8, 1427),
         "evidence_basis": "contemporary-journal",
         "what_was_lost": "Shackleton, Worsley and Hurley all kept diaries, and "
                          "Worsley's navigational log survives — which is why the "
