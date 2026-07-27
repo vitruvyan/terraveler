@@ -67,6 +67,15 @@ services:
     volumes:
       - ./traces:/app/traces
       - ./out:/app/out
+      # The pipeline source is mounted, not baked in. The Dockerfile still
+      # COPYs it so the image runs standalone, but a bind mount means editing
+      # sources.py or extract.py takes effect on the next run without a
+      # rebuild. Forgetting that rebuild produced three silent zero-document
+      # runs in one session — the container simply did not know about the
+      # voyage it was asked for, and reported success with an empty corpus.
+      # (not :ro — a read-only /app blocks creating the nested
+      #  mountpoints for traces/ and out/ above it)
+      - ./ingest:/app
     networks:
       - terraveler_net
 
