@@ -89,7 +89,6 @@ export default function DeskLogin({
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    setActive(Math.floor(Math.random() * LOGIN_BACKGROUNDS.length));
     const timer = window.setInterval(() => {
       setActive((current) => nextRandomIndex(current));
     }, 9000);
