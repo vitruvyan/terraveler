@@ -855,8 +855,14 @@ def plan_itinerary_node(ctx, corpus):
             data = _chat_json(PLAN_MODEL, PLAN_SYSTEM, user)
             stops = data.get("stops", [])
         except Exception as e:
-            return state.with_rejection(Rejection(
-                "plan_itinerary", f"planning call failed: {str(e)[:140]}", _now()))
+            # A failed plan is not an empty voyage. Returning here produced a
+            # submission with zero waypoints that looked like a completed run —
+            # a rate limit took three voyages that way in one batch, and the
+            # only sign was a suspiciously round number.
+            raise RuntimeError(
+                f"planning call failed for {ctx.voyage}: {str(e)[:160]}. "
+                f"No draft written — a voyage with no itinerary is a failed run, "
+                f"not a short one.") from e
 
         waypoints = []
         for i, s in enumerate(stops):
@@ -998,6 +1004,7 @@ def retrieve_chunks(ctx, corpus, waypoint, k=8, pad=60):
 def extract_node(ctx, corpus):
     def node(state):
         n_with_excerpt = 0
+        failed_calls = []
         for w in corpus.waypoints:
             chunks = retrieve_chunks(ctx, corpus, w)
             w["_retrieved"] = chunks
@@ -1014,6 +1021,7 @@ def extract_node(ctx, corpus):
                                    f"(candidate dates: {w['candidate_dates']})\n\n"
                                    f"JOURNAL EXCERPTS:\n\n{listing}")
             except Exception as e:
+                failed_calls.append(w["seq"])
                 state = state.with_rejection(Rejection(
                     f"wp{w['seq']} '{w['place_historical_raw']}'",
                     f"extract call failed: {str(e)[:120]}", _now()))
@@ -1039,6 +1047,17 @@ def extract_node(ctx, corpus):
                 n_with_excerpt += 1
 
         state = state.with_fact(Fact("waypoints_with_candidate_excerpt", n_with_excerpt, "extract", _now()))
+        # A run that lost most of its stages to a transport failure is a failed
+        # run, not a short voyage. Verrazzano came back with 2 waypoints of ~20
+        # after a 429, and a 2-stage draft passes the Stage-0 gate and reaches
+        # the desk looking deliberate.
+        if failed_calls and len(failed_calls) > max(2, len(corpus.waypoints) // 5):
+            raise RuntimeError(
+                f"{len(failed_calls)} of {len(corpus.waypoints)} extract calls failed "
+                f"for {ctx.voyage} (seqs {failed_calls[:8]}...). No draft written: a "
+                f"truncated itinerary is indistinguishable from a complete one once "
+                f"it reaches the desk.")
+
         return state.with_decision(Decision(
             f"Extract ({EXTRACT_MODEL}): grounded {len(corpus.waypoints)} waypoints, "
             f"{n_with_excerpt} with a candidate verbatim excerpt (pre-verification)", _now()))
