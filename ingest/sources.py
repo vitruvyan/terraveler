@@ -318,22 +318,27 @@ VOYAGE_SOURCES = {
         "image_queries": ['Francis Drake portrait', 'Golden Hind ship', 'Drake circumnavigation map'],
     },
 
+    # Marco Polo — MARSDEN, not Yule. The Yule/Cordier edition is the scholarly
+    # standard and it is unusable here: it interleaves some 2,300 footnote
+    # markers per volume with the text, and an extraction from it returned five
+    # of its first eight excerpts as Yule's own commentary — one of them an
+    # index line, "Venice, 18; find young Marco there". A voyage whose excerpts
+    # are its editor's arguments misattributes the one thing this atlas
+    # promises. Marsden's translation carries no apparatus at all: zero matches
+    # for the note patterns that Yule fires on thousands of times.
     "polo-1271": {
         "texts": [
-            {"kind": "gutenberg",
-             "title": 'The Travels of Marco Polo, Vol. 1 (ed. Henry Yule, rev. Henri Cordier)',
-             "url": "https://www.gutenberg.org/cache/epub/10636/pg10636.txt",
-             "source_url": "https://www.gutenberg.org/ebooks/10636",
-             "license": "Public domain"},
-            {"kind": "gutenberg",
-             "title": "The Travels of Marco Polo, Vol. 2 (ed. Henry Yule, rev. Henri Cordier)",
-             "url": "https://www.gutenberg.org/cache/epub/12410/pg12410.txt",
-             "source_url": "https://www.gutenberg.org/ebooks/12410",
+            {"kind": "archive",
+             "title": "The Travels of Marco Polo, the Venetian (trans. William Marsden, rev. ed. 1892)",
+             "url": "https://archive.org/download/travelsofmarcopo92polo/travelsofmarcopo92polo_djvu.txt",
+             "source_url": "https://archive.org/details/travelsofmarcopo92polo",
              "license": "Public domain"},
             {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
-             "titles": ['Marco Polo', 'Il Milione', 'Kublai Khan', 'Yuan dynasty', 'Silk Road', 'Rustichello da Pisa']},
+             "titles": ["Marco Polo", "Il Milione", "Kublai Khan", "Yuan dynasty",
+                        "Silk Road", "Rustichello da Pisa"]},
         ],
-        "image_queries": ['Marco Polo portrait', 'Kublai Khan court', 'Catalan Atlas caravan'],
+        "image_queries": ["Marco Polo portrait", "Kublai Khan court",
+                          "Catalan Atlas caravan"],
     },
 
     "ibnbattuta-1325": {

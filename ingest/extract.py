@@ -421,15 +421,9 @@ VOYAGE_META = {
         "sponsor": 'travelling with his father and uncle, merchants of Venice',
         "summary": "Twenty-four years out of Venice: through Persia and the Pamirs to Kublai Khan's court at Khanbaliq, years in the Khan's service across Cathay and the south, then home by sea through the Indies, Ceylon and Hormuz.",
         "date_window": (1271, 1295),
-        # NO narrative_chunk_range on purpose. Yule is two volumes and
-        # chunk_index restarts per source, so a single range would cut one
-        # volume and not the other — the same reason Cortes has none. Per-stop
-        # pgvector retrieval carries completeness across both.
-        # KNOWN LIMITATION: Yule carries roughly 2,300 footnote markers per
-        # volume and interleaves them with the text, so a minority of excerpts
-        # will be the editor's apparatus. No plain translation exists on
-        # Gutenberg; see docs/LIBRARY_QUEUE.md on why this is an editorial
-        # choice and not something the pipeline can filter.
+        # Source swapped to Marsden 1892 (see sources.py). Range to be
+        # calibrated after the re-ingestion — the Yule range is meaningless
+        # against a different book.
         "evidence_basis": 'contemporary-testimony',
         "what_was_lost": 'Polo kept no journal. The book was dictated in a Genoese prison around 1298 to Rustichello of Pisa, a writer of Arthurian romances, more than two decades after the events. No original manuscript survives and the roughly 150 that do disagree with one another, some carrying episodes the others lack.',
     },
