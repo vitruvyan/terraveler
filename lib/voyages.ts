@@ -155,6 +155,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Three voyages into the Gulf of St Lawrence: the cross raised at Gasp\u00e9, a winter at Stadacona cured by an Iroquoian remedy, and the journey to Hochelaga beneath the mountain he named Mont Royal.",
   },
+  {
+    slug: "dias-1487",
+    href: "/voyage/dias-1487",
+    title: "Bartolomeu Dias Rounds the Cape (1487-1488)",
+    navigator: "Bartolomeu Dias",
+    years: "1487–1488",
+    blurb:
+      "The voyage that proved the Atlantic and the Indian Ocean were one sea \u2014 and whose every record burned in the Lisbon earthquake of 1755.",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
