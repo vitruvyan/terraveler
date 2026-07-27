@@ -11,6 +11,32 @@ Verified 2026-07-25. Re-check the URLs before a run: archive.org items are
 sometimes re-scanned under a new identifier, and an item that was open can be
 withdrawn into the lending collection.
 
+## What "verbatim" can and cannot promise for a scan
+
+The extractor re-checks every quotation against the live source before keeping
+it, and nulls anything it cannot confirm. That is a real guarantee and it has
+held: no fabricated quote has reached a draft.
+
+But it confirms the quote against the **digitised text**, which for an
+archive.org item is an OCR of a scan. If the OCR misread a word, a quote
+reproducing that misreading verifies perfectly — it matches the file — while
+differing from the printed page. For Project Gutenberg, whose texts are
+proofread by volunteers, the two are effectively the same thing. For a raw
+scan they are not.
+
+Measured across the nine corpora, garbled-token density runs from 0.00%
+(Cortés, Gutenberg) to 0.23% (Xuanzang, Beal 1884 via the Digital Library of
+India). The spread is modest and the proxy is crude — Cook, a proofread
+Gutenberg text, scores 0.16% because the heuristic counts footnote markers and
+inline dates as noise. So this is not a reason to refuse scans.
+
+It is a reason to say what the guarantee is. **Verbatim means verbatim against
+the source we cite, and where that source is a scan, the citation should let a
+reader reach the scan rather than only the book.** The source_url already does
+this. Nothing further is required of the pipeline; something is required of
+anyone who reads a quotation from `cartier-1534`, `pizarro-1532` or
+`xuanzang-629` and assumes it matches a printed page character for character.
+
 ## Why each entry names the exact edition
 
 Three of the first source proposals for this queue were unusable, and in every
