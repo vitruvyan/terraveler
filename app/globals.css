@@ -938,6 +938,34 @@ input[type="range"].scrubber::-moz-range-thumb {
   max-width: min(340px, calc(100vw - 130px));
 }
 .left-stack .lens-switch { position: static; }
+.map-brand-stack {
+  flex-direction: row;
+  align-items: center;
+}
+.map-wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 5px 12px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: 0 3px 12px rgba(43, 33, 23, 0.14);
+  color: var(--ink);
+  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-decoration: none;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+}
+.map-wordmark:hover { background: rgba(255, 255, 255, 0.62); }
+.map-wordmark:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
 
 .cartouche {
   background: rgba(242, 230, 207, 0.95);
@@ -1008,9 +1036,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--parchment-deep);
-  background: rgba(242, 230, 207, 0.95);
-  color: var(--ink);
+  border: 1px solid var(--accent-deep);
+  background: var(--accent);
+  color: var(--parchment);
   font-size: 17px;
   cursor: pointer;
   display: flex;
@@ -1019,7 +1047,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
 }
-.tr-btn:hover { background: var(--parchment-deep); }
+.tr-btn:hover { background: var(--accent-deep); }
 .tr-menu {
   position: absolute;
   top: 48px;
