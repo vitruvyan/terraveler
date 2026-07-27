@@ -763,7 +763,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .auth-wordmark {
   display: block;
   color: var(--ink);
-  font-family: var(--font-display);
+  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 1.46rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1127,7 +1127,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .sh-brand { display: flex; flex-direction: column; margin-right: auto; }
 .sh-wordmark {
-  font-family: var(--font-display);
+  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 700;
   font-size: 1.7rem;
   letter-spacing: 0.06em;
@@ -1183,7 +1183,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .sf-col a { color: var(--ink); text-decoration: none; }
 .sf-col a:hover { color: var(--ink); text-decoration: underline; }
 .sf-wordmark {
-  font-family: var(--font-display);
+  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-weight: 700;
   font-size: 1.4rem;
   letter-spacing: 0.06em;

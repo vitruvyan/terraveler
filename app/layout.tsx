@@ -1,5 +1,16 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+const ebGaramond = localFont({
+  src: [
+    { path: "./fonts/EBGaramond-500.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/EBGaramond-600.ttf", weight: "600", style: "normal" },
+    { path: "./fonts/EBGaramond-700.ttf", weight: "700", style: "normal" },
+  ],
+  variable: "--font-logo",
+  display: "swap",
+});
 
 const SITE_URL = "https://www.terraveler.com";
 const SITE_DESCRIPTION =
@@ -38,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={ebGaramond.variable}>
       <body>
         {children}
         <script
