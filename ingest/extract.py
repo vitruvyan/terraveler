@@ -438,6 +438,42 @@ def norm(s):
     return re.sub(r"\s+", " ", s).strip().casefold()
 
 
+_EN = re.compile(r"\b(the|and|of|to|was|were|which|that|with|from|they|we|had|there|this)\b", re.I)
+# Short high-signal function words that are not also English words. "plus" and
+# "son" are deliberately absent: both are ordinary English, and a false French
+# reading discards a good quotation, which is the costlier mistake.
+_FR = re.compile(r"\b(les|des|que|qui|nous|leur|ledit|ladicte|dudit|icelle|aultre|"
+                 r"lesquelz|estoit|avons|sont|pour|dans|cette|nostre|vne|est|"
+                 r"et|au|aux|avec|il|ils|elle|sur|par|tout|tous|ainsi|comme|"
+                 r"fut|sans|ung|ses|nos|vers|ceulx|quinze|trois)\b", re.I)
+
+
+def reads_as_english(text, margin=1.5):
+    """Whether a quotation is in the language Terraveler publishes.
+
+    Carta §4: "The language of Terraveler is English, always. Sources may be in
+    any language; published content is in English."
+
+    Some editions print the original facing the translation, and the corpus
+    interleaves them: Biggar's Cartier is roughly 975 English chunks against 365
+    French, alternating page by page. A chunk_index range cannot separate what
+    alternates, so four of Cartier's twenty-three excerpts came back in
+    sixteenth-century French — verbatim, correctly verified, and unpublishable.
+
+    Deliberately a function-word count rather than a model. The distinction here
+    is coarse and the stakes are a null: an English passage carrying French
+    place names must not be discarded, so the margin is generous and a tie goes
+    to keeping the quote. Where it guesses wrong the cost is a stage that says
+    it has no excerpt, which the atlas already knows how to say honestly.
+    """
+    if not text:
+        return True
+    en, fr = len(_EN.findall(text)), len(_FR.findall(text))
+    if en == 0 and fr == 0:
+        return True                      # too short to judge; let it through
+    return en >= fr / margin if fr else True
+
+
 def fetchable_source_url(url):
     """The citation URL is for a human; verification needs the plain text.
 
@@ -972,6 +1008,19 @@ def verify_node(ctx, corpus):
                     f"source unreachable ({url}): {str(e)[:100]}", _now()))
                 continue
             if norm(w["diary_excerpt"]) in norm(live):
+                # Verbatim is necessary and not sufficient. A quotation can be
+                # perfectly authentic and still unpublishable: Carta §4 says the
+                # published language is English, always, and an edition that
+                # prints the original facing the translation hands back both.
+                if not reads_as_english(w["diary_excerpt"]):
+                    dropped += 1
+                    state = state.with_rejection(Rejection(
+                        f"wp{w['seq']} verify '{w['place_historical']}'",
+                        "excerpt verified verbatim but is not in English — nulled "
+                        "per Carta 4 (sources may be in any language; published "
+                        "content is in English)", _now()))
+                    w["diary_excerpt"] = None
+                    continue
                 passed += 1
                 state = state.with_decision(Decision(
                     f"wp{w['seq']} '{w['place_historical']}': diary_excerpt VERIFIED "
