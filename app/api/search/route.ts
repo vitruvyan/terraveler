@@ -110,7 +110,16 @@ export async function GET(req: Request) {
     .sort((a, b) => b.best - a.best)
     .map(({ best, ...g }) => g);
 
-  if (hits.length === 0) await recordMiss(q);
+  // Only a settled query is a request. Autocomplete fires every 180ms of
+  // typing, so recording every empty result recorded every keystroke: typing
+  // "shackleton" produced shac, shak, shakle, shaklet, shakletong as five
+  // separate things the atlas was asked for and did not hold. The editor's
+  // demand list filled with the act of typing.
+  //
+  // The client sets record=1 once, after a longer pause, and only when the
+  // query it already tried came back empty — so the fast path stays fast and
+  // the demand log hears a person who finished asking.
+  if (hits.length === 0 && url.searchParams.get("record") === "1") await recordMiss(q);
 
   return NextResponse.json({
     q,

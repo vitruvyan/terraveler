@@ -714,6 +714,139 @@ input[type="range"].scrubber::-moz-range-thumb {
 .desk-btn-changes { background: #8a5a9a; border-color: #8a5a9a; color: #fff; }
 .desk-btn-reject { background: #a3402c; border-color: #a3402c; color: #fff; }
 
+.desk-login-shell {
+  position: relative;
+  min-height: calc(100svh - 76px);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(42px, 8vh, 92px) 22px;
+  background: #18110c;
+}
+.desk-login-bg,
+.desk-login-slide,
+.desk-login-vignette {
+  position: absolute;
+  inset: 0;
+}
+.desk-login-bg { z-index: 0; }
+.desk-login-slide {
+  inset: -18px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  transform: scale(1.035);
+  filter: saturate(0.88) contrast(1.04) brightness(0.88);
+  transition: opacity 1600ms ease, transform 9000ms ease;
+}
+.desk-login-slide.active {
+  opacity: 1;
+  transform: scale(1);
+}
+.desk-login-vignette {
+  background:
+    linear-gradient(90deg, rgba(18, 11, 7, 0.68), rgba(18, 11, 7, 0.26) 48%, rgba(18, 11, 7, 0.54)),
+    radial-gradient(circle at 50% 44%, rgba(242, 230, 207, 0.05), rgba(18, 11, 7, 0.58) 78%);
+}
+.desk-login-panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 390px);
+  margin-right: min(46vw, 620px);
+  padding: 26px;
+  border: 1px solid rgba(231, 213, 176, 0.72);
+  border-radius: 8px;
+  background: rgba(242, 230, 207, 0.92);
+  box-shadow: 0 18px 55px rgba(18, 11, 7, 0.42);
+  backdrop-filter: blur(8px);
+}
+.desk-login-kicker {
+  display: block;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--brass);
+}
+.desk-login-panel h1 {
+  margin: 6px 0 18px;
+  font-size: 1.72rem;
+}
+.desk-login-google {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  margin-bottom: 15px;
+}
+.desk-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.desk-login-divider::before,
+.desk-login-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(90, 74, 52, 0.26);
+}
+.desk-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.desk-login-error {
+  color: #a3402c;
+  font-size: 13px;
+}
+.desk-login-credit {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 1;
+  max-width: min(560px, calc(100vw - 36px));
+  margin: 0;
+  padding: 6px 9px;
+  border: 1px solid rgba(242, 230, 207, 0.2);
+  border-radius: 6px;
+  background: rgba(18, 11, 7, 0.52);
+  color: rgba(242, 230, 207, 0.78);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: right;
+}
+.desk-login-credit a {
+  color: rgba(242, 230, 207, 0.95);
+  text-decoration-color: rgba(242, 230, 207, 0.5);
+}
+
+@media (max-width: 820px) {
+  .desk-login-shell {
+    place-items: end center;
+    min-height: calc(100svh - 96px);
+    padding: 56px 18px 72px;
+  }
+  .desk-login-panel {
+    margin-right: 0;
+    padding: 22px;
+  }
+  .desk-login-credit {
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desk-login-slide {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* --- Full-bleed map chrome: cartouche, top-right cluster, strip, transport --- */
 .left-stack {
   position: absolute;

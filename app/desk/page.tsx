@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import DeskLogin from "@/components/DeskLogin";
 import SiteHeader from "@/components/SiteHeader";
 
 type Sub = {
@@ -164,27 +165,14 @@ export default function Desk() {
     return (
       <>
       <SiteHeader />
-      <main style={{ maxWidth: 380, margin: "8vh auto", padding: "0 22px" }}>
-        <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-          Terraveler · Editorial desk
-        </span>
-        <h1 style={{ margin: "6px 0 18px", fontSize: "1.6rem" }}>Sign in</h1>
-        <a href="/api/desk/google" className="desk-btn desk-btn-primary"
-           style={{ display: "block", textAlign: "center", textDecoration: "none", marginBottom: 14 }}>
-          Sign in with Google
-        </a>
-        <div style={{ textAlign: "center", fontSize: 12, color: "var(--ink-soft)", margin: "0 0 10px" }}>
-          — or with email —
-        </div>
-        <form onSubmit={login} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email"
-            type="email" autoComplete="username" className="desk-input" />
-          <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder="password"
-            type="password" autoComplete="current-password" className="desk-input" />
-          <button type="submit" className="desk-btn desk-btn-primary">Enter the desk</button>
-          {err && <div style={{ color: "#a3402c", fontSize: 13 }}>{err}</div>}
-        </form>
-      </main>
+      <DeskLogin
+        email={email}
+        password={password}
+        error={err}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onSubmit={login}
+      />
       </>
     );
   }

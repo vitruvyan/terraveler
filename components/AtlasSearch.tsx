@@ -92,6 +92,33 @@ export default function AtlasSearch({
     return () => clearTimeout(t);
   }, [q, kind, excludeSlug]);
 
+  // Tell the atlas it was asked for something it does not hold — but only once
+  // the asking has stopped.
+  //
+  // The results debounce is 180ms, which is right for an autocomplete and wrong
+  // for a demand signal: every keystroke that found nothing was recorded as a
+  // separate request, so typing "shackleton" put shac, shak, shakle, shaklet
+  // and shakletong on the editor's list of things people wanted. The list
+  // filled up with the act of typing rather than with anyone's intent.
+  //
+  // A second, much longer pause is the closest thing to "I have finished
+  // asking" that a search box can observe. One small request, only for a query
+  // that already came back empty, and only if it is still on screen a second
+  // and a half later.
+  useEffect(() => {
+    const query = q.trim();
+    if (!query || res?.total !== 0 || res?.q !== q) return;
+    const t = setTimeout(() => {
+      const params = new URLSearchParams({ q, record: "1" });
+      if (kind) params.set("kind", kind);
+      if (excludeSlug) params.set("exclude", excludeSlug);
+      fetch(`/api/search?${params}`).catch(() => {
+        /* the demand log is best-effort; never surface it to the reader */
+      });
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [q, res, kind, excludeSlug]);
+
   useEffect(() => {
     onActiveChange?.(Boolean(q.trim()));
   }, [q, onActiveChange]);
