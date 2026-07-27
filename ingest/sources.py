@@ -235,6 +235,38 @@ VOYAGE_SOURCES = {
         ],
     },
 
+    # Xuanzang — the great overland journey, and the atlas's first non-European
+    # traveller. Deliberately early rather than "later": an atlas that reaches
+    # thirty European voyages before admitting one from anywhere else makes every
+    # subsequent addition read as a correction.
+    #
+    # Beal's 1884 translation, both volumes in one scan (Digital Library of
+    # India, unrestricted, gate-verified). Note the Victorian transliterations —
+    # Hiuen Tsiang for Xuanzang, Kanauj, Kucha — which the gazetteer will need
+    # help with.
+    "xuanzang-629": {
+        "texts": [
+            {"kind": "archive",
+             "title": "Si-Yu-Ki: Buddhist Records of the Western World, Vols I–II "
+                      "(trans. Samuel Beal, 1884)",
+             "url": "https://archive.org/download/in.ernet.dli.2015.49333/"
+                    "2015.49333.Buddhist-Records-Of-The-Western-World--Vol-1-2_djvu.txt",
+             "source_url": "https://archive.org/details/in.ernet.dli.2015.49333",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ["Xuanzang", "Great Tang Records on the Western Regions",
+                        "Nalanda", "Bamiyan", "Gandhara", "Kingdom of Khotan",
+                        "Silk Road", "Harsha"]},
+        ],
+        "image_queries": [
+            "Xuanzang portrait",
+            "Nalanda ruins",
+            "Bamiyan Buddhas",
+            "Silk Road Tang dynasty map",
+            "Big Wild Goose Pagoda Xian",
+        ],
+    },
+
     # Shackleton — Worsley's navigation makes the positions unusually exact for
     # a voyage that spent most of itself without a ship.
     "shackleton-1914": {

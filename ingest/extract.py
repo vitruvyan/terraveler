@@ -308,6 +308,36 @@ VOYAGE_META = {
                          "exist.",
     },
 
+    "xuanzang-629": {
+        "title": "Xuanzang's Journey to the Western Regions (629-645)",
+        "navigator": "Xuanzang",
+        "ships": "on foot, by horse and by camel, across the Taklamakan and the Hindu Kush",
+        "sponsor": "none — he left Tang China against an imperial ban on travel, "
+                   "and returned sixteen years later to an emperor's welcome",
+        "summary": "The great overland journey: out of Chang'an past the frontier "
+                   "towers, along the northern Silk Road through Kucha and Kashgar, "
+                   "over the Tian Shan to Samarkand, south through Balkh and Bamiyan "
+                   "to Gandhara, then across northern India to Nalanda, where he "
+                   "studied for years, on to the far south and Ceylon, and home again "
+                   "by the southern desert route with six hundred and fifty-seven "
+                   "Buddhist texts.",
+        "date_window": (629, 645),
+        # First-hand, but not a log kept on the road. The Records were composed
+        # after his return, at the emperor's request, by his disciple Bianji
+        # writing down what Xuanzang told him — which is the testimony tier's
+        # definition exactly, and the first time a non-European voyage exercises
+        # it.
+        "evidence_basis": "contemporary-testimony",
+        "what_was_lost": "Whatever notes Xuanzang carried are gone. What survives "
+                         "was set down after he came home, by a disciple taking his "
+                         "dictation, and it is arranged as a geography of countries "
+                         "rather than as a journey with dates — so the order of the "
+                         "route is read from the order of the text, and almost none "
+                         "of it can be dated to a day. He also left China illegally, "
+                         "against an imperial ban, so no official record of his "
+                         "departure was ever made.",
+    },
+
     "shackleton-1914": {
         "title": "The Imperial Trans-Antarctic Expedition (1914-1917)",
         "navigator": "Ernest Shackleton",
