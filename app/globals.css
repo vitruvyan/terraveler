@@ -968,6 +968,34 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .cart-emblem:hover { background: var(--parchment-deep); }
 
+/* Map controls use the navigation accent; the event and voyage sliders keep
+   their parchment treatment so the map remains the visual focus. */
+.cart-emblem,
+.tr-btn,
+.lens-rail {
+  background: var(--accent);
+  border-color: var(--accent-deep);
+  box-shadow: 0 6px 18px rgba(43, 33, 23, 0.3);
+}
+.cart-emblem,
+.tr-btn,
+.lens-rail .lens-btn { color: var(--parchment); }
+.cart-emblem:hover,
+.tr-btn:hover { background: var(--accent-deep); }
+.lens-rail .lens-btn:hover { background: rgba(255, 255, 255, 0.13); }
+.lens-rail .lens-btn.active {
+  background: var(--parchment-deep);
+  color: var(--accent-deep);
+}
+.lens-rail .rail-close { color: rgba(242, 230, 207, 0.8); }
+.lens-rail .rail-div { background: rgba(242, 230, 207, 0.3); }
+.cart-emblem:focus-visible,
+.tr-btn:focus-visible,
+.lens-rail .lens-btn:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
 .tr-cluster {
   position: absolute;
   top: 14px;
@@ -1816,11 +1844,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgba(242, 230, 207, 0.95);
-  border: 1px solid var(--parchment-deep);
+  background: var(--accent);
+  border: 1px solid var(--accent-deep);
   border-radius: 12px;
   padding: 4px;
-  box-shadow: 0 6px 20px rgba(43, 33, 23, 0.2);
+  box-shadow: 0 6px 18px rgba(43, 33, 23, 0.3);
 }
 .lens-rail .lens-btn-ico { font-size: 18px; padding: 8px 8px; }
 .rail-div { height: 1px; background: var(--parchment-deep); margin: 3px 5px; }

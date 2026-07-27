@@ -486,7 +486,7 @@ export default function VoyageExperience({
 
   return (
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-      {/* The compass — the site opens minimal: this alone. It opens the Atlas. */}
+      {/* The atlas emblem opens the voyage picker. */}
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
       <div className="left-stack">
         <button
@@ -495,7 +495,7 @@ export default function VoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          🧭
+          🌐
         </button>
       </div>
 
