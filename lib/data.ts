@@ -8,6 +8,7 @@ import apollo11 from "@/data/apollo-11.json";
 import cook from "@/data/cook.json";
 import cortes from "@/data/cortes.json";
 import darwin from "@/data/darwin-1831.json";
+import magellan from "@/data/magellan-1519.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -38,6 +39,7 @@ const LOCAL: Record<VoyageSlug, unknown> = {
   "cook-1768": cook,
   "cortes-1519": cortes,
   "darwin-1831": darwin,
+  "magellan-1519": magellan,
 };
 
 export function knownVoyages(): readonly string[] {
