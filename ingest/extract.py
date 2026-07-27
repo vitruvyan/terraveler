@@ -383,6 +383,121 @@ VOYAGE_META = {
                          "never came, is the half of this expedition almost nobody "
                          "recorded.",
     },
+
+    # ---- third wave. Cabot is the first 'reconstructed' voyage the atlas
+    # has ever held: the tier was written for exactly this and had never
+    # been used in production. ----
+
+    "gama-1497": {
+        "title": 'Vasco da Gama and the Sea Road to India (1497-1499)',
+        "navigator": 'Vasco da Gama',
+        "ships": 'São Gabriel, São Rafael, Berrio and a storeship',
+        "sponsor": 'sailing from Lisbon for King Manuel I of Portugal',
+        "summary": 'The voyage that joined Europe to the Indian Ocean: a long arc into the open Atlantic to catch the westerlies, the Cape rounded ten years after Dias, up the Swahili coast past Mozambique and Mombasa to Malindi, and across to Calicut with a pilot who knew the monsoon.',
+        "date_window": (1497, 1499),
+        "evidence_basis": 'contemporary-journal',
+        "what_was_lost": "The Roteiro was kept during the voyage by someone aboard — and nobody knows who. It is signed by no one; Álvaro Velho is a guess. Da Gama's own report to the king is lost. Of roughly 170 men who sailed, some 55 came back, and the journal breaks off before the end.",
+    },
+
+    "drake-1577": {
+        "title": "Drake's Circumnavigation (1577-1580)",
+        "navigator": 'Francis Drake',
+        "ships": 'Pelican, renamed Golden Hind',
+        "sponsor": 'sailing from Plymouth under a commission from Elizabeth I kept deliberately vague',
+        "summary": 'The second circumnavigation and the first by a captain who survived it: south to Port San Julián and the execution of Thomas Doughty, through the Strait, up the Pacific coast raiding Spanish shipping, a landing on the California coast he called Nova Albion, then west across the Pacific and home by the Cape.',
+        "date_window": (1577, 1580),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": "Drake published nothing. This account was compiled in 1628 by his nephew from the notes of Francis Fletcher, the chaplain — whose original manuscript is lost, and who quarrelled with Drake on the voyage. The queen ordered the expedition's charts and journals surrendered and kept secret, so what survives is a family's version of a state secret, fifty years late.",
+    },
+
+    "polo-1271": {
+        "title": 'The Travels of Marco Polo (1271-1295)',
+        "navigator": 'Marco Polo',
+        "ships": 'overland by caravan, and home by sea from Zaiton',
+        "sponsor": 'travelling with his father and uncle, merchants of Venice',
+        "summary": "Twenty-four years out of Venice: through Persia and the Pamirs to Kublai Khan's court at Khanbaliq, years in the Khan's service across Cathay and the south, then home by sea through the Indies, Ceylon and Hormuz.",
+        "date_window": (1271, 1295),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": 'Polo kept no journal. The book was dictated in a Genoese prison around 1298 to Rustichello of Pisa, a writer of Arthurian romances, more than two decades after the events. No original manuscript survives and the roughly 150 that do disagree with one another, some carrying episodes the others lack.',
+    },
+
+    "ibnbattuta-1325": {
+        "title": 'The Rihla of Ibn Battuta (1325-1354)',
+        "navigator": 'Ibn Battuta',
+        "ships": 'by caravan, by dhow and on foot across three continents',
+        "sponsor": 'setting out from Tangier on the hajj, and not stopping for twenty-nine years',
+        "summary": 'Perhaps 120,000 kilometres: Mecca by way of Egypt and Syria, then Persia, the Swahili coast, Anatolia, the Golden Horde, India and eight years in the service of the Sultan of Delhi, the Maldives, Ceylon, China — and later, from Morocco, across the Sahara to Mali.',
+        "date_window": (1325, 1354),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": "Ibn Battuta wrote nothing down as he travelled, and said so: his notes were lost at sea. On his return the Sultan of Morocco had him dictate everything to Ibn Juzayy, who shaped it and borrowed passages from earlier travel writers. This English text is Lee's 1829 abridgement of an abridged manuscript — the complete Rihla in English exists only in a translation still in copyright.",
+    },
+
+    "leoafricanus-1510": {
+        "title": 'Leo Africanus in Africa (c. 1510-1520)',
+        "navigator": 'al-Hasan ibn Muhammad al-Wazzan (Leo Africanus)',
+        "ships": 'by caravan across the Atlas, the Sahara and the Niger',
+        "sponsor": 'travelling as a diplomat for the Sultan of Fez',
+        "summary": 'North and West Africa described from inside it: Fez and Morocco, the Atlas passes, the Saharan crossings, Timbuktu and Gao under Songhai, the Niger, and eastward to Egypt — the account that gave Europe most of what it thought it knew about the interior for three hundred years.',
+        "date_window": (1510, 1520),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": "He was captured by Spanish corsairs, presented to the Pope, baptised, and wrote in Italy for a European readership — from memory, years afterwards, as a man whose freedom depended on being useful. His Arabic original is lost. What survives passed through Ramusio's Italian and then Pory's English of 1600: two removes from a man already writing in his captors' language.",
+    },
+
+    "faxian-399": {
+        "title": "Faxian's Journey to the Buddhist Kingdoms (399-414)",
+        "navigator": 'Faxian',
+        "ships": 'on foot across the Taklamakan, and home by sea from Ceylon',
+        "sponsor": "setting out from Chang'an at about sixty, to find the monastic rules India still held",
+        "summary": 'Overland through Dunhuang and the desert to Khotan, over the Pamirs to Gandhara and the Ganges plain, years at Pataliputra copying texts, then Ceylon, and home by merchant ship through Java — shipwrecked twice and landing far north of where he meant to.',
+        "date_window": (399, 414),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": "Faxian wrote his record after returning, in his seventies, from memory and the texts he had carried. It is short — a few dozen pages for fifteen years — and Legge's Victorian transliterations make its places hard to resolve. He travelled with companions who turned back, died, or stayed in India; none of them left an account.",
+    },
+
+    "verrazzano-1524": {
+        "title": 'Verrazzano and the Atlantic Coast (1524)',
+        "navigator": 'Giovanni da Verrazzano',
+        "ships": 'La Dauphine',
+        "sponsor": 'sailing from Normandy for Francis I of France',
+        "summary": 'The first recorded European survey of the North American coast between Florida and Newfoundland: a landfall near Cape Fear, the long run north, the narrows into what is now New York Bay, a fortnight in Narragansett Bay, and on past a coast whose people met him with less welcome the further he went.',
+        "date_window": (1524, 1524),
+        "evidence_basis": 'contemporary-testimony',
+        "what_was_lost": 'The original letter to Francis I is lost; what survives are later copies, and the only public-domain English edition is a volume by Henry Cruse Murphy arguing at length that the letter is a forgery. Modern scholarship has largely moved back toward authenticity, but the atlas quotes it through the book that disputes it, and says so.',
+    },
+
+    "mungopark-1795": {
+        "title": 'Mungo Park on the Niger (1795-1797)',
+        "navigator": 'Mungo Park',
+        "ships": 'on horseback and on foot, and finally with nothing at all',
+        "sponsor": 'sent by the African Association of London to find the course of the Niger',
+        "summary": 'Inland from the Gambia with two companions and a horse: imprisoned for four months by a Moorish chief, escaping alone across the Sahel, reaching the Niger at Segou to find it flowing east, and walking back destitute — carried the last stage by a slave caravan whose passage he recorded from inside it.',
+        "date_window": (1795, 1797),
+        "evidence_basis": 'contemporary-journal',
+        "what_was_lost": 'Park kept notes throughout and lost most of them; the narrative was written up in London afterwards, for a society that had paid for it. The people who kept him alive appear mostly without names. And the coffle he travelled with on the return is described by the one man in it who was not for sale.',
+    },
+
+    "lewisclark-1804": {
+        "title": 'Lewis and Clark: the Corps of Discovery (1804-1806)',
+        "navigator": 'Meriwether Lewis and William Clark',
+        "ships": 'a keelboat, two pirogues, then dugout canoes and horses',
+        "sponsor": 'sent by President Jefferson to find a water route across the continent',
+        "summary": 'Up the Missouri from St Louis, a winter among the Mandan, over the Bitterroots with Shoshone horses and Nez Perce guidance, down the Snake and Columbia to the Pacific, a wet winter at Fort Clatsop, and back.',
+        "date_window": (1804, 1806),
+        "evidence_basis": 'contemporary-journal',
+        "what_was_lost": 'The journals are among the fullest of any expedition — and they are the record of the people who arrived. Sacagawea, without whom the party would not have crossed the mountains, is written about constantly and never quoted. The nations who fed, guided and tolerated them appear as the captains understood them, and the maps that resulted were used to dispossess those nations within two generations.',
+    },
+
+    "cabot-1497": {
+        "title": "John Cabot's Atlantic Landfall (1497)",
+        "navigator": 'John Cabot',
+        "ships": 'the Matthew, of Bristol, with a crew of about eighteen',
+        "sponsor": 'sailing from Bristol under letters patent from Henry VII',
+        "summary": 'Thirty-five days west from Bristol to a landfall in North America, a single going-ashore to plant a flag and take on water, and a fast run home — the voyage that gave England its claim to the continent, and whose landfall nobody can locate.',
+        "date_window": (1497, 1497),
+        "evidence_basis": 'reconstructed',
+        "what_was_lost": "Cabot left nothing. No log, no letter, no chart, and no account by anyone who sailed with him. Everything known comes from four documents by people who were not there: a merchant's letter from Lisbon, two despatches by the Duke of Milan's man in London, and a payment in the king's household book. Where he landed has been argued over for four centuries — Newfoundland, Cape Breton, Labrador, Maine — and this atlas draws a route it cannot prove, because the voyage happened and the silence is the archive's, not history's.",
+    },
+
 }
 
 

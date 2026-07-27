@@ -289,6 +289,139 @@ VOYAGE_SOURCES = {
             "Frank Hurley Antarctic photograph",
         ],
     },
+
+    # ---- third wave: the spine, the cultural void, and the unused tiers ----
+
+    "gama-1497": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'A Journal of the First Voyage of Vasco da Gama, 1497-1499 (trans. E. G. Ravenstein, Hakluyt Society, 1898)',
+             "url": "https://www.gutenberg.org/cache/epub/46440/pg46440.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/46440",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Vasco da Gama', 'Cape Route', 'Calicut', 'Malindi', 'Kingdom of Portugal', 'Zamorin of Calicut']},
+        ],
+        "image_queries": ['Vasco da Gama portrait', 'Sao Gabriel ship', 'Calicut 15th century', 'Padrao pillar Portuguese'],
+    },
+
+    "drake-1577": {
+        "texts": [
+            {"kind": "archive",
+             "title": 'The World Encompassed by Sir Francis Drake (Hakluyt Society, 1854)',
+             "url": "https://archive.org/download/worldencompassed16drak/worldencompassed16drak_djvu.txt",
+             "source_url": "https://archive.org/details/worldencompassed16drak",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Francis Drake', "Francis Drake's circumnavigation", 'Golden Hind', 'Nova Albion', 'Strait of Magellan']},
+        ],
+        "image_queries": ['Francis Drake portrait', 'Golden Hind ship', 'Drake circumnavigation map'],
+    },
+
+    "polo-1271": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'The Travels of Marco Polo, Vol. 1 (ed. Henry Yule, rev. Henri Cordier)',
+             "url": "https://www.gutenberg.org/cache/epub/10636/pg10636.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/10636",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Marco Polo', 'Il Milione', 'Kublai Khan', 'Yuan dynasty', 'Silk Road', 'Rustichello da Pisa']},
+        ],
+        "image_queries": ['Marco Polo portrait', 'Kublai Khan court', 'Catalan Atlas caravan'],
+    },
+
+    "ibnbattuta-1325": {
+        "texts": [
+            {"kind": "archive",
+             "title": 'The Travels of Ibn Batuta (trans. Rev. Samuel Lee, Oriental Translation Committee, 1829)',
+             "url": "https://archive.org/download/bub_gb_22IbAQAAMAAJ/bub_gb_22IbAQAAMAAJ_djvu.txt",
+             "source_url": "https://archive.org/details/bub_gb_22IbAQAAMAAJ",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Ibn Battuta', 'Rihla', 'Mali Empire', 'Delhi Sultanate', 'Maldives', 'Timbuktu']},
+        ],
+        "image_queries": ['Ibn Battuta illustration', 'Mali Empire Mansa Musa', 'medieval Cairo', 'dhow Indian Ocean'],
+    },
+
+    "leoafricanus-1510": {
+        "texts": [
+            {"kind": "archive",
+             "title": 'The History and Description of Africa (trans. John Pory 1600, ed. Robert Brown, Hakluyt Society, 1896)',
+             "url": "https://archive.org/download/historyanddescr02porygoog/historyanddescr02porygoog_djvu.txt",
+             "source_url": "https://archive.org/details/historyanddescr02porygoog",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Leo Africanus', 'Songhai Empire', 'Timbuktu', 'Fez', 'Kingdom of Morocco']},
+        ],
+        "image_queries": ['Leo Africanus portrait', 'Timbuktu Djinguereber', 'Fez medina', 'Songhai Empire map'],
+    },
+
+    "faxian-399": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'A Record of Buddhistic Kingdoms (Faxian, trans. James Legge, 1886)',
+             "url": "https://www.gutenberg.org/cache/epub/2124/pg2124.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/2124",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Faxian', 'Gupta Empire', 'Anuradhapura', 'Khotan', 'Pataliputra']},
+        ],
+        "image_queries": ['Faxian pilgrim', 'Anuradhapura stupa', 'Gupta Empire art'],
+    },
+
+    "verrazzano-1524": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'The Voyage of Verrazzano (Henry Cruse Murphy, 1875)',
+             "url": "https://www.gutenberg.org/cache/epub/5252/pg5252.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/5252",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Giovanni da Verrazzano', 'New York Bay', 'Narragansett Bay', 'Cape Fear']},
+        ],
+        "image_queries": ['Giovanni da Verrazzano portrait', 'La Dauphine ship', 'New York harbour 16th century'],
+    },
+
+    "mungopark-1795": {
+        "texts": [
+            {"kind": "archive",
+             "title": 'Travels in the Interior Districts of Africa (Mungo Park, 1799)',
+             "url": "https://archive.org/download/travelsininter00park/travelsininter00park_djvu.txt",
+             "source_url": "https://archive.org/details/travelsininter00park",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Mungo Park (explorer)', 'Niger River', 'Segou', 'African Association', 'Atlantic slave trade']},
+        ],
+        "image_queries": ['Mungo Park explorer portrait', 'Niger river 18th century', 'Segou Mali'],
+    },
+
+    "lewisclark-1804": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'The Journals of Lewis and Clark, 1804-1806',
+             "url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/8419",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['Lewis and Clark Expedition', 'Meriwether Lewis', 'William Clark', 'Sacagawea', 'Corps of Discovery', 'Columbia River']},
+        ],
+        "image_queries": ['Lewis and Clark expedition', 'Sacagawea', 'Corps of Discovery keelboat'],
+    },
+
+    "cabot-1497": {
+        "texts": [
+            {"kind": "gutenberg",
+             "title": 'The Northmen, Columbus and Cabot, 985-1503 — the Pasqualigo and Soncino letters (ed. Olson & Bourne, 1906)',
+             "url": "https://www.gutenberg.org/cache/epub/18571/pg18571.txt",
+             "source_url": "https://www.gutenberg.org/ebooks/18571",
+             "license": "Public domain"},
+            {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
+             "titles": ['John Cabot', 'Matthew (ship)', 'Newfoundland', 'Bristol']},
+        ],
+        "image_queries": ['John Cabot portrait', 'Matthew ship Bristol', 'Newfoundland coast historic'],
+    },
+
 }
 
 IMAGES_PER_QUERY = 2
