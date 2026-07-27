@@ -9,6 +9,11 @@ import cook from "@/data/cook.json";
 import cortes from "@/data/cortes.json";
 import darwin from "@/data/darwin-1831.json";
 import magellan from "@/data/magellan-1519.json";
+import pizarro from "@/data/pizarro-1532.json";
+import columbus from "@/data/columbus-1492.json";
+import shackleton from "@/data/shackleton-1914.json";
+import xuanzang from "@/data/xuanzang-629.json";
+import cartier from "@/data/cartier-1534.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -40,6 +45,11 @@ const LOCAL: Record<VoyageSlug, unknown> = {
   "cortes-1519": cortes,
   "darwin-1831": darwin,
   "magellan-1519": magellan,
+  "pizarro-1532": pizarro,
+  "columbus-1492": columbus,
+  "shackleton-1914": shackleton,
+  "xuanzang-629": xuanzang,
+  "cartier-1534": cartier,
 };
 
 export function knownVoyages(): readonly string[] {

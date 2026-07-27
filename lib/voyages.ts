@@ -110,6 +110,51 @@ const ATLAS_ENTRIES = [
     blurb:
       "The first voyage to circle the world: the strait that took Magellan's name, ninety-eight days of open Pacific on rotten stores, his death at Mactan, and one ship of five coming home under Elcano.",
   },
+  {
+    slug: "pizarro-1532",
+    href: "/voyage/pizarro-1532",
+    title: "Pizarro and the Fall of Tawantinsuyu (1532-1533)",
+    navigator: "Francisco Pizarro",
+    years: "1532–1533",
+    blurb:
+      "Xerez was Pizarro's own secretary and stood in the square at Cajamarca. The march from Tumbez, the ambush, the room filled with the gold of Cusco, and a conquest recorded by the men who made it.",
+  },
+  {
+    slug: "columbus-1492",
+    href: "/voyage/columbus-1492",
+    title: "The Voyages of Christopher Columbus (1492-1504)",
+    navigator: "Christopher Columbus",
+    years: "1492–1504",
+    blurb:
+      "The crossing of 1492 and the voyages that followed \u2014 reaching us not through Columbus's lost log but through Las Casas's abstract of it, quoting in places and summarising in others.",
+  },
+  {
+    slug: "shackleton-1914",
+    href: "/voyage/shackleton-1914",
+    title: "The Imperial Trans-Antarctic Expedition (1914-1917)",
+    navigator: "Ernest Shackleton",
+    years: "1914–1917",
+    blurb:
+      "A crossing that never began: Endurance crushed in the Weddell Sea, the drift on the floes, eight hundred miles in an open boat, and every man brought home.",
+  },
+  {
+    slug: "xuanzang-629",
+    href: "/voyage/xuanzang-629",
+    title: "Xuanzang's Journey to the Western Regions (629-645)",
+    navigator: "Xuanzang",
+    years: "",
+    blurb:
+      "Sixteen years on foot and by camel, out of Tang China against an imperial ban: the northern Silk Road, Samarkand, Bamiyan, and the years of study at Nalanda.",
+  },
+  {
+    slug: "cartier-1534",
+    href: "/voyage/cartier-1534",
+    title: "Jacques Cartier and the St Lawrence (1534-1542)",
+    navigator: "Jacques Cartier",
+    years: "1534–1541",
+    blurb:
+      "Three voyages into the Gulf of St Lawrence: the cross raised at Gasp\u00e9, a winter at Stadacona cured by an Iroquoian remedy, and the journey to Hochelaga beneath the mountain he named Mont Royal.",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
