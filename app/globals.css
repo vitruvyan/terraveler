@@ -1060,59 +1060,6 @@ input[type="range"].scrubber::-moz-range-thumb {
   box-shadow: 0 8px 26px rgba(43, 33, 23, 0.24);
 }
 
-/* High-contrast controls keep the map readable while making its tools easy
-   to find on pale land, water, and historical map overlays. */
-.cart-emblem,
-.tr-btn,
-.lens-rail,
-.world-strip,
-.transport-bar {
-  background: rgba(37, 30, 23, 0.94);
-  border-color: rgba(231, 213, 176, 0.5);
-  box-shadow: 0 7px 22px rgba(20, 14, 10, 0.42);
-}
-.cart-emblem,
-.tr-btn,
-.lens-rail .lens-btn,
-.world-strip,
-.transport-bar {
-  color: #f7e7c8;
-}
-.cart-emblem:hover,
-.tr-btn:hover,
-.lens-rail .lens-btn:hover {
-  background: rgba(72, 57, 42, 0.98);
-}
-.lens-rail .lens-btn.active {
-  background: var(--accent);
-  color: var(--parchment);
-}
-.lens-rail .rail-close { color: #d9c8a6; }
-.rail-div { background: rgba(231, 213, 176, 0.34); }
-.cart-emblem:focus-visible,
-.tr-btn:focus-visible,
-.lens-rail .lens-btn:focus-visible,
-.transport-bar .play-btn:focus-visible {
-  outline: 2px solid var(--brass);
-  outline-offset: 2px;
-}
-.tr-menu {
-  background: rgba(37, 30, 23, 0.98);
-  border-color: rgba(231, 213, 176, 0.5);
-  box-shadow: 0 9px 28px rgba(20, 14, 10, 0.5);
-}
-.tr-menu > a { color: #f7e7c8; }
-.tr-menu > a:hover { background: rgba(255, 255, 255, 0.1); }
-.tr-menu-foot { border-top-color: rgba(231, 213, 176, 0.26); color: #d9c8a6; }
-.world-strip .ws-card,
-.transport-bar .autopause-toggle { color: #f7e7c8; }
-.transport-bar .play-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(231, 213, 176, 0.5);
-  color: #f7e7c8;
-}
-.transport-bar .play-btn:hover { background: var(--brass); color: #2b2117; }
-
 /* --- Site footer (editorial pages) --- */
 .site-footer {
   max-width: 760px;
@@ -1869,11 +1816,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgba(37, 30, 23, 0.94);
-  border: 1px solid rgba(231, 213, 176, 0.5);
+  background: rgba(242, 230, 207, 0.95);
+  border: 1px solid var(--parchment-deep);
   border-radius: 12px;
   padding: 4px;
-  box-shadow: 0 7px 22px rgba(20, 14, 10, 0.42);
+  box-shadow: 0 6px 20px rgba(43, 33, 23, 0.2);
 }
 .lens-rail .lens-btn-ico { font-size: 18px; padding: 8px 8px; }
 .rail-div { height: 1px; background: var(--parchment-deep); margin: 3px 5px; }
