@@ -101,6 +101,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "A survey of South America that turned into something else: the fossil beds of Patagonia, the earthquake at Concepci\u00f3n, the Gal\u00e1pagos, and the coral atolls of the Keeling Islands.",
   },
+  {
+    slug: "magellan-1519",
+    href: "/voyage/magellan-1519",
+    title: "The First Circumnavigation: Magellan and Elcano (1519-1522)",
+    navigator: "Ferdinand Magellan",
+    years: "1519–1522",
+    blurb:
+      "The first voyage to circle the world: the strait that took Magellan's name, ninety-eight days of open Pacific on rotten stores, his death at Mactan, and one ship of five coming home under Elcano.",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */

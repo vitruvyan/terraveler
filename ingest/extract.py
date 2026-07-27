@@ -438,21 +438,59 @@ def norm(s):
     return re.sub(r"\s+", " ", s).strip().casefold()
 
 
-def gutenberg_raw_url(url):
-    """rag_docs.source_url for gutenberg texts is the human-readable /ebooks/{id}
-    page (nice for citation) — but that's HTML, not fetchable as plain text.
-    Map it to the actual raw .txt location used at ingestion time (pipeline.py's
-    fetch_gutenberg fetched from cache/epub/{id}/pg{id}.txt). Verify MUST re-fetch
-    this raw URL, and the submission should cite it too (matches the
-    submission_laperouse.json shape, whose source_url is already a raw .txt link
-    that a re-verifier — e.g. scripts/curator.py — can fetch and substring-match)."""
+def fetchable_source_url(url):
+    """The citation URL is for a human; verification needs the plain text.
+
+    rag_docs.source_url is the readable landing page — gutenberg.org/ebooks/{id},
+    archive.org/details/{id} — which is HTML. The verify node re-fetches this URL
+    and substring-matches the quote against it, so a landing page means nothing
+    ever verifies.
+
+    That is not hypothetical. The Gutenberg case was mapped from the start; the
+    archive.org case was not, and Pizarro came back with 0 of 17 excerpts
+    confirmed and all of them nulled. The source-integrity gate did exactly what
+    it should — it refused to keep a quote it could not re-find — but what it
+    could not find was the text, not the quote. Every archive.org voyage would
+    have produced an itinerary with nothing to say.
+    """
     if not url:
         return url
     m = re.search(r"gutenberg\.org/ebooks/(\d+)", url)
     if m:
         i = m.group(1)
         return f"https://www.gutenberg.org/cache/epub/{i}/pg{i}.txt"
+    m = re.search(r"archive\.org/(?:details|download)/([^/?#]+)", url)
+    if m:
+        return archive_text_url(m.group(1)) or url
     return url
+
+
+_ARCHIVE_TXT_CACHE = {}
+
+
+def archive_text_url(identifier):
+    """The OCR text file inside an archive.org item, found through its metadata.
+
+    The filename is per-item and unguessable — '2015.49333.Buddhist-Records-Of-
+    The-Western-World--Vol-1-2_djvu.txt' — so it is looked up rather than
+    constructed, and cached because verify calls this once per waypoint.
+    """
+    if identifier in _ARCHIVE_TXT_CACHE:
+        return _ARCHIVE_TXT_CACHE[identifier]
+    out = None
+    try:
+        req = urllib.request.Request(
+            f"https://archive.org/metadata/{identifier}", headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=45) as r:
+            meta = json.loads(r.read().decode("utf-8", "replace"))
+        for f in meta.get("files", []):
+            if str(f.get("name", "")).endswith("_djvu.txt"):
+                out = f"https://archive.org/download/{identifier}/{f['name']}"
+                break
+    except Exception:
+        out = None          # verify will null the excerpt, which is the safe end
+    _ARCHIVE_TXT_CACHE[identifier] = out
+    return out
 
 
 def haversine_km(a_lat, a_lng, b_lat, b_lng):
@@ -917,7 +955,7 @@ def verify_node(ctx, corpus):
             if not w.get("diary_excerpt"):
                 continue
             src = w.get("evidence_source")
-            url = gutenberg_raw_url(src["source_url"]) if src else None
+            url = fetchable_source_url(src["source_url"]) if src else None
             if not url:
                 w["diary_excerpt"] = None
                 dropped += 1
@@ -985,7 +1023,7 @@ def assemble_node(ctx, corpus):
             evidence = {
                 "quote": w.get("diary_excerpt"),
                 "excerpt": w.get("diary_excerpt"),
-                "source_url": gutenberg_raw_url(src.get("source_url")),
+                "source_url": fetchable_source_url(src.get("source_url")),
                 "source_title": src.get("title"),
                 "license": src.get("license"),
             }
