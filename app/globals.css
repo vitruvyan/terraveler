@@ -1002,7 +1002,8 @@ input[type="range"].scrubber::-moz-range-thumb {
 .cart-emblem:hover { background: var(--parchment-deep); }
 
 /* Parchment keeps the map controls legible without muting their coloured
-   native icons. The tools rail stays distinct as an instrument surface. */
+   native icons. The rail gets contrast from its outline and shadow instead
+   of a dark field. */
 .cart-emblem,
 .lens-rail {
   border-color: var(--parchment-deep);
@@ -1014,21 +1015,26 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink);
 }
 .lens-rail {
-  background: #2d3e4f;
-  border-color: #20303f;
+  background: rgba(242, 230, 207, 0.96);
+  border-color: var(--parchment-deep);
 }
-.lens-rail .lens-btn { color: #fff; }
+.lens-rail .lens-btn { color: var(--ink-soft); }
 .cart-emblem:hover,
 .tr-btn:hover { background: var(--parchment-deep); }
 .lens-rail .lens-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: rgba(127, 38, 55, 0.1);
 }
 .lens-rail .lens-btn.active {
-  background: var(--parchment-deep);
-  color: #2d3e4f;
+  background: rgba(127, 38, 55, 0.12);
+  color: var(--accent-deep);
 }
-.lens-rail .rail-close { color: rgba(242, 230, 207, 0.8); }
-.lens-rail .rail-div { background: rgba(242, 230, 207, 0.3); }
+.lens-rail .lens-btn[aria-label="Ship's Log"] { color: #32759a; }
+.lens-rail .lens-btn[aria-label="Navigation Chart"] { color: #4d7c68; }
+.lens-rail .lens-btn[aria-label="Cartographer"] { color: #a9772f; }
+.lens-rail .lens-btn[aria-label="Plates"] { color: #8a5a9a; }
+.lens-rail .lens-btn[aria-label="Peoples (coming soon)"] { color: #896657; }
+.lens-rail .rail-close { color: var(--ink-soft); }
+.lens-rail .rail-div { background: var(--parchment-deep); }
 .cart-emblem:focus-visible,
 .tr-btn:focus-visible,
 .lens-rail .lens-btn:focus-visible {
@@ -1884,8 +1890,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: var(--accent);
-  border: 1px solid var(--accent-deep);
+  background: rgba(242, 230, 207, 0.96);
+  border: 1px solid var(--parchment-deep);
   border-radius: 12px;
   padding: 4px;
   box-shadow: 0 6px 18px rgba(43, 33, 23, 0.3);
