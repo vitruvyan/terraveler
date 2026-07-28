@@ -6,6 +6,7 @@ import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/
 import spaceEventsData from "@/data/space_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
+import { AtlasIcon, NavigatorIcon } from "@/components/NavigationIcons";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
 import { voyageLogPath } from "@/lib/voyages";
@@ -290,7 +291,7 @@ export default function SpaceVoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          🧭
+          <AtlasIcon className="nav-icon" />
         </button>
       </div>
 
@@ -444,7 +445,7 @@ export default function SpaceVoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            👤
+            <NavigatorIcon className="nav-icon" />
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>

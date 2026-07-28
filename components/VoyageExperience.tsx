@@ -7,6 +7,7 @@ import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import ContributePanel from "@/components/ContributePanel";
+import { AtlasIcon, NavigatorIcon } from "@/components/NavigationIcons";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
@@ -489,7 +490,8 @@ export default function VoyageExperience({
       {/* The atlas emblem opens the voyage picker. */}
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
       <a className="map-wordmark" href="/" aria-label="Terraveler home">
-        Terraveler
+        <span>Terraveler</span>
+        <span className="map-tagline">An atlas of geo-history, written in tandem</span>
       </a>
       <div className="left-stack">
         <button
@@ -498,7 +500,7 @@ export default function VoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          🌐
+          <AtlasIcon className="nav-icon" />
         </button>
       </div>
 
@@ -681,7 +683,7 @@ export default function VoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            👤
+            <NavigatorIcon className="nav-icon" />
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>

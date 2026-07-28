@@ -5,10 +5,10 @@
   --ink-soft: #5a4a34;
   --sea: #a8b8a0;
   --route: #7a2e1d;        /* map content only: the voyage line & ship */
-  --accent: #46608a;       /* UI accent: naval blue */
-  --accent-deep: #374d70;
-  --btn: #c98977;        /* buttons: light brick, almost rose */
-  --btn-deep: #b0715d;
+  --accent: #7f2637;       /* UI accent: bordeaux */
+  --accent-deep: #581522;
+  --btn: #9b3c46;
+  --btn-deep: #742733;
   --brass: #a9772f;
   --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-body: Georgia, "Times New Roman", serif;
@@ -939,8 +939,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .left-stack .lens-switch { position: static; }
 .map-wordmark {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-direction: column;
+  justify-content: center;
   position: absolute;
   top: 14px;
   left: 64px;
@@ -955,6 +957,15 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-shadow: 0 2px 8px rgba(24, 30, 40, 0.72);
 }
 .map-wordmark:hover { color: rgba(255, 255, 255, 0.84); }
+.map-tagline {
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-style: italic;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
 .map-wordmark:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 2px;
@@ -1000,9 +1011,14 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .cart-emblem,
 .tr-btn,
-.lens-rail .lens-btn { color: var(--parchment); }
+.lens-rail .lens-btn { color: #fff; }
 .cart-emblem:hover,
 .tr-btn:hover { background: var(--accent-deep); }
+.nav-icon {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
 .lens-rail .lens-btn:hover { background: rgba(255, 255, 255, 0.13); }
 .lens-rail .lens-btn.active {
   background: var(--parchment-deep);
@@ -1031,7 +1047,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-radius: 50%;
   border: 1px solid var(--accent-deep);
   background: var(--accent);
-  color: var(--parchment);
+  color: #fff;
   font-size: 17px;
   cursor: pointer;
   display: flex;
