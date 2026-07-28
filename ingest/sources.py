@@ -396,10 +396,19 @@ VOYAGE_SOURCES = {
 
     "ibnbattuta-1325": {
         "texts": [
+            # Gibb 1929 replaces Lee 1829, which was in the corpus first and was
+            # barely readable: 0.68% garbled tokens against Gibb's 0.03%, with
+            # whole sentences arriving as "some of the SnArs ftrmed a conspiracy,
+            # by which it was thdr intention to depose the Emperor". A quotation
+            # from that scan can be perfectly verbatim and still tell a reader
+            # nothing, which is a failure the verbatim gate cannot catch.
+            #
+            # Both are selections rather than the complete Rihla, and both are
+            # public domain. This one is a translation a reader can actually read.
             {"kind": "archive",
-             "title": 'The Travels of Ibn Batuta (trans. Rev. Samuel Lee, Oriental Translation Committee, 1829)',
-             "url": "https://archive.org/download/bub_gb_22IbAQAAMAAJ/bub_gb_22IbAQAAMAAJ_djvu.txt",
-             "source_url": "https://archive.org/details/bub_gb_22IbAQAAMAAJ",
+             "title": 'Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)',
+             "url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
+             "source_url": "https://archive.org/details/pli.kerala.rare.27987",
              "license": "Public domain"},
             {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
              "titles": ['Ibn Battuta', 'Rihla', 'Mali Empire', 'Delhi Sultanate', 'Maldives', 'Timbuktu']},

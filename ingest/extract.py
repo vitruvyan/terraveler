@@ -479,10 +479,19 @@ VOYAGE_META = {
         "sponsor": 'setting out from Tangier on the hajj, and not stopping for twenty-nine years',
         "summary": 'Perhaps 120,000 kilometres: Mecca by way of Egypt and Syria, then Persia, the Swahili coast, Anatolia, the Golden Horde, India and eight years in the service of the Sultan of Delhi, the Maldives, Ceylon, China — and later, from Morocco, across the Sahara to Mali.',
         "date_window": (1325, 1354),
-        # Calibrated against the corpus (2026-07-27). Lee 1829 via archive.org, 1,138 PD chunks. The Oriental Translation Fund's front matter is OCR'd so badly it is unreadable rather than merely wrong ('TBANtUlTW >nOM rilK AKKIDCKU ARABIC HANUSCRIFT'), which is itself the signal: the narrative is legible and the apparatus is not. Conservative at both ends.
-        "narrative_chunk_range": (30, 1130),
+        # Calibrated against the Gibb 1929 corpus by direct inspection
+        # (2026-07-28), which replaced Lee 1829: see ingest/sources.py for why.
+        # Chunks 0-134 are the Broadway Travellers series matter, Gibb's
+        # introduction and the contents; 135 opens the narrative ("Here begins
+        # the narrative ... I left Tangier, my birthplace"); 1097 closes it with
+        # the colophon dating the dictation to 3rd Dhu'l-hijja 756; 1098 onward
+        # is Gibb's endnotes and the index. The introduction is also where the
+        # scan's OCR is worst — set in a smaller face, it turns long s into a
+        # capital S ("firSt", "moft") — so excluding it improves legibility and
+        # accuracy at the same time.
+        "narrative_chunk_range": (135, 1097),
         "evidence_basis": 'contemporary-testimony',
-        "what_was_lost": "Ibn Battuta wrote nothing down as he travelled, and said so: his notes were lost at sea. On his return the Sultan of Morocco had him dictate everything to Ibn Juzayy, who shaped it and borrowed passages from earlier travel writers. This English text is Lee's 1829 abridgement of an abridged manuscript — the complete Rihla in English exists only in a translation still in copyright.",
+        "what_was_lost": "Ibn Battuta wrote nothing down as he travelled, and said so: his notes were lost at sea. On his return the Sultan of Morocco had him dictate everything to Ibn Juzayy, who shaped it and borrowed passages from earlier travel writers. This English text is Gibb's 1929 selection from that already-shaped narrative, so it is an abridgement of an abridgement: the complete Rihla in English runs to four volumes published between 1958 and 1994 and is still in copyright. What is missing here is therefore not lost — it is merely not ours to quote.",
     },
 
     "leoafricanus-1510": {
