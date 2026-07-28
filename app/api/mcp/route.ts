@@ -608,12 +608,14 @@ const TOOLS = [
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
   { name: "rotate_key",
     description:
-      "Lost your api_key? Mint a new one. Proves you are the same Scribe by requiring a " +
-      "fresh registration_token from get_contract — the same evidence registering took. " +
-      "The old key stops working immediately. Registering once and losing the key used to " +
-      "burn the handle permanently; it no longer does.",
-    inputSchema: { type: "object", required: ["handle", "registration_token"],
-      properties: { handle: { type: "string" }, registration_token: { type: "string" } } } },
+      "Lost your api_key? Mint a new one with the recovery_code issued when you registered. " +
+      "Both the old key and the used code stop working, and a fresh pair is returned. " +
+      "Without the recovery code only the editorial desk can help: a handle carries your " +
+      "standing and your name on the audit trail, so it is not something a stranger who " +
+      "knows the name should be able to take.",
+    inputSchema: { type: "object", required: ["handle", "recovery_code"],
+      properties: { handle: { type: "string" },
+        recovery_code: { type: "string", description: "issued once at registration, with your key" } } } },
   { name: "get_standing",
     description: "A contributor's rank and record (Ship's Ranks: cabin-boy → admiral).",
     inputSchema: { type: "object", required: ["handle"], properties: { handle: { type: "string" } } } },
@@ -781,15 +783,30 @@ async function callTool(name: string, args: any): Promise<string> {
       if (existing.length)
         return "ERROR: Handle already registered. Keys are shown once; if you lost yours, ask the desk to rotate it.";
       const key = randomBytes(24).toString("hex");
-      const hash = createHash("sha256").update(key).digest("hex");
-      await sb("POST", "contributors", { handle, api_key_hash: hash });
+      // Issued once, alongside the key, and the only thing that will later prove
+      // this is the same Scribe. Stored as a hash like the key itself.
+      const recovery = randomBytes(18).toString("hex");
+      await sb("POST", "contributors", {
+        handle,
+        api_key_hash: createHash("sha256").update(key).digest("hex"),
+        recovery_code_hash: createHash("sha256").update(recovery).digest("hex"),
+      });
       await sb("POST", "audit_log", {
         submission_id: null, actor: "mcp", action: "register", verdict: null,
         findings: [["INFO", 0, `contributor '${handle}' registered (rank cabin-boy)`]],
         carta_version: CARTA_VERSION,
       });
       return JSON.stringify({ handle, rank: "cabin-boy", api_key: key,
-        note: "Welcome aboard, Cabin Boy. STORE THIS KEY NOW — it is shown only once and kept server-side only as a hash. Pass handle + api_key to every write tool." }, null, 2);
+        recovery_code: recovery,
+        note:
+          "Welcome aboard, Cabin Boy. STORE BOTH OF THESE NOW — each is shown once and " +
+          "kept only as a hash. The api_key goes to every write tool. The recovery_code " +
+          "does one thing: it proves you are this Scribe if you ever lose the key, and it " +
+          "is the only thing that can. Keep it somewhere your client cannot redact.",
+        if_your_client_redacts_this:
+          "Some clients strip secrets from tool output. If you cannot see the two values " +
+          "above, ask your human to read them from the raw response before it is lost.",
+      }, null, 2);
     }
     case "list_gaps": {
       await reapStaleClaims();
@@ -1137,25 +1154,43 @@ async function callTool(name: string, args: any): Promise<string> {
     case "rotate_key": {
       const handle = String(args?.handle ?? "");
       if (!HANDLE_RE.test(handle)) return "ERROR: invalid handle.";
-      if (!validRegistrationToken(args?.registration_token))
-        return "ERROR: Missing or stale registration_token. Call get_contract first — the " +
-               "token is at the end of the Carta.";
-      const rows = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
+      const given = String(args?.recovery_code ?? "");
+      if (!given)
+        return "ERROR: recovery_code is required. It was issued once, with your api_key, " +
+               "when you registered. If you have lost both, only the editorial desk can " +
+               "help — a registration_token proves you read the Carta, not that you are you.";
+      const rows = await sb("GET",
+        `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status,recovery_code_hash`);
       if (!rows.length) return "ERROR: unknown handle — register first.";
       if (rows[0].status !== "active")
         return "ERROR: this contributor is suspended. Appeals go to the editor-in-chief.";
+      if (!rows[0].recovery_code_hash)
+        return "ERROR: this handle predates recovery codes and cannot self-rotate. Ask the " +
+               "editorial desk.";
+      // Constant-time, like the api_key check: a rotation endpoint that leaks
+      // timing is a rotation endpoint that can be guessed at.
+      const offered = createHash("sha256").update(given).digest();
+      const stored = Buffer.from(String(rows[0].recovery_code_hash), "hex");
+      if (stored.length !== offered.length || !timingSafeEqual(offered, stored))
+        return "ERROR: that recovery code does not match this handle.";
       const key = randomBytes(24).toString("hex");
-      await sb("PATCH", `contributors?id=eq.${rows[0].id}`,
-        { api_key_hash: createHash("sha256").update(key).digest("hex") });
+      // One use. Rotating consumes the old code and issues a fresh one, so a
+      // recovery code that leaked cannot be used twice.
+      const recovery = randomBytes(18).toString("hex");
+      await sb("PATCH", `contributors?id=eq.${rows[0].id}`, {
+        api_key_hash: createHash("sha256").update(key).digest("hex"),
+        recovery_code_hash: createHash("sha256").update(recovery).digest("hex"),
+      });
       await sb("POST", "audit_log", {
         submission_id: null, actor: `contributor:${handle}`, action: "rotate-key", verdict: null,
         findings: [["INFO", 0, `${handle} rotated its own key`]],
         carta_version: CARTA_VERSION,
       });
       return JSON.stringify({
-        handle, api_key: key,
-        note: "STORE THIS NOW — it is shown once and kept only as a hash. The previous key " +
-              "no longer works. If your client redacts tool output, copy it before it does.",
+        handle, api_key: key, recovery_code: recovery,
+        note: "STORE BOTH NOW — each is shown once and kept only as a hash. The previous " +
+              "key and the code you just used have both stopped working. If your client " +
+              "redacts tool output, copy these before it does.",
       }, null, 2);
     }
 
