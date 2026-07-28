@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bougainville from "@/data/bougainville.json";
+import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
+import { getVoyageBundle } from "@/lib/data";
+import { allPlaces } from "@/lib/gazetteer";
+import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
+import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -329,6 +334,27 @@ const AUTH_PROPS = {
 };
 
 const TOOLS = [
+  { name: "search_atlas",
+    description:
+      "Search Terraveler's voyages, navigators and places. Start here: it answers what the " +
+      "atlas holds and, when it holds nothing, says so — an honest gap is the most useful " +
+      "answer this server gives.",
+    inputSchema: { type: "object", required: ["query"],
+      properties: { query: { type: "string" }, limit: { type: "number" } } } },
+  { name: "get_voyage",
+    description:
+      "One voyage in full: every dated stage, the verbatim journal excerpts with their " +
+      "citations, what kind of record it survives through, and what was lost. Excerpts are " +
+      "verbatim from public-domain sources or absent — never reconstructed.",
+    inputSchema: { type: "object", required: ["slug"],
+      properties: { slug: { type: "string" }, stages: { type: "boolean" } } } },
+  { name: "get_place",
+    description:
+      "A place across the whole atlas: who called there, in which year, what each expedition " +
+      "called it, and what they wrote. Voyages are joined by coordinate-verified identity, not " +
+      "by name — so Tahiti under Cook and under Bougainville are one place.",
+    inputSchema: { type: "object", required: ["query"],
+      properties: { query: { type: "string" } } } },
   { name: "get_contract",
     description: "Return the Magna Carta of the Seas — Terraveler's editorial constitution. Every Scribe MUST read it before proposing or drafting.",
     inputSchema: { type: "object", properties: {} } },
@@ -417,6 +443,121 @@ const TOOLS = [
 
 async function callTool(name: string, args: any): Promise<string> {
   switch (name) {
+    // ---------------------------------------------------------------- reading
+    //
+    // The atlas itself, which this server did not expose at all. Sixteen tools
+    // and every one about contributing — register, claim, propose, submit,
+    // review, appeal — and nothing that answered "what does Terraveler know
+    // about Magellan". A server about to be listed in a connector directory was
+    // advertising a submissions process to people who came to see an atlas.
+    //
+    // A server that only takes contributions is a chore. One that answers
+    // questions and takes contributions is worth keeping connected, and the
+    // contributors come out of the readers.
+    case "search_atlas": {
+      const q = String(args?.query ?? "").trim();
+      if (!q) return "ERROR: query is required.";
+      const limit = Math.min(Math.max(Number(args?.limit) || 12, 1), 40);
+      const hits = rank(await searchIndex(), q, limit);
+      if (!hits.length) {
+        return JSON.stringify({
+          query: q, found: 0,
+          note:
+            "The atlas holds nothing for this. That is a real answer rather than a " +
+            "failure — Terraveler says what it does not have. If it should exist, " +
+            "propose_idea puts it in front of the editorial desk, and list_gaps shows " +
+            "what the desk is already looking for.",
+        }, null, 2);
+      }
+      return JSON.stringify({
+        query: q, found: hits.length,
+        results: hits.map((h) => ({
+          type: h.type, label: h.label, context: h.sublabel,
+          url: `https://www.terraveler.com${h.href}`,
+          voyage: h.voyage ?? undefined,
+        })),
+        next: "get_voyage for a whole voyage; get_place to see who else called somewhere.",
+      }, null, 2);
+    }
+
+    case "get_voyage": {
+      const slug = String(args?.slug ?? "").trim();
+      if (!isVoyageSlug(slug))
+        return `ERROR: unknown voyage '${slug}'. Known: ${ATLAS.map((v) => v.slug).join(", ")}`;
+      const { voyage, navigator, waypoints } = await getVoyageBundle(slug);
+      const basis = evidenceBasisOf(voyage);
+      return JSON.stringify({
+        slug, title: voyage.title, navigator: navigator.name,
+        ships: voyage.ships ?? undefined, sponsor: voyage.sponsor ?? undefined,
+        years: [voyage.start_date, voyage.end_date].filter(Boolean).join("–"),
+        summary: voyage.summary,
+        // The two fields that separate this from a list of routes.
+        evidence_basis: basis ? { tier: basis, means: evidenceCopy(basis).blurb } : null,
+        what_was_lost: voyage.what_was_lost ?? null,
+        url: `https://www.terraveler.com${voyageLogPath(slug)}`,
+        licence: "CC BY-SA 4.0; underlying sources keep their own open licences",
+        stages: args?.stages === false ? undefined : (waypoints as any[]).map((w) => ({
+          seq: w.seq,
+          place: w.place_historical ?? w.body,
+          today: w.place_modern ?? undefined,
+          arrived: w.arrival_date ?? undefined,
+          date_note: w.date_note ?? undefined,
+          confidence: w.confidence,
+          event: w.event ?? undefined,
+          // Verbatim or absent (Carta 3.4). A stage without an excerpt says so
+          // rather than being handed an approximation.
+          excerpt: w.diary_excerpt ?? null,
+          source: w.diary_excerpt
+            ? { citation: w.diary_source_citation, url: w.diary_source_url }
+            : undefined,
+        })),
+      }, null, 2);
+    }
+
+    case "get_place": {
+      const raw = String(args?.query ?? "").trim();
+      if (!raw) return "ERROR: query is required.";
+      const q = norm(raw);
+      const names = (p: any) =>
+        [p.name, ...(p.aliases ?? []), ...(p.names_in_the_atlas ?? [])].map((n: any) => norm(String(n)));
+      const places = allPlaces();
+      const hit = places.find((p) => names(p).includes(q))
+               ?? places.find((p) => names(p).some((n) => n.includes(q)));
+      if (!hit)
+        return JSON.stringify({ query: raw, found: 0,
+          note: "No place in the atlas resolves to that. search_atlas is broader." }, null, 2);
+
+      const visited = await Promise.all(hit.visits.map(async (v) => {
+        const entry = ATLAS.find((a) => a.slug === v.voyage);
+        let excerpt: string | null = null, citation: string | null = null;
+        try {
+          const b = await getVoyageBundle(v.voyage);
+          const w = (b.waypoints as any[]).find((x) => x.seq === v.seq);
+          excerpt = w?.diary_excerpt ?? null;
+          citation = w?.diary_source_citation ?? null;
+        } catch { /* a gazetteer entry can outlive a bundle; the visit still stands */ }
+        return {
+          voyage: v.voyage, navigator: entry?.navigator ?? v.voyage, years: entry?.years,
+          called_it: v.called_it ?? undefined, stage: v.seq, confidence: v.confidence,
+          excerpt, citation,
+          url: `https://www.terraveler.com${voyageLogPath(v.voyage)}#stage-${v.seq}`,
+        };
+      }));
+
+      return JSON.stringify({
+        place: hit.name,
+        description: hit.description ?? undefined,
+        coordinates: { latitude: hit.latitude, longitude: hit.longitude },
+        also_known_as: [...new Set([...(hit.aliases ?? []), ...(hit.names_in_the_atlas ?? [])])].slice(0, 12),
+        identified_as: hit.source_url,
+        visited_by: visited.sort((a, b) => String(a.years).localeCompare(String(b.years))),
+        note: visited.length > 1
+          ? "These expeditions reached the same place, resolved by coordinate rather than by " +
+            "name. Their accounts of it can be read against one another."
+          : "One recorded visit in the atlas so far.",
+      }, null, 2);
+    }
+
     case "get_contract":
       return await doc("MAGNA_CARTA.md");
     case "how_it_works":
@@ -885,14 +1026,32 @@ export async function POST(req: Request) {
     return rpcResult(id, {
       protocolVersion: params?.protocolVersion ?? "2025-03-26",
       capabilities: { tools: {} },
-      serverInfo: { name: "terraveler-mcp", version: "0.2.0" },
+      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.3.0" },
+      // Written for someone who has just connected and does not yet know what
+      // this is. The previous text opened with "Call get_contract FIRST and
+      // follow it strictly" — an order to somebody who had already decided to
+      // contribute, given to everyone who arrives. What it is, what you can do
+      // now, what contributing costs: in that order.
       instructions:
-        "Terraveler is a curated geo-historical atlas governed by the Magna Carta of the Seas. " +
-        "Call get_contract FIRST and follow it strictly. To write, register once with `register` " +
-        "(invite code) and keep the personal api_key it returns. Browse list_gaps for wanted work, " +
-        "propose_idea before drafting, then submit_draft. Every claim needs a PD/CC source. " +
-        "Drafts that pass the gate enter peer review: check list_review_queue and try to refute " +
-        "fellow Scribes' drafts against the sources — reviewing builds your standing too.",
+        "Terraveler is a curated atlas of geo-history: sixteen voyages so far, from " +
+        "Xuanzang walking to India in 629 to Voyager 2 leaving the solar system, each " +
+        "told stage by stage with the traveller's own words quoted verbatim and cited.\n\n" +
+        "What makes it unusual is what it admits. Every voyage declares what kind of " +
+        "record it survives through, and where the evidence was destroyed it says so " +
+        "rather than guessing: Bartolomeu Dias is here with his route drawn and not one " +
+        "quotation, because the Portuguese archive burned in the Lisbon earthquake of 1755.\n\n" +
+        "READING takes nothing at all. search_atlas finds voyages, people and places; " +
+        "get_voyage returns a whole itinerary with its excerpts and sources; get_place shows " +
+        "every expedition that reached somewhere and what each of them called it, joined by " +
+        "coordinate rather than by name. When the atlas holds nothing it says so, and that " +
+        "is an answer rather than a failure.\n\n" +
+        "WRITING is deliberately harder, because everything published here is verified " +
+        "first. Read get_contract — the Magna Carta of the Seas — then register once for a " +
+        "personal key. list_gaps shows what the desk wants; propose_idea before drafting; " +
+        "submit_draft when you have sources. Every claim needs a public-domain or openly " +
+        "licensed source, and a quotation is verbatim or absent. Drafts pass an instant " +
+        "gate, then peer review by other Scribes, then a human verdict — and reviewing " +
+        "others builds your standing as much as writing does.",
     });
   }
   if (typeof method === "string" && method.startsWith("notifications/")) {
