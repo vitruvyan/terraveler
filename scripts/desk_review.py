@@ -44,6 +44,8 @@ import os
 import pathlib
 import re
 import sys
+import datetime
+import hashlib
 import urllib.error
 import urllib.request
 
@@ -52,8 +54,15 @@ sys.path.insert(0, str(ROOT / "ingest"))
 
 import psycopg2                                            # noqa: E402
 import psycopg2.extras                                     # noqa: E402
-from verbatim import locate_in_source, norm, readable_text                # noqa: E402
+from verbatim import UnverifiableSource, locate_in_source, norm, source_text                # noqa: E402
 from whitelist import verify_source                        # noqa: E402
+
+CARTA = ""          # set in main(), stamped into every verified span
+
+
+def _stamp() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+
 
 UA = "terraveler-desk/1.0 (contact: dbaldoni@gmail.com)"
 ACTOR = "curator-desk"
@@ -100,7 +109,7 @@ def fetch(url: str) -> str:
     with urllib.request.urlopen(req, timeout=120) as r:
         body = r.read().decode("utf-8", "replace")
         ctype = r.headers.get("Content-Type", "")
-    _cache[url] = readable_text(body, ctype)
+    _cache[url] = source_text(body, ctype)
     return _cache[url]
 
 
@@ -164,7 +173,8 @@ def check_chronology(waypoints: list, f: Findings) -> None:
         prev = (d, w.get("seq"))
 
 
-def check_quotations(waypoints: list, f: Findings, basis: str | None = None) -> dict:
+def check_quotations(waypoints: list, f: Findings, basis: str | None = None,
+                     verified: dict | None = None) -> dict:
     """The heart of it. Every quotation is re-located in its live source, and
     the submitted text must equal the span the source actually holds.
 
@@ -193,12 +203,31 @@ def check_quotations(waypoints: list, f: Findings, basis: str | None = None) -> 
                 continue
             try:
                 body = fetch(url)
+            except UnverifiableSource as e:
+                f.fail(where, f"cannot be verified: {e}")
+                stats["absent"] += 1
+                continue
             except Exception as e:
                 f.warn(where, f"source unreachable ({url}): {str(e)[:90]} — not a verdict "
                               f"on the quotation, a verdict on the network")
                 stats["unreachable"] += 1
                 continue
-            raw, reading, _exact = locate_in_source(quote, body)
+            raw, reading, transformations = locate_in_source(quote, body)
+            if raw is not None and verified is not None:
+                # The materialised span. Everything downstream reads THIS and
+                # never the contributor's text — which is the only way the
+                # guarantee survives a path that does not run the pipeline.
+                verified[f"{w.get('seq')}.{ci}"] = {
+                    "raw_span": raw,
+                    "reading_span": reading,
+                    "transformations": transformations,
+                    "source_url": url,
+                    "source_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+                    "start_offset": body.find(raw),
+                    "length": len(raw),
+                    "verified_at": _stamp(),
+                    "carta_version": CARTA,
+                }
             if raw is None:
                 f.fail(where, f"NOT FOUND in the live source — fabricated or altered "
                               f"(Carta 3.4). Offered: {quote[:90]!r}")
@@ -252,7 +281,9 @@ def review(sub: dict, carta: str) -> dict:
     check_shape(payload, f, carta)
     check_confidence(waypoints, f)
     check_chronology(waypoints, f)
-    stats = check_quotations(waypoints, f, (payload.get("voyage") or {}).get("evidence_basis"))
+    verified: dict = {}
+    stats = check_quotations(waypoints, f,
+                             (payload.get("voyage") or {}).get("evidence_basis"), verified)
 
     if f.count("FAIL"):
         verdict, why = "changes", "findings must be answered before this can be published"
@@ -266,7 +297,7 @@ def review(sub: dict, carta: str) -> dict:
         verdict, why = "approve", "every mechanical check passed"
     return {"id": sub["id"], "target": sub["target_voyage"], "type": sub["type"],
             "verdict": verdict, "reason": why, "stats": stats,
-            "findings": f.rows}
+            "findings": f.rows, "verified_spans": verified}
 
 
 def record(cur, res: dict, carta: str) -> None:
@@ -275,6 +306,16 @@ def record(cur, res: dict, carta: str) -> None:
     if status:
         cur.execute("update submissions set status=%s, updated_at=now() where id=%s",
                     (status, res["id"]))
+    # Written on every pass, verdict or not. The publisher reads this and
+    # nothing else: a span located in the source, with the offset, the length
+    # and the hash of the exact bytes it was found in. Without it the atlas
+    # published `evidence.quote` — the contributor's own typing — for every
+    # submission that arrived through MCP rather than through the pipeline.
+    cur.execute("insert into verified_spans (submission_id, spans, carta_version) "
+                "values (%s,%s,%s) on conflict (submission_id) do update "
+                "set spans = excluded.spans, carta_version = excluded.carta_version, "
+                "verified_at = now()",
+                (res["id"], psycopg2.extras.Json(res["verified_spans"]), carta))
     # The actor is the Curator, never the editor. A verdict recorded under a
     # human's name that a human did not give is the defect this replaces.
     cur.execute(
@@ -291,7 +332,8 @@ def main() -> int:
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args()
 
-    carta = carta_version()
+    global CARTA
+    carta = CARTA = carta_version()
     conn = connect()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if args.ids:

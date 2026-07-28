@@ -87,7 +87,25 @@ def years_of(waypoints: list) -> tuple:
     return (ys[0], ys[-1]) if ys else (None, None)
 
 
-def to_bundle(payload: dict) -> dict:
+def fetch_spans(submission_id: int) -> dict:
+    """The spans the desk located in the sources, or nothing.
+
+    Nothing is a refusal, not a default. Publishing from the submitted payload
+    when this is empty is precisely the hole an external review walked through:
+    every gate reported PASS and the atlas printed a sentence the source does
+    not contain."""
+    out = subprocess.run(
+        ["docker", "exec", "terraveler_postgres", "psql", "-U", "terraveler",
+         "-d", "terraveler", "-tAc",
+         f"select coalesce(spans::text,'{{}}') from verified_spans "
+         f"where submission_id={int(submission_id)}"],
+        capture_output=True, text=True)
+    if out.returncode != 0 or not out.stdout.strip():
+        return {}
+    return json.loads(out.stdout.strip())
+
+
+def to_bundle(payload: dict, spans: dict) -> dict:
     v = payload["voyage"]
     wps = payload.get("waypoints") or []
     nav_name = v.get("navigator") or "Unknown"
@@ -122,10 +140,14 @@ def to_bundle(payload: dict) -> dict:
             "arrival_date": w.get("arrival_date"), "departure_date": None,
             "date_note": None,
             "event": (claims[0].get("text") if claims else None) or None,
-            # Verbatim or absent (Carta §3.4). A stage whose quote the verify
-            # node could not confirm arrives here with no claim at all, and
-            # leaves with a null excerpt rather than an approximation.
-            "diary_excerpt": ev.get("quote"),
+            # Verbatim or absent (Carta §3.4), and "verbatim" means the span
+            # located in the source — never `ev["quote"]`, which is whatever the
+            # contributor typed. Publishing that was how a draft arriving
+            # through MCP could put "the voyage began." on a page printing
+            # "The Voyage began." with every gate reporting PASS. There is no
+            # fallback here on purpose: a quotation with no verified span is
+            # not published, and the run says so rather than approximating.
+            "diary_excerpt": (spans.get(f"{w.get('seq')}.1") or {}).get("reading_span"),
             "diary_source_citation": ev.get("source_title"),
             "diary_source_url": ev.get("source_url"),
             "confidence": w.get("confidence") or "certain",
@@ -164,7 +186,28 @@ def main():
         sys.exit(f"submission {args.submission_id} is '{row['status']}', not 'approved'. "
                  f"The editor's verdict is what authorises publication (Carta §5).")
 
-    bundle = to_bundle(row["payload"])
+    spans = fetch_spans(args.submission_id)
+    quoted_claims = sum(1 for w in (row["payload"].get("waypoints") or [])
+                        for c in (w.get("claims") or [])
+                        if (c.get("evidence") or {}).get("quote"))
+    if quoted_claims and not spans:
+        sys.exit(
+            f"submission {args.submission_id} carries {quoted_claims} quotation(s) and has no "
+            f"verified spans. Carta 3.4: what the atlas prints is the span located in the "
+            f"source, not the text the contributor typed — and there is deliberately no "
+            f"fallback to the latter.\n"
+            f"Run:  python3 scripts/desk_review.py {args.submission_id}")
+
+    bundle = to_bundle(row["payload"], spans)
+    dropped = [w["seq"] for w in bundle["waypoints"]
+               if w["diary_excerpt"] is None and any(
+                   (cl.get("evidence") or {}).get("quote")
+                   for src in (row["payload"].get("waypoints") or [])
+                   if src.get("seq") == w["seq"]
+                   for cl in (src.get("claims") or []))]
+    if dropped:
+        print(f"  ⚠ {len(dropped)} stage(s) offered a quotation with no verified span and "
+              f"will publish without one: {dropped}")
     slug = bundle["voyage"]["slug"]
     stem = args.file or slug
     path = DATA / f"{stem}.json"

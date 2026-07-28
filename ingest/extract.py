@@ -1296,10 +1296,14 @@ def verify_node(ctx, corpus):
             # every false positive an external review demonstrated: the matcher
             # had always folded those, and the QUOTER's version was what got
             # stored.
-            raw, reading, exact = locate_in_source(w["diary_excerpt"], live)
-            w["verbatim_exact"] = exact
-            w["normalizations"] = ([] if reading == raw
-                                   else ["end-of-line-dehyphenation"])
+            raw, reading, transformations = locate_in_source(w["diary_excerpt"], live)
+            # Honest about both. `verbatim_exact` used to be computed with the
+            # same folds the matcher performs, so it said "exact" over a quote
+            # whose case and dashes differed; and `normalizations` always said
+            # "end-of-line-dehyphenation" whatever had actually happened. A
+            # provenance field that always says the same thing records nothing.
+            w["verbatim_exact"] = (raw is not None and w["diary_excerpt"] == raw)
+            w["normalizations"] = transformations or []
             if raw is not None:
                 w["diary_excerpt"] = reading
                 w["diary_excerpt_raw"] = raw
@@ -1317,7 +1321,7 @@ def verify_node(ctx, corpus):
                     w["diary_excerpt"] = None
                     continue
                 passed += 1
-                how = ("VERBATIM" if exact else
+                how = ("VERBATIM" if not transformations else
                        "VERBATIM once the page's own line breaks were closed "
                        "(Carta 3.4)")
                 state = state.with_decision(Decision(

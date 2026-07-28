@@ -28,25 +28,24 @@ def _fold_punct(ch):
             "\u2014": "-", "\u2013": "-"}.get(ch, ch)
 
 
+def _newlines(s, a, b):
+    """Line endings inside a whitespace run, counting the separators an OCR of
+    a printed page actually produces."""
+    return sum(s.count(c, a, b) for c in ("\n", "\r", "\f", "\u2028", "\u2029"))
+
+
 def _breaks_word(s, ws_start, ws_end):
     """Could this hyphen-then-whitespace be a word the margin divided?
 
     Used ONLY for matching, where the job is retrieval: find the passage the
-    scribe meant. Being generous here is safe because nothing the scribe typed
-    is published — the span is copied out of the source afterwards. It is the
-    publication rule below that has to be careful.
+    scribe meant. Generous on purpose, and safe because nothing the scribe
+    types is published — the span is copied out of the source afterwards.
 
     Blank lines are allowed here and refused in the publication rule below.
-    "inter-\n\nnational" is a paragraph break, which does not divide a word —
-    but "to en-\n\n\ntreat" is a PAGE break, which does, and in an OCR the two
-    are the same characters. La Pérouse's vol. II breaks exactly that way, with
-    a running head and a page number sitting in the gap. Refusing both cost a
-    real quotation and reported it as "fabricated or altered".
-
-    So matching accepts them, because a false negative here is an accusation of
-    forgery; publication refuses them, because a false positive there prints a
-    word the page never had. The generous side is the safe one only because
-    the published span is copied rather than typed."""
+    "inter-\n\nnational" is a paragraph break, which does not divide a word;
+    "to en-\n\n\ntreat" is a PAGE break, which does, and in an OCR the two are
+    the same characters. Refusing both cost a real La Pérouse quotation and
+    reported it as "fabricated or altered"."""
     nxt = s[ws_end] if ws_end < len(s) else ""
     k = ws_start - 2
     return bool(nxt) and nxt.isalpha() and k >= 0 and s[k].isalpha()
@@ -56,22 +55,79 @@ def _division_is_unambiguous(s, ws_start, ws_end):
     """Is the hyphen certainly the margin's, rather than the word's?
 
     Used for publication, where a wrong answer prints a word the source never
-    had. Carta 3.4: an ambiguous hyphen stays. A capital on either side is the
-    signal that the hyphen is lexical — "an X-\nray plate", "Anglo- Saxon" —
-    so those keep their hyphen and lose only the line break.
+    had, so every condition here is a refusal to guess:
 
-    It still cannot tell "north-\neast" from "anchor-\ned", and nothing
-    without the page's geometry can. That case rejoins, and it is the known
-    limit of the clause rather than a defect hidden inside it."""
+      - there must be a line ending. "ice- bound" is a hyphen and a space, and
+        a space is not a margin. The whole corpus of La Pérouse's 1799 edition
+        holds 1,811 hyphens at a line ending and 67 followed only by spaces,
+        so guessing at the second buys almost nothing and costs real words.
+      - exactly one line ending. Two is a paragraph or a page, and neither is
+        close enough to be sure.
+      - lower case on both sides. A capital either way is X-ray, Anglo-Saxon,
+        T-shirt: the printer's hyphen, not the margin's.
+
+    It still cannot tell "north-\neast" from "anchor-\ned", and nothing without
+    the page's geometry can. That case rejoins, and it is the declared limit of
+    Carta 3.4 rather than a defect hidden inside it."""
     if not _breaks_word(s, ws_start, ws_end):
         return False
-    if s.count("\n", ws_start, ws_end) > 1:
-        return False        # a paragraph or a page break: too far to be sure
+    if _newlines(s, ws_start, ws_end) != 1:
+        return False
     return s[ws_end].islower() and s[ws_start - 2].islower()
 
 
+def _for_reading(raw):
+    """The source's own span, with only what the line endings did to it undone.
+
+    Everything else survives: capitalisation, punctuation, spelling, ligatures,
+    the printer's hyphens, runs of spaces, and the boundaries between
+    paragraphs. An earlier version treated every isspace() as typographic
+    damage and so deleted paragraph breaks, form feeds and double spaces —
+    changes Carta 3.4 does not license and which an adversarial review
+    demonstrated one by one.
+
+    Returns the readable span and the list of transformations actually applied,
+    so provenance can name them instead of asserting a default."""
+    out, done, i, n = [], [], 0, len(raw)
+    while i < n:
+        ch = raw[i]
+        if not ch.isspace():
+            out.append(ch)
+            i += 1
+            continue
+        j = i
+        while j < n and raw[j].isspace():
+            j += 1
+        nl = _newlines(raw, i, j)
+        if nl == 0:
+            # Spaces and tabs inside a line are the source's own spacing.
+            out.append(raw[i:j])
+        elif out and out[-1] == "-" and nl == 1 and _breaks_word(raw, i, j):
+            if _division_is_unambiguous(raw, i, j):
+                out.pop()
+                done.append("line-break-rejoin")
+            else:
+                # The hyphen might be the printer's, so it stays — but the line
+                # ending is not part of the word either way, and turning it
+                # into a space would print "X- ray", which is on no page.
+                done.append("line-break-closed")
+        elif nl == 1:
+            out.append(" ")
+            done.append("line-wrap-to-space")
+        else:
+            # A paragraph or a page. Keeping it is the only honest rendering:
+            # it is a boundary the page has, and collapsing it invents prose
+            # the author did not write.
+            out.append("\n\n")
+            done.append("paragraph-break-kept")
+        i = j
+    text = "".join(out).strip()
+    return text, sorted(set(done))
+
+
 def _norm_with_origins(s):
-    """norm(), plus where every surviving character came from.
+    """The matching form of a text, plus where every surviving character came
+    from.
 
     The whole point of the comparison is to find a span in the source. Doing
     that and then publishing the QUOTER's text instead of the source's was the
@@ -84,7 +140,7 @@ def _norm_with_origins(s):
     Returning the origin index of each normalised character lets the pipeline
     copy the span out of the source instead. Then capitalisation, dashes,
     ligatures and hyphenation are the source's by construction, and no
-    normalisation the matcher performs can alter a published word."""
+    normalisation performed here can alter a published word."""
     out, origins = [], []
 
     def push(text, at):
@@ -99,7 +155,6 @@ def _norm_with_origins(s):
             j = i
             while j < n and s[j].isspace():
                 j += 1
-            # A word the margin divided: drop the hyphen and the break with it.
             if out and out[-1] == "-" and j < n and _breaks_word(s, i, j):
                 out.pop(); origins.pop()
             elif out:
@@ -109,9 +164,8 @@ def _norm_with_origins(s):
         # Every hyphen inside a word is dropped for matching purposes, on both
         # sides. Where a source breaks "X-ray" at the margin, one scribe writes
         # "X-ray" and another "Xray" and both mean the same passage; deciding
-        # which is "right" is undecidable and, now that the span is copied out
-        # of the source, pointless. The source's own hyphens are published
-        # untouched either way — this only governs what counts as finding it.
+        # which is "right" is undecidable and, since the span is copied out of
+        # the source, pointless.
         folded = _fold_punct(ch)
         if folded in "-\u2010\u00ad" and out and out[-1].isalnum() \
                 and i + 1 < n and s[i + 1].isalnum():
@@ -127,68 +181,40 @@ def _norm_with_origins(s):
     return "".join(out[start:]), origins[start:]
 
 
-def _norm_no_rejoin(s):
-    """The comparison without the one transformation 3.4 permits, so the
-    pipeline can record WHICH of the two a quotation matched."""
-    s = unicodedata.normalize("NFKC", "".join(_fold_punct(c) for c in s))
-    return re.sub(r"\s+", " ", s).strip().casefold()
-
-
-def _for_reading(raw):
-    """The source's own span, with only what the margin did to it undone.
-
-    Carta 3.4 permits exactly one transformation and this is where it is
-    applied — to the SOURCE's characters, never to the quoter's. Capitalisation,
-    punctuation, spelling, ligatures and every hyphen the printer meant survive
-    untouched, because they are copied rather than retyped. What goes is the
-    line ending itself: a word the margin split is made whole, and the breaks
-    become single spaces, so a quotation reads as a sentence instead of as a
-    column of type.
-
-    The raw span is kept beside it. Both are published; the reader sees this
-    one, and anyone checking the citation against the scan has the other."""
-    out, i, n = [], 0, len(raw)
-    while i < n:
-        ch = raw[i]
-        if ch.isspace():
-            j = i
-            while j < n and raw[j].isspace():
-                j += 1
-            if out and out[-1] == "-" and _breaks_word(raw, i, j):
-                # The break goes either way; the hyphen only when it was the
-                # margin's. An ambiguous one stays and reads as what it is.
-                if _division_is_unambiguous(raw, i, j):
-                    out.pop()
-            elif out:
-                out.append(" ")
-            i = j
-            continue
-        out.append(ch)
-        i += 1
-    return "".join(out).strip()
-
-
 def locate_in_source(quote, source):
     """Find a quotation in its source and return what the SOURCE says.
 
-    Returns (raw_span, reading_span, exact) or (None, None, False). Both spans
-    are copied out of the source: `raw_span` character for character, and
-    `reading_span` with only the margin's own damage undone. `exact` says
-    whether the quotation as offered already matched without the line-break
-    rejoining Carta 3.4 permits.
+    Returns (raw_span, reading_span, transformations) or (None, None, None).
+    Both spans are copied out of the source: `raw_span` character for
+    character, and `reading_span` with only what the line endings did undone.
+    `transformations` names what was actually applied to get from one to the
+    other — never a default, because a provenance field that always says the
+    same thing records nothing.
 
     This is the only thing allowed to decide what a diary_excerpt contains.
     A scribe chooses which passage matters; it does not get to retype it."""
     hay, origins = _norm_with_origins(source)
     needle, _ = _norm_with_origins(quote)
     if not needle:
-        return None, None, False
-    at = hay.find(needle)
+        return None, None, None
+    # Token boundaries. A bare find() matched "the" inside "other" and returned
+    # a span starting mid-word, which is a citation to something the source
+    # does not say.
+    at = -1
+    probe = hay.find(needle)
+    while probe >= 0:
+        before_ok = probe == 0 or not hay[probe - 1].isalnum()
+        after = probe + len(needle)
+        after_ok = after >= len(hay) or not hay[after].isalnum()
+        if before_ok and after_ok:
+            at = probe
+            break
+        probe = hay.find(needle, probe + 1)
     if at < 0:
-        return None, None, False
+        return None, None, None
     raw = source[origins[at]:origins[at + len(needle) - 1] + 1]
-    exact = _norm_no_rejoin(quote) in _norm_no_rejoin(source)
-    return raw, _for_reading(raw), exact
+    reading, transformations = _for_reading(raw)
+    return raw, reading, transformations
 
 
 def norm(s):
@@ -206,29 +232,41 @@ def norm(s):
 
 # ---------------------------------------------------------------- source text
 
-_SCRIPTISH = re.compile(r"(?is)<(script|style|head)\b.*?</\1\s*>")
-_TAG = re.compile(r"(?s)<[^>]+>")
+class UnverifiableSource(Exception):
+    """The source cannot be reduced to what a reader would see."""
+
+
+def source_text(body: str, content_type: str = "") -> str:
+    """The text a quotation may be checked against.
+
+    Plain text passes through untouched. HTML is refused.
+
+    Both halves of that were learned the hard way. Stripping markup with a
+    regex looks like it works and does not: an unclosed <script>, a <template>,
+    a hidden element, a crafted comment and a quoted attribute all survive it,
+    so a quotation invisible on the page verifies as though a reader could see
+    it — an external review demonstrated five bypasses in a row. And deciding
+    "this is markup" by looking for a "<" destroys plain text: eight stray
+    angle brackets in an OCR'd 1929 book cost 318,658 characters, forty per
+    cent of the volume, after which four genuine quotations were reported as
+    "fabricated or altered".
+
+    So neither guess is made. The Content-Type decides, and an HTML source is
+    declared unverifiable rather than half-parsed. Nothing is lost by this:
+    every source in the atlas is a Gutenberg .txt or an archive.org _djvu.txt,
+    which is what a citable edition looks like anyway. If an HTML source ever
+    matters, it needs a real parser and a real renderer, not this."""
+    ct = content_type.lower()
+    if "html" in ct or "xml" in ct:
+        raise UnverifiableSource(
+            "the source is served as " + (content_type or "markup") + ". A quotation "
+            "cannot be verified against markup: text hidden in a script, a template, "
+            "an attribute or a comment is not on the page a reader opens, and no "
+            "regular expression can tell the difference. Cite the plain-text edition "
+            "— for Project Gutenberg the .txt, for archive.org the _djvu.txt.")
+    return body
 
 
 def readable_text(body: str, content_type: str = "") -> str:
-    """What a reader would see on the page, given what the server said it sent.
-
-    Two failures, in opposite directions, produced this function.
-
-    A gate that matched against the raw HTTP response would verify a sentence
-    that appears only in a <meta> tag or in embedded JSON — text no reader can
-    see. So markup has to go.
-
-    But deciding "this is markup" by looking for a "<" destroys plain text. An
-    OCR'd 1929 book held eight stray angle brackets, and stripping everything
-    between each one and the next ">" deleted 318,658 characters — forty per
-    cent of the volume — after which four genuine quotations were reported as
-    NOT FOUND, which this pipeline words as "fabricated or altered". Accusing a
-    contributor of forgery because a scanner misread a bracket is the most
-    expensive mistake this code can make.
-
-    So the Content-Type decides, and nothing else does. When the server does not
-    say, the body is left exactly as it came."""
-    if "html" not in content_type.lower() and "xml" not in content_type.lower():
-        return body
-    return _TAG.sub(" ", _SCRIPTISH.sub(" ", body))
+    """Deprecated alias kept for one release. Use source_text."""
+    return source_text(body, content_type)
