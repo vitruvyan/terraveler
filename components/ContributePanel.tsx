@@ -108,6 +108,9 @@ export default function ContributePanel({
   const [idea, setIdea] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  // The reference the desk will use. The response carried it and this threw it
+  // away, leaving a contributor with nothing to ask about later.
+  const [ref, setRef] = useState<number | null>(null);
   const [sendErr, setSendErr] = useState<string | null>(null);
 
   const place =
@@ -196,6 +199,7 @@ export default function ContributePanel({
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "Could not submit.");
+      setRef(typeof j?.submission_id === "number" ? j.submission_id : null);
       setSent(true);
     } catch (e: any) {
       setSendErr(String(e?.message || e));
@@ -287,7 +291,14 @@ export default function ContributePanel({
         </div>
         {sent ? (
           <div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 6, lineHeight: 1.45 }}>
-            Thank you — your suggestion is on the editor&rsquo;s desk. It&rsquo;s reviewed before anything goes live.
+            Thank you — your suggestion is on the editor&rsquo;s desk. It&rsquo;s reviewed
+            before anything goes live.
+            {ref !== null && (
+              <>
+                {" "}Your reference is <strong>#{ref}</strong> — quote it if you write to
+                the desk about this.
+              </>
+            )}
           </div>
         ) : (
           <>

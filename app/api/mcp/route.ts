@@ -215,6 +215,25 @@ function nextSteps(id: number, status: string): Record<string, unknown> {
   }
 }
 
+/** Carta §3.5: "Provenance is recorded forever: ideator, drafting model,
+ *  sources, date, and the Carta version in force."
+ *
+ *  submit_draft carried that in its own meta block and the two suggestion tools
+ *  carried nothing, so half of what enters the queue arrived anonymous — the
+ *  audit trail showed ideator and drafting_model as null for the first external
+ *  contributor's work. The clause does not say "for drafts". */
+const provenance = (args: any) => ({
+  ideator: typeof args?.ideator === "string" ? args.ideator.slice(0, 120) : null,
+  scribe_model: typeof args?.scribe_model === "string" ? args.scribe_model.slice(0, 80) : null,
+  carta_version: CARTA_VERSION,
+});
+
+const PROVENANCE_PROPS = {
+  ideator: { type: "string",
+    description: "the human who asked for this — Carta 2: humans submit intent, AI drafts" },
+  scribe_model: { type: "string", description: "the model writing this, e.g. gpt-5, claude-opus-5" },
+};
+
 // ------------------------------------------------------------------ quotas
 // Standing earns capacity, never exemption from review (Carta 7).
 const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }> = {
@@ -552,13 +571,13 @@ const TOOLS = [
   { name: "suggest_feature",
     description: "Suggest a feature or change for Terraveler itself (site, map, tools, process). The suggestion lands on the editorial desk for consideration.",
     inputSchema: { type: "object", required: ["handle", "api_key", "title", "description"],
-      properties: { ...AUTH_PROPS,
+      properties: { ...AUTH_PROPS, ...PROVENANCE_PROPS,
         title: { type: "string" }, description: { type: "string" },
         area: { type: "string", description: "optional: map | timeline | chat | governance | mcp | other" } } } },
   { name: "suggest_content",
     description: "Suggest content for a SPECIFIC voyage waypoint — an additional PD/CC source, a period image, an ethnographic detail, a coordinate/date fix, or a correction. Scoped to (voyage, waypoint, type). Lighter than submit_draft: a pointer for the desk, not a verified draft. Use this when contributing from a specific log entry, plate, or ethnographic note.",
     inputSchema: { type: "object", required: ["handle", "api_key", "voyage", "type", "idea"],
-      properties: { ...AUTH_PROPS,
+      properties: { ...AUTH_PROPS, ...PROVENANCE_PROPS,
         voyage: { type: "string", description: "voyage slug, e.g. boudeuse-1766" },
         waypoint: { type: "number", description: "waypoint seq this concerns (omit for whole-voyage)" },
         type: { type: "string", enum: ["source", "image", "coordinate", "date", "ethnography", "correction", "other"] },
@@ -908,7 +927,8 @@ async function callTool(name: string, args: any): Promise<string> {
       if (bad) return `ERROR: ${bad}`;
       const one = await recordSubmission(args, {
         type: "feature-suggestion",
-        payload: { title: args.title, description: args.description, area: args.area ?? null },
+        payload: { meta: provenance(args), title: args.title,
+                   description: args.description, area: args.area ?? null },
         status: "human-review", actor: "mcp", action: "suggestion",
       });
       if (one !== RPC_MISSING) {
@@ -922,7 +942,8 @@ async function callTool(name: string, args: any): Promise<string> {
       if (over) return `ERROR: ${over}`;
       const s = await sb("POST", "submissions", {
         contributor_id: a.ok!.id, type: "feature-suggestion", target_voyage: null,
-        payload: { title: args.title, description: args.description, area: args.area ?? null },
+        payload: { meta: provenance(args), title: args.title,
+                   description: args.description, area: args.area ?? null },
         status: "human-review", carta_version: CARTA_VERSION,
       });
       await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "suggestion",
@@ -940,7 +961,8 @@ async function callTool(name: string, args: any): Promise<string> {
         " — it now appears on the editorial desk. Track it with get_submission_status.";
       const one = await recordSubmission(args, {
         type: "content-suggestion", target_voyage: args.voyage ?? null,
-        payload: { voyage: args.voyage, waypoint: args.waypoint ?? null,
+        payload: { meta: provenance(args),
+                   voyage: args.voyage, waypoint: args.waypoint ?? null,
                    content_type: args.type, idea: args.idea },
         status: "human-review", actor: "mcp", action: "content-suggestion",
       });
@@ -1163,6 +1185,18 @@ async function callTool(name: string, args: any): Promise<string> {
       const wps = Array.isArray(s.payload?.waypoints) ? s.payload.waypoints : [];
       const quoted = wps.filter((w: any) =>
         (w?.claims ?? []).some((c: any) => c?.evidence?.quote)).length;
+      // A suggestion is not a draft. Reporting "waypoints: 0" and "draft
+      // withheld" for a proposed image made the trail read as though something
+      // had gone wrong, when nothing had — the shape simply did not fit.
+      const isDraft = wps.length > 0 || s.type === "new-voyage" || s.type === "waypoint-enrichment";
+      const content = isDraft
+        ? { kind: "draft", waypoints: wps.length, with_verified_excerpt: quoted }
+        : { kind: s.type,
+            about: s.payload?.voyage
+              ? `${s.payload.voyage}${s.payload.waypoint != null ? ` waypoint ${s.payload.waypoint}` : ""}`
+              : (s.payload?.area ?? undefined),
+            title: s.payload?.title ?? undefined,
+            summary: String(s.payload?.idea ?? s.payload?.description ?? "").slice(0, 400) || undefined };
       return JSON.stringify({
         submission: {
           id: s.id, type: s.type, status: s.status,
@@ -1173,12 +1207,14 @@ async function callTool(name: string, args: any): Promise<string> {
           drafting_model: s.payload?.meta?.scribe_model ?? null,
           evidence_basis: s.payload?.voyage?.evidence_basis ?? null,
         },
-        content: { waypoints: wps.length, with_verified_excerpt: quoted },
+        content,
         trail,
-        note:
-          "The draft itself is withheld: unapproved text does not become public by " +
-          "being quoted in the reasoning that refused it. Reviewer identities are " +
-          "withheld pending an editorial decision — see issue #10.",
+        note: isDraft
+          ? "The draft itself is withheld: unapproved text does not become public by being " +
+            "quoted in the reasoning that refused it. Reviewer identities are withheld " +
+            "pending an editorial decision."
+          : "A suggestion is shown in full — it is a pointer for the desk, not unapproved " +
+            "text awaiting publication.",
       }, null, 2);
     }
 
