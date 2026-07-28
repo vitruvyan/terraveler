@@ -164,6 +164,42 @@ const ATLAS_ENTRIES = [
     blurb:
       "The voyage that proved the Atlantic and the Indian Ocean were one sea \u2014 and whose every record burned in the Lisbon earthquake of 1755.",
   },
+  {
+    slug: "gama-1497",
+    href: "/voyage/gama-1497",
+    title: "Vasco da Gama and the Sea Road to India (1497-1499)",
+    navigator: "Vasco da Gama",
+    years: "1497–1499",
+    blurb:
+      "The voyage that joined Europe to the Indian Ocean: a long arc into the open Atlantic to catch the westerlies, the Cape rounded ten years after Dias, up the Swahili coast past\u2026",
+  },
+  {
+    slug: "drake-1577",
+    href: "/voyage/drake-1577",
+    title: "Drake's Circumnavigation (1577-1580)",
+    navigator: "Francis Drake",
+    years: "1577–1580",
+    blurb:
+      "The second circumnavigation and the first by a captain who survived it: south to Port San Juli\u00e1n and the execution of Thomas Doughty, through the Strait, up the Pacific coast\u2026",
+  },
+  {
+    slug: "leoafricanus-1510",
+    href: "/voyage/leoafricanus-1510",
+    title: "Leo Africanus in Africa (c. 1510-1520)",
+    navigator: "al-Hasan ibn Muhammad al-Wazzan (Leo Africanus)",
+    years: "1514–1518",
+    blurb:
+      "North and West Africa described from inside it: Fez and Morocco, the Atlas passes, the Saharan crossings, Timbuktu and Gao under Songhai, the Niger, and eastward to Egypt \u2014 the\u2026",
+  },
+  {
+    slug: "faxian-399",
+    href: "/voyage/faxian-399",
+    title: "Faxian's Journey to the Buddhist Kingdoms (399-414)",
+    navigator: "Faxian",
+    years: "",
+    blurb:
+      "Overland through Dunhuang and the desert to Khotan, over the Pamirs to Gandhara and the Ganges plain, years at Pataliputra copying texts, then Ceylon, and home by merchant ship\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */

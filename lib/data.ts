@@ -15,6 +15,10 @@ import shackleton from "@/data/shackleton-1914.json";
 import xuanzang from "@/data/xuanzang-629.json";
 import cartier from "@/data/cartier-1534.json";
 import dias from "@/data/dias-1487.json";
+import gama from "@/data/gama-1497.json";
+import drake from "@/data/drake-1577.json";
+import leoafricanus from "@/data/leoafricanus-1510.json";
+import faxian from "@/data/faxian-399.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -53,6 +57,10 @@ const LOCAL: Record<VoyageSlug, unknown> = {
   "xuanzang-629": xuanzang,
   "cartier-1534": cartier,
   "dias-1487": dias,
+  "gama-1497": gama,
+  "drake-1577": drake,
+  "leoafricanus-1510": leoafricanus,
+  "faxian-399": faxian,
 };
 
 export function knownVoyages(): readonly string[] {

@@ -733,6 +733,24 @@ def _extract_json(text):
         return json.loads(text[i:j + 1])
 
 
+def _anthropic_text(data):
+    """The text of a Claude reply, however many blocks it arrived in.
+
+    Reading content[0]["text"] assumes the first block is text. It is not
+    always: a thinking block, or any future block type, comes first and the
+    KeyError that follows says only 'text'. Lewis & Clark died that way with
+    six thousand chunks of journal sitting in the corpus, and the trace
+    recorded the whole failure as one word.
+    """
+    blocks = data.get("content") or []
+    text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+    if text.strip():
+        return text
+    raise RuntimeError(
+        f"no text in the reply: stop_reason={data.get('stop_reason')!r}, "
+        f"blocks={[b.get('type') for b in blocks]!r}")
+
+
 def _chat_json(model, system, user, temperature=0, timeout=180):
     anthropic = model.startswith("claude")
     if anthropic:
@@ -760,7 +778,7 @@ def _chat_json(model, system, user, temperature=0, timeout=180):
     for attempt in range(4):
         try:
             data = _post_json(url, headers, body, timeout)
-            content = (data["content"][0]["text"] if anthropic
+            content = (_anthropic_text(data) if anthropic
                        else data["choices"][0]["message"]["content"])
             return _extract_json(content)
         except Exception:
@@ -900,6 +918,7 @@ def plan_itinerary_node(ctx, corpus):
                 f"no public-domain narrative chunks found for {ctx.voyage} in "
                 f"range [{lo},{hi}]", _now()))
 
+        corpus.planned = False
         sample = _plan_sample(corpus.chunks, ctx.plan_sample_size)
         listing = "\n\n".join(
             f"[chunk_index={c['chunk_index']}]\n{c['content'][:500]}" for c in sample)
@@ -927,6 +946,7 @@ def plan_itinerary_node(ctx, corpus):
                 f"No draft written — a voyage with no itinerary is a failed run, "
                 f"not a short one.") from e
 
+        corpus.planned = True
         waypoints = []
         for i, s in enumerate(stops):
             place = (s.get("place") or "").strip()
@@ -1373,6 +1393,15 @@ def assemble_node(ctx, corpus):
             },
             "waypoints": waypoints_out,
         }
+        # The plan node raises when planning fails, and the exploration policy
+        # swallows it and runs the rest of the graph anyway — which is how a
+        # failed run still wrote a tidy submission with zero waypoints. The
+        # guard has to live where the file is written, not where the error is.
+        if not getattr(corpus, "planned", False):
+            raise RuntimeError(
+                f"{ctx.voyage}: planning never completed, so there is no itinerary "
+                f"to assemble. Refusing to write a draft that would read as a "
+                f"finished run.")
         corpus.submission = submission
 
         os.makedirs(ctx.out_dir, exist_ok=True)
@@ -1490,6 +1519,13 @@ def main():
     print(json.dumps(summary, indent=2))
     print("─" * 60)
     print(f"✔ trace: {trace_path}", file=sys.stderr)
+
+    # A batch script reads the exit code, not the trace. A run that produced no
+    # itinerary is a failure even though every node "completed".
+    if not facts.get("final_waypoints"):
+        print(f"✘ {args.voyage}: no waypoints — see the trace for which node was "
+              f"skipped and why.", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

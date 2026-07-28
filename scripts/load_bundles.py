@@ -36,6 +36,8 @@ import re
 import sys
 from pathlib import Path
 
+import pathlib
+
 import psycopg2
 import psycopg2.extras
 
@@ -87,13 +89,25 @@ def bundles() -> dict:
     return out
 
 
+def _dotenv_password() -> str:
+    """Postgres runs in Docker on port 6000, and its password is already in .env.
+    Every script that asked the operator to export it by hand got the port wrong
+    at least once. Read the file the compose stack reads."""
+    f = pathlib.Path(__file__).resolve().parent.parent / ".env"
+    if f.exists():
+        for line in f.read_text().splitlines():
+            if line.startswith("POSTGRES_PASSWORD="):
+                return line.split("=", 1)[1].strip().strip('"')
+    return ""
+
+
 def connect():
     return psycopg2.connect(
         host=os.environ.get("PGHOST", "127.0.0.1"),
-        port=int(os.environ.get("PGPORT", "5432")),
+        port=int(os.environ.get("PGPORT", "6000")),
         dbname=os.environ.get("PGDATABASE", "terraveler"),
         user=os.environ.get("PGUSER", "terraveler"),
-        password=os.environ.get("PGPASSWORD", ""),
+        password=os.environ.get("PGPASSWORD") or _dotenv_password(),
     )
 
 
