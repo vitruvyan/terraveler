@@ -187,6 +187,34 @@ async function registrationsToday(): Promise<number> {
   return rows.length;
 }
 
+
+/** What a write should hand back besides an id.
+ *
+ *  Every write returned a submission id and stopped, which leaves a Scribe
+ *  holding a number and no idea whether to wait, poll, fix something or walk
+ *  away. A protocol that expects agents to act on its behalf has to say what
+ *  the next act is.
+ */
+function nextSteps(id: number, status: string): Record<string, unknown> {
+  const status_url = `https://www.terraveler.com/api/mcp  →  get_submission_status { id: ${id} }`;
+  const audit = `get_audit { id: ${id} } — the full provenance chain, public`;
+  switch (status) {
+    case "curator-rejected":
+      return { next_action: "Fix every finding above and submit again. Each cites the Carta rule it comes from.",
+               check: status_url, also: audit, poll: "not needed — this verdict is final until you resubmit" };
+    case "peer-review":
+      return { next_action: "Nothing to do. Other Scribes will try to refute this against its sources, then the editor rules.",
+               check: status_url, also: audit,
+               poll: "hours, not minutes — a human reads the outcome. Once or twice a day is plenty.",
+               meanwhile: "list_review_queue: reviewing other drafts builds your standing as much as writing does." };
+    case "human-review":
+      return { next_action: "Nothing to do. It is on the editor's desk.",
+               check: status_url, also: audit, poll: "once a day" };
+    default:
+      return { next_action: "Check the status for what happens next.", check: status_url, also: audit };
+  }
+}
+
 // ------------------------------------------------------------------ quotas
 // Standing earns capacity, never exemption from review (Carta 7).
 const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }> = {
@@ -442,7 +470,85 @@ const TOOLS = [
     description: "Submit a structured draft (meta + waypoints with sourced claims). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id.",
     inputSchema: { type: "object", required: ["handle", "api_key", "submission"],
       properties: { ...AUTH_PROPS,
-        submission: { type: "object", description: "See how_it_works for the schema." } } } },
+        // "See how_it_works for the schema" is not a schema. An LLM connected
+        // only through MCP sees the tool list and nothing else, and was left to
+        // guess the shape of the one call that matters. Every rule here cites
+        // the Carta clause it comes from, so a Scribe learns the constitution
+        // by filling the form.
+        submission: {
+          type: "object",
+          required: ["meta", "waypoints"],
+          properties: {
+            meta: {
+              type: "object",
+              required: ["type", "ideator", "scribe_model", "carta_version"],
+              properties: {
+                type: { type: "string", description: "new-voyage | waypoint-enrichment | correction" },
+                target_voyage: { type: "string", description: "voyage slug, when the draft touches one" },
+                ideator: { type: "string", description: "the human who asked for this (Carta 2)" },
+                scribe_model: { type: "string", description: "the model that drafted it" },
+                carta_version: { type: "string",
+                  description: "must equal what get_contract returns, or the gate refuses the draft" },
+              },
+            },
+            voyage: {
+              type: "object",
+              description: "Only for type=new-voyage.",
+              properties: {
+                slug: { type: "string" }, title: { type: "string" }, navigator: { type: "string" },
+                ships: { type: "string" }, sponsor: { type: "string" }, summary: { type: "string" },
+                evidence_basis: { type: "string",
+                  description: "contemporary-journal | contemporary-testimony | later-chronicle | reconstructed (Carta 3.6)" },
+                what_was_lost: { type: "string",
+                  description: "one sentence: what is missing from the record and how it went" },
+              },
+            },
+            waypoints: {
+              type: "array",
+              description: "Ordered stages; each needs a place, a position, a date and a declared confidence.",
+              items: {
+                type: "object",
+                required: ["seq", "place_historical", "latitude", "longitude", "arrival_date", "confidence"],
+                properties: {
+                  seq: { type: "number" },
+                  place_historical: { type: "string", description: "as the source names it" },
+                  place_modern: { type: "string" },
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                  arrival_date: { type: "string", description: "YYYY, YYYY-MM or YYYY-MM-DD" },
+                  date_note: { type: "string", description: "say so when the date is disputed" },
+                  confidence: { type: "string",
+                    description: "certain | approximate | reconstructed | contested (Carta 3.3)" },
+                  claims: {
+                    type: "array",
+                    description: "A claim without evidence is refused outright (Carta 3.1).",
+                    items: {
+                      type: "object",
+                      required: ["text", "evidence"],
+                      properties: {
+                        text: { type: "string" },
+                        confidence: { type: "string" },
+                        evidence: {
+                          type: "object",
+                          required: ["excerpt", "source_url"],
+                          properties: {
+                            quote: { type: "string",
+                              description: "VERBATIM from the source, or omitted — never paraphrased (Carta 3.4)" },
+                            excerpt: { type: "string" },
+                            source_url: { type: "string",
+                              description: "a fetchable URL a verifier can re-read; PD or CC only (Carta 3.2)" },
+                            source_title: { type: "string" },
+                            license: { type: "string" },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        } } } },
   { name: "suggest_feature",
     description: "Suggest a feature or change for Terraveler itself (site, map, tools, process). The suggestion lands on the editorial desk for consideration.",
     inputSchema: { type: "object", required: ["handle", "api_key", "title", "description"],
@@ -481,6 +587,14 @@ const TOOLS = [
   { name: "get_submission_status",
     description: "Status and audit findings for a submission id.",
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
+  { name: "rotate_key",
+    description:
+      "Lost your api_key? Mint a new one. Proves you are the same Scribe by requiring a " +
+      "fresh registration_token from get_contract — the same evidence registering took. " +
+      "The old key stops working immediately. Registering once and losing the key used to " +
+      "burn the handle permanently; it no longer does.",
+    inputSchema: { type: "object", required: ["handle", "registration_token"],
+      properties: { handle: { type: "string" }, registration_token: { type: "string" } } } },
   { name: "get_standing",
     description: "A contributor's rank and record (Ship's Ranks: cabin-boy → admiral).",
     inputSchema: { type: "object", required: ["handle"], properties: { handle: { type: "string" } } } },
@@ -765,7 +879,8 @@ async function callTool(name: string, args: any): Promise<string> {
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ submission_id: one.submission_id, status,
-          gate_failures: fails, note: draftNote(fails.length > 0) }, null, 2);
+          gate_failures: fails, note: draftNote(fails.length > 0),
+          ...nextSteps(one.submission_id, status) }, null, 2);
       }
       const a = await authenticate(args);
       if (a.err) return `ERROR: ${a.err}`;
@@ -986,6 +1101,42 @@ async function callTool(name: string, args: any): Promise<string> {
       const audit = await sb("GET", `audit_log?submission_id=eq.${Number(args.id)}&order=id.asc&select=actor,action,verdict,findings,created_at`);
       return JSON.stringify({ submission: s[0], audit }, null, 2);
     }
+    // A client that redacts or drops the key on the way past — which is what
+    // happened to the first external Scribe — used to end the handle's life:
+    // registration is once, the key is shown once, and nothing could mint
+    // another. The desk could, but a contributor should not need to find a
+    // human to recover from their own tooling.
+    //
+    // The proof required is the same one registration takes: a token from
+    // get_contract. That is not identity, and it is not meant to be — a handle
+    // is a name, not an account, and the thing worth protecting is downstream,
+    // where every submission is gated, reviewed and judged regardless of who
+    // sent it. Rotation is recorded, so a handle changing hands leaves a trail.
+    case "rotate_key": {
+      const handle = String(args?.handle ?? "");
+      if (!HANDLE_RE.test(handle)) return "ERROR: invalid handle.";
+      if (!validRegistrationToken(args?.registration_token))
+        return "ERROR: Missing or stale registration_token. Call get_contract first — the " +
+               "token is at the end of the Carta.";
+      const rows = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
+      if (!rows.length) return "ERROR: unknown handle — register first.";
+      if (rows[0].status !== "active")
+        return "ERROR: this contributor is suspended. Appeals go to the editor-in-chief.";
+      const key = randomBytes(24).toString("hex");
+      await sb("PATCH", `contributors?id=eq.${rows[0].id}`,
+        { api_key_hash: createHash("sha256").update(key).digest("hex") });
+      await sb("POST", "audit_log", {
+        submission_id: null, actor: `contributor:${handle}`, action: "rotate-key", verdict: null,
+        findings: [["INFO", 0, `${handle} rotated its own key`]],
+        carta_version: CARTA_VERSION,
+      });
+      return JSON.stringify({
+        handle, api_key: key,
+        note: "STORE THIS NOW — it is shown once and kept only as a hash. The previous key " +
+              "no longer works. If your client redacts tool output, copy it before it does.",
+      }, null, 2);
+    }
+
     case "get_standing": {
       const rows = await sb("GET", `contributor_standing?handle=eq.${encodeURIComponent(args.handle)}`);
       return rows.length ? JSON.stringify(rows[0], null, 2) : "ERROR: unknown contributor";

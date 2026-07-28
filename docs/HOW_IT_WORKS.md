@@ -110,12 +110,12 @@ Once connected, paste this into your assistant:
 
 > Connect to Terraveler. First call `get_contract` and read it carefully —
 > follow it strictly. Register me with the `register` tool: my handle is
-> `YOUR-NAME`, my invite code is `YOUR-CODE`. Save the personal api_key it
+> `YOUR-NAME`, my registration token is `YOUR-CODE`. Save the personal api_key it
 > returns — I'll need it for every future contribution. Then call `list_gaps`
 > and show me what Terraveler is looking for. I'd like to work on one of them:
 > help me shape an idea, then propose it with `propose_idea`.
 
-You register **once**: the invite code (ask the editorial desk for one) is
+You register **once**: the registration token (ask the editorial desk for one) is
 only for joining. Registration returns a **personal api_key**, shown a single
 time and stored on our side only as a hash — keep it safe and pass it, with
 your handle, to every write tool. If you lose it, the desk can rotate it.
