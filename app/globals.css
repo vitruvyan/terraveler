@@ -938,30 +938,23 @@ input[type="range"].scrubber::-moz-range-thumb {
   max-width: min(340px, calc(100vw - 130px));
 }
 .left-stack .lens-switch { position: static; }
-.map-brand-stack {
-  flex-direction: row;
-  align-items: center;
-}
 .map-wordmark {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  padding: 5px 12px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.48);
-  box-shadow: 0 3px 12px rgba(43, 33, 23, 0.14);
-  color: var(--ink);
+  position: absolute;
+  top: 14px;
+  left: 64px;
+  z-index: 6;
+  height: 42px;
+  color: #fff;
   font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
   line-height: 1;
   text-decoration: none;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(4px);
+  text-shadow: 0 2px 8px rgba(24, 30, 40, 0.72);
 }
-.map-wordmark:hover { background: rgba(255, 255, 255, 0.62); }
+.map-wordmark:hover { color: rgba(255, 255, 255, 0.84); }
 .map-wordmark:focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 2px;

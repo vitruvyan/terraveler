@@ -488,10 +488,10 @@ export default function VoyageExperience({
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
       {/* The atlas emblem opens the voyage picker. */}
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
-      <div className="left-stack map-brand-stack">
-        <a className="map-wordmark" href="/" aria-label="Terraveler home">
-          Terraveler
-        </a>
+      <a className="map-wordmark" href="/" aria-label="Terraveler home">
+        Terraveler
+      </a>
+      <div className="left-stack">
         <button
           className="cart-emblem"
           onClick={() => setPickerOpen((o) => !o)}
