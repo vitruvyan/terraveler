@@ -94,6 +94,38 @@ EVIDENCE_BASES = (
 )
 
 VOYAGE_META = {
+    "boussole-1785": {
+        "title": "The Voyage of La Pérouse (1785-1788)",
+        "navigator": "Jean-François de Galaup, comte de La Pérouse",
+        "ships": "La Boussole and L'Astrolabe",
+        "sponsor": "Louis XVI and the French Navy — a scientific and commercial "
+                   "circumnavigation conceived as France's answer to Cook",
+        "summary": "From Brest around Cape Horn to Chile, Easter Island and "
+                    "Hawaii; north to the Alaskan coast, where twenty-one men "
+                    "drowned in the pass at Lituya Bay; south to Monterey, then "
+                    "west across the Pacific to Macao and Manila; north again "
+                    "through the Sea of Japan, the Tartary coast and the strait "
+                    "that now carries his name, to Kamchatka — from where the "
+                    "journals were carried overland to Paris; then Samoa, where "
+                    "de Langle and eleven others were killed at Tutuila, Tonga, "
+                    "Norfolk Island and Botany Bay. The expedition sailed from "
+                    "Botany Bay in March 1788 and was never seen again.",
+        "date_window": (1785, 1788),
+        "evidence_basis": "contemporary-journal",
+        "what_was_lost": "The ending. La Pérouse sent his journals home in "
+                         "stages — overland from Kamchatka with de Lesseps in "
+                         "1787, and a last packet from Botany Bay in 1788 — so "
+                         "the voyage is documented in his own hand up to the "
+                         "moment he sailed out of Botany Bay. Everything after "
+                         "that went down with the two ships at Vanikoro: some "
+                         "two hundred men, the charts, the collections, and "
+                         "every page written at sea from March 1788 onward. The "
+                         "wreck was not identified for forty years, and what "
+                         "happened in those final weeks is known only from "
+                         "Vanikoro islanders' accounts, recorded two "
+                         "generations later, and from what divers have since "
+                         "raised from the reef.",
+    },
     "cook-1768": {
         "title": "The First Voyage of Captain James Cook (1768-1771)",
         "navigator": "Lieutenant James Cook",

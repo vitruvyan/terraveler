@@ -113,8 +113,41 @@ VOYAGE_SOURCES = {
     },
 
     # La Pérouse — corpus stub. PD sources to be confirmed before a real run.
-    "laperouse-1785": {
+    # The slug is the ship, not the man, because that is what the atlas
+    # publishes and a corpus filed under a different name is a corpus no
+    # extraction can find. It sat under "laperouse-1785" with 85 Wikipedia
+    # chunks and no journal at all, which is why the published voyage carries
+    # no quotation: there was nothing to quote.
+    #
+    # The journal survives because La Pérouse sent it home. De Lesseps carried
+    # the dispatches overland from Kamchatka in 1787 and a last packet left
+    # Botany Bay in 1788; the ships and everything still aboard them were lost
+    # at Vanikoro. So the English translation of 1799 is a primary journal for
+    # the whole voyage except its ending, which no source has.
+    #
+    # Three volumes, each verified against archive.org's metadata: published
+    # 1799, no collection this project treats as unvetted, OCR garble 0.01-0.04%.
+    # The scan preserves the long s of the period ("requeſted"), which is a
+    # typographic form of the same letter and is left as it stands — the
+    # citation points at the scan, and altering a source to read more smoothly
+    # is the one thing this pipeline will not do.
+    "boussole-1785": {
         "texts": [
+            {"kind": "archive",
+             "title": "A Voyage Round the World, 1785-1788, by J. F. G. de la Pérouse (London 1799, vol. I)",
+             "url": "https://archive.org/download/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_djvu.txt",
+             "source_url": "https://archive.org/details/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799",
+             "license": "Public domain"},
+            {"kind": "archive",
+             "title": "A Voyage Round the World, 1785-1788, by J. F. G. de la Pérouse (London 1799, vol. II)",
+             "url": "https://archive.org/download/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_2/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_2_djvu.txt",
+             "source_url": "https://archive.org/details/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_2",
+             "license": "Public domain"},
+            {"kind": "archive",
+             "title": "A Voyage Round the World, 1785-1788, by J. F. G. de la Pérouse (London 1799, vol. III)",
+             "url": "https://archive.org/download/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_3/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_3_djvu.txt",
+             "source_url": "https://archive.org/details/bim_eighteenth-century_a-voyage-round-the-world_la-prouse-jean-franoi_1799_3",
+             "license": "Public domain"},
             {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
              "titles": ["Jean-François de Galaup, comte de Lapérouse",
                         "Lapérouse expedition", "Astrolabe (1781)", "Boussole"]},

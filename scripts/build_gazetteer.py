@@ -40,6 +40,7 @@ import math
 import re
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -332,7 +333,9 @@ def main() -> int:
         isolation, which is what distinguishes an island from the airport on
         it. Returning null is a valid answer: an unidentified landfall is
         better than an invented one (Carta §3.4)."""
-        key = os.getenv("OPENAI_API_KEY", "")
+        model = os.getenv("GAZETTEER_MODEL", "claude-sonnet-5")
+        key = os.getenv("ANTHROPIC_API_KEY" if model.startswith("claude")
+                        else "OPENAI_API_KEY", "")
         if not key:
             return None
         listing = "\n".join(
@@ -351,21 +354,45 @@ def main() -> int:
             'settlement itself; where a historical and a modern entity both exist, prefer '
             'the one the voyage would have called at. If none of them is the place, say so.\n'
             'Answer as JSON only: {"qid": "Q…" or null, "reason": "one short sentence"}')
-        body = json.dumps({
-            "model": os.getenv("GAZETTEER_MODEL", "gpt-4o-mini"),
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-        }).encode()
-        req = urllib.request.Request(
-            "https://api.openai.com/v1/chat/completions", data=body,
-            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        # Either provider, chosen by the model name — the same fix extract.py
+        # needed. 244 stops sat unidentified for a day because one account's
+        # billing ran out, which is not a fact about geography.
+        if model.startswith("claude"):
+            url = "https://api.anthropic.com/v1/messages"
+            headers = {"x-api-key": key, "anthropic-version": "2023-06-01",
+                       "Content-Type": "application/json"}
+            body = {"model": model, "max_tokens": 512,
+                    "system": "Answer with a single JSON object and nothing else.",
+                    "messages": [{"role": "user", "content": prompt}]}
+        else:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+            body = {"model": model, "temperature": 0,
+                    "response_format": {"type": "json_object"},
+                    "messages": [{"role": "user", "content": prompt}]}
+        req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
                 payload = json.load(r)
-            out = json.loads(payload["choices"][0]["message"]["content"])
+            if model.startswith("claude"):
+                # Every text block, not the first: a reply can lead with
+                # something else and the KeyError then says only 'text'.
+                text = "".join(b.get("text", "") for b in payload.get("content", [])
+                               if b.get("type") == "text")
+            else:
+                text = payload["choices"][0]["message"]["content"]
+            text = text.strip()
+            if text.startswith("```"):
+                text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.S)
+            out = json.loads(text[text.find("{"):text.rfind("}") + 1] or text)
             return {"qid": out.get("qid") or None, "reason": (out.get("reason") or "")[:300],
-                    "decided_by": payload.get("model", "llm")}
+                    "decided_by": payload.get("model", model)}
+        except urllib.error.HTTPError as e:
+            # The body says what is wrong; the status alone says only that
+            # something is.
+            print(f"  ! judgement failed for {stop['historical']}: HTTP {e.code} "
+                  f"{e.read().decode('utf-8', 'replace')[:160]}", file=sys.stderr)
+            return None
         except Exception as e:
             print(f"  ! judgement failed for {stop['historical']}: {e}", file=sys.stderr)
             return None
@@ -417,7 +444,7 @@ def main() -> int:
     if pending:
         PENDING_PATH.write_text(json.dumps({"pending": pending}, ensure_ascii=False, indent=1) + "\n")
         print(f"awaiting judgement: {len(pending)} stops → {PENDING_PATH.relative_to(ROOT)}")
-        print("  (set OPENAI_API_KEY and re-run, or adjudicate them into "
+        print("  (set ANTHROPIC_API_KEY or OPENAI_API_KEY and re-run, or adjudicate them into "
               f"{DECISIONS_PATH.relative_to(ROOT)})")
     elif PENDING_PATH.exists():
         PENDING_PATH.unlink()

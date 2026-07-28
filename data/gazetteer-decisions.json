@@ -1,6 +1,100 @@
 {
- "note": "Which Wikidata entity each landfall is. Judged by comparing the candidates the coordinates left standing; content-addressed by the question asked, so re-runs and new voyages reuse them. null means no candidate was the place.",
+ "note": "Which Wikidata entity each landfall is. Content-addressed by the question asked, so re-runs and new voyages reuse them.",
  "decisions": [
+  {
+   "qid": "Q320049",
+   "reason": "Agadez is the historic settlement/oasis town matching the landfall name, unlike the modern hospital or the broader region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "be83db61a767dc21",
+   "atlas_name": "Agadez",
+   "candidates": [
+    "Q320049",
+    "Q93437467",
+    "Q389944"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q87",
+   "reason": "Alexandria is the historic Mediterranean port city itself, matching exactly as the landfall recorded in 1514.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e5520fd550cbb6aa",
+   "atlas_name": "Alexandria",
+   "candidates": [
+    "Q87"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2879573",
+   "reason": "Algoa Bay is the coastal inlet matching the 1488 landfall's name and location, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a21331e1daadf77f",
+   "atlas_name": "Algoa Bay",
+   "candidates": [
+    "Q2879573"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q219608",
+   "reason": "In 1521 the landfall would have been the island of Ambon itself, not the modern city founded later by the Portuguese/Dutch.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d3952a022da9f524",
+   "atlas_name": "Ambon",
+   "candidates": [
+    "Q18970",
+    "Q219608"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q49344318",
+   "reason": "The city seat of Angra do Heroísmo is the historic settlement/port a 1499 voyage would have called at, rather than the modern municipality administrative unit.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ec38b246491422da",
+   "atlas_name": "Angra of Terceira",
+   "candidates": [
+    "Q193677",
+    "Q49344318"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q159325",
+   "reason": "Lüderitz is the settlement at the site historically known as Angra Pequena, the 1487 landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "dd073268e65b339a",
+   "atlas_name": "Angra Pequena",
+   "candidates": [
+    "Q159325",
+    "Q1439417",
+    "Q1880264"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3777329",
+   "reason": "Anjidiv Island is the actual geographic island matching the 1498 landfall named Anjediva.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b31e8d4852359542",
+   "atlas_name": "Anjediva",
+   "candidates": [
+    "Q3777329"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q575033",
+   "reason": "Anticosti Island is the actual geographic feature the 1535 voyage sighted and named, matching both name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d3626da6124e13ae",
+   "atlas_name": "Anticosti island",
+   "candidates": [
+    "Q575033"
+   ],
+   "decided_at": "2026-07-28"
+  },
   {
    "key": "1980ddfd6d2eb10e",
    "atlas_name": "Archipel des Grandes Cyclades (Tierra Austral del Espíritu Santo)",
@@ -26,6 +120,29 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q2203",
+   "reason": "Arica is the historic port city/settlement matching the 1579 landfall, not the modern administrative commune.",
+   "decided_by": "claude-sonnet-5",
+   "key": "84bbfa6005db1d47",
+   "atlas_name": "Arica",
+   "candidates": [
+    "Q2203",
+    "Q23660598"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q46197",
+   "reason": "Ascension Island itself matches the recorded landfall and existed as a geographic feature at the time of the 1836 voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e1551639d9c4c3ea",
+   "atlas_name": "Ascension",
+   "candidates": [
+    "Q46197"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "36781f04218b51c2",
    "atlas_name": "Ascension Island",
    "candidates": [
@@ -35,6 +152,58 @@
    "reason": "Ascension Island.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q575033",
+   "reason": "Anticosti Island itself is the geographic feature Cartier named Assumption Island in 1534.",
+   "decided_by": "claude-sonnet-5",
+   "key": "fcf70c439330894d",
+   "atlas_name": "Assumption island",
+   "candidates": [
+    "Q575033"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q36947",
+   "reason": "Salvador, Bahia is the historic port city matching the recorded landfall \"Bahia\" and is a settlement, not a modern-only institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a7f6c20328a41276",
+   "atlas_name": "Bahia",
+   "candidates": [
+    "Q36947"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q54108",
+   "reason": "The city of Bahía Blanca, already founded as a fort/settlement by 1828, is the actual landfall the Beagle voyage recorded in 1832, unlike the later train stations, the administrative partido, or the more distant bay/estuary features.",
+   "decided_by": "claude-sonnet-5",
+   "key": "fe7bb92f3e5b08a4",
+   "atlas_name": "Bahia Blanca",
+   "candidates": [
+    "Q54108",
+    "Q16492827",
+    "Q788626",
+    "Q5841017",
+    "Q21846501",
+    "Q2575947"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q214495",
+   "reason": "Bamyan is the historic city/settlement matching the recorded landfall, unlike the district, university, or province.",
+   "decided_by": "claude-sonnet-5",
+   "key": "64eea9aa423d2e96",
+   "atlas_name": "Bamiyan",
+   "candidates": [
+    "Q214495",
+    "Q2572224",
+    "Q4853503",
+    "Q171382"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "7a967eceefe5ffbc",
@@ -53,6 +222,100 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q995615",
+   "reason": "Mossel Bay the town/bay itself is the geographic landfall site, unlike the hospital or the larger administrative municipality.",
+   "decided_by": "claude-sonnet-5",
+   "key": "54bf51bb1bb54cb7",
+   "atlas_name": "bay (angra) of Sam Brás",
+   "candidates": [
+    "Q995615",
+    "Q57399552",
+    "Q1707740"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2037402",
+   "reason": "Samaná Bay matches the recorded landfall as the geographic bay itself, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2f6ce21a344eea9f",
+   "atlas_name": "Bay of Samana",
+   "candidates": [
+    "Q2037402"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q20548818",
+   "reason": "This is the actual human settlement of Baiona, the port town that would have been the physical landfall visited in 1577.",
+   "decided_by": "claude-sonnet-5",
+   "key": "41e553e779e930df",
+   "atlas_name": "Bayona",
+   "candidates": [
+    "Q748867",
+    "Q31281064",
+    "Q20548818",
+    "Q12384010"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q728779",
+   "reason": "Belle Isle is the island landfall itself, a plausible geographic feature for a 1534 voyage to have recorded, despite the distance discrepancy.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d4816c8631a1ae73",
+   "atlas_name": "Belle-Isle",
+   "candidates": [
+    "Q728779"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3437375",
+   "reason": "Berkeley Sound bay matches the recorded landfall name and location as a geographic feature, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "5caa898d76469661",
+   "atlas_name": "Berkeley Sound, in East Falkland Island",
+   "candidates": [
+    "Q3437375"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3437623",
+   "reason": "This is the geographic feature (Bird Rocks) matching the voyage's landfall, not a modern institution or structure.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c9f8e48841cb8472",
+   "atlas_name": "Bird rocks",
+   "candidates": [
+    "Q3437623"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": null,
+   "reason": "The only candidate, Gulf of Paria, is 151.9 km away and does not represent the actual Boca del Drago landfall site, so no correct entity is listed.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7c7442ab970570d6",
+   "atlas_name": "Boca del Drago",
+   "candidates": [
+    "Q844799"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q6497558",
+   "reason": "The island of Bohol is the geographic landfall a 1521 voyage would have reached, not the modern province.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a849974dd939cf6e",
+   "atlas_name": "Bohol",
+   "candidates": [
+    "Q6497558",
+    "Q13752"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "e1aaede25eb5ee73",
    "atlas_name": "Bolabola",
    "candidates": [
@@ -63,6 +326,31 @@
    "reason": "Bora Bora, the island.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q9279",
+   "reason": "Bandar Seri Begawan is the settlement (historic Brunei town) the voyage's landfall referred to, unlike the police station, river, or entire country.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2b20b372b0b97b4c",
+   "atlas_name": "Borneo",
+   "candidates": [
+    "Q138316165",
+    "Q9279",
+    "Q407792",
+    "Q921"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q130626",
+   "reason": "Borno State corresponds to the historical Borno (Kanem-Bornu) region reached in the voyage, the only plausible match among the candidates.",
+   "decided_by": "claude-sonnet-5",
+   "key": "fcb211356995b490",
+   "atlas_name": "Borno",
+   "candidates": [
+    "Q130626"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "8c55f3f1626294a0",
@@ -98,6 +386,18 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q1486",
+   "reason": "Buenos Aires the city/settlement is the plausible 1832 landfall, unlike the modern train station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "16fba076cfc82ade",
+   "atlas_name": "Buenos Ayres",
+   "candidates": [
+    "Q1486",
+    "Q4985538"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "6207a54bb455f682",
    "atlas_name": "Bustard Bay",
    "candidates": [
@@ -107,6 +407,140 @@
    "reason": "Bustard Bay, named for the bird shot there.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q4092",
+   "reason": "The headland itself, Cape of Good Hope, matches the recorded landfall 'Cabo das Tormentas' at 0.3 km, unlike the much later and distant Cape Colony.",
+   "decided_by": "claude-sonnet-5",
+   "key": "73f3da6175d5f520",
+   "atlas_name": "Cabo das Tormentas",
+   "candidates": [
+    "Q4092",
+    "Q370736"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q15682",
+   "reason": "The landfall matches the city of Cádiz itself, an actual settlement, not the province or electoral district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f56041eee1ec6489",
+   "atlas_name": "Cadiz",
+   "candidates": [
+    "Q15682",
+    "Q81978",
+    "Q2887470"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q85",
+   "reason": "Cairo, Egypt is the historic city itself and matches the recorded landfall exactly.",
+   "decided_by": "claude-sonnet-5",
+   "key": "64728037605ec671",
+   "atlas_name": "Cairo",
+   "candidates": [
+    "Q85",
+    "Q30805"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q28729",
+   "reason": "Kozhikode city itself is the historical settlement of Calicut where the 1498 voyage landed, unlike the modern railway station or administrative divisions.",
+   "decided_by": "claude-sonnet-5",
+   "key": "4480e75a154e886b",
+   "atlas_name": "Calecut",
+   "candidates": [
+    "Q28729",
+    "Q6435240",
+    "Q1142979",
+    "Q3595239"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q105037",
+   "reason": "The voyage would have landed at the historic port city of Callao itself, not the modern administrative district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "632fd3000dd4a9cc",
+   "atlas_name": "Callao",
+   "candidates": [
+    "Q105037",
+    "Q2678730"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q182984",
+   "reason": "Kano city itself is the historical settlement matching the recorded landfall, unlike the modern state entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "855802297de9f3de",
+   "atlas_name": "Cano",
+   "candidates": [
+    "Q182984",
+    "Q682571"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q5034593",
+   "reason": "The 1534 landfall refers to the cape/peninsula itself, not the later-built lighthouse.",
+   "decided_by": "claude-sonnet-5",
+   "key": "69f33db7cd8885ed",
+   "atlas_name": "Cape Bonavista",
+   "candidates": [
+    "Q5034593",
+    "Q5034596"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q858128",
+   "reason": "Cape Cross is the actual headland landfall named in 1487, a natural geographic feature rather than a mere coordinate point.",
+   "decided_by": "claude-sonnet-5",
+   "key": "90f5582f6ee6d2d8",
+   "atlas_name": "Cape Cross",
+   "candidates": [
+    "Q858128",
+    "Q31858031"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q111296110",
+   "reason": "This is the geographic parish/cape corresponding to the historical Cape San Francisco landfall, not a modern unrelated institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "abbbb2c38f0f2337",
+   "atlas_name": "Cape de San Francisco",
+   "candidates": [
+    "Q111296110"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q4092",
+   "reason": "The 1580 landfall matches the Cape of Good Hope headland itself, a geographic feature, not the later colonial polity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7aa47831446662a4",
+   "atlas_name": "Cape Hope",
+   "candidates": [
+    "Q4092",
+    "Q370736"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q4092",
+   "reason": "The 1497 landfall named Cape of Good Hope is the actual headland itself, not the later colonial administrative entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7359edfa815aee67",
+   "atlas_name": "Cape of Good Hope",
+   "candidates": [
+    "Q4092",
+    "Q370736"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "3a35889b6fe7a913",
@@ -125,6 +559,83 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q2936966",
+   "reason": "This is the geographic neighbourhood/former municipality corresponding to the historical landfall, unlike the modern post office.",
+   "decided_by": "claude-sonnet-5",
+   "key": "444d241095d67d33",
+   "atlas_name": "cape Rouge",
+   "candidates": [
+    "Q2936966",
+    "Q113067762"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q5465",
+   "reason": "Cape Town the city itself is the historical port settlement the voyage would have called at, unlike the university or the modern municipality.",
+   "decided_by": "claude-sonnet-5",
+   "key": "6c46023a948a21af",
+   "atlas_name": "Cape Town",
+   "candidates": [
+    "Q5465",
+    "Q951305",
+    "Q1185115"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3023340",
+   "reason": "The 1580 voyage would have landed at the Portuguese colonial territory of Cape Verde, matching the historical entity closest to the recorded position.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cbb5774bc0de3c08",
+   "atlas_name": "Cape Verde",
+   "candidates": [
+    "Q3023340",
+    "Q1011",
+    "Q35963",
+    "Q115212222"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q31878253",
+   "reason": "The 1519 landfall referred to the Cape Verde island group itself, not the modern sovereign state entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "74aced575d721f66",
+   "atlas_name": "Cape Verde islands",
+   "candidates": [
+    "Q1011",
+    "Q31878253"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q205119",
+   "reason": "Cajamarca the city itself is the settlement the 1532 voyage recorded as landfall, not the province, district, or department.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d2d6407f05ab114f",
+   "atlas_name": "Caxamalca",
+   "candidates": [
+    "Q1431135",
+    "Q205119",
+    "Q3312431",
+    "Q205078"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q104586152",
+   "reason": "This archaeological site at Caxas corresponds to the historic settlement the 1532 voyage recorded, unlike the other similarly named Inca site.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2bf3e4618d32890b",
+   "atlas_name": "Caxas",
+   "candidates": [
+    "Q104586152",
+    "Q112004934"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "72fd6aba92b79063",
    "atlas_name": "Cempoalá",
    "candidates": [
@@ -134,6 +645,47 @@
    "reason": "Cempoala, the Totonac city whose ruins carry the name; the distance reflects an approximate recorded position.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q854",
+   "reason": "The landfall corresponds to the island/country of Sri Lanka itself, the only entity at the exact recorded position and plausible for a c.4th-century voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f25eec6c40c13638",
+   "atlas_name": "Ceylon",
+   "candidates": [
+    "Q854",
+    "Q4526612",
+    "Q2670092",
+    "Q918153"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q6501000",
+   "reason": "Chang'an was the historical city/capital that existed in 629, matching the voyage's landfall name and period, unlike the modern city of Xi'an or later administrative divisions.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8cd401388bae1198",
+   "atlas_name": "Chang'an",
+   "candidates": [
+    "Q6501000",
+    "Q5826",
+    "Q981237",
+    "Q15909714",
+    "Q1061858"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1048209",
+   "reason": "Floreana Island is the modern name for the historical 'Charles Island' landfall, matching both name origin and closest distance.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1974833c2c76e2a1",
+   "atlas_name": "Charles Island",
+   "candidates": [
+    "Q1048209",
+    "Q1062516"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "789b75eb5943a111",
@@ -149,6 +701,42 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q6501000",
+   "reason": "The 399 voyage would have arrived at the ancient city of Chang'an, the historical settlement, rather than the modern city of Xi'an or a university.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d58b6de257dd9694",
+   "atlas_name": "Ch’ang-gan",
+   "candidates": [
+    "Q5826",
+    "Q981237",
+    "Q6501000"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1880",
+   "reason": "Concepción, Chile is the historic port city matching the recorded landfall's name and coordinates.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ec4fdd6232ad615e",
+   "atlas_name": "Concepcion",
+   "candidates": [
+    "Q1880"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1859950",
+   "reason": "Rum Cay is the actual island landfall (Concepcion), matching the geographic feature rather than the modern administrative district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7e85548635589423",
+   "atlas_name": "Concepcion, La, island",
+   "candidates": [
+    "Q21713441",
+    "Q1859950"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "7f741bb42ac18caa",
    "atlas_name": "Concepción, Chili",
    "candidates": [
@@ -158,6 +746,18 @@
    "reason": "Concepción, the Chilean port.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q1140993",
+   "reason": "This is the actual island and district of Crooked Island, the geographic feature matching the 1492 landfall, rather than a redundant island-only duplicate entry.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b85c273528ca8a7b",
+   "atlas_name": "Crooked Island",
+   "candidates": [
+    "Q1140993",
+    "Q21713450"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "dc509caa1d1b34fc",
@@ -171,6 +771,20 @@
    "reason": "Santiago de Cuba, the port the expedition sailed from, not the province.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q5582862",
+   "reason": "This is the historic city of Cusco itself, the actual settlement the voyage recorded as landfall, rather than the surrounding province or department.",
+   "decided_by": "claude-sonnet-5",
+   "key": "940222913c7d80e3",
+   "atlas_name": "Cuzco",
+   "candidates": [
+    "Q5582862",
+    "Q1132101",
+    "Q2723621",
+    "Q205057"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "b2fce6be747afb2c",
@@ -195,6 +809,41 @@
    "reason": "Deptford, the naval yard on the Thames; the railway station of the same name is modern.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q1245018",
+   "reason": "Devonport is the historic district/settlement of Plymouth that a 1831 voyage would call at, not the modern naval base.",
+   "decided_by": "claude-sonnet-5",
+   "key": "341fd50c2bedc4a0",
+   "atlas_name": "Devonport",
+   "candidates": [
+    "Q1245018",
+    "Q1207020"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q784",
+   "reason": "Dominica is the Caribbean island itself, matching the 1493 landfall of that name.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ec6452fba82b5b9b",
+   "atlas_name": "Dominica",
+   "candidates": [
+    "Q784"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q319114",
+   "reason": "Dunhuang the settlement itself is the historical landfall, unlike the geopark which is a modern natural park feature far away.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e3733265dd52d132",
+   "atlas_name": "Dunhuang",
+   "candidates": [
+    "Q319114",
+    "Q11079378"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "d11129762d22d3ab",
@@ -236,6 +885,29 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q988689",
+   "reason": "Elephant Island is the actual island landfall recorded in 1916, matching both name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3ddade619432e2ac",
+   "atlas_name": "Elephant Island",
+   "candidates": [
+    "Q988689"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2605077",
+   "reason": "Point Wild is the actual headland landfall on Elephant Island, closest match to the recorded location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b311dc554b77204a",
+   "atlas_name": "Elephant Island",
+   "candidates": [
+    "Q2605077",
+    "Q988689"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "55769ba5156fa3c5",
    "atlas_name": "Endeavour River",
    "candidates": [
@@ -249,6 +921,30 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q21",
+   "reason": "The voyage made landfall at the country of England itself, which sits at 0.0 km, matching the modern geographic entity rather than the historical kingdom 106 km away.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8a3cd6fb6846a9b8",
+   "atlas_name": "England",
+   "candidates": [
+    "Q21",
+    "Q179876"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q478029",
+   "reason": "Falmouth is the historic port town/settlement that an 1836 voyage would have called at, not the modern civil parish administrative unit.",
+   "decided_by": "claude-sonnet-5",
+   "key": "70d6e88155799058",
+   "atlas_name": "Falmouth",
+   "candidates": [
+    "Q478029",
+    "Q33158564"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "9e635fbd284a1333",
    "atlas_name": "Fayal",
    "candidates": [
@@ -258,6 +954,17 @@
    "reason": "Faial, the Azorean island Cook watered at.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q80985",
+   "reason": "Fez is the historic city itself, a valid landfall for a c.15 voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "678ec5dbe2ebb3de",
+   "atlas_name": "Fez",
+   "candidates": [
+    "Q80985"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "30db31600a6d26b1",
@@ -275,6 +982,73 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q188904",
+   "reason": "Gao is the historical city/settlement matching the landfall name, whereas the airport is a modern facility that could not have been a c.1 voyage landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "bcb6472f4c56f78e",
+   "atlas_name": "Gago, Gogo, Gagho, Gawo, or Gao",
+   "candidates": [
+    "Q188904",
+    "Q3083185"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1113311",
+   "reason": "Peshawar is the historical settlement corresponding to the recorded landfall of Gandhara, not a modern institution or infrastructure entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "4e3676bd3109081c",
+   "atlas_name": "Gandhara",
+   "candidates": [
+    "Q1113311",
+    "Q7171369",
+    "Q3918532",
+    "Q549467",
+    "Q213651",
+    "Q7171364"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q141903",
+   "reason": "Jacques Cartier's 1534 landfall at Gaspé corresponds to the harbor/town site, not the broader peninsula.",
+   "decided_by": "claude-sonnet-5",
+   "key": "945f76553f94bbb3",
+   "atlas_name": "Gaspé",
+   "candidates": [
+    "Q141903",
+    "Q151559"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q176767",
+   "reason": "Bodh Gaya town is the settlement matching the recorded landfall, not the tree, district, city, or constituency.",
+   "decided_by": "claude-sonnet-5",
+   "key": "6335097138c92aa3",
+   "atlas_name": "Gaya",
+   "candidates": [
+    "Q321437",
+    "Q176767",
+    "Q55337492",
+    "Q49173",
+    "Q251329"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1324562",
+   "reason": "Yumen Pass (Jade Gate) is the mountain pass/gate itself matching the recorded landfall, unlike the modern county-level city.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2d150e05a2d5dceb",
+   "atlas_name": "gem-gate",
+   "candidates": [
+    "Q1324562",
+    "Q729562"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "d6d3eed72b577176",
    "atlas_name": "Golfe de la Louisiade; Isle & Bay of Choiseul",
    "candidates": [
@@ -284,6 +1058,177 @@
    "reason": "Choiseul, the island Bougainville named and coasted.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q105967",
+   "reason": "It is the actual volcanic island of La Gomera, the geographic feature the voyage would have landed on.",
+   "decided_by": "claude-sonnet-5",
+   "key": "07672345e851554f",
+   "atlas_name": "Gomera",
+   "candidates": [
+    "Q105967",
+    "Q6462787",
+    "Q21480764",
+    "Q48851511",
+    "Q604275"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q863683",
+   "reason": "Rajgir town/settlement is the historical landfall site, not the modern railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "19a748f53f54b994",
+   "atlas_name": "Gridhrakuta",
+   "candidates": [
+    "Q863683",
+    "Q18619319"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q185672",
+   "reason": "Grytviken the historic whaling station/settlement itself is the landfall recorded in 1914, not the church, cemetery, industrial ruins, or modern port entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "40efdd0406237422",
+   "atlas_name": "Grytviken",
+   "candidates": [
+    "Q185672",
+    "Q3281864",
+    "Q112161252",
+    "Q17624765",
+    "Q111386756"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q17012",
+   "reason": "The closest match is the Guadeloupe archipelago/region itself, the actual landfall recorded in 1493, not the national park or a more specific island feature.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3354a050adcfb3c8",
+   "atlas_name": "Guadeloupe",
+   "candidates": [
+    "Q17012",
+    "Q3118683",
+    "Q1028479"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q890879",
+   "reason": "Long Island, Bahamas is the island Columbus's voyage recorded as Guaigo, matching both name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a53740f16524e045",
+   "atlas_name": "Guaigo",
+   "candidates": [
+    "Q890879"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q162281",
+   "reason": "Oualata is the historic Mauritanian oasis town matching the recorded landfall of Gualata.",
+   "decided_by": "claude-sonnet-5",
+   "key": "16fd2c6efa3caca4",
+   "atlas_name": "Gualata",
+   "candidates": [
+    "Q162281"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1279608",
+   "reason": "Pacasmayo is the coastal city/settlement matching the historical landfall, unlike the airport, province, or district administrative entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "fa14f70499f6a165",
+   "atlas_name": "Guamamayo",
+   "candidates": [
+    "Q1944266",
+    "Q20460491",
+    "Q1279608",
+    "Q6319125"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1144797",
+   "reason": "Guanahani is the historical island itself, the actual 1492 landfall, rather than the modern San Salvador Island entries.",
+   "decided_by": "claude-sonnet-5",
+   "key": "5d2eca623e4c44a1",
+   "atlas_name": "Guanahani",
+   "candidates": [
+    "Q31508221",
+    "Q845540",
+    "Q1144797"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q25276415",
+   "reason": "The 1502 landfall was the island of Guanaja itself, matching the geographic island entity rather than the modern municipality or settlement.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e8674f8180a6170d",
+   "atlas_name": "Guanaja",
+   "candidates": [
+    "Q1552720",
+    "Q25276412",
+    "Q25276415"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q586659",
+   "reason": "Santa María Huatulco is the historic coastal settlement/anchorage matching the 1579 landfall, unlike the airport, municipality, tourist development, or biosphere reserve.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a5a85dba3144eadf",
+   "atlas_name": "Guatulco",
+   "candidates": [
+    "Q586659",
+    "Q2901831",
+    "Q3893101",
+    "Q96620931",
+    "Q22674871"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q40191",
+   "reason": "Hobart was an established city by 1836 and the natural landfall destination, matching the recorded name directly.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cc663774add2de88",
+   "atlas_name": "Hobart Town",
+   "candidates": [
+    "Q5874777",
+    "Q40191",
+    "Q1621560"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q544356",
+   "reason": "The archaeological site of the Iroquoian village of Hochelaga is the actual historical landfall Cartier recorded, closest to the site and matching the period settlement rather than modern city or district entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b0655f3d5707a6f3",
+   "atlas_name": "Hochelaga",
+   "candidates": [
+    "Q544356",
+    "Q340",
+    "Q139601693",
+    "Q3138926",
+    "Q3138923"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1626237",
+   "reason": "Homonhon Island matches the recorded landfall name and location as the actual geographic feature, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "603e2b073b7e57e8",
+   "atlas_name": "Homohon",
+   "candidates": [
+    "Q1626237"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "591bbed5500aa6c9",
@@ -301,6 +1246,46 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q1632770",
+   "reason": "Huamachuco is the historic settlement the voyage would have landed at, not the modern district or airport.",
+   "decided_by": "claude-sonnet-5",
+   "key": "bdf0b4fbd334e385",
+   "atlas_name": "Huanca-pampa",
+   "candidates": [
+    "Q5925302",
+    "Q1632770",
+    "Q28163379"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q468782",
+   "reason": "The landfall corresponds to the settlement of Huancayo itself, not the cathedral, province, or district subdivisions.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1a1ed9d78c86cf86",
+   "atlas_name": "Huanca-pampa",
+   "candidates": [
+    "Q5758478",
+    "Q468782",
+    "Q1777621",
+    "Q6319902"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q14440",
+   "reason": "Iquique is the port city that existed as a settlement in 1835 and matches the landfall location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "da872c279c0c3af9",
+   "atlas_name": "Iquique",
+   "candidates": [
+    "Q14440",
+    "Q251456",
+    "Q23660233"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "e71cb73653290b29",
    "atlas_name": "island Cozumel",
    "candidates": [
@@ -310,6 +1295,21 @@
    "reason": "Cozumel, the island where the fleet mustered.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q128172",
+   "reason": "The island itself is the geographic feature that matches the recorded landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "374afb5de8600e39",
+   "atlas_name": "island of Orleans",
+   "candidates": [
+    "Q128172",
+    "Q88912438",
+    "Q2103666",
+    "Q52727429",
+    "Q61021330"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "c250a2b73ff746cc",
@@ -325,6 +1325,19 @@
    "reason": "Port Louis, the harbour of the Isle de France where they refitted; 'Isle de France' itself is recorded as a former name, not a place.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q3593077",
+   "reason": "Funk Island itself is the actual landfall island seen by the 1534 voyage, not the modern ecological reserve or an offshore bank.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3c8ead0bd9a046a3",
+   "atlas_name": "isle of Birds",
+   "candidates": [
+    "Q15622444",
+    "Q3593077",
+    "Q116506092"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "c8c352491b5efcfe",
@@ -356,6 +1369,211 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": null,
+   "reason": "All listed entities are a modern administrative agency, a broad region, and a university, none of which is the actual settlement/landfall called Jajahuti.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2d4b87fee49a2bf6",
+   "atlas_name": "Jajahuti",
+   "candidates": [
+    "Q4997518",
+    "Q851955",
+    "Q4997520"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q33377",
+   "reason": "The ancient city of Jalandhar itself matches the landfall name and is a genuine settlement, unlike the district or the modern electoral constituency.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ce2403f5fd86d87f",
+   "atlas_name": "Jalandhara",
+   "candidates": [
+    "Q33377",
+    "Q1817425",
+    "Q6126633"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q766",
+   "reason": "The 1503 landfall was on the island of Jamaica itself, which existed long before the 1655 British colony, making Q766 the appropriate geographic entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "44f4a1efb6bbba85",
+   "atlas_name": "Jamaica",
+   "candidates": [
+    "Q766",
+    "Q2526023"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3757",
+   "reason": "Java island itself is the geographic feature that matches the 1580 landfall recorded under that name.",
+   "decided_by": "claude-sonnet-5",
+   "key": "9ca1889fbcdf41cc",
+   "atlas_name": "Java",
+   "candidates": [
+    "Q3757"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2086056",
+   "reason": "This is the actual settlement/kelurahan of Banten on the coast of Java that historically served as the port city landfall, rather than the modern province.",
+   "decided_by": "claude-sonnet-5",
+   "key": "0d432ecc7a561480",
+   "atlas_name": "Java",
+   "candidates": [
+    "Q3540",
+    "Q2086056"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3757",
+   "reason": "Java island itself matches the recorded landfall 'Java-dvipa' and is a geographic feature consistent with a 412 CE voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "eccad1f34f038194",
+   "atlas_name": "Java-dvipa",
+   "candidates": [
+    "Q3757"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1150706",
+   "reason": "Kalinga was the historical region/kingdom on the Odisha coast that a c.6th-century voyage would have called at, not the modern Indian state.",
+   "decided_by": "claude-sonnet-5",
+   "key": "5bdc25daba05c58b",
+   "atlas_name": "Kalinga",
+   "candidates": [
+    "Q1150706",
+    "Q22048"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1194765",
+   "reason": "Kamarupa was a historical kingdom around Assam, matching the period landfall rather than the modern state or language.",
+   "decided_by": "claude-sonnet-5",
+   "key": "6a0a8f6960881f69",
+   "atlas_name": "Kamarupa",
+   "candidates": [
+    "Q1164",
+    "Q29401",
+    "Q1194765"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q212332",
+   "reason": "Kanchipuram is the historical city/settlement matching the recorded landfall, unlike the nearby monastery, stations, or district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b4ee2f1c340d8156",
+   "atlas_name": "Kanchipura",
+   "candidates": [
+    "Q212332",
+    "Q129932",
+    "Q63356221",
+    "Q15233410",
+    "Q15157"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q614890",
+   "reason": "The historical landfall corresponds to the town/settlement of Kannauj itself, not modern administrative or transport entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "909b45ddedbb65f6",
+   "atlas_name": "Kanyâkubja",
+   "candidates": [
+    "Q55740663",
+    "Q12418036",
+    "Q627979",
+    "Q614890",
+    "Q30593211"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q30610827",
+   "reason": "The voyage recorded the ancient Buddhist city of Kapilavastu itself, matching the historical archaeological site at the exact location rather than the modern neighborhood, municipality, or district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ea1c03a7932fefb4",
+   "atlas_name": "Kapilavastu",
+   "candidates": [
+    "Q30610827",
+    "Q3417973",
+    "Q955882",
+    "Q28574"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q173816",
+   "reason": "Kapisa Province corresponds to the historical Kapisa region/city that a 7th-century traveler would have visited, unlike modern-only entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "888b118904872be7",
+   "atlas_name": "Kapisa",
+   "candidates": [
+    "Q173816"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q170521",
+   "reason": "The 644 voyage would have called at the historic city of Kashgar itself, not the modern prefecture, railway station, or river.",
+   "decided_by": "claude-sonnet-5",
+   "key": "458e6bb0a312e562",
+   "atlas_name": "Kashgar",
+   "candidates": [
+    "Q739890",
+    "Q170521",
+    "Q800996",
+    "Q1511750"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q36004",
+   "reason": "The airport is a modern facility that couldn't have existed in 1836, whereas the island group itself is the geographic feature the voyage would have called at.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7e1536da017c98ce",
+   "atlas_name": "Keeling Island",
+   "candidates": [
+    "Q1105469",
+    "Q36004"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q336661",
+   "reason": "Qena is the city itself, the settlement the voyage would have landed at, unlike the governorate or university.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c15a2ad17b05af90",
+   "atlas_name": "Keneh",
+   "candidates": [
+    "Q336661",
+    "Q31065",
+    "Q7568730"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q235389",
+   "reason": "The landfall corresponds to the actual oasis town of Hotan/Khotan, the settlement the voyage would have visited, rather than the modern prefecture, county, or the historical kingdom entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "553532179c6f3248",
+   "atlas_name": "Khoten",
+   "candidates": [
+    "Q989885",
+    "Q922669",
+    "Q235389",
+    "Q914898"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "d295e82a774cb488",
    "atlas_name": "King George's Island",
    "candidates": [
@@ -369,6 +1587,180 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q704257",
+   "reason": "Albany is the settlement at King George's Sound that the voyage would have called at, with no anachronistic alternative present.",
+   "decided_by": "claude-sonnet-5",
+   "key": "0973efb0496f8d10",
+   "atlas_name": "King George's Sound",
+   "candidates": [
+    "Q704257"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1742039",
+   "reason": "This is the geographic bay itself, matching the 1916 Shackleton expedition's landfall at King Haakon Bay.",
+   "decided_by": "claude-sonnet-5",
+   "key": "77a8d9f3e563da19",
+   "atlas_name": "King Haakon Bay",
+   "candidates": [
+    "Q1742039"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1328546",
+   "reason": "In 629 CE the landfall corresponds to the ancient kingdom/settlement of Kucha, not the modern city, airport, or mosque that postdate it.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f6ff2ae6024b1f2a",
+   "atlas_name": "Kiu-chi (Kuche)",
+   "candidates": [
+    "Q17161872",
+    "Q1023116",
+    "Q2983995",
+    "Q1328546"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1328546",
+   "reason": "This is the historical Kucha kingdom/settlement matching the recorded landfall name and period, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "5c716cc877aee577",
+   "atlas_name": "Kiu-chii",
+   "candidates": [
+    "Q1328546"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q989892",
+   "reason": "Hami is the settlement/oasis town corresponding to the historical landfall 'Kiu-mi-to', unlike the Kara Del kingdom which is a later political entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "dd717504fe92681d",
+   "atlas_name": "Kiu-mi-to",
+   "candidates": [
+    "Q989892",
+    "Q9643578"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q825673",
+   "reason": "Kushinagar town itself is the historic settlement the voyage would have landed at, unlike the modern constituency, airport, or district entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cfaf4acb78360da6",
+   "atlas_name": "Kushinagara",
+   "candidates": [
+    "Q825673",
+    "Q55740753",
+    "Q6447956",
+    "Q1840355"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q80484",
+   "reason": "Patna is the historic city (ancient Kusumapura/Pataliputra) itself, unlike the airport or the modern district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7609fbbc1d71ca22",
+   "atlas_name": "Kusumapura",
+   "candidates": [
+    "Q80484",
+    "Q2673010",
+    "Q100077"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q979927",
+   "reason": "Tashkorgan town is the historical settlement corresponding to the 630 landfall, unlike the modern county, prison, fort, or airport.",
+   "decided_by": "claude-sonnet-5",
+   "key": "09a39c0ba963a7bd",
+   "atlas_name": "K’ie-p’an-to",
+   "candidates": [
+    "Q911737",
+    "Q979927",
+    "Q136295012",
+    "Q17006509",
+    "Q107621242"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1635008",
+   "reason": "Mocha Island is the geographic feature matching the recorded landfall 'La Mocha'.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f3d088b59b08bc34",
+   "atlas_name": "La Mocha",
+   "candidates": [
+    "Q1635008"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q131323901",
+   "reason": "La Ramada is the actual village/landfall site, whereas the district is a modern administrative division.",
+   "decided_by": "claude-sonnet-5",
+   "key": "236643d539670564",
+   "atlas_name": "La Ramada",
+   "candidates": [
+    "Q131323901",
+    "Q6319589"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q105037",
+   "reason": "The 1579 landfall refers to the port/city of Callao itself, not the modern district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ff79ecaf6d3f42e8",
+   "atlas_name": "Lima called ui?m!^''° * -^^ Callao",
+   "candidates": [
+    "Q2678730",
+    "Q105037"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q597",
+   "reason": "Lisbon the city/municipality is the actual historical port of call, unlike the district or the university.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2a44a033014a7c7b",
+   "atlas_name": "Lisbon",
+   "candidates": [
+    "Q597",
+    "Q207199",
+    "Q1122926"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q84",
+   "reason": "London the city/settlement is the natural landfall for a 1914 voyage, not the modern administrative region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3e4d2d9db3c5f448",
+   "atlas_name": "London",
+   "candidates": [
+    "Q84",
+    "Q23939248"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q9213",
+   "reason": "Lumbini itself is the pilgrimage site/settlement matching the recorded landfall, unlike the later administrative zone or province.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2334b1bb0f9b76bc",
+   "atlas_name": "Lumbini",
+   "candidates": [
+    "Q9213",
+    "Q9172",
+    "Q25104014"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "bf230cf82d06a117",
    "atlas_name": "Macao",
    "candidates": [
@@ -380,6 +1772,31 @@
    "reason": "Macau, the Portuguese entrepôt where the expedition sold its furs.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q2449",
+   "reason": "Mogadishu is the historic port city that matches the recorded landfall of Magadoxo, unlike the modern airport or university.",
+   "decided_by": "claude-sonnet-5",
+   "key": "0f6a015a74567262",
+   "atlas_name": "Magadoxo",
+   "candidates": [
+    "Q2449",
+    "Q1119032",
+    "Q721115"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q16258",
+   "reason": "Maldonado is the coastal city in Uruguay matching the recorded landfall's name and near-zero distance.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b91331b89cd9cb81",
+   "atlas_name": "Maldonado",
+   "candidates": [
+    "Q16258",
+    "Q331196"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "2cf7ab41ba8a638b",
@@ -403,6 +1820,67 @@
    "reason": "Tutuila, the island of the massacre at Maouna; a US naval base occupied the same shore a century later.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q17054",
+   "reason": "Martinique island itself matches the recorded landfall and is a plausible 1502-era place name, not a modern-only institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3c8d9c78d92ae07f",
+   "atlas_name": "Martinique",
+   "candidates": [
+    "Q17054"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q200311",
+   "reason": "Mathura is the historic city/settlement itself, matching the landfall name and location exactly.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3e20e61859da0c5b",
+   "atlas_name": "Mathura",
+   "candidates": [
+    "Q200311",
+    "Q1773422",
+    "Q3634234"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2656389",
+   "reason": "The voyage made landfall on the physical island of Mauritius, which is Q2656389, rather than the modern sovereign state entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "15937a33c8d49515",
+   "atlas_name": "Mauritius",
+   "candidates": [
+    "Q1027",
+    "Q2656389"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q685318",
+   "reason": "Mactan island itself is the geographic feature that matches the historical landfall, unlike the modern airport, channel, or memorial.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8abaa4a3dda77917",
+   "atlas_name": "Mauthan",
+   "candidates": [
+    "Q685318",
+    "Q1048704",
+    "Q6725749",
+    "Q46509377"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q31826201",
+   "reason": "Limasawa Island itself matches the historical landfall of Magellan's 1521 voyage known as Mazava.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cbb7acd3ab5aad8e",
+   "atlas_name": "Mazava",
+   "candidates": [
+    "Q31826201"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "1e33eb4e86008868",
@@ -433,6 +1911,30 @@
    "reason": "Coyoacán, where Cortés established himself after the fall of the city.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q271411",
+   "reason": "Malindi is the historic Swahili coastal city where Vasco da Gama's fleet made landfall in 1498, matching the recorded name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8222ce84c31cbc64",
+   "atlas_name": "Milinde (Malindi)",
+   "candidates": [
+    "Q271411"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q225641",
+   "reason": "Mombasa city is the historical port settlement the 1498 voyage would have called at, not the county or the island landform.",
+   "decided_by": "claude-sonnet-5",
+   "key": "6055e3c198c3f17a",
+   "atlas_name": "Mombaça",
+   "candidates": [
+    "Q225641",
+    "Q1112885",
+    "Q1570435"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "66dc7832687047e8",
@@ -472,6 +1974,89 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q27194533",
+   "reason": "Motupe is the settlement/locality matching the recorded landfall, not the modern administrative district or the distant river.",
+   "decided_by": "claude-sonnet-5",
+   "key": "feb97cd0986fcae1",
+   "atlas_name": "Motux",
+   "candidates": [
+    "Q6317839",
+    "Q27194533",
+    "Q9071961"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q130135",
+   "reason": "The Atlas Mountains themselves are the geographic feature matching the voyage's recorded landfall of \"mount Atlas.\"",
+   "decided_by": "claude-sonnet-5",
+   "key": "d9ccbfbda1a974c3",
+   "atlas_name": "mount Atlas",
+   "candidates": [
+    "Q130135"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": null,
+   "reason": "Neither candidate is the historical settlement/island itself—one is a hospital and the other a modern bridge, both modern infrastructure unsuitable as a 1498 landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "51a685e59be705e7",
+   "atlas_name": "Mozambique",
+   "candidates": [
+    "Q91684248",
+    "Q12270178"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q10906766",
+   "reason": "As a 1414 landfall, it refers to the historical city of Nanjing during that era, not the modern university or the general city entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "692c1dfa163291af",
+   "atlas_name": "Nanking",
+   "candidates": [
+    "Q10906766",
+    "Q683580",
+    "Q16666"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q5468",
+   "reason": "Durban is the historic settlement at the site named Natal by Vasco da Gama in 1497, matching the landfall location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d560641401b3d6bb",
+   "atlas_name": "Natal",
+   "candidates": [
+    "Q5468"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q863683",
+   "reason": "Rajgir is the historical town/city corresponding to ancient Rajagriha, unlike the anachronistic railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "53c3d8648804dd85",
+   "atlas_name": "New Rajagriha",
+   "candidates": [
+    "Q863683",
+    "Q18619319"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q812091",
+   "reason": "Bay of Islands is the geographic coastal feature matching the recorded landfall and existed as such in 1835.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f5cd4b23b137eeb5",
+   "atlas_name": "New Zealand",
+   "candidates": [
+    "Q812091"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "126b91d666a5ba98",
    "atlas_name": "North Island of New Zealand",
    "candidates": [
@@ -481,6 +2066,21 @@
    "reason": "The North Island of New Zealand.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q3142013",
+   "reason": "The 1579 landfall corresponds to the coastal cape of Point Reyes itself, the natural geographic feature closest to the recorded position.",
+   "decided_by": "claude-sonnet-5",
+   "key": "613147e795c0149e",
+   "atlas_name": "Noua Albion",
+   "candidates": [
+    "Q3142013",
+    "Q779685",
+    "Q7208146",
+    "Q2100791",
+    "Q2088643"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "62b404533aeab098",
@@ -519,6 +2119,70 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q3315350",
+   "reason": "The 1533 landfall corresponds to the settlement of Pachacamac itself, the district nearest the recorded position, rather than the archaeological site or offshore islands.",
+   "decided_by": "claude-sonnet-5",
+   "key": "85ec1f250fbbf160",
+   "atlas_name": "Pachacama",
+   "candidates": [
+    "Q3315350",
+    "Q430563",
+    "Q5922394"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q622030",
+   "reason": "Palos de la Frontera is the historic municipality/port town from which the 1492 voyage departed and would have called 'Palos', closest match and a genuine settlement rather than a modern industrial facility.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1a7b81367b8a5a79",
+   "atlas_name": "Palos",
+   "candidates": [
+    "Q622030",
+    "Q24013477",
+    "Q11994661"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1142129",
+   "reason": "The nearest match is the Pearl Islands archipelago itself, the actual geographic landfall, rather than the distant city or country.",
+   "decided_by": "claude-sonnet-5",
+   "key": "80e7ce01bcde968e",
+   "atlas_name": "Panama",
+   "candidates": [
+    "Q1142129",
+    "Q3306",
+    "Q804"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q80484",
+   "reason": "Patna is the historic city/settlement matching the landfall name Pataliputtra, unlike the airport or district entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "29afc7bf51720c48",
+   "atlas_name": "Pataliputtra",
+   "candidates": [
+    "Q80484",
+    "Q2673010",
+    "Q100077"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q48344",
+   "reason": "Recife the city/municipality is the historical port of Pernambuco called at during the voyage, unlike the modern railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "715e4cd0e2686994",
+   "atlas_name": "Pernambuco",
+   "candidates": [
+    "Q48344",
+    "Q10276091"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "82bb05eb4d79f565",
    "atlas_name": "Petropavlovsk, Kamchatka",
    "candidates": [
@@ -531,6 +2195,17 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q43382",
+   "reason": "Plymouth, Devon is the historic port city matching the recorded landfall name and coordinates.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c5073338c1e76eef",
+   "atlas_name": "Plimmouth",
+   "candidates": [
+    "Q43382"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "5ec898aa80178d1c",
    "atlas_name": "Plymouth",
    "candidates": [
@@ -540,6 +2215,48 @@
    "reason": "Plymouth, the Devon port the Endeavour sailed from.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q182159",
+   "reason": "The nearest match is the actual town of Balkh, the historical city that would have been the landfall known as Po-ho.",
+   "decided_by": "claude-sonnet-5",
+   "key": "389b3a658b43a34a",
+   "atlas_name": "Po-ho",
+   "candidates": [
+    "Q182159",
+    "Q6850536",
+    "Q2881031",
+    "Q121104",
+    "Q1935682"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1113311",
+   "reason": "Peshawar is the historic city (ancient Po-lu-sha-pu-lo) that the 631 voyage recorded as a landfall, not a modern station, university, district, or the Afghan settlement of the same name.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b6c7e6bda7cb9196",
+   "atlas_name": "Po-lu-sha-pu-lo",
+   "candidates": [
+    "Q1113311",
+    "Q7171369",
+    "Q3918532",
+    "Q549467",
+    "Q7171364"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1061269",
+   "reason": "Palawan island itself, at the exact recorded position, is the geographic feature the 1521 voyage would have landed on.",
+   "decided_by": "claude-sonnet-5",
+   "key": "0b27c813d2826a99",
+   "atlas_name": "Poluan",
+   "candidates": [
+    "Q1061269",
+    "Q13869"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "5654f675caea9a28",
@@ -555,6 +2272,17 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q800201",
+   "reason": "Puerto del Hambre is the historic settlement/landfall matching the 1834 'Port Famine' location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2671edc94317b7d3",
+   "atlas_name": "Port Famine",
+   "candidates": [
+    "Q800201"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "966dc2762f48beec",
    "atlas_name": "Port Jackson",
    "candidates": [
@@ -568,6 +2296,31 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q54504",
+   "reason": "Port Jackson is the natural harbour landfall itself, matching the recorded name and being a valid geographic feature from that period.",
+   "decided_by": "claude-sonnet-5",
+   "key": "449fcc6dae71a3ef",
+   "atlas_name": "Port Jackson",
+   "candidates": [
+    "Q3130",
+    "Q5356001",
+    "Q54504"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q955668",
+   "reason": "This is the actual settlement/landfall site at Puerto San Julián, matching the historical port of call, rather than the modern port infrastructure entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8597c5c5c96fa170",
+   "atlas_name": "Port of St. Julian",
+   "candidates": [
+    "Q955668",
+    "Q111386818"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "77ea4b31915d6d2e",
    "atlas_name": "Port Praslin, New Britain",
    "candidates": [
@@ -577,6 +2330,42 @@
    "reason": "The only candidate is a bay 42 km from the recorded position under an unrelated name; Port Praslin's identity is better left open than asserted on that.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q955668",
+   "reason": "Puerto San Julián is the historic settlement/bay landfall site, matching a 16th-century voyage's port of call rather than a modern port infrastructure entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "be2169c2743f71db",
+   "atlas_name": "Port S. Julian",
+   "candidates": [
+    "Q955668",
+    "Q111386818"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q955668",
+   "reason": "The historical landfall corresponds to the settlement of Puerto San Julián itself, not the modern port infrastructure.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ec6e0fa6e69afe49",
+   "atlas_name": "Port St. Julian",
+   "candidates": [
+    "Q955668",
+    "Q111386818"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3751",
+   "reason": "Praia the city/port itself is the settlement the voyage called at, not the surrounding municipality.",
+   "decided_by": "claude-sonnet-5",
+   "key": "be7e0d7d7089cc24",
+   "atlas_name": "Porto Praya, in St. Jago, the chief island of the Cape de Verd archipelago",
+   "candidates": [
+    "Q3751",
+    "Q497019"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "298da8c8b1af5047",
@@ -602,6 +2391,73 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q170521",
+   "reason": "Kashgar city itself is the historical settlement the voyage would have recorded as a landfall, unlike the modern prefecture or railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b2f94fbf5f6f3958",
+   "atlas_name": "Pu-ho",
+   "candidates": [
+    "Q739890",
+    "Q170521",
+    "Q800996",
+    "Q1511750"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q51599",
+   "reason": "Punta Arenas, Chile is the historical Strait of Magellan port city matching the recorded landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "80e204352ae48ed6",
+   "atlas_name": "Punta Arenas",
+   "candidates": [
+    "Q51599"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q34941899",
+   "reason": "Icacos Point matches the recorded landfall name and location as a natural point feature, unlike the more distant peninsula.",
+   "decided_by": "claude-sonnet-5",
+   "key": "4db451dd52994fab",
+   "atlas_name": "Punta del Arenal, island of Trinidad",
+   "candidates": [
+    "Q34941899",
+    "Q49333220"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1113311",
+   "reason": "Peshawar is the historic city itself, matching the landfall as a settlement rather than a modern station, university, or district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "668936ac3d19aa27",
+   "atlas_name": "Purushapura, or Peshawur",
+   "candidates": [
+    "Q1113311",
+    "Q7171369",
+    "Q3918532",
+    "Q549467",
+    "Q7171364"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q79980",
+   "reason": "Varanasi city itself is the historical landfall referenced, not modern administrative or transport entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a62158ddf2aa56b6",
+   "atlas_name": "P’o-lo-ni-sse (Bdnaras)",
+   "candidates": [
+    "Q3630705",
+    "Q1321140",
+    "Q2478439",
+    "Q79980",
+    "Q3276974"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "51ca80e566be2cd4",
    "atlas_name": "Queen Charlotte's Sound",
    "candidates": [
@@ -611,6 +2467,17 @@
    "reason": "Queen Charlotte Sound, Cook's careening station.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q1638699",
+   "reason": "This national park covers the Jardines de la Reina archipelago, the same island chain Columbus named the Queen's Garden in 1494.",
+   "decided_by": "claude-sonnet-5",
+   "key": "24f3b3e38d0dbb86",
+   "atlas_name": "Queen's Garden",
+   "candidates": [
+    "Q1638699"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "0ded8a9b5f8ccd09",
@@ -625,6 +2492,42 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q35827",
+   "reason": "The estuary Río de la Plata itself matches the recorded landfall name and is a plausible 1578 geographic feature, not a modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "63f735d9f104b4eb",
+   "atlas_name": "Rio de la Plata",
+   "candidates": [
+    "Q35827"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1130009",
+   "reason": "The river mouth itself (Great Fish River) matches the historical landfall name Rio do Infante and is the nearest geographic feature.",
+   "decided_by": "claude-sonnet-5",
+   "key": "74872279557c1a2e",
+   "atlas_name": "Rio do Infante",
+   "candidates": [
+    "Q1130009",
+    "Q112220889",
+    "Q5599198",
+    "Q1544274"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": null,
+   "reason": "Q44802 is the modern Argentine province, an administrative entity that could not have been the landfall itself, so no correct match is present.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8865475d74a088bd",
+   "atlas_name": "Rio Negro",
+   "candidates": [
+    "Q44802"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "0587e2ee0bb7231b",
    "atlas_name": "Rio-Janeiro",
    "candidates": [
@@ -635,6 +2538,29 @@
    "reason": "The city they anchored at, not the modern state of the same name.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q392161",
+   "reason": "The Saguenay River mouth is the geographic feature matching the recorded 1535 landfall, unlike any modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "469ce26aad9df590",
+   "atlas_name": "river of the Saguenay",
+   "candidates": [
+    "Q392161"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q220",
+   "reason": "Rome as a city/settlement existed in 1518 and matches the landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a6877a0011cff03e",
+   "atlas_name": "Rome",
+   "candidates": [
+    "Q220",
+    "Q17167"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "c2ea2bdfa339755a",
@@ -648,6 +2574,48 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q210887",
+   "reason": "This is the municipality/settlement of Sanlúcar de Barrameda itself, the historic port the voyage recorded as its landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8ba35bf3f5cba814",
+   "atlas_name": "San Lucar",
+   "candidates": [
+    "Q210887",
+    "Q6058144",
+    "Q12896923"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q210887",
+   "reason": "This is the municipality/settlement of Sanlúcar de Barrameda itself, the historic port matching the recorded landfall, unlike the palace building or the redundant settlement entry farther away.",
+   "decided_by": "claude-sonnet-5",
+   "key": "babaec7cc9307d60",
+   "atlas_name": "San Lucar de Barrameda",
+   "candidates": [
+    "Q6058144",
+    "Q210887",
+    "Q12896923"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q223966",
+   "reason": "Piura is the city founded in 1532 that corresponds to the recorded landfall of San Miguel.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ff7a54ed68ee2a9d",
+   "atlas_name": "San Miguel",
+   "candidates": [
+    "Q223966",
+    "Q7926209",
+    "Q676572",
+    "Q3825445",
+    "Q1432372",
+    "Q208183"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "2758214f11245dba",
    "atlas_name": "Sandwich Islands (Mowee)",
    "candidates": [
@@ -659,6 +2627,19 @@
    "reason": "Maui, the island La Pérouse called Mowee.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q210887",
+   "reason": "This is the municipality/settlement itself matching the historic port city named in the voyage record, closest plausible match distinguishing it from a mere building.",
+   "decided_by": "claude-sonnet-5",
+   "key": "91edc859ea46aa2c",
+   "atlas_name": "Sanlúcar de Barrameda",
+   "candidates": [
+    "Q6058144",
+    "Q210887",
+    "Q12896923"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "5f474236cc533c3a",
@@ -675,6 +2656,65 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": null,
+   "reason": "The only candidate is the modern Santa Cruz Province, 181.5 km away, not the actual river/landfall site the 1520 voyage recorded.",
+   "decided_by": "claude-sonnet-5",
+   "key": "9d2559c60655323a",
+   "atlas_name": "Santa Cruz",
+   "candidates": [
+    "Q44821"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q217262",
+   "reason": "The island itself is the geographic feature that existed in 1493, unlike the modern ESA tracking station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e367bee8cd9cdd41",
+   "atlas_name": "Santa Maria",
+   "candidates": [
+    "Q217262",
+    "Q18354889"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q34820",
+   "reason": "Santo Domingo is the historic settlement founded in 1496 that the 1498 voyage would have recorded as its landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "0cf6010e01ede1a7",
+   "atlas_name": "Santo Domingo",
+   "candidates": [
+    "Q34820"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q995615",
+   "reason": "Mossel Bay is the historic landfall settlement itself, unlike the hospital or the modern municipality entity.",
+   "decided_by": "claude-sonnet-5",
+   "key": "dbd7fa96e9e5fbd0",
+   "atlas_name": "Sao Bras",
+   "candidates": [
+    "Q995615",
+    "Q57399552",
+    "Q1707740"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q968662",
+   "reason": "The 1487 landfall refers to the settlement of Elmina itself, not the fort/castle structure or any modern institution.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1f276d610d137809",
+   "atlas_name": "Sao Jorge da Mina",
+   "candidates": [
+    "Q968662",
+    "Q55264655"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "610c66a06cd990e1",
    "atlas_name": "Savu",
    "candidates": [
@@ -689,6 +2729,46 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q1017333",
+   "reason": "Tafilalt (historically Sijilmasa) is the oasis/settlement region matching the landfall name, unlike the broader modern administrative region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "efe42b488ad32b70",
+   "atlas_name": "Segelmessa",
+   "candidates": [
+    "Q1017333",
+    "Q19950954"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q8717",
+   "reason": "This is the actual city of Seville itself at 0.0 km, the settlement the voyage would have recorded as landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "6c600f4baadb0981",
+   "atlas_name": "Seville",
+   "candidates": [
+    "Q8717",
+    "Q683023",
+    "Q95088",
+    "Q7458064"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3445630",
+   "reason": "The nearest feature is the Sierra Leone River estuary, matching the 1578 landfall on the coast, not the modern state or colonial-era political entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "18a4afb0064ec791",
+   "atlas_name": "Sierra Leona",
+   "candidates": [
+    "Q3445630",
+    "Q1044",
+    "Q30059027",
+    "Q14920623"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "f68ebe4d24716013",
    "atlas_name": "St. Helena",
    "candidates": [
@@ -699,6 +2779,32 @@
    "reason": "The island of Saint Helena, not the three-island territory administered from it.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q41211",
+   "reason": "San Juan is the historic settlement corresponding to the 1493 landfall name 'St. John the Baptist'.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e75cea06fd40177b",
+   "atlas_name": "St. John the Baptist",
+   "candidates": [
+    "Q41211"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q163108",
+   "reason": "Saint-Malo itself is the historic port town matching the recorded landfall's name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "666dad6298bd83c8",
+   "atlas_name": "St. Malo",
+   "candidates": [
+    "Q163108",
+    "Q128095",
+    "Q128340",
+    "Q654765",
+    "Q775568"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "492aa1d17491b79d",
@@ -716,6 +2822,47 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q3339246",
+   "reason": "Stadacona was the 16th-century Iroquoian village that Cartier's 1535 voyage recorded, distinct from the modern city or infrastructure entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "63eece0e5670981f",
+   "atlas_name": "Stadacona",
+   "candidates": [
+    "Q371553",
+    "Q5172933",
+    "Q96400665",
+    "Q2145",
+    "Q3339246",
+    "Q794549",
+    "Q114245211"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q815831",
+   "reason": "The Strait of Belle Isle itself matches the recorded landfall name and is a natural geographic feature that existed in 1534.",
+   "decided_by": "claude-sonnet-5",
+   "key": "29416d26d1aea075",
+   "atlas_name": "strait of Belle Isle",
+   "candidates": [
+    "Q815831",
+    "Q22413166",
+    "Q22413186"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q48365",
+   "reason": "The Strait of Magellan is the natural strait itself, matching the 1520 landfall recorded by Magellan's voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "5aaefad8ed513739",
+   "atlas_name": "Strait of Magellan",
+   "candidates": [
+    "Q48365"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "1751b88049b9a3ec",
    "atlas_name": "Straits of Magalhaens (Port Galant / Cape Pillar)",
    "candidates": [
@@ -725,6 +2872,40 @@
    "reason": "The strait itself; Port Galant and Cape Pillar are anchorages within it.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q1510300",
+   "reason": "It is the bay itself, matching the 1916 landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c02e0524d385ce48",
+   "atlas_name": "Stromness Bay",
+   "candidates": [
+    "Q1510300"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q389161",
+   "reason": "Swat District is the ancient region/settlement area matching the recorded landfall of Su-ho-to, unlike the excluded modern-only entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "9d00003e8fb1b14b",
+   "atlas_name": "Su-ho-to",
+   "candidates": [
+    "Q389161"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q5753",
+   "reason": "Samarkand city itself is the historical settlement the voyage recorded as a landfall, unlike the larger modern administrative region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "291c1534b95eb689",
+   "atlas_name": "SX-MO-KiEN (Samarkand)",
+   "candidates": [
+    "Q5753",
+    "Q487532"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "5f40fce4f32533f9",
@@ -752,6 +2933,58 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q42000",
+   "reason": "Tahiti is the island landfall itself, unlike the language or the modern airport.",
+   "decided_by": "claude-sonnet-5",
+   "key": "2fb23c49bad99942",
+   "atlas_name": "Tahiti",
+   "candidates": [
+    "Q42000",
+    "Q34128",
+    "Q1049719"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q156093",
+   "reason": "A 401 CE voyage would have encountered the ancient city/archaeological site of Taxila, not the modern Pakistani city.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e49afb5bfbb5fc91",
+   "atlas_name": "Takshasila",
+   "candidates": [
+    "Q30304289",
+    "Q156093"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q118278",
+   "reason": "Tamluk is the historic city/settlement matching the ancient port of Tamralipti, unlike the modern administrative or infrastructure entities listed.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f61c2ba028bc6439",
+   "atlas_name": "Tamalipti",
+   "candidates": [
+    "Q7681520",
+    "Q118278",
+    "Q59967584",
+    "Q3351485",
+    "Q7681519"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q156093",
+   "reason": "The 631 voyage would have visited the ancient city of Taxila, which is now represented by the archaeological site, not the modern city founded later.",
+   "decided_by": "claude-sonnet-5",
+   "key": "8d298e715b5d7370",
+   "atlas_name": "Taxila",
+   "candidates": [
+    "Q30304289",
+    "Q156093"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "9e4227afe54c8ef9",
    "atlas_name": "Taïti (New Cythera / Nouvelle-Cythère)",
    "candidates": [
@@ -765,6 +2998,48 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q118278",
+   "reason": "Tamluk city is the historical settlement/landfall itself, unlike the modern administrative subdivisions, constituency, or railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "26a2a154fa4b9a41",
+   "atlas_name": "Tdmralipti",
+   "candidates": [
+    "Q7681520",
+    "Q118278",
+    "Q3351485",
+    "Q59967584",
+    "Q7681519"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q40846",
+   "reason": "It is the physical island of Tenerife, the only geographic feature among the options and the natural landfall for a 1519 voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a6183a98bad4b8d6",
+   "atlas_name": "Tenerife",
+   "candidates": [
+    "Q40846",
+    "Q48851521",
+    "Q21483926"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q40846",
+   "reason": "The landfall corresponds to the island of Tenerife itself, the geographic feature closest to the recorded position, not the electoral units or the distant municipality.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b72afec9f6580535",
+   "atlas_name": "Teneriffe",
+   "candidates": [
+    "Q40846",
+    "Q48851521",
+    "Q21483926",
+    "Q14328"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "851cdd9c228a653a",
    "atlas_name": "Tepeaca",
    "candidates": [
@@ -775,6 +3050,29 @@
    "reason": "Tepeaca, the town Cortés fortified after the retreat.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q215074",
+   "reason": "Terceira Island is the geographic feature matching the recorded landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "b9fecbf7e8a2882a",
+   "atlas_name": "Terceira",
+   "candidates": [
+    "Q215074"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q19151",
+   "reason": "The 1579 landfall refers to the historic city/sultanate of Ternate, matching the settlement Q19151 rather than the island landmass itself.",
+   "decided_by": "claude-sonnet-5",
+   "key": "9c8c2fd15ebf97dd",
+   "atlas_name": "Ternate",
+   "candidates": [
+    "Q19151",
+    "Q333483"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "05802685f920564d",
@@ -803,6 +3101,52 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q58705",
+   "reason": "The Arabian Sea itself matches the recorded landfall name and location, and is a geographic feature consistent with a 1498 voyage's landfall.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1667b80fa74b1962",
+   "atlas_name": "the Arabian Gulf",
+   "candidates": [
+    "Q58705"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q321437",
+   "reason": "The voyage's landfall was explicitly the Bodhi Tree itself, the sacred fig at Bodh Gaya, matching the historical site rather than the modern town or electoral constituency.",
+   "decided_by": "claude-sonnet-5",
+   "key": "47472f781da7e7d9",
+   "atlas_name": "the Bodhi Tree",
+   "candidates": [
+    "Q321437",
+    "Q176767",
+    "Q55337492"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2960771",
+   "reason": "This is the fort/settlement site of Charlesbourg-Royal itself, matching the 1541 landfall description.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c69f07ea37008436",
+   "atlas_name": "the building on the river of Cape Rouge and in the one on the cliff above",
+   "candidates": [
+    "Q2960771"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q31878253",
+   "reason": "This is the Cape Verde Islands island group itself, the geographic feature the voyage would have landed at.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f1c85ca415536319",
+   "atlas_name": "the Cape Verde Islands",
+   "candidates": [
+    "Q31878253"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "00619c2fdf086885",
    "atlas_name": "the extremity of New Wales",
    "candidates": [
@@ -814,6 +3158,65 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q161750",
+   "reason": "The Pamir Mountains is the geographic feature matching the recorded landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7bfcfc7e599d2eca",
+   "atlas_name": "the Little Snowy mountains",
+   "candidates": [
+    "Q161750"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q42070",
+   "reason": "The Gobi Desert itself matches the recorded landfall 'the river of sand' and is a plausible geographic feature for the voyage's description.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c175636e9ec96a0b",
+   "atlas_name": "the river of sand",
+   "candidates": [
+    "Q42070"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1113311",
+   "reason": "Peshawar itself, the historic city (ancient Purushapura), is the settlement referenced as \"the royal city\" by the 631 voyage, not modern infrastructure like the railway station or university.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cefa334d18df4aaf",
+   "atlas_name": "the royal city",
+   "candidates": [
+    "Q1113311",
+    "Q7171369",
+    "Q3918532",
+    "Q549467",
+    "Q7171364"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q48365",
+   "reason": "The Strait of Magellan is the geographic feature matching the recorded landfall, despite the 86.1 km coordinate discrepancy likely due to imprecise historical recording.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c93a5df8324f682b",
+   "atlas_name": "the streights of Magellan",
+   "candidates": [
+    "Q48365"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q16635",
+   "reason": "Guam is the island landfall historically known as Thieves' Island (Islas de los Ladrones) visited during Magellan's 1521 voyage.",
+   "decided_by": "claude-sonnet-5",
+   "key": "90b55636d5bc76c7",
+   "atlas_name": "Thieves’ Island (_dos ladrōes_)",
+   "candidates": [
+    "Q16635"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "c9ede572ac801282",
    "atlas_name": "Thirsty Sound",
    "candidates": [
@@ -823,6 +3226,44 @@
    "reason": "Thirsty Sound, so named for want of fresh water.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q12506955",
+   "reason": "The 1521 landfall would have been the island of Tidore itself, not the modern city administration or the language.",
+   "decided_by": "claude-sonnet-5",
+   "key": "28d7da7b8902a300",
+   "atlas_name": "Tidore",
+   "candidates": [
+    "Q19153",
+    "Q12506955",
+    "Q3528199"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q9427",
+   "reason": "The voyage made landfall at the historic city of Timbuktu itself, not the modern heritage designation or the broader region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "020161d717685c31",
+   "atlas_name": "Timbuktu",
+   "candidates": [
+    "Q9427",
+    "Q15240719",
+    "Q339462"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q83067",
+   "reason": "The 1522 landfall refers to the island of Timor itself, not the modern sovereign state of Timor-Leste.",
+   "decided_by": "claude-sonnet-5",
+   "key": "c8a97496c8e8d86a",
+   "atlas_name": "Timor",
+   "candidates": [
+    "Q83067",
+    "Q574"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "29e5eb435fd20470",
@@ -868,6 +3309,48 @@
    "decided_at": "2026-07-25"
   },
   {
+   "qid": "Q827640",
+   "reason": "The landfall corresponds to the actual city of Tumbes, the settlement the 1532 voyage would have encountered.",
+   "decided_by": "claude-sonnet-5",
+   "key": "d48b2aa3ce3d9ace",
+   "atlas_name": "Tumbez",
+   "candidates": [
+    "Q209597",
+    "Q827640",
+    "Q1479348",
+    "Q2039785"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q3572",
+   "reason": "Tunis the city itself is the settlement the voyage would have called at, not the governorate or later colonial protectorate.",
+   "decided_by": "claude-sonnet-5",
+   "key": "89a91e8da15a68aa",
+   "atlas_name": "Tunis",
+   "candidates": [
+    "Q3572",
+    "Q328109",
+    "Q2017684"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q868527",
+   "reason": "Turpan the settlement/city is the geographic landfall matching the historical name, unlike the airport, karez system, depression, or railway station.",
+   "decided_by": "claude-sonnet-5",
+   "key": "a0c291ae752afe6a",
+   "atlas_name": "Turf an",
+   "candidates": [
+    "Q868527",
+    "Q6588610",
+    "Q852896",
+    "Q284780",
+    "Q10918051"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
    "key": "ff8935e6c4434c8b",
    "atlas_name": "Ulietea",
    "candidates": [
@@ -878,6 +3361,78 @@
    "reason": "Raiatea, the island; an airport cannot be a landfall of 1769.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q1509463",
+   "reason": "This is the ancient historical site/settlement of Vaishali that would have existed as a landfall in 402 CE, unlike the modern administrative district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "96a92fec2061bbea",
+   "atlas_name": "Vaisali",
+   "candidates": [
+    "Q100130",
+    "Q1509463"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q1509463",
+   "reason": "The ancient site of Vaishali, an established settlement/pilgrimage site in the 7th century, matches the historical landfall rather than the modern administrative district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "1e6c41bcafdf8773",
+   "atlas_name": "Vaiśālī",
+   "candidates": [
+    "Q100130",
+    "Q1509463"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q33986",
+   "reason": "Valparaíso city is the historical port settlement the 1834 voyage would have called at, not the modern administrative region.",
+   "decided_by": "claude-sonnet-5",
+   "key": "425f59fb7cd8cc7d",
+   "atlas_name": "Valparaiso",
+   "candidates": [
+    "Q33986",
+    "Q219458"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q33986",
+   "reason": "Valparaíso is the historic port city matching the recorded landfall name and location.",
+   "decided_by": "claude-sonnet-5",
+   "key": "e09ec29c3760c882",
+   "atlas_name": "Valperizo",
+   "candidates": [
+    "Q33986"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q593137",
+   "reason": "Veraguas Province matches the recorded landfall name and location, representing the historical region of Veragua encountered in 1503.",
+   "decided_by": "claude-sonnet-5",
+   "key": "cf5f2d4617060884",
+   "atlas_name": "Veragua",
+   "candidates": [
+    "Q593137"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q2475760",
+   "reason": "Vilcashuamán is the historic settlement itself, matching the landfall name, unlike the modern province, district, or airport.",
+   "decided_by": "claude-sonnet-5",
+   "key": "7312a1dc7d54479c",
+   "atlas_name": "Vilcas",
+   "candidates": [
+    "Q2475760",
+    "Q537708",
+    "Q3825195",
+    "Q27058213"
+   ],
+   "decided_at": "2026-07-28"
   },
   {
    "key": "41bcb09ec8acf8f9",
@@ -902,6 +3457,57 @@
    "reason": "The Whitsunday Passage. Wikidata files it as a river, which is wrong, but the entity is the passage Cook sailed.",
    "decided_by": "ai-review",
    "decided_at": "2026-07-25"
+  },
+  {
+   "qid": "Q139570137",
+   "reason": "Swat Valley is the geographic feature matching the historic Udyana/Woo-chang landfall, closer and more appropriate than the modern district.",
+   "decided_by": "claude-sonnet-5",
+   "key": "3a1b651880b8b981",
+   "atlas_name": "Woo-chang, or Udyana",
+   "candidates": [
+    "Q139570137",
+    "Q389161"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q917434",
+   "reason": "Jauja is the historic city/settlement matching the 1533 landfall, unlike the modern airport, province, or district entities.",
+   "decided_by": "claude-sonnet-5",
+   "key": "eb5bb70815fe0482",
+   "atlas_name": "Xauxa",
+   "candidates": [
+    "Q1431582",
+    "Q917434",
+    "Q922867",
+    "Q5262649"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q766",
+   "reason": "Yamaye refers to the island of Jamaica itself, which existed as a geographic landfall in 1494, unlike the later British colony.",
+   "decided_by": "claude-sonnet-5",
+   "key": "f342fd401b03a3c3",
+   "atlas_name": "Yamaye",
+   "candidates": [
+    "Q766",
+    "Q2526023"
+   ],
+   "decided_at": "2026-07-28"
+  },
+  {
+   "qid": "Q12832321",
+   "reason": "Yarkand town is the actual settlement that historically served as the landfall/city known as Yarkand, unlike the county or the former khanate.",
+   "decided_by": "claude-sonnet-5",
+   "key": "ed10ed75db20b203",
+   "atlas_name": "Yarkand",
+   "candidates": [
+    "Q857618",
+    "Q12832321",
+    "Q1188459"
+   ],
+   "decided_at": "2026-07-28"
   }
  ]
 }

@@ -7,6 +7,336 @@
  },
  "places": [
   {
+   "qid": "Q320049",
+   "name": "Agadez",
+   "description": "urban commune in Niger",
+   "latitude": 16.97222,
+   "longitude": 7.99083,
+   "instance_of": [
+    "municipality of Niger"
+   ],
+   "aliases": [
+    "Agades",
+    "Agadès"
+   ],
+   "names_in_the_atlas": [
+    "Agadez",
+    "Agadez, Niger"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 7,
+     "called_it": "Agadez",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q320049",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q704257",
+   "name": "Albany",
+   "description": "port city in Western Australia, Australia",
+   "latitude": -35.02278,
+   "longitude": 117.88139,
+   "instance_of": [
+    "town"
+   ],
+   "aliases": [
+    "Albany, Australia",
+    "Albany, W.A.",
+    "Albany port",
+    "Albany, Western Australia",
+    "Albany, Western Australia, Australia"
+   ],
+   "names_in_the_atlas": [
+    "King George's Sound",
+    "Albany, Western Australia, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 24,
+     "called_it": "King George's Sound",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q704257",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q87",
+   "name": "Alexandria",
+   "description": "port city on the Mediterranean coast of Egypt",
+   "latitude": 31.1975,
+   "longitude": 29.8925,
+   "instance_of": [
+    "port city",
+    "municipality",
+    "big city",
+    "polis",
+    "city"
+   ],
+   "aliases": [
+    "Mediterranean's Bride",
+    "Pearl of the Mediterranean",
+    "Al Iskandariya",
+    "Iskandariyya",
+    "Alexandria, Egypt"
+   ],
+   "names_in_the_atlas": [
+    "Alexandria",
+    "Alexandria, Egypt"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 12,
+     "called_it": "Alexandria",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q87",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q2879573",
+   "name": "Algoa Bay",
+   "description": "wide inlet along the South African east coast",
+   "latitude": -33.83333,
+   "longitude": 25.83333,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Algoa Bay",
+    "Algoa Bay, South Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 7,
+     "called_it": "Algoa Bay",
+     "distance_km": 20.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2879573",
+   "voyages": [
+    "dias-1487"
+   ]
+  },
+  {
+   "qid": "Q219608",
+   "name": "Ambon Island",
+   "description": "island in Maluku Province, Indonesia",
+   "latitude": -3.61472,
+   "longitude": 128.16583,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Pulau Ambon",
+    "Amboina",
+    "Amboyna",
+    "Ambon",
+    "Ambon Island"
+   ],
+   "names_in_the_atlas": [
+    "Ambon",
+    "Ambon Island, Maluku, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 20,
+     "called_it": "Ambon",
+     "distance_km": 10.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q219608",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q49344318",
+   "name": "Angra do Heroísmo",
+   "description": "city seat of Angra do Heroísmo municipality, Azores, Portugal",
+   "latitude": 38.65,
+   "longitude": -27.21667,
+   "instance_of": [
+    "city of Portugal",
+    "municipality seat"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Angra of Terceira",
+    "Angra do Heroísmo, Terceira Island, Azores, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 20,
+     "called_it": "Angra of Terceira",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q49344318",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q3777329",
+   "name": "Anjidiv Island",
+   "description": "island in India",
+   "latitude": 14.75667,
+   "longitude": 74.1125,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Anjediva",
+    "Anjediva Island, Karnataka, India"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 15,
+     "called_it": "Anjediva",
+     "distance_km": 2.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3777329",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q575033",
+   "name": "Anticosti Island",
+   "description": "island in Quebec, Canada",
+   "latitude": 49.5,
+   "longitude": -63.0,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Île d'Anticosti",
+    "Anticosti"
+   ],
+   "names_in_the_atlas": [
+    "Assumption island",
+    "Anticosti Island, Quebec, Canada",
+    "Anticosti island"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 6,
+     "called_it": "Assumption island",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 12,
+     "called_it": "Anticosti island",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q575033",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q58705",
+   "name": "Arabian Sea",
+   "description": "marginal sea of the northern Indian Ocean",
+   "latitude": 16.0,
+   "longitude": 64.0,
+   "instance_of": [
+    "sea"
+   ],
+   "aliases": [
+    "Indian Sea",
+    "Darya",
+    "Erythraean Sea",
+    "Akhzar Sea",
+    "Arab Sea"
+   ],
+   "names_in_the_atlas": [
+    "the Arabian Gulf",
+    "Arabian Sea"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 12,
+     "called_it": "the Arabian Gulf",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q58705",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q2203",
+   "name": "Arica",
+   "description": "city of Chile",
+   "latitude": -18.47839,
+   "longitude": -70.32122,
+   "instance_of": [
+    "city in Chile",
+    "big city",
+    "city"
+   ],
+   "aliases": [
+    "Arica (1540–1929)",
+    "Peruvian Arica",
+    "Arica (Peru)",
+    "Arica, Peru"
+   ],
+   "names_in_the_atlas": [
+    "Arica",
+    "Arica, Arica y Parinacota, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 11,
+     "called_it": "Arica",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2203",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
    "qid": "Q46197",
    "name": "Ascension Island",
    "description": "equatorial island in the Atlantic Ocean, a British overseas territory belonging to the United Kingdom",
@@ -24,7 +354,9 @@
    ],
    "names_in_the_atlas": [
     "Ascension Island",
-    "Ascension Island, British Overseas Territory, South Atlantic Ocean"
+    "Ascension Island, British Overseas Territory, South Atlantic Ocean",
+    "Ascension",
+    "Ascension Island, British Overseas Territory"
    ],
    "visits": [
     {
@@ -33,11 +365,246 @@
      "called_it": "Ascension Island",
      "distance_km": 2.7,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 29,
+     "called_it": "Ascension",
+     "distance_km": 2.7,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q46197",
    "voyages": [
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q130135",
+   "name": "Atlas Mountains",
+   "description": "North African mountain range",
+   "latitude": 31.06194,
+   "longitude": -7.91611,
+   "instance_of": [
+    "mountain range"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "mount Atlas",
+    "Atlas Mountains, Morocco"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 1,
+     "called_it": "mount Atlas",
+     "distance_km": 1.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q130135",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q54108",
+   "name": "Bahía Blanca",
+   "description": "city in Argentina",
+   "latitude": -38.71824,
+   "longitude": -62.26734,
+   "instance_of": [
+    "city of Argentina",
+    "big city",
+    "locality",
+    "seat of government"
+   ],
+   "aliases": [
+    "Bahia Blanca, Argentina",
+    "Bahia Blanca"
+   ],
+   "names_in_the_atlas": [
+    "Bahia Blanca",
+    "Bahía Blanca, Buenos Aires Province, Argentina"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 10,
+     "called_it": "Bahia Blanca",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q54108",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q20548818",
+   "name": "Baiona",
+   "description": "human settlement in Baiona, Vigo, Pontevedra Province, Spain",
+   "latitude": 42.11995,
+   "longitude": -8.85449,
+   "instance_of": [
+    "settlement in Galicia",
+    "municipality capital"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Bayona",
+    "Baiona, Galicia, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 2,
+     "called_it": "Bayona",
+     "distance_km": 3.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q20548818",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q182159",
+   "name": "Balkh",
+   "description": "capital of Balkh District, Afghanistan",
+   "latitude": 36.75806,
+   "longitude": 66.89889,
+   "instance_of": [
+    "town"
+   ],
+   "aliases": [
+    "Umm Al-Belaad",
+    "Mother of All Cities",
+    "Umm al-Bilad",
+    "Bactra",
+    "Baktra",
+    "Balch"
+   ],
+   "names_in_the_atlas": [
+    "Po-ho",
+    "Balkh, Afghanistan"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 10,
+     "called_it": "Po-ho",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q182159",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q214495",
+   "name": "Bamyan",
+   "description": "The Cradle of Hazara Civilization",
+   "latitude": 34.81667,
+   "longitude": 67.81667,
+   "instance_of": [
+    "city",
+    "small city",
+    "human settlement"
+   ],
+   "aliases": [
+    "Bamiyan",
+    "varmayana"
+   ],
+   "names_in_the_atlas": [
+    "Bamiyan",
+    "Bamiyan, Afghanistan"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 11,
+     "called_it": "Bamiyan",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q214495",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q9279",
+   "name": "Bandar Seri Begawan",
+   "description": "capital and largest city of Brunei",
+   "latitude": 4.91667,
+   "longitude": 114.91667,
+   "instance_of": [
+    "city",
+    "municipality"
+   ],
+   "aliases": [
+    "Bandar",
+    "BSB",
+    "Seri Begawan",
+    "Brunei Town",
+    "Bandar Brunei"
+   ],
+   "names_in_the_atlas": [
+    "Borneo",
+    "Brunei (Bandar Seri Begawan), Brunei"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 18,
+     "called_it": "Borneo",
+     "distance_km": 3.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q9279",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q2086056",
+   "name": "Banten",
+   "description": "subdistrict in Serang City, Banten, Indonesia",
+   "latitude": -6.03722,
+   "longitude": 106.1625,
+   "instance_of": [
+    "desa",
+    "kelurahan"
+   ],
+   "aliases": [
+    "Bantam",
+    "Banten (town)",
+    "Desa Banten"
+   ],
+   "names_in_the_atlas": [
+    "Java",
+    "Banten, Java, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 22,
+     "called_it": "Java",
+     "distance_km": 73.2,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2086056",
+   "voyages": [
+    "drake-1577"
    ]
   },
   {
@@ -83,6 +650,178 @@
    ]
   },
   {
+   "qid": "Q812091",
+   "name": "Bay of Islands",
+   "description": "area in the Northland Region of the North Island of New Zealand",
+   "latitude": -35.2,
+   "longitude": 174.16667,
+   "instance_of": [
+    "coast",
+    "bight"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "New Zealand",
+    "Bay of Islands, Northland, New Zealand"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 21,
+     "called_it": "New Zealand",
+     "distance_km": 5.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q812091",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q728779",
+   "name": "Belle Isle",
+   "description": "island in Newfoundland and Labrador, Canada",
+   "latitude": 51.92889,
+   "longitude": -55.35917,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Belle-Isle",
+    "Belle Isle, Newfoundland and Labrador, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 7,
+     "called_it": "Belle-Isle",
+     "distance_km": 104.9,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q728779",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q3437375",
+   "name": "Berkeley Sound",
+   "description": "bay in Falkland Islands, United Kingdom",
+   "latitude": -51.5685,
+   "longitude": -57.935,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Berkeley Sound, in East Falkland Island",
+    "Berkeley Sound, East Falkland, Falkland Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 12,
+     "called_it": "Berkeley Sound, in East Falkland Island",
+     "distance_km": 13.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3437375",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q176767",
+   "name": "Bodh Gaya",
+   "description": "town",
+   "latitude": 24.695,
+   "longitude": 84.9925,
+   "instance_of": [
+    "human settlement",
+    "Nagar Panchayat government"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Gaya",
+    "Bodh Gaya, Bihar, India"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 16,
+     "called_it": "Gaya",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q176767",
+   "voyages": [
+    "faxian-399"
+   ]
+  },
+  {
+   "qid": "Q321437",
+   "name": "Bodhi Tree",
+   "description": "sacred fig tree under which Buddha is said to have achieved enlightenment",
+   "latitude": 24.69591,
+   "longitude": 84.99147,
+   "instance_of": [
+    "remarkable tree"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "the Bodhi Tree",
+    "Bodh Gaya, Bihar, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 27,
+     "called_it": "the Bodhi Tree",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q321437",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q6497558",
+   "name": "Bohol",
+   "description": "island in the Philippines",
+   "latitude": 9.83333,
+   "longitude": 124.16667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Bohol Island"
+   ],
+   "names_in_the_atlas": [
+    "Bohol",
+    "Bohol, Philippines"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 16,
+     "called_it": "Bohol",
+     "distance_km": 2.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6497558",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
    "qid": "Q183113",
    "name": "Bora Bora",
    "description": "island in French Polynesia",
@@ -111,6 +850,37 @@
    "source_url": "https://www.wikidata.org/wiki/Q183113",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q130626",
+   "name": "Borno State",
+   "description": "state in Nigeria",
+   "latitude": 11.5,
+   "longitude": 13.0,
+   "instance_of": [
+    "state of Nigeria"
+   ],
+   "aliases": [
+    "Borno",
+    "Home of peace"
+   ],
+   "names_in_the_atlas": [
+    "Borno",
+    "Borno, Lake Chad region, Nigeria"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 9,
+     "called_it": "Borno",
+     "distance_km": 111.2,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q130626",
+   "voyages": [
+    "leoafricanus-1510"
    ]
   },
   {
@@ -193,6 +963,54 @@
    ]
   },
   {
+   "qid": "Q1486",
+   "name": "Buenos Aires",
+   "description": "capital and largest city of Argentina",
+   "latitude": -34.59972,
+   "longitude": -58.38194,
+   "instance_of": [
+    "city of Argentina",
+    "electoral unit",
+    "federal district",
+    "first-level administrative division",
+    "autonomous city",
+    "administrative territorial entity",
+    "national capital",
+    "federal capital",
+    "primate city",
+    "largest city"
+   ],
+   "aliases": [
+    "Ciudad Autonoma de Buenos Aires",
+    "Ciudad de Buenos Aires"
+   ],
+   "names_in_the_atlas": [
+    "Buenos Ayres",
+    "Buenos Aires, Argentina"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 7,
+     "called_it": "Buenos Ayres",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "shackleton-1914",
+     "seq": 2,
+     "called_it": "Buenos Ayres",
+     "distance_km": 1.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1486",
+   "voyages": [
+    "darwin-1831",
+    "shackleton-1914"
+   ]
+  },
+  {
    "qid": "Q21915221",
    "name": "Bustard Bay",
    "description": "bay in Australia",
@@ -218,6 +1036,253 @@
    "source_url": "https://www.wikidata.org/wiki/Q21915221",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q111296110",
+   "name": "Cabo San Francisco",
+   "description": "rural parish of Esmeraldas Province in Ecuador",
+   "latitude": 0.65426,
+   "longitude": -80.06675,
+   "instance_of": [
+    "parish of Ecuador"
+   ],
+   "aliases": [
+    "San Francisco del Cabo"
+   ],
+   "names_in_the_atlas": [
+    "Cape de San Francisco",
+    "Cabo San Francisco, Esmeraldas, Ecuador"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 13,
+     "called_it": "Cape de San Francisco",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q111296110",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q85",
+   "name": "Cairo",
+   "description": "capital city of Egypt",
+   "latitude": 30.04444,
+   "longitude": 31.23583,
+   "instance_of": [
+    "big city",
+    "megacity",
+    "largest city",
+    "metropolis",
+    "ancient city",
+    "tourist destination",
+    "national capital"
+   ],
+   "aliases": [
+    "Qahira",
+    "Cairo, Egypt",
+    "ghahere"
+   ],
+   "names_in_the_atlas": [
+    "Cairo",
+    "Cairo, Egypt"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 11,
+     "called_it": "Cairo",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q85",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q205119",
+   "name": "Cajamarca",
+   "description": "capital city of Cajamarca, Peru",
+   "latitude": -7.1575,
+   "longitude": -78.5175,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [
+    "Caxamarca"
+   ],
+   "names_in_the_atlas": [
+    "Caxamalca",
+    "Cajamarca, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 10,
+     "called_it": "Caxamalca",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "pizarro-1532",
+     "seq": 11,
+     "called_it": "Caxamalca",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q205119",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q105037",
+   "name": "Callao",
+   "description": "city ​​and main seaport of Peru",
+   "latitude": -12.05222,
+   "longitude": -77.13917,
+   "instance_of": [
+    "city",
+    "big city",
+    "seaport"
+   ],
+   "aliases": [
+    "El Callao",
+    "Callao city"
+   ],
+   "names_in_the_atlas": [
+    "Callao",
+    "Callao, Peru",
+    "Lima called ui?m!^''° * -^^ Callao",
+    "Callao, Lima, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 18,
+     "called_it": "Callao",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 12,
+     "called_it": "Lima called ui?m!^''° * -^^ Callao",
+     "distance_km": 11.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q105037",
+   "voyages": [
+    "darwin-1831",
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q2936966",
+   "name": "Cap-Rouge",
+   "description": "neighbourhood in Quebec City, Quebec, Canada, former municipality",
+   "latitude": 46.75833,
+   "longitude": -71.35417,
+   "instance_of": [
+    "parish municipality",
+    "city or town of Quebec",
+    "neighborhood",
+    "neighbourhood of Quebec City",
+    "former municipality"
+   ],
+   "aliases": [
+    "Cap-Rouge, Quebec City",
+    "Quartier Cap-Rouge",
+    "Cap-Rouge Quarter",
+    "Cap Rouge Quarter",
+    "Cap Rouge, Quebec City",
+    "Red Cape, Quebec City",
+    "Saint-Félix-du-Cap-Rouge",
+    "Saint-Felix-du-Cap-Rouge"
+   ],
+   "names_in_the_atlas": [
+    "cape Rouge",
+    "Cap-Rouge, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 20,
+     "called_it": "cape Rouge",
+     "distance_km": 3.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2936966",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q5034593",
+   "name": "Cape Bonavista",
+   "description": "peninsula in Newfoundland and Labrador, Canada",
+   "latitude": 48.7,
+   "longitude": -53.0875,
+   "instance_of": [
+    "peninsula"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Cape Bonavista",
+    "Cape Bonavista, Newfoundland and Labrador, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 2,
+     "called_it": "Cape Bonavista",
+     "distance_km": 5.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5034593",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q858128",
+   "name": "Cape Cross",
+   "description": "protected area",
+   "latitude": -21.77278,
+   "longitude": 13.95083,
+   "instance_of": [
+    "protected area",
+    "headland"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Cape Cross",
+    "Cape Cross, Namibia"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 3,
+     "called_it": "Cape Cross",
+     "distance_km": 1.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q858128",
+   "voyages": [
+    "dias-1487"
    ]
   },
   {
@@ -247,7 +1312,8 @@
     "Cape of Good Hope (Table Bay)",
     "Cape Town, South Africa",
     "Table Bay",
-    "Cape Town, Western Cape, South Africa"
+    "Cape Town, Western Cape, South Africa",
+    "Cape Town"
    ],
    "visits": [
     {
@@ -263,12 +1329,57 @@
      "called_it": "Table Bay",
      "distance_km": 0.1,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 27,
+     "called_it": "Cape Town",
+     "distance_km": 0.0,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q5465",
    "voyages": [
     "boudeuse-1766",
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q31878253",
+   "name": "Cape Verde Islands",
+   "description": "Island group in Cape Verde",
+   "latitude": 16.0,
+   "longitude": -24.0,
+   "instance_of": [
+    "island group"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "the Cape Verde Islands",
+    "Cape Verde Islands, Cabo Verde",
+    "Cape Verde islands"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 25,
+     "called_it": "the Cape Verde Islands",
+     "distance_km": 171.4,
+     "confidence": "approximate"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 4,
+     "called_it": "Cape Verde islands",
+     "distance_km": 123.4,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q31878253",
+   "voyages": [
+    "columbus-1492",
+    "magellan-1519"
    ]
   },
   {
@@ -298,6 +1409,72 @@
    "source_url": "https://www.wikidata.org/wiki/Q1728345",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q4092",
+   "name": "Cape of Good Hope",
+   "description": "headland of Cape Peninsula, South Africa",
+   "latitude": -34.35806,
+   "longitude": 18.47194,
+   "instance_of": [
+    "cape",
+    "headland"
+   ],
+   "aliases": [
+    "die Kaap van Goeie Hoop",
+    "Cabo da Boa Esperança",
+    "Cape of Storms"
+   ],
+   "names_in_the_atlas": [
+    "Cabo das Tormentas",
+    "Cape of Good Hope, South Africa",
+    "Cape Hope",
+    "Cape of Good Hope"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 9,
+     "called_it": "Cabo das Tormentas",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 23,
+     "called_it": "Cape Hope",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 6,
+     "called_it": "Cape of Good Hope",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 19,
+     "called_it": "Cape of Good Hope",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 22,
+     "called_it": "Cape of Good Hope",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q4092",
+   "voyages": [
+    "dias-1487",
+    "drake-1577",
+    "gama-1497",
+    "magellan-1519"
    ]
   },
   {
@@ -337,6 +1514,34 @@
    ]
   },
   {
+   "qid": "Q104586152",
+   "name": "Caxas",
+   "description": "archaeological site in Piura, Peru",
+   "latitude": -5.08425,
+   "longitude": -79.58759,
+   "instance_of": [
+    "archaeological site"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Caxas",
+    "Cajas, Piura, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 8,
+     "called_it": "Caxas",
+     "distance_km": 10.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q104586152",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
    "qid": "Q1053364",
    "name": "Cempoala",
    "description": "Mesoamerican archaeological site in Veracruz, Mexico",
@@ -362,6 +1567,70 @@
    "source_url": "https://www.wikidata.org/wiki/Q1053364",
    "voyages": [
     "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q6501000",
+   "name": "Chang'an",
+   "description": "ancient capital and city of China",
+   "latitude": 34.30833,
+   "longitude": 108.85833,
+   "instance_of": [
+    "human settlement",
+    "archaeological site"
+   ],
+   "aliases": [
+    "Changan",
+    "Chang An",
+    "Kenjanfu",
+    "Si-ngan-fu",
+    "Xi'an",
+    "Xian",
+    "Sian",
+    "Si-an",
+    "Hsi-an",
+    "Hsi An",
+    "Kenjan",
+    "Si-ngan",
+    "Hsi-ngan",
+    "Quenzanfu",
+    "Quenzan",
+    "Si-ngan Fu",
+    "Chang-ngan",
+    "Khumdan",
+    "Khumdán",
+    "Kingchao-fu",
+    "Kingchao",
+    "Xianfu",
+    "Kansan",
+    "Quen-zan-fu",
+    "Quen-zan"
+   ],
+   "names_in_the_atlas": [
+    "Ch’ang-gan",
+    "Xi'an, Shaanxi, China",
+    "Chang'an"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 1,
+     "called_it": "Ch’ang-gan",
+     "distance_km": 9.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 1,
+     "called_it": "Chang'an",
+     "distance_km": 8.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q6501000",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
    ]
   },
   {
@@ -423,6 +1692,40 @@
    ]
   },
   {
+   "qid": "Q36004",
+   "name": "Cocos (Keeling) Islands",
+   "description": "territory of Australia in the Indian Ocean",
+   "latitude": -12.1175,
+   "longitude": 96.895,
+   "instance_of": [
+    "island group",
+    "external territory of Australia"
+   ],
+   "aliases": [
+    "Keeling Islands",
+    "Territory of the Cocos (Keeling) Islands",
+    "cc",
+    "Cocos Islands"
+   ],
+   "names_in_the_atlas": [
+    "Keeling Island",
+    "Cocos (Keeling) Islands, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 25,
+     "called_it": "Keeling Island",
+     "distance_km": 5.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q36004",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
    "qid": "Q1880",
    "name": "Concepción",
    "description": "city in Chile",
@@ -439,6 +1742,8 @@
     "Concepcion, Chile"
    ],
    "names_in_the_atlas": [
+    "Concepcion",
+    "Concepción, Biobío, Chile",
     "Concepción, Chili",
     "Concepción, Chile"
    ],
@@ -449,11 +1754,19 @@
      "called_it": "Concepción, Chili",
      "distance_km": 0.0,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 16,
+     "called_it": "Concepcion",
+     "distance_km": 0.0,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q1880",
    "voyages": [
-    "boussole-1785"
+    "boussole-1785",
+    "darwin-1831"
    ]
   },
   {
@@ -512,6 +1825,135 @@
    "source_url": "https://www.wikidata.org/wiki/Q20119933",
    "voyages": [
     "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1140993",
+   "name": "Crooked Island",
+   "description": "island and district, part of a group of Bahamian islands",
+   "latitude": 22.75,
+   "longitude": -74.2,
+   "instance_of": [
+    "island",
+    "district of The Bahamas"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Crooked Island",
+    "Crooked Island, Bahamas"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 6,
+     "called_it": "Crooked Island",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1140993",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q5582862",
+   "name": "Cusco",
+   "description": "historic city of Peru, capital of the Department of Cusco",
+   "latitude": -13.51694,
+   "longitude": -71.97861,
+   "instance_of": [
+    "city",
+    "big city",
+    "historic district",
+    "urban area"
+   ],
+   "aliases": [
+    "World heritage city",
+    "Rome of America",
+    "Imperial city of Cusco",
+    "Empire city of Cusco",
+    "Cultural heritage city of Peru",
+    "Capital ​​of the Inca empire",
+    "City of Cuzco",
+    "Rome of the Americas",
+    "Imperial city of Cuzco",
+    "Empire city of Cuzco",
+    "Cuzco World Heritage Site",
+    "Imperial City of the Cusco",
+    "City of Cusco",
+    "Cusco World Heritage Site",
+    "Imperial City of the Cuzco",
+    "Qusqu",
+    "Qosqo"
+   ],
+   "names_in_the_atlas": [
+    "Cuzco",
+    "Cusco, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 16,
+     "called_it": "Cuzco",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5582862",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q15682",
+   "name": "Cádiz",
+   "description": "municipality and capital city of the province of Cádiz, Spain",
+   "latitude": 36.535,
+   "longitude": -6.2975,
+   "instance_of": [
+    "municipality of Spain"
+   ],
+   "aliases": [
+    "Cadiz, Spain"
+   ],
+   "names_in_the_atlas": [
+    "Cadiz",
+    "Cádiz, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 14,
+     "called_it": "Cadiz",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 23,
+     "called_it": "Cadiz",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 29,
+     "called_it": "Cadiz",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 30,
+     "called_it": "Cadiz",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q15682",
+   "voyages": [
+    "columbus-1492"
    ]
   },
   {
@@ -574,6 +2016,151 @@
    ]
   },
   {
+   "qid": "Q1245018",
+   "name": "Devonport",
+   "description": "district of Plymouth in the English county of Devon",
+   "latitude": 50.3725,
+   "longitude": -4.17278,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [
+    "Plymouth Dock",
+    "Dock"
+   ],
+   "names_in_the_atlas": [
+    "Devonport",
+    "Devonport, Plymouth, England, United Kingdom"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 1,
+     "called_it": "Devonport",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1245018",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q784",
+   "name": "Dominica",
+   "description": "island sovereign state in the Caribbean Sea",
+   "latitude": 15.41667,
+   "longitude": -61.33333,
+   "instance_of": [
+    "sovereign state",
+    "island country",
+    "country"
+   ],
+   "aliases": [
+    "Commonwealth of Dominica",
+    "The Commonwealth of Dominica",
+    "dm",
+    "DOM",
+    "Wai‘tu kubuli",
+    "Wai'tu kubuli",
+    "Island of Dominica"
+   ],
+   "names_in_the_atlas": [
+    "Dominica",
+    "Dominica, Caribbean"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 16,
+     "called_it": "Dominica",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q784",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q319114",
+   "name": "Dunhuang",
+   "description": "county-level city in Jiuquan, Gansu, China",
+   "latitude": 40.14111,
+   "longitude": 94.66389,
+   "instance_of": [
+    "county-level city"
+   ],
+   "aliases": [
+    "Tun-huang",
+    "Tun-huang-hsien",
+    "Dunhuangxian",
+    "Dunhuang Xian",
+    "Dunhuang County",
+    "Dunhuang City",
+    "Dunhuangshi",
+    "Dunhuang Shi",
+    "Tun-huang City",
+    "Tun-huang-shih",
+    "Tun-huang Shih",
+    "Shazhou",
+    "Sha-chou"
+   ],
+   "names_in_the_atlas": [
+    "Dunhuang",
+    "Dunhuang, Gansu, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 38,
+     "called_it": "Dunhuang",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q319114",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q5468",
+   "name": "Durban",
+   "description": "city in KwaZulu-Natal, South Africa",
+   "latitude": -29.85833,
+   "longitude": 31.025,
+   "instance_of": [
+    "city",
+    "port city",
+    "big city"
+   ],
+   "aliases": [
+    "Durban, South Africa",
+    "Durban, KwaZulu-Natal",
+    "Durban, eThekwini"
+   ],
+   "names_in_the_atlas": [
+    "Natal",
+    "Durban, KwaZulu-Natal, South Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 8,
+     "called_it": "Natal",
+     "distance_km": 1.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5468",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
    "qid": "Q14452",
    "name": "Easter Island",
    "description": "Polynesian island and special territory of Chile",
@@ -605,6 +2192,71 @@
    ]
   },
   {
+   "qid": "Q988689",
+   "name": "Elephant Island",
+   "description": "island off the coast of Antarctica",
+   "latitude": -61.14,
+   "longitude": -55.12,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Elephant Island",
+    "Elephant Island, South Shetland Islands, Antarctica"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 7,
+     "called_it": "Elephant Island",
+     "distance_km": 1.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "shackleton-1914",
+     "seq": 12,
+     "called_it": "Elephant Island",
+     "distance_km": 13.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q988689",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q968662",
+   "name": "Elmina",
+   "description": "town in Central Region, Ghana",
+   "latitude": 5.08333,
+   "longitude": -1.35,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [
+    "Edina"
+   ],
+   "names_in_the_atlas": [
+    "Sao Jorge da Mina",
+    "Elmina, Ghana"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 2,
+     "called_it": "Sao Jorge da Mina",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q968662",
+   "voyages": [
+    "dias-1487"
+   ]
+  },
+  {
    "qid": "Q527474",
    "name": "Endeavour River",
    "description": "river in Queensland, Australia",
@@ -630,6 +2282,40 @@
    "source_url": "https://www.wikidata.org/wiki/Q527474",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q21",
+   "name": "England",
+   "description": "country in north-west Europe, part of the United Kingdom",
+   "latitude": 53.0,
+   "longitude": -1.0,
+   "instance_of": [
+    "constituent country of the United Kingdom",
+    "cultural area",
+    "nation",
+    "country"
+   ],
+   "aliases": [
+    "England, United Kingdom",
+    "England, UK"
+   ],
+   "names_in_the_atlas": [
+    "England",
+    "England, United Kingdom"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 15,
+     "called_it": "England",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q21",
+   "voyages": [
+    "shackleton-1914"
    ]
   },
   {
@@ -696,6 +2382,185 @@
    ]
   },
   {
+   "qid": "Q478029",
+   "name": "Falmouth",
+   "description": "town and port on the River Fal in Cornwall, England, UK",
+   "latitude": 50.15,
+   "longitude": -5.06667,
+   "instance_of": [
+    "town"
+   ],
+   "aliases": [
+    "Falmouth, Cornwall"
+   ],
+   "names_in_the_atlas": [
+    "Falmouth",
+    "Falmouth, Cornwall, England"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 33,
+     "called_it": "Falmouth",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q478029",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q80985",
+   "name": "Fez",
+   "description": "city in Morocco",
+   "latitude": 34.04333,
+   "longitude": -5.00333,
+   "instance_of": [
+    "city",
+    "administrative territorial entity"
+   ],
+   "aliases": [
+    "Fez, Morocco",
+    "Fes, Morocco"
+   ],
+   "names_in_the_atlas": [
+    "Fez",
+    "Fez, Morocco"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 14,
+     "called_it": "Fez",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q80985",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q1048209",
+   "name": "Floreana Island",
+   "description": "Island in Ecuador's Galapagos Archipelago",
+   "latitude": -1.2975,
+   "longitude": -90.43417,
+   "instance_of": [
+    "volcano",
+    "island"
+   ],
+   "aliases": [
+    "Floreana",
+    "I. Floreana",
+    "Isla Floreana",
+    "Floreana I.",
+    "Floreana Is.",
+    "Charles",
+    "Charles Island",
+    "Charles I.",
+    "Charles Is.",
+    "I. Charles",
+    "King Charles",
+    "King Charles Island",
+    "King Charles I.",
+    "King Charles Is.",
+    "I. King Charles",
+    "Mascarenas",
+    "Santa Maria",
+    "Isla Santa Maria",
+    "I. Santa Maria",
+    "Sta. Maria",
+    "I. Sta. Maria",
+    "Santa Maria I.",
+    "Santa Maria Is.",
+    "Santa Maria Island",
+    "Sta. Maria I.",
+    "Sta. Maria Is.",
+    "Sta. Maria Island",
+    "I. de Santa Maria",
+    "I. de Sta. Maria",
+    "King Charles's Island",
+    "King Charles's I.",
+    "King Charles's Is.",
+    "Charles's Island",
+    "Charles's I.",
+    "Charles's Is.",
+    "Mascarenas Island",
+    "Mascarenas I.",
+    "Mascarenas Is.",
+    "Isla Mascarenas",
+    "I. Mascarenas",
+    "Santa Maria de la Aguada",
+    "Sta. Maria de la Aguada",
+    "Isla Santa Maria de la Aguada",
+    "I. Santa Maria de la Aguada",
+    "Floriana",
+    "Floriana Island",
+    "Isla Floriana",
+    "I. Floriana",
+    "Floriana Is.",
+    "Floriana I.",
+    "Mercedes Island",
+    "Isla Mercedes",
+    "I. Mercedes",
+    "Mercedes",
+    "Mercedes I.",
+    "Mercedes Is."
+   ],
+   "names_in_the_atlas": [
+    "Charles Island",
+    "Floreana Island, Galápagos, Ecuador"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 19,
+     "called_it": "Charles Island",
+     "distance_km": 1.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1048209",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q2960771",
+   "name": "Fort Charlesbourg Royal",
+   "description": "fort and National Historic Site in Quebec City, Canada",
+   "latitude": 46.74815,
+   "longitude": -71.34159,
+   "instance_of": [
+    "archaeological site",
+    "abandoned village"
+   ],
+   "aliases": [
+    "Charlesbourg-Royal"
+   ],
+   "names_in_the_atlas": [
+    "the building on the river of Cape Rouge and in the one on the cliff above",
+    "Charlesbourg-Royal, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 23,
+     "called_it": "the building on the river of Cape Rouge and in the one on the cliff above",
+     "distance_km": 9.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2960771",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
    "qid": "Q134983322",
    "name": "Funchal",
    "description": "city and seat of Funchal municipality, Portugal",
@@ -726,6 +2591,517 @@
    ]
   },
   {
+   "qid": "Q3593077",
+   "name": "Funk Island",
+   "description": "island in Newfoundland and Labrador, Canada",
+   "latitude": 49.75,
+   "longitude": -53.18222,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "isle of Birds",
+    "Funk Island, Newfoundland and Labrador, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 11,
+     "called_it": "isle of Birds",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3593077",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q188904",
+   "name": "Gao",
+   "description": "city in Mali",
+   "latitude": 16.26667,
+   "longitude": -0.05,
+   "instance_of": [
+    "communes of Algeria and Mali"
+   ],
+   "aliases": [
+    "Gawgaw",
+    "Kawkaw",
+    "Gaawo"
+   ],
+   "names_in_the_atlas": [
+    "Gago, Gogo, Gagho, Gawo, or Gao",
+    "Gao, Mali"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 5,
+     "called_it": "Gago, Gogo, Gagho, Gawo, or Gao",
+     "distance_km": 1.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q188904",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q141903",
+   "name": "Gaspé",
+   "description": "town in Québec, Canada",
+   "latitude": 48.83104,
+   "longitude": -64.48444,
+   "instance_of": [
+    "city or town of Quebec",
+    "village municipality of Quebec"
+   ],
+   "aliases": [
+    "Gaspe, Quebec",
+    "Gaspe, QC",
+    "Gaspe"
+   ],
+   "names_in_the_atlas": [
+    "Gaspé",
+    "Gaspé Peninsula, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 5,
+     "called_it": "Gaspé",
+     "distance_km": 3.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q141903",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q42070",
+   "name": "Gobi Desert",
+   "description": "desert in China and Mongolia",
+   "latitude": 42.5,
+   "longitude": 103.0,
+   "instance_of": [
+    "desert"
+   ],
+   "aliases": [
+    "Gobi",
+    "Shamo",
+    "Cobi",
+    "Han-hai",
+    "Hanhai",
+    "Hang-hai",
+    "Lop",
+    "Beljan",
+    "Desert of Lop",
+    "Lop Desert",
+    "Samo",
+    "Kalmuk",
+    "Kara-kathay",
+    "Ko-pih",
+    "Ta Ko-pih",
+    "Gebi",
+    "Da Gebi",
+    "Kara Kathay",
+    "Kalmack Desert"
+   ],
+   "names_in_the_atlas": [
+    "the river of sand",
+    "Gobi Desert, China/Mongolia",
+    "Gobi Desert, Mongolia/China"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 2,
+     "called_it": "the river of sand",
+     "distance_km": 118.6,
+     "confidence": "approximate"
+    },
+    {
+     "voyage": "faxian-399",
+     "seq": 3,
+     "called_it": "the river of sand",
+     "distance_km": 164.0,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q42070",
+   "voyages": [
+    "faxian-399"
+   ]
+  },
+  {
+   "qid": "Q1130009",
+   "name": "Great Fish River",
+   "description": "river in South Africa",
+   "latitude": -33.49278,
+   "longitude": 27.13111,
+   "instance_of": [
+    "river"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Rio do Infante",
+    "Great Fish River, South Africa",
+    "Great Fish River, Eastern Cape, South Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 8,
+     "called_it": "Rio do Infante",
+     "distance_km": 0.8,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 7,
+     "called_it": "Rio do Infante",
+     "distance_km": 203.6,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1130009",
+   "voyages": [
+    "dias-1487",
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q185672",
+   "name": "Grytviken",
+   "description": "abandoned whaling station; settlement on the island of South Georgia–South Sandwich Islands",
+   "latitude": -54.28147,
+   "longitude": -36.50803,
+   "instance_of": [
+    "whaling station",
+    "hamlet"
+   ],
+   "aliases": [
+    "Grytviken whaling station"
+   ],
+   "names_in_the_atlas": [
+    "Grytviken",
+    "Grytviken, South Georgia Island, South Georgia and the South Sandwich Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 3,
+     "called_it": "Grytviken",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q185672",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q17012",
+   "name": "Guadeloupe",
+   "description": "overseas region and department of France, and archipelago in the Caribbean",
+   "latitude": 16.2595,
+   "longitude": -61.5605,
+   "instance_of": [
+    "region of France",
+    "overseas department and region of France",
+    "dependent territory"
+   ],
+   "aliases": [
+    "gp",
+    "971",
+    "Gwadloup",
+    "Karukera",
+    "Gwada"
+   ],
+   "names_in_the_atlas": [
+    "Guadeloupe",
+    "Guadeloupe, France (Caribbean)"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 17,
+     "called_it": "Guadeloupe",
+     "distance_km": 2.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17012",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q16635",
+   "name": "Guam",
+   "description": "unincorporated territory of the United States of America",
+   "latitude": 13.5,
+   "longitude": 144.8,
+   "instance_of": [
+    "insular area of the United States",
+    "island",
+    "unincorporated territory of the United States",
+    "territory of the United States",
+    "nationality for sports"
+   ],
+   "aliases": [
+    "GU",
+    "Territory of Guam",
+    "US-GU",
+    "GUM",
+    "Guåhån",
+    "Guahan",
+    "ISO 3166-1:GU",
+    "Guåhan",
+    "Island of Guam",
+    "Guam (USA)"
+   ],
+   "names_in_the_atlas": [
+    "Thieves’ Island (_dos ladrōes_)",
+    "Guam, Mariana Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 12,
+     "called_it": "Thieves’ Island (_dos ladrōes_)",
+     "distance_km": 6.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q16635",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q1144797",
+   "name": "Guanahani",
+   "description": "island",
+   "latitude": 24.05,
+   "longitude": -74.5,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Guanaham"
+   ],
+   "names_in_the_atlas": [
+    "Guanahani",
+    "San Salvador Island, Bahamas"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 3,
+     "called_it": "Guanahani",
+     "distance_km": 2.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1144797",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q989892",
+   "name": "Hami",
+   "description": "prefecture-level city in Xinjiang, China",
+   "latitude": 42.83224,
+   "longitude": 93.51548,
+   "instance_of": [
+    "prefecture-level city"
+   ],
+   "aliases": [
+    "Kumul",
+    "Kumul Vilayiti",
+    "Hami prefecture",
+    "Hami Shi",
+    "Kamil",
+    "Komul",
+    "Kamul",
+    "I-wu",
+    "Iwu",
+    "Yiwu",
+    "I-wu-lu",
+    "Igu",
+    "I-chu",
+    "I-chou",
+    "Homi-li",
+    "Homi",
+    "Komi",
+    "Komi-li",
+    "Icheu",
+    "Qumul"
+   ],
+   "names_in_the_atlas": [
+    "Kiu-mi-to",
+    "Hami (Kumul), Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 3,
+     "called_it": "Kiu-mi-to",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q989892",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q40191",
+   "name": "Hobart",
+   "description": "capital city of Tasmania, Australia",
+   "latitude": -42.88333,
+   "longitude": 147.31667,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [
+    "Hobart Town",
+    "Hobarton",
+    "Hobart, Tasmania",
+    "Hobart, Tas.",
+    "Greater Hobart"
+   ],
+   "names_in_the_atlas": [
+    "Hobart Town",
+    "Hobart, Tasmania, Australia"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 23,
+     "called_it": "Hobart Town",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q40191",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q544356",
+   "name": "Hochelaga",
+   "description": "archaeological site",
+   "latitude": 45.50364,
+   "longitude": -73.57529,
+   "instance_of": [
+    "archaeological site"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Hochelaga",
+    "Montreal, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 16,
+     "called_it": "Hochelaga",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 22,
+     "called_it": "Hochelaga",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q544356",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q1626237",
+   "name": "Homonhon",
+   "description": "island in the Philippines",
+   "latitude": 10.73333,
+   "longitude": 125.71667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Homonhon Island"
+   ],
+   "names_in_the_atlas": [
+    "Homohon",
+    "Homonhon Island, Eastern Samar, Philippines"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 13,
+     "called_it": "Homohon",
+     "distance_km": 1.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1626237",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q235389",
+   "name": "Hotan",
+   "description": "oasis town in the Tarim Basin, southwestern Xinjiang, an autonomous region in Western China",
+   "latitude": 37.1012,
+   "longitude": 79.9327,
+   "instance_of": [
+    "oasis",
+    "county-level city"
+   ],
+   "aliases": [
+    "Khotan",
+    "Godana",
+    "Godaniya",
+    "Gosthana",
+    "Hetian",
+    "Hotien"
+   ],
+   "names_in_the_atlas": [
+    "Khoten",
+    "Hotan, Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 5,
+     "called_it": "Khoten",
+     "distance_km": 1.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q235389",
+   "voyages": [
+    "faxian-399"
+   ]
+  },
+  {
    "qid": "Q521020",
    "name": "Huahine",
    "description": "island in French Polynesia",
@@ -752,6 +3128,151 @@
    "source_url": "https://www.wikidata.org/wiki/Q521020",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q1632770",
+   "name": "Huamachuco",
+   "description": "capital city of Sánchez Carrión, La Libertad, Peru",
+   "latitude": -7.81208,
+   "longitude": -78.04869,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Huanca-pampa",
+    "Huamachuco, La Libertad, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 9,
+     "called_it": "Huanca-pampa",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1632770",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q468782",
+   "name": "Huancayo",
+   "description": "capital city of Junín region, Peru",
+   "latitude": -12.06667,
+   "longitude": -75.21667,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Huanca-pampa",
+    "Huancayo, Mantaro Valley, Junín, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 14,
+     "called_it": "Huanca-pampa",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q468782",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q34941899",
+   "name": "Icacos Point",
+   "description": "point in Trinidad and Tobago",
+   "latitude": 10.0425,
+   "longitude": -61.91222,
+   "instance_of": [
+    "point"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Punta del Arenal, island of Trinidad",
+    "Icacos Point, Trinidad and Tobago"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 26,
+     "called_it": "Punta del Arenal, island of Trinidad",
+     "distance_km": 1.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q34941899",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q14440",
+   "name": "Iquique",
+   "description": "port city in Chile",
+   "latitude": -20.2141,
+   "longitude": -70.1524,
+   "instance_of": [
+    "port city",
+    "city in Chile",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Iquique",
+    "Iquique, Tarapacá Region, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 17,
+     "called_it": "Iquique",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q14440",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q25276415",
+   "name": "Isla de Guanaja",
+   "description": "island in Honduras",
+   "latitude": 16.5,
+   "longitude": -85.91667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Guanaja Island"
+   ],
+   "names_in_the_atlas": [
+    "Guanaja",
+    "Guanaja Island, Bay Islands, Honduras"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 32,
+     "called_it": "Guanaja",
+     "distance_km": 5.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q25276415",
+   "voyages": [
+    "columbus-1492"
    ]
   },
   {
@@ -793,6 +3314,747 @@
    ]
   },
   {
+   "qid": "Q33377",
+   "name": "Jalandhar",
+   "description": "ancient city in the north Indian state of Punjab",
+   "latitude": 31.32556,
+   "longitude": 75.57917,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [
+    "Jullundur"
+   ],
+   "names_in_the_atlas": [
+    "Jalandhara",
+    "Jalandhar, Punjab, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 17,
+     "called_it": "Jalandhara",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q33377",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q766",
+   "name": "Jamaica",
+   "description": "island state in the Caribbean Sea",
+   "latitude": 18.18,
+   "longitude": -77.4,
+   "instance_of": [
+    "Commonwealth realm",
+    "territorial evolution of the British Empire",
+    "island country",
+    "country",
+    "sovereign state",
+    "archipelagic state"
+   ],
+   "aliases": [
+    "JA",
+    "Commonwealth of Jamaica"
+   ],
+   "names_in_the_atlas": [
+    "Yamaye",
+    "Jamaica",
+    "St. Ann's Bay, Jamaica"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 21,
+     "called_it": "Yamaye",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 35,
+     "called_it": "Jamaica",
+     "distance_km": 35.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q766",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q1638699",
+   "name": "Jardines de la Reina National Park",
+   "description": "national park in Cuba",
+   "latitude": 20.81667,
+   "longitude": -78.91667,
+   "instance_of": [
+    "protected area",
+    "national park"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Queen's Garden",
+    "Jardines de la Reina, Cienfuegos area, Cuba"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 20,
+     "called_it": "Queen's Garden",
+     "distance_km": 97.1,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1638699",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q917434",
+   "name": "Jauja",
+   "description": "Peruvian city",
+   "latitude": -11.775,
+   "longitude": -75.5,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Xauxa",
+    "Jauja, Junín, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 13,
+     "called_it": "Xauxa",
+     "distance_km": 13.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q917434",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q3757",
+   "name": "Java",
+   "description": "island of Indonesia",
+   "latitude": -7.49167,
+   "longitude": 110.00444,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Pulau Jawa",
+    "Jawa Island",
+    "Java Island",
+    "Pulau Java",
+    "Jawa",
+    "Java island",
+    "Java, Indonesia",
+    "Giava",
+    "Ява"
+   ],
+   "names_in_the_atlas": [
+    "Java",
+    "Java, Indonesia",
+    "Java-dvipa"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 21,
+     "called_it": "Java",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "faxian-399",
+     "seq": 18,
+     "called_it": "Java-dvipa",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3757",
+   "voyages": [
+    "drake-1577",
+    "faxian-399"
+   ]
+  },
+  {
+   "qid": "Q1150706",
+   "name": "Kalinga",
+   "description": "former country",
+   "latitude": 20.15,
+   "longitude": 85.5,
+   "instance_of": [
+    "historical region",
+    "historical country"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Kalinga",
+    "Odisha, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 33,
+     "called_it": "Kalinga",
+     "distance_km": 95.1,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1150706",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q1194765",
+   "name": "Kamarupa",
+   "description": "kingdom based around Assam (350-1140)",
+   "latitude": 26.0,
+   "longitude": 91.0,
+   "instance_of": [
+    "historical country"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Kamarupa",
+    "Assam, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 29,
+     "called_it": "Kamarupa",
+     "distance_km": 194.8,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1194765",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q212332",
+   "name": "Kanchipuram",
+   "description": "city in Tamil Nadu, India",
+   "latitude": 12.83083,
+   "longitude": 79.70778,
+   "instance_of": [
+    "big city",
+    "city"
+   ],
+   "aliases": [
+    "Kancheepuram",
+    "Conjeveram",
+    "Conjeevaram",
+    "Condjeveram"
+   ],
+   "names_in_the_atlas": [
+    "Kanchipura",
+    "Kanchipuram, Tamil Nadu, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 31,
+     "called_it": "Kanchipura",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q212332",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q614890",
+   "name": "Kannauj",
+   "description": "town in India",
+   "latitude": 27.03134,
+   "longitude": 79.92202,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Kanyâkubja",
+    "Kannauj, Uttar Pradesh, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 19,
+     "called_it": "Kanyâkubja",
+     "distance_km": 2.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q614890",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q182984",
+   "name": "Kano",
+   "description": "city in Nigeria",
+   "latitude": 12.0,
+   "longitude": 8.51667,
+   "instance_of": [
+    "city",
+    "big city",
+    "geographic location"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Cano",
+    "Kano, Nigeria"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 8,
+     "called_it": "Cano",
+     "distance_km": 0.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q182984",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q30610827",
+   "name": "Kapilavastu",
+   "description": "ancient Buddhist city",
+   "latitude": 27.57645,
+   "longitude": 83.05498,
+   "instance_of": [
+    "ancient city",
+    "archaeological site"
+   ],
+   "aliases": [
+    "Kapilvastu"
+   ],
+   "names_in_the_atlas": [
+    "Kapilavastu",
+    "Kapilavastu (Tilaurakot), Nepal",
+    "Tilaurakot, Nepal"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 12,
+     "called_it": "Kapilavastu",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 21,
+     "called_it": "Kapilavastu",
+     "distance_km": 5.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q30610827",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q173816",
+   "name": "Kapisa Province",
+   "description": "province of Afghanistan",
+   "latitude": 35.0,
+   "longitude": 69.7,
+   "instance_of": [
+    "province of Afghanistan"
+   ],
+   "aliases": [
+    "Kapisa"
+   ],
+   "names_in_the_atlas": [
+    "Kapisa",
+    "Kapisa (near Kabul), Afghanistan"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 12,
+     "called_it": "Kapisa",
+     "distance_km": 11.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q173816",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q170521",
+   "name": "Kashgar",
+   "description": "city in Kashgar Prefecture, Xinjiang, China",
+   "latitude": 39.45,
+   "longitude": 75.98333,
+   "instance_of": [
+    "county-level city",
+    "big city"
+   ],
+   "aliases": [
+    "Qeshqer",
+    "Kashgar City",
+    "City of Kashgar",
+    "Kashi Shi",
+    "Kashghar",
+    "Kachgar",
+    "Shule",
+    "Su-lo"
+   ],
+   "names_in_the_atlas": [
+    "Pu-ho",
+    "Kashgar, Xinjiang, China",
+    "Kashgar"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 7,
+     "called_it": "Pu-ho",
+     "distance_km": 2.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 36,
+     "called_it": "Kashgar",
+     "distance_km": 1.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q170521",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q1742039",
+   "name": "King Haakon Bay",
+   "description": "bay in South Georgia and the South Sandwich Islands, United Kingdom",
+   "latitude": -54.15,
+   "longitude": -37.3167,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "King Haakon Bay",
+    "King Haakon Bay, South Georgia and the South Sandwich Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 10,
+     "called_it": "King Haakon Bay",
+     "distance_km": 6.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1742039",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q28729",
+   "name": "Kozhikode",
+   "description": "city in Kerala, India",
+   "latitude": 11.24778,
+   "longitude": 75.78028,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [
+    "Calicut"
+   ],
+   "names_in_the_atlas": [
+    "Calecut",
+    "Kozhikode, Kerala, India"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 13,
+     "called_it": "Calecut",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 14,
+     "called_it": "Calecut",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q28729",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q1328546",
+   "name": "Kucha",
+   "description": "former country in present-day China",
+   "latitude": 41.65,
+   "longitude": 82.9,
+   "instance_of": [
+    "historical country"
+   ],
+   "aliases": [
+    "Kuqa",
+    "Qiuzi",
+    "Qiuci",
+    "Chiu-tzu",
+    "Chiutzu",
+    "Kiu-che",
+    "Kiuche",
+    "Kuei-tzu",
+    "Kueitzu",
+    "Guizi",
+    "Kvcha"
+   ],
+   "names_in_the_atlas": [
+    "Kiu-chi (Kuche)",
+    "Kuqa, Xinjiang, China",
+    "Kiu-chii",
+    "Kucha, Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 5,
+     "called_it": "Kiu-chi (Kuche)",
+     "distance_km": 9.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 37,
+     "called_it": "Kiu-chii",
+     "distance_km": 8.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1328546",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q825673",
+   "name": "Kushinagar",
+   "description": "town in Uttar Pradesh, India, the place where Gautama Buddha died",
+   "latitude": 26.74028,
+   "longitude": 83.88889,
+   "instance_of": [
+    "town",
+    "Nagar Panchayat government"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Kushinagara",
+    "Kushinagar, Uttar Pradesh, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 23,
+     "called_it": "Kushinagara",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q825673",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q105967",
+   "name": "La Gomera",
+   "description": "One of the main islands of the Canary archipelago",
+   "latitude": 28.115,
+   "longitude": -17.225,
+   "instance_of": [
+    "volcanic island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Gomera",
+    "La Gomera, Canary Islands, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 2,
+     "called_it": "Gomera",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 15,
+     "called_it": "Gomera",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q105967",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q131323901",
+   "name": "La Ramada",
+   "description": "town in Cajamarca, Peru",
+   "latitude": -6.25314,
+   "longitude": -78.57578,
+   "instance_of": [
+    "village"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "La Ramada",
+    "La Ramada, Jequetepeque Valley, Cajamarca, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 7,
+     "called_it": "La Ramada",
+     "distance_km": 125.9,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q131323901",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q31826201",
+   "name": "Limasawa",
+   "description": "island in the Philippines",
+   "latitude": 9.93111,
+   "longitude": 125.07444,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Limasawa Island"
+   ],
+   "names_in_the_atlas": [
+    "Mazava",
+    "Limasawa Island, Southern Leyte, Philippines"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 14,
+     "called_it": "Mazava",
+     "distance_km": 2.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q31826201",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q597",
+   "name": "Lisbon",
+   "description": "municipality and capital city of Portugal",
+   "latitude": 38.70804,
+   "longitude": -9.13902,
+   "instance_of": [
+    "city of Portugal",
+    "national capital",
+    "large city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Lisbon",
+    "Lisbon, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 12,
+     "called_it": "Lisbon",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "dias-1487",
+     "seq": 1,
+     "called_it": "Lisbon",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "dias-1487",
+     "seq": 10,
+     "called_it": "Lisbon",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 1,
+     "called_it": "Lisbon",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 21,
+     "called_it": "Lisbon",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q597",
+   "voyages": [
+    "columbus-1492",
+    "dias-1487",
+    "gama-1497"
+   ]
+  },
+  {
    "qid": "Q1086178",
    "name": "Lituya Bay",
    "description": "fjord on the southeast coast of Alaska, United States",
@@ -818,6 +4080,162 @@
    "source_url": "https://www.wikidata.org/wiki/Q1086178",
    "voyages": [
     "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q84",
+   "name": "London",
+   "description": "capital and largest city of England and the United Kingdom",
+   "latitude": 51.50722,
+   "longitude": -0.1275,
+   "instance_of": [
+    "metropolis",
+    "financial center",
+    "city",
+    "global city",
+    "megacity",
+    "largest city",
+    "national capital",
+    "political territorial entity"
+   ],
+   "aliases": [
+    "London, UK",
+    "London, United Kingdom",
+    "London, England",
+    "London UK",
+    "London U.K.",
+    "Londinium",
+    "Loñ",
+    "Lundenwic",
+    "Londinio",
+    "Londini",
+    "Londiniensium",
+    "Augusta",
+    "Trinovantum",
+    "Kaerlud",
+    "Karelundein",
+    "Lunden",
+    "Big Smoke",
+    "the Big Smoke",
+    "Lundenburh",
+    "Lundenburgh",
+    "Llyn Dain",
+    "Llan Dian",
+    "Londinion",
+    "Loniniensi",
+    "Lon.",
+    "Loñ.",
+    "Lond.",
+    "LDN"
+   ],
+   "names_in_the_atlas": [
+    "London",
+    "London, England, United Kingdom"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 1,
+     "called_it": "London",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q84",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q890879",
+   "name": "Long Island",
+   "description": "island in the Bahamas",
+   "latitude": 23.25,
+   "longitude": -75.1,
+   "instance_of": [
+    "island",
+    "district of The Bahamas"
+   ],
+   "aliases": [
+    "Long Island, Bahamas"
+   ],
+   "names_in_the_atlas": [
+    "Guaigo",
+    "Long Island, Bahamas"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 5,
+     "called_it": "Guaigo",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q890879",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q9213",
+   "name": "Lumbini",
+   "description": "Buddhist pilgrimage site in Nepal",
+   "latitude": 27.4814,
+   "longitude": 83.27583,
+   "instance_of": [
+    "pilgrimage site"
+   ],
+   "aliases": [
+    "Lumbini sal park lumbini sal park"
+   ],
+   "names_in_the_atlas": [
+    "Lumbini",
+    "Lumbini, Rupandehi District, Nepal"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 22,
+     "called_it": "Lumbini",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q9213",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q159325",
+   "name": "Lüderitz",
+   "description": "city in Namibia",
+   "latitude": -26.64778,
+   "longitude": 15.15778,
+   "instance_of": [
+    "city",
+    "human settlement"
+   ],
+   "aliases": [
+    "Angra Pequena"
+   ],
+   "names_in_the_atlas": [
+    "Angra Pequena",
+    "Luderitz, Namibia"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 4,
+     "called_it": "Angra Pequena",
+     "distance_km": 0.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q159325",
+   "voyages": [
+    "dias-1487"
    ]
   },
   {
@@ -866,6 +4284,174 @@
    ]
   },
   {
+   "qid": "Q685318",
+   "name": "Mactan",
+   "description": "island in the Philippines",
+   "latitude": 10.3,
+   "longitude": 123.96667,
+   "instance_of": [
+    "island",
+    "barangay"
+   ],
+   "aliases": [
+    "Mactan Island"
+   ],
+   "names_in_the_atlas": [
+    "Mauthan",
+    "Mactan, Cebu, Philippines"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 15,
+     "called_it": "Mauthan",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q685318",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q16258",
+   "name": "Maldonado",
+   "description": "city in Uruguay",
+   "latitude": -34.90874,
+   "longitude": -54.95827,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Maldonado",
+    "Maldonado, Uruguay"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 8,
+     "called_it": "Maldonado",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q16258",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q271411",
+   "name": "Malindi",
+   "description": "city in Kenya",
+   "latitude": -3.21944,
+   "longitude": 40.11667,
+   "instance_of": [
+    "human settlement"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Milinde (Malindi)",
+    "Malindi, Kenya"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 11,
+     "called_it": "Milinde (Malindi)",
+     "distance_km": 15.8,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 16,
+     "called_it": "Milinde (Malindi)",
+     "distance_km": 15.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q271411",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q17054",
+   "name": "Martinique",
+   "description": "island in the Lesser Antilles, overseas region and department of France",
+   "latitude": 14.65,
+   "longitude": -61.015,
+   "instance_of": [
+    "region of France",
+    "overseas department and region of France",
+    "dependent territory"
+   ],
+   "aliases": [
+    "Matnik",
+    "Matinik",
+    "Martinica",
+    "Territorial Collectivity of Martinique",
+    "Jouanacaëra",
+    "Wanakaera",
+    "Madiana",
+    "Madinina",
+    "Matinino"
+   ],
+   "names_in_the_atlas": [
+    "Martinique",
+    "Martinique, Caribbean"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 31,
+     "called_it": "Martinique",
+     "distance_km": 7.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q17054",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q200311",
+   "name": "Mathura",
+   "description": "City in Uttar Pradesh, India",
+   "latitude": 27.49241,
+   "longitude": 77.67367,
+   "instance_of": [
+    "town in India",
+    "human settlement"
+   ],
+   "aliases": [
+    "Mathura, Uttar Pradesh",
+    "Mutura",
+    "Multura",
+    "Muttra"
+   ],
+   "names_in_the_atlas": [
+    "Mathura",
+    "Mathura, Uttar Pradesh, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 18,
+     "called_it": "Mathura",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q200311",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
    "qid": "Q188705",
    "name": "Maui",
    "description": "second-largest of the Hawaiian Islands, in the United States",
@@ -894,6 +4480,39 @@
    "source_url": "https://www.wikidata.org/wiki/Q188705",
    "voyages": [
     "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q2656389",
+   "name": "Mauritius Island",
+   "description": "main island in the country of Mauritius",
+   "latitude": -20.3,
+   "longitude": 57.58333,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Mauritius",
+    "Isle Moris",
+    "Mauritian Island",
+    "Isle of France"
+   ],
+   "names_in_the_atlas": [
+    "Mauritius",
+    "Mauritius, Republic of Mauritius"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 26,
+     "called_it": "Mauritius",
+     "distance_km": 14.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2656389",
+   "voyages": [
+    "darwin-1831"
    ]
   },
   {
@@ -955,6 +4574,101 @@
    "source_url": "https://www.wikidata.org/wiki/Q1489",
    "voyages": [
     "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q1635008",
+   "name": "Mocha Island",
+   "description": "island in Chile",
+   "latitude": -38.365,
+   "longitude": -73.915,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "La Mocha",
+    "Mocha Island, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 9,
+     "called_it": "La Mocha",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1635008",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q2449",
+   "name": "Mogadishu",
+   "description": "capital and the largest city of Somalia",
+   "latitude": 2.03917,
+   "longitude": 45.34194,
+   "instance_of": [
+    "port city",
+    "city",
+    "largest city",
+    "federal capital"
+   ],
+   "aliases": [
+    "Xamar",
+    "The Seat of the Shah",
+    "Hamar",
+    "Maqadīshū",
+    "Mogadishu, Somalia"
+   ],
+   "names_in_the_atlas": [
+    "Magadoxo",
+    "Mogadishu, Somalia"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 17,
+     "called_it": "Magadoxo",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2449",
+   "voyages": [
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q225641",
+   "name": "Mombasa",
+   "description": "city in Kenya",
+   "latitude": -4.05,
+   "longitude": 39.66667,
+   "instance_of": [
+    "city",
+    "port city",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Mombaça",
+    "Mombasa, Kenya"
+   ],
+   "visits": [
+    {
+     "voyage": "gama-1497",
+     "seq": 10,
+     "called_it": "Mombaça",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q225641",
+   "voyages": [
+    "gama-1497"
    ]
   },
   {
@@ -1024,12 +4738,20 @@
      "called_it": "Monte Video",
      "distance_km": 0.0,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 6,
+     "called_it": "Monte Video",
+     "distance_km": 2.5,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q1335",
    "voyages": [
     "boudeuse-1766",
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
    ]
   },
   {
@@ -1062,6 +4784,113 @@
    "source_url": "https://www.wikidata.org/wiki/Q673400",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q995615",
+   "name": "Mossel Bay",
+   "description": "town in the Western Cape, South Africa",
+   "latitude": -34.18333,
+   "longitude": 22.13333,
+   "instance_of": [
+    "town"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Sao Bras",
+    "Mossel Bay, South Africa",
+    "bay (angra) of Sam Brás",
+    "Mossel Bay, Western Cape, South Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "dias-1487",
+     "seq": 6,
+     "called_it": "Sao Bras",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "gama-1497",
+     "seq": 5,
+     "called_it": "bay (angra) of Sam Brás",
+     "distance_km": 1.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q995615",
+   "voyages": [
+    "dias-1487",
+    "gama-1497"
+   ]
+  },
+  {
+   "qid": "Q27194533",
+   "name": "Motupe",
+   "description": null,
+   "latitude": -6.15194,
+   "longitude": -79.71417,
+   "instance_of": [
+    "locality"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Motux",
+    "Motupe, Lambayeque, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 4,
+     "called_it": "Motux",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "pizarro-1532",
+     "seq": 5,
+     "called_it": "Motux",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q27194533",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q10906766",
+   "name": "Nan-ching",
+   "description": "Nanjing during the Republic of China period",
+   "latitude": 32.04316,
+   "longitude": 118.77864,
+   "instance_of": [
+    "special municipality",
+    "former administrative territorial entity"
+   ],
+   "aliases": [
+    "Capital special city",
+    "Nanking special city",
+    "Nanjing",
+    "Nanking"
+   ],
+   "names_in_the_atlas": [
+    "Nanking",
+    "Nanjing, Jiangsu, China"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 19,
+     "called_it": "Nanking",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q10906766",
+   "voyages": [
+    "faxian-399"
    ]
   },
   {
@@ -1168,6 +4997,191 @@
    ]
   },
   {
+   "qid": "Q162281",
+   "name": "Oualata",
+   "description": "commune of Mauritania",
+   "latitude": 17.29783,
+   "longitude": -7.0235,
+   "instance_of": [
+    "commune of Mauritania",
+    "oasis"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Gualata",
+    "Walata, Mauritania"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 3,
+     "called_it": "Gualata",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q162281",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q1279608",
+   "name": "Pacasmayo",
+   "description": "city",
+   "latitude": -7.40028,
+   "longitude": -79.57,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Guamamayo",
+    "Pacasmayo, La Libertad, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 6,
+     "called_it": "Guamamayo",
+     "distance_km": 15.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1279608",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q3315350",
+   "name": "Pachacamac",
+   "description": "district of Lima, Peru",
+   "latitude": -12.23,
+   "longitude": -76.85917,
+   "instance_of": [
+    "district of Peru"
+   ],
+   "aliases": [
+    "Pachacámac"
+   ],
+   "names_in_the_atlas": [
+    "Pachacama",
+    "Pachacamac, Lima Region, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 12,
+     "called_it": "Pachacama",
+     "distance_km": 2.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3315350",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q1061269",
+   "name": "Palawan",
+   "description": "island in the Philippines",
+   "latitude": 9.5,
+   "longitude": 118.5,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Palawan Island"
+   ],
+   "names_in_the_atlas": [
+    "Poluan",
+    "Palawan, Philippines"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 17,
+     "called_it": "Poluan",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1061269",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q622030",
+   "name": "Palos de la Frontera",
+   "description": "municipality in Huelva, Spain",
+   "latitude": 37.22777,
+   "longitude": -6.89323,
+   "instance_of": [
+    "city",
+    "municipality of Spain"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Palos",
+    "Palos de la Frontera, Huelva, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 1,
+     "called_it": "Palos",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 13,
+     "called_it": "Palos",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q622030",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q161750",
+   "name": "Pamir Mountains",
+   "description": "mountain range in Central Asia",
+   "latitude": 39.00194,
+   "longitude": 71.99975,
+   "instance_of": [
+    "mountain range"
+   ],
+   "aliases": [
+    "Pamirs",
+    "The Pamirs",
+    "Pamir Plateau"
+   ],
+   "names_in_the_atlas": [
+    "the Little Snowy mountains",
+    "Pamir Mountains, Tajikistan"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 7,
+     "called_it": "the Little Snowy mountains",
+     "distance_km": 8.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q161750",
+   "voyages": [
+    "faxian-399"
+   ]
+  },
+  {
    "qid": "Q1861129",
    "name": "Panaitan Island",
    "description": "island in Pandeglang Regency, Banten Province, Indonesia",
@@ -1205,6 +5219,145 @@
    ]
   },
   {
+   "qid": "Q80484",
+   "name": "Patna",
+   "description": "metropolis and state capital of Bihar, India",
+   "latitude": 25.61,
+   "longitude": 85.14139,
+   "instance_of": [
+    "city",
+    "big city",
+    "largest city",
+    "state capital"
+   ],
+   "aliases": [
+    "Pataliputra",
+    "Batana",
+    "Patan",
+    "Pātaliputta",
+    "Pataliputta",
+    "Pātaliputra",
+    "Patnā"
+   ],
+   "names_in_the_atlas": [
+    "Pataliputtra",
+    "Patna, Bihar, India",
+    "Kusumapura"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 14,
+     "called_it": "Pataliputtra",
+     "distance_km": 1.8,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 25,
+     "called_it": "Kusumapura",
+     "distance_km": 1.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q80484",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q1142129",
+   "name": "Pearl Islands",
+   "description": "group of 200 or more islands and islets off the Pacific coast of Panama",
+   "latitude": 8.33333,
+   "longitude": -79.11667,
+   "instance_of": [
+    "archipelago"
+   ],
+   "aliases": [
+    "Islas de las Perlas"
+   ],
+   "names_in_the_atlas": [
+    "Panama",
+    "Pearl Islands, Gulf of Panama, Panama"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 14,
+     "called_it": "Panama",
+     "distance_km": 7.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1142129",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q1113311",
+   "name": "Peshawar",
+   "description": "capital of Khyber Pakhtunkhwa Province, Pakistan",
+   "latitude": 34.01444,
+   "longitude": 71.5675,
+   "instance_of": [
+    "city",
+    "administrative territorial entity",
+    "big city"
+   ],
+   "aliases": [
+    "Pekhawar",
+    "Peshawur",
+    "Peshawer",
+    "Pesháwar",
+    "Pechaver"
+   ],
+   "names_in_the_atlas": [
+    "Gandhara",
+    "Peshawar, Khyber Pakhtunkhwa, Pakistan",
+    "Purushapura, or Peshawur",
+    "Po-lu-sha-pu-lo",
+    "the royal city"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 9,
+     "called_it": "Gandhara",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "faxian-399",
+     "seq": 11,
+     "called_it": "Purushapura, or Peshawur",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 13,
+     "called_it": "Po-lu-sha-pu-lo",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 15,
+     "called_it": "the royal city",
+     "distance_km": 1.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1113311",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
    "qid": "Q7951",
    "name": "Petropavlovsk-Kamchatsky",
    "description": "city in far-eastern Russia",
@@ -1237,6 +5390,42 @@
    ]
   },
   {
+   "qid": "Q223966",
+   "name": "Piura",
+   "description": "city of Peru, capital of Piura region",
+   "latitude": -5.20083,
+   "longitude": -80.62528,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "San Miguel",
+    "Piura, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 1,
+     "called_it": "San Miguel",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "pizarro-1532",
+     "seq": 17,
+     "called_it": "San Miguel",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q223966",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
    "qid": "Q43382",
    "name": "Plymouth",
    "description": "city in Devon, England",
@@ -1254,7 +5443,8 @@
    ],
    "names_in_the_atlas": [
     "Plymouth",
-    "Plymouth, England, United Kingdom"
+    "Plymouth, England, United Kingdom",
+    "Plimmouth"
    ],
    "visits": [
     {
@@ -1263,11 +5453,92 @@
      "called_it": "Plymouth",
      "distance_km": 0.0,
      "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 1,
+     "called_it": "Plimmouth",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 25,
+     "called_it": "Plymouth",
+     "distance_km": 0.0,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q43382",
    "voyages": [
-    "cook-1768"
+    "cook-1768",
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q3142013",
+   "name": "Point Reyes",
+   "description": "prominent cape on the Pacific coast of northern California, USA",
+   "latitude": 37.9968,
+   "longitude": -123.02,
+   "instance_of": [
+    "peninsula"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Noua Albion",
+    "Point Reyes, California, USA"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 16,
+     "called_it": "Noua Albion",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3142013",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q2605077",
+   "name": "Point Wild",
+   "description": "point on Elephant Island",
+   "latitude": -61.1,
+   "longitude": -54.8667,
+   "instance_of": [
+    "headland",
+    "peninsula"
+   ],
+   "aliases": [
+    "Punta Wild"
+   ],
+   "names_in_the_atlas": [
+    "Elephant Island",
+    "Point Wild, Elephant Island, South Shetland Islands, Antarctica"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 8,
+     "called_it": "Elephant Island",
+     "distance_km": 3.7,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "shackleton-1914",
+     "seq": 13,
+     "called_it": "Elephant Island",
+     "distance_km": 4.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2605077",
+   "voyages": [
+    "shackleton-1914"
    ]
   },
   {
@@ -1287,7 +5558,8 @@
    ],
    "names_in_the_atlas": [
     "Port Jackson",
-    "Sydney Harbour, New South Wales, Australia"
+    "Sydney Harbour, New South Wales, Australia",
+    "Sydney, New South Wales, Australia"
    ],
    "visits": [
     {
@@ -1296,11 +5568,19 @@
      "called_it": "Port Jackson",
      "distance_km": 2.1,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 22,
+     "called_it": "Port Jackson",
+     "distance_km": 2.4,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q54504",
    "voyages": [
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
    ]
   },
   {
@@ -1374,6 +5654,214 @@
    ]
   },
   {
+   "qid": "Q3023340",
+   "name": "Portuguese Cape Verde",
+   "description": "former colony of the Portuguese Empire in the Cape Verde Islands",
+   "latitude": 14.91772,
+   "longitude": -23.50916,
+   "instance_of": [
+    "colony",
+    "overseas province of Portugal"
+   ],
+   "aliases": [
+    "Cape Verde"
+   ],
+   "names_in_the_atlas": [
+    "Cape Verde",
+    "Cape Verde (Cabo Verde), West Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 24,
+     "called_it": "Cape Verde",
+     "distance_km": 9.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3023340",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q3751",
+   "name": "Praia",
+   "description": "capital of Cape Verde",
+   "latitude": 14.91772,
+   "longitude": -23.50916,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Porto Praya, in St. Jago, the chief island of the Cape de Verd archipelago",
+    "Praia, Santiago, Cape Verde"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 3,
+     "called_it": "Porto Praya, in St. Jago, the chief island of the Cape de Verd archipelago",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3751",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q955668",
+   "name": "Puerto San Julián",
+   "description": "city in Argentina",
+   "latitude": -49.30695,
+   "longitude": -67.72979,
+   "instance_of": [
+    "village",
+    "municipality",
+    "heritage",
+    "human settlement"
+   ],
+   "aliases": [
+    "Puerto San Julian",
+    "Port St. Julian",
+    "Port Saint Julian",
+    "St. Julian",
+    "Saint Julian",
+    "harbor of St. Julian",
+    "harbor of Saint Julian",
+    "harbour of St. Julian",
+    "harbour of Saint Julian"
+   ],
+   "names_in_the_atlas": [
+    "Port St. Julian",
+    "Puerto San Julián, Santa Cruz, Argentina",
+    "Port S. Julian",
+    "Port of St. Julian"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 11,
+     "called_it": "Port St. Julian",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 7,
+     "called_it": "Port S. Julian",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 8,
+     "called_it": "Port of St. Julian",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q955668",
+   "voyages": [
+    "darwin-1831",
+    "drake-1577",
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q800201",
+   "name": "Puerto del Hambre",
+   "description": "human settlement",
+   "latitude": -53.60742,
+   "longitude": -70.93425,
+   "instance_of": [
+    "human settlement",
+    "archaeological site"
+   ],
+   "aliases": [
+    "City of King Don Felipe"
+   ],
+   "names_in_the_atlas": [
+    "Port Famine",
+    "Puerto del Hambre, Magallanes, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 13,
+     "called_it": "Port Famine",
+     "distance_km": 1.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q800201",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q51599",
+   "name": "Punta Arenas",
+   "description": "Chilean city beside the Strait of Magellan",
+   "latitude": -53.1625,
+   "longitude": -70.90806,
+   "instance_of": [
+    "city in Chile",
+    "big city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Punta Arenas",
+    "Punta Arenas, Chile"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 14,
+     "called_it": "Punta Arenas",
+     "distance_km": 0.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q51599",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q336661",
+   "name": "Qena",
+   "description": "city in Egypt",
+   "latitude": 26.16667,
+   "longitude": 32.71667,
+   "instance_of": [
+    "big city",
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Keneh",
+    "Qena, Egypt"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 13,
+     "called_it": "Keneh",
+     "distance_km": 0.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q336661",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
    "qid": "Q25473",
    "name": "Queen Charlotte Sound / Tōtaranui",
    "description": "part of Marlborough Sounds, in New Zealand's South Island",
@@ -1439,6 +5927,75 @@
    ]
   },
   {
+   "qid": "Q863683",
+   "name": "Rajgir",
+   "description": "town and historical city in Bihar, India, important place in Buddhism",
+   "latitude": 25.03,
+   "longitude": 85.42,
+   "instance_of": [
+    "town",
+    "Nagar Panchayat government"
+   ],
+   "aliases": [
+    "Rajgriha"
+   ],
+   "names_in_the_atlas": [
+    "New Rajagriha",
+    "Rajgir, Bihar, India",
+    "Gridhrakuta"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 15,
+     "called_it": "New Rajagriha",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 26,
+     "called_it": "Gridhrakuta",
+     "distance_km": 0.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q863683",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q48344",
+   "name": "Recife",
+   "description": "municipality of Pernambuco state, Brazil",
+   "latitude": -8.05389,
+   "longitude": -34.88083,
+   "instance_of": [
+    "municipality of Brazil",
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Pernambuco",
+    "Recife, Pernambuco, Brazil"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 31,
+     "called_it": "Pernambuco",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q48344",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
    "qid": "Q8678",
    "name": "Rio de Janeiro",
    "description": "city of Rio de Janeiro state, Brazil",
@@ -1475,12 +6032,141 @@
      "called_it": "Rio de Janeiro",
      "distance_km": 0.4,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 5,
+     "called_it": "Rio de Janeiro",
+     "distance_km": 3.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 5,
+     "called_it": "Rio de Janeiro",
+     "distance_km": 3.4,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 6,
+     "called_it": "Rio de Janeiro",
+     "distance_km": 3.4,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q8678",
    "voyages": [
     "boudeuse-1766",
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831",
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q3437623",
+   "name": "Rochers aux Oiseaux",
+   "description": "group of rocks in Quebec, Canada",
+   "latitude": 47.83833,
+   "longitude": -61.14583,
+   "instance_of": [
+    "group of rocks"
+   ],
+   "aliases": [
+    "Bird Rocks"
+   ],
+   "names_in_the_atlas": [
+    "Bird rocks",
+    "Îles aux Oiseaux (Bird Rocks), Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 3,
+     "called_it": "Bird rocks",
+     "distance_km": 1.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3437623",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q220",
+   "name": "Rome",
+   "description": "capital and largest city of Italy",
+   "latitude": 41.89306,
+   "longitude": 12.48278,
+   "instance_of": [
+    "border city",
+    "abolished municipality in Italy",
+    "tourist destination",
+    "metropolis",
+    "largest city",
+    "college town",
+    "big city",
+    "comune of Italy",
+    "national capital"
+   ],
+   "aliases": [
+    "The Eternal City",
+    "Rome, Italy",
+    "City of Seven Hills",
+    "Eternal City",
+    "The City of Marble",
+    "City of Marble",
+    "The Capital of the World",
+    "Capital of the World"
+   ],
+   "names_in_the_atlas": [
+    "Rome",
+    "Rome, Italy"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 15,
+     "called_it": "Rome",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q220",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q1859950",
+   "name": "Rum Cay",
+   "description": "island in the Bahamas",
+   "latitude": 23.67389,
+   "longitude": -74.87111,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Mamana",
+    "Santa Maria de la Concepción"
+   ],
+   "names_in_the_atlas": [
+    "Concepcion, La, island",
+    "Rum Cay, Bahamas"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 4,
+     "called_it": "Concepcion, La, island",
+     "distance_km": 18.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1859950",
+   "voyages": [
+    "columbus-1492"
    ]
   },
   {
@@ -1509,6 +6195,40 @@
    "source_url": "https://www.wikidata.org/wiki/Q224943",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q35827",
+   "name": "Río de la Plata",
+   "description": "estuary formed by the confluence of the Uruguay River and the Paraná River on the border between Argentina and Uruguay",
+   "latitude": -34.88306,
+   "longitude": -56.71361,
+   "instance_of": [
+    "estuary",
+    "river",
+    "main stem"
+   ],
+   "aliases": [
+    "River Plate",
+    "Plata River",
+    "La Plata River"
+   ],
+   "names_in_the_atlas": [
+    "Rio de la Plata",
+    "Río de la Plata, Argentina/Uruguay"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 6,
+     "called_it": "Rio de la Plata",
+     "distance_km": 110.2,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q35827",
+   "voyages": [
+    "drake-1577"
    ]
   },
   {
@@ -1560,6 +6280,36 @@
    ]
   },
   {
+   "qid": "Q392161",
+   "name": "Saguenay River",
+   "description": "river in Quebec, Canada",
+   "latitude": 48.12917,
+   "longitude": -69.70361,
+   "instance_of": [
+    "river"
+   ],
+   "aliases": [
+    "Saguenay"
+   ],
+   "names_in_the_atlas": [
+    "river of the Saguenay",
+    "Saguenay River (mouth), Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 13,
+     "called_it": "river of the Saguenay",
+     "distance_km": 51.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q392161",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
    "qid": "Q34497",
    "name": "Saint Helena",
    "description": "island in the South Atlantic Ocean",
@@ -1584,11 +6334,19 @@
      "called_it": "St. Helena",
      "distance_km": 1.2,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 28,
+     "called_it": "St. Helena",
+     "distance_km": 1.9,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q34497",
    "voyages": [
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
    ]
   },
   {
@@ -1609,7 +6367,9 @@
    ],
    "names_in_the_atlas": [
     "St. Maloes",
-    "Saint-Malo, France"
+    "Saint-Malo, France",
+    "St. Malo",
+    "Saint-Malo, Brittany, France"
    ],
    "visits": [
     {
@@ -1618,11 +6378,157 @@
      "called_it": "St. Maloes",
      "distance_km": 0.0,
      "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 1,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 8,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 9,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 18,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 19,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 24,
+     "called_it": "St. Malo",
+     "distance_km": 0.1,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q163108",
    "voyages": [
-    "boudeuse-1766"
+    "boudeuse-1766",
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q36947",
+   "name": "Salvador",
+   "description": "municipality of Bahia state, Brazil",
+   "latitude": -12.98306,
+   "longitude": -38.49278,
+   "instance_of": [
+    "municipality of Brazil",
+    "metropolitan region"
+   ],
+   "aliases": [
+    "São Salvador da Bahia de Todos os Santos",
+    "Bahia"
+   ],
+   "names_in_the_atlas": [
+    "Bahia",
+    "Salvador, Bahia, Brazil"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 4,
+     "called_it": "Bahia",
+     "distance_km": 1.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 30,
+     "called_it": "Bahia",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q36947",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q2037402",
+   "name": "Samaná Bay",
+   "description": "bay in the eastern Dominican Republic",
+   "latitude": 19.16667,
+   "longitude": -69.41667,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [
+    "Samana Bay"
+   ],
+   "names_in_the_atlas": [
+    "Bay of Samana",
+    "Samaná Bay, Dominican Republic"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 10,
+     "called_it": "Bay of Samana",
+     "distance_km": 7.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2037402",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q5753",
+   "name": "Samarkand",
+   "description": "city in southeastern Uzbekistan",
+   "latitude": 39.65472,
+   "longitude": 66.97583,
+   "instance_of": [
+    "big city",
+    "administrative territorial entity"
+   ],
+   "aliases": [
+    "Samarqand",
+    "Samarcand",
+    "Summarkund",
+    "Summarkùnd"
+   ],
+   "names_in_the_atlas": [
+    "SX-MO-KiEN (Samarkand)",
+    "Samarkand, Uzbekistan"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 9,
+     "called_it": "SX-MO-KiEN (Samarkand)",
+     "distance_km": 1.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q5753",
+   "voyages": [
+    "xuanzang-629"
    ]
   },
   {
@@ -1658,6 +6564,103 @@
    ]
   },
   {
+   "qid": "Q41211",
+   "name": "San Juan",
+   "description": "capital of Puerto Rico",
+   "latitude": 18.46528,
+   "longitude": -66.11667,
+   "instance_of": [
+    "municipality of Puerto Rico",
+    "big city"
+   ],
+   "aliases": [
+    "San Juan, Puerto Rico",
+    "San Juan Bautista",
+    "San Juan Municipio",
+    "San Juan de Puerto Rico",
+    "San Juan, PR",
+    "San Juan PR",
+    "San Juan Bautista de Puerto Rico"
+   ],
+   "names_in_the_atlas": [
+    "St. John the Baptist",
+    "San Juan, Puerto Rico"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 18,
+     "called_it": "St. John the Baptist",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q41211",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q210887",
+   "name": "Sanlúcar de Barrameda",
+   "description": "municipality of Spain",
+   "latitude": 36.77889,
+   "longitude": -6.35389,
+   "instance_of": [
+    "municipality of Spain"
+   ],
+   "aliases": [
+    "San Lucar",
+    "Sanlucar",
+    "Sanlucar de Barrameda",
+    "San Lúcar",
+    "Sanlúcar"
+   ],
+   "names_in_the_atlas": [
+    "San Lucar de Barrameda",
+    "Sanlúcar de Barrameda, Cádiz, Spain",
+    "Sanlúcar de Barrameda",
+    "San Lucar",
+    "Sanlúcar de Barrameda, Andalusia, Spain",
+    "Sanlúcar de Barrameda, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 24,
+     "called_it": "San Lucar de Barrameda",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "columbus-1492",
+     "seq": 36,
+     "called_it": "Sanlúcar de Barrameda",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 2,
+     "called_it": "San Lucar",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 24,
+     "called_it": "San Lucar",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q210887",
+   "voyages": [
+    "columbus-1492",
+    "magellan-1519"
+   ]
+  },
+  {
    "qid": "Q14328",
    "name": "Santa Cruz de Tenerife",
    "description": "municipality in Canary Islands, Spain",
@@ -1686,6 +6689,65 @@
    "source_url": "https://www.wikidata.org/wiki/Q14328",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q217262",
+   "name": "Santa Maria Island",
+   "description": "island in the Azores, Portugal",
+   "latitude": 36.9732,
+   "longitude": -25.0945,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Santa Maria",
+    "Santa Maria Island, Azores, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 11,
+     "called_it": "Santa Maria",
+     "distance_km": 0.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q217262",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q586659",
+   "name": "Santa María Huatulco",
+   "description": "municipal seat of Huatulco, State of Oaxaca, Mexico",
+   "latitude": 15.83267,
+   "longitude": -96.32063,
+   "instance_of": [
+    "locality of Mexico"
+   ],
+   "aliases": [
+    "Santa Maria Huatulco",
+    "Huatulco"
+   ],
+   "names_in_the_atlas": [
+    "Guatulco",
+    "Huatulco, Oaxaca, Mexico"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 15,
+     "called_it": "Guatulco",
+     "distance_km": 0.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q586659",
+   "voyages": [
+    "drake-1577"
    ]
   },
   {
@@ -1722,6 +6784,238 @@
    ]
   },
   {
+   "qid": "Q34820",
+   "name": "Santo Domingo",
+   "description": "capital of the Dominican Republic",
+   "latitude": 18.4625,
+   "longitude": -69.93611,
+   "instance_of": [
+    "city",
+    "big city"
+   ],
+   "aliases": [
+    "Santo Domingo, Dominican Republic",
+    "Santo Domingo de Guzman",
+    "San Domingo"
+   ],
+   "names_in_the_atlas": [
+    "Santo Domingo",
+    "Santo Domingo, Dominican Republic"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 28,
+     "called_it": "Santo Domingo",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q34820",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q8717",
+   "name": "Seville",
+   "description": "municipality of Andalusia, Spain",
+   "latitude": 37.38861,
+   "longitude": -5.995,
+   "instance_of": [
+    "municipality of Spain"
+   ],
+   "aliases": [
+    "Seville, Spain",
+    "Ishbiliya",
+    "Ixbiliya"
+   ],
+   "names_in_the_atlas": [
+    "Seville",
+    "Seville, Spain"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 37,
+     "called_it": "Seville",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 1,
+     "called_it": "Seville",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 25,
+     "called_it": "Seville",
+     "distance_km": 1.1,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q8717",
+   "voyages": [
+    "columbus-1492",
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q3445630",
+   "name": "Sierra Leone River",
+   "description": "river in Sierra Leone",
+   "latitude": 8.504,
+   "longitude": -13.186,
+   "instance_of": [
+    "river",
+    "estuary"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Sierra Leona",
+    "Sierra Leone, West Africa"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 4,
+     "called_it": "Sierra Leona",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3445630",
+   "voyages": [
+    "drake-1577"
+   ]
+  },
+  {
+   "qid": "Q854",
+   "name": "Sri Lanka",
+   "description": "island country in South Asia",
+   "latitude": 7.0,
+   "longitude": 81.0,
+   "instance_of": [
+    "sovereign state",
+    "island country",
+    "country"
+   ],
+   "aliases": [
+    "Democratic Socialist Republic of Sri Lanka",
+    "Taprobane",
+    "Serendib",
+    "Ceylan",
+    "lk",
+    "Lanka, Sri",
+    "sri",
+    "lke",
+    "ce",
+    "Srilanka",
+    "SRI"
+   ],
+   "names_in_the_atlas": [
+    "Ceylon",
+    "Sri Lanka"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 32,
+     "called_it": "Ceylon",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q854",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q3339246",
+   "name": "Stadacona",
+   "description": "16th-century Iroquoian village near present-day Quebec City; origin of the name \"Canada\"",
+   "latitude": 46.82444,
+   "longitude": -71.24344,
+   "instance_of": [
+    "abandoned village",
+    "archaeological site"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Stadacona",
+    "Quebec City, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 15,
+     "called_it": "Stadacona",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 17,
+     "called_it": "Stadacona",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 21,
+     "called_it": "Stadacona",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3339246",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
+   "qid": "Q815831",
+   "name": "Strait of Belle Isle",
+   "description": "waterway in eastern Canada",
+   "latitude": 51.5,
+   "longitude": -56.5,
+   "instance_of": [
+    "strait"
+   ],
+   "aliases": [
+    "Straits of Belle Isle",
+    "Labrador Straits"
+   ],
+   "names_in_the_atlas": [
+    "strait of Belle Isle",
+    "Strait of Belle Isle, Newfoundland and Labrador/Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 4,
+     "called_it": "strait of Belle Isle",
+     "distance_km": 20.8,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "cartier-1534",
+     "seq": 10,
+     "called_it": "strait of Belle Isle",
+     "distance_km": 23.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q815831",
+   "voyages": [
+    "cartier-1534"
+   ]
+  },
+  {
    "qid": "Q48365",
    "name": "Strait of Magellan",
    "description": "body of water in Chile connecting Atlantic and Pacific Oceans",
@@ -1737,7 +7031,10 @@
    ],
    "names_in_the_atlas": [
     "Straits of Magalhaens (Port Galant / Cape Pillar)",
-    "Strait of Magellan, Chile"
+    "Strait of Magellan, Chile",
+    "the streights of Magellan",
+    "Strait of Magellan, southern Chile",
+    "Strait of Magellan"
    ],
    "visits": [
     {
@@ -1746,11 +7043,112 @@
      "called_it": "Straits of Magalhaens (Port Galant / Cape Pillar)",
      "distance_km": 75.8,
      "confidence": "approximate"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 8,
+     "called_it": "the streights of Magellan",
+     "distance_km": 86.1,
+     "confidence": "approximate"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 10,
+     "called_it": "Strait of Magellan",
+     "distance_km": 159.1,
+     "confidence": "approximate"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q48365",
    "voyages": [
-    "boudeuse-1766"
+    "boudeuse-1766",
+    "drake-1577",
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q1510300",
+   "name": "Stromness Bay",
+   "description": "bay of South Georgia Island",
+   "latitude": -54.15,
+   "longitude": -36.6333,
+   "instance_of": [
+    "bay"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Stromness Bay",
+    "Stromness Bay, South Georgia and the South Sandwich Islands"
+   ],
+   "visits": [
+    {
+     "voyage": "shackleton-1914",
+     "seq": 9,
+     "called_it": "Stromness Bay",
+     "distance_km": 4.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1510300",
+   "voyages": [
+    "shackleton-1914"
+   ]
+  },
+  {
+   "qid": "Q389161",
+   "name": "Swat District",
+   "description": "district in Khyber Pakhtunkhwa, Pakistan",
+   "latitude": 34.78278,
+   "longitude": 72.36194,
+   "instance_of": [
+    "district of Pakistan",
+    "ancient civilization"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Su-ho-to",
+    "Swat, Khyber Pakhtunkhwa, Pakistan"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 14,
+     "called_it": "Su-ho-to",
+     "distance_km": 48.8,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q389161",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q139570137",
+   "name": "Swat Valley",
+   "description": "valley in Pakistan",
+   "latitude": 35.2,
+   "longitude": 72.48333,
+   "instance_of": [
+    "valley"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Woo-chang, or Udyana",
+    "Swat Valley, Khyber Pakhtunkhwa, Pakistan"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 8,
+     "called_it": "Woo-chang, or Udyana",
+     "distance_km": 7.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q139570137",
+   "voyages": [
+    "faxian-399"
    ]
   },
   {
@@ -1784,6 +7182,49 @@
    ]
   },
   {
+   "qid": "Q1017333",
+   "name": "Tafilalt",
+   "description": "region and oasis in Morocco, previously also known as Sijilmasa from its former primary settlement",
+   "latitude": 31.32389,
+   "longitude": -4.2575,
+   "instance_of": [
+    "oasis",
+    "historical region"
+   ],
+   "aliases": [
+    "Sijilmasa",
+    "Segelmesse",
+    "Sijilmassa",
+    "Sigilmassa",
+    "Sidjilmasa",
+    "Sidjilmassa",
+    "Sijilmâsa",
+    "Segellamesse",
+    "Siyilmasa",
+    "Sidjilmâsâ",
+    "Sigelmasse",
+    "Tasilet",
+    "Tafilet"
+   ],
+   "names_in_the_atlas": [
+    "Segelmessa",
+    "Tafilalt, Morocco"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 2,
+     "called_it": "Segelmessa",
+     "distance_km": 69.2,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1017333",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
    "qid": "Q42000",
    "name": "Tahiti",
    "description": "island in the Southern Pacific Ocean",
@@ -1800,7 +7241,8 @@
     "Taïti (New Cythera / Nouvelle-Cythère)",
     "Tahiti, French Polynesia",
     "King George's Island",
-    "Tahiti, Society Islands, French Polynesia"
+    "Tahiti, Society Islands, French Polynesia",
+    "Tahiti"
    ],
    "visits": [
     {
@@ -1816,12 +7258,20 @@
      "called_it": "King George's Island",
      "distance_km": 5.3,
      "confidence": "certain"
+    },
+    {
+     "voyage": "darwin-1831",
+     "seq": 20,
+     "called_it": "Tahiti",
+     "distance_km": 4.7,
+     "confidence": "certain"
     }
    ],
    "source_url": "https://www.wikidata.org/wiki/Q42000",
    "voyages": [
     "boudeuse-1766",
-    "cook-1768"
+    "cook-1768",
+    "darwin-1831"
    ]
   },
   {
@@ -1857,6 +7307,157 @@
    ]
   },
   {
+   "qid": "Q118278",
+   "name": "Tamluk",
+   "description": "City in West Bengal, India",
+   "latitude": 22.3,
+   "longitude": 87.91667,
+   "instance_of": [
+    "municipality of West Bengal"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Tamalipti",
+    "Tamluk, West Bengal, India",
+    "Tdmralipti"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 17,
+     "called_it": "Tamalipti",
+     "distance_km": 1.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 30,
+     "called_it": "Tdmralipti",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q118278",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q979927",
+   "name": "Tashkorgan",
+   "description": "town in China",
+   "latitude": 37.77056,
+   "longitude": 75.22861,
+   "instance_of": [
+    "town of China",
+    "human settlement"
+   ],
+   "aliases": [
+    "Tashiku'ergan"
+   ],
+   "names_in_the_atlas": [
+    "K’ie-p’an-to",
+    "Tashkurgan, Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 8,
+     "called_it": "K’ie-p’an-to",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q979927",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q156093",
+   "name": "Taxila",
+   "description": "archaeological site of the ancient Indian subcontinent, at Taxila, Punjab, Pakistan",
+   "latitude": 33.74583,
+   "longitude": 72.7875,
+   "instance_of": [
+    "archaeological site"
+   ],
+   "aliases": [
+    "Mint of Taxila"
+   ],
+   "names_in_the_atlas": [
+    "Takshasila",
+    "Taxila, Punjab, Pakistan",
+    "Taxila"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 10,
+     "called_it": "Takshasila",
+     "distance_km": 2.5,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 16,
+     "called_it": "Taxila",
+     "distance_km": 4.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q156093",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q40846",
+   "name": "Tenerife",
+   "description": "One of the main islands of the Canary archipelago",
+   "latitude": 28.26861,
+   "longitude": -16.60556,
+   "instance_of": [
+    "volcanic island",
+    "administrative territorial entity",
+    "tourist destination"
+   ],
+   "aliases": [
+    "Teneriffe",
+    "Island of Tenerife",
+    "Island of Teneriffe",
+    "Nivaria"
+   ],
+   "names_in_the_atlas": [
+    "Teneriffe",
+    "Tenerife, Canary Islands, Spain",
+    "Tenerife"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 2,
+     "called_it": "Teneriffe",
+     "distance_km": 3.2,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "magellan-1519",
+     "seq": 3,
+     "called_it": "Tenerife",
+     "distance_km": 3.2,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q40846",
+   "voyages": [
+    "darwin-1831",
+    "magellan-1519"
+   ]
+  },
+  {
    "qid": "Q20232353",
    "name": "Tepeaca",
    "description": "municipal seat of Tepeaca, State of Puebla, Mexico",
@@ -1882,6 +7483,66 @@
    "source_url": "https://www.wikidata.org/wiki/Q20232353",
    "voyages": [
     "cortes-1519"
+   ]
+  },
+  {
+   "qid": "Q215074",
+   "name": "Terceira Island",
+   "description": "island in the Azores archipelago",
+   "latitude": 38.73333,
+   "longitude": -27.31667,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Terceira"
+   ],
+   "names_in_the_atlas": [
+    "Terceira",
+    "Terceira, Azores, Portugal"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 32,
+     "called_it": "Terceira",
+     "distance_km": 8.4,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q215074",
+   "voyages": [
+    "darwin-1831"
+   ]
+  },
+  {
+   "qid": "Q19151",
+   "name": "Ternate",
+   "description": "city in North Maluku Province, Indonesia",
+   "latitude": 0.78333,
+   "longitude": 127.36667,
+   "instance_of": [
+    "city of Indonesia"
+   ],
+   "aliases": [
+    "Ternate City"
+   ],
+   "names_in_the_atlas": [
+    "Ternate",
+    "Ternate, North Maluku, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "drake-1577",
+     "seq": 20,
+     "called_it": "Ternate",
+     "distance_km": 1.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q19151",
+   "voyages": [
+    "drake-1577"
    ]
   },
   {
@@ -1941,6 +7602,103 @@
    "source_url": "https://www.wikidata.org/wiki/Q21900556",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q12506955",
+   "name": "Tidore Island",
+   "description": "island in Tidore Islands City, North Maluku Province, Indonesia",
+   "latitude": 0.68639,
+   "longitude": 127.41083,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Pulau Tidore",
+    "Tidore",
+    "Tidore Island"
+   ],
+   "names_in_the_atlas": [
+    "Tidore",
+    "Tidore, Maluku Islands, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 19,
+     "called_it": "Tidore",
+     "distance_km": 1.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q12506955",
+   "voyages": [
+    "magellan-1519"
+   ]
+  },
+  {
+   "qid": "Q9427",
+   "name": "Timbuktu",
+   "description": "city in Mali",
+   "latitude": 16.77333,
+   "longitude": -2.99944,
+   "instance_of": [
+    "city",
+    "urban area"
+   ],
+   "aliases": [
+    "Tombouctou",
+    "Tumbutu",
+    "Timbuctoo",
+    "Timbuktoo"
+   ],
+   "names_in_the_atlas": [
+    "Timbuktu",
+    "Timbuktu, Mali"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 4,
+     "called_it": "Timbuktu",
+     "distance_km": 1.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q9427",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q83067",
+   "name": "Timor",
+   "description": "island bordering the south of maritime Southeast Asia and the north of the Australian continental plate",
+   "latitude": -9.08333,
+   "longitude": 125.08333,
+   "instance_of": [
+    "island"
+   ],
+   "aliases": [
+    "Timor Island",
+    "Pulau Timor"
+   ],
+   "names_in_the_atlas": [
+    "Timor",
+    "Timor, Lesser Sunda Islands, Indonesia"
+   ],
+   "visits": [
+    {
+     "voyage": "magellan-1519",
+     "seq": 21,
+     "called_it": "Timor",
+     "distance_km": 23.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q83067",
+   "voyages": [
+    "magellan-1519"
    ]
   },
   {
@@ -2011,6 +7769,104 @@
    ]
   },
   {
+   "qid": "Q827640",
+   "name": "Tumbes",
+   "description": "city of Peru, capital of Tumbes region",
+   "latitude": -3.57083,
+   "longitude": -80.45972,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Tumbez",
+    "Tumbes, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 2,
+     "called_it": "Tumbez",
+     "distance_km": 37.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q827640",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
+   "qid": "Q3572",
+   "name": "Tunis",
+   "description": "capital of Tunisia",
+   "latitude": 36.80083,
+   "longitude": 10.18,
+   "instance_of": [
+    "big city",
+    "municipality of Tunisia"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Tunis",
+    "Tunis, Tunisia"
+   ],
+   "visits": [
+    {
+     "voyage": "leoafricanus-1510",
+     "seq": 10,
+     "called_it": "Tunis",
+     "distance_km": 0.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q3572",
+   "voyages": [
+    "leoafricanus-1510"
+   ]
+  },
+  {
+   "qid": "Q868527",
+   "name": "Turpan",
+   "description": "prefecture-level city in Xinjiang, China",
+   "latitude": 42.95,
+   "longitude": 89.18222,
+   "instance_of": [
+    "prefecture-level city",
+    "big city"
+   ],
+   "aliases": [
+    "Turfan",
+    "Turpan City",
+    "Turfan City",
+    "Tulufan",
+    "Tourfan",
+    "Tourpan",
+    "Tulufanshi",
+    "T'u-lu-fan-shih",
+    "T'u-lu-fan Shih",
+    "T'u-lu-fan",
+    "Tulufan Shi"
+   ],
+   "names_in_the_atlas": [
+    "Turf an",
+    "Turpan, Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 4,
+     "called_it": "Turf an",
+     "distance_km": 0.3,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q868527",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
    "qid": "Q269205",
    "name": "Tutuila",
    "description": "largest island in American Samoa",
@@ -2075,6 +7931,90 @@
    ]
   },
   {
+   "qid": "Q1509463",
+   "name": "Vaishali",
+   "description": "ancient Buddhist pilgrimage and archaeological site (Ashoka pillar, Stupa and Swastika Monastery) associated with significant events in Lord Buddha's life; in Bihar in India",
+   "latitude": 25.98659,
+   "longitude": 85.12559,
+   "instance_of": [
+    "Buddhist pilgrimage sites in India",
+    "archaeological site"
+   ],
+   "aliases": [
+    "Vesali (in Pali)",
+    "Land of Ambapali (Amrapali)"
+   ],
+   "names_in_the_atlas": [
+    "Vaisali",
+    "Vaishali, Bihar, India",
+    "Vaiśālī"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 13,
+     "called_it": "Vaisali",
+     "distance_km": 37.9,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "xuanzang-629",
+     "seq": 24,
+     "called_it": "Vaiśālī",
+     "distance_km": 2.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1509463",
+   "voyages": [
+    "faxian-399",
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q33986",
+   "name": "Valparaíso",
+   "description": "city in Chile",
+   "latitude": -33.04611,
+   "longitude": -71.61972,
+   "instance_of": [
+    "city in Chile",
+    "big city",
+    "port city",
+    "legislature"
+   ],
+   "aliases": [
+    "Valparaiso, Chile",
+    "Valparaiso"
+   ],
+   "names_in_the_atlas": [
+    "Valparaiso",
+    "Valparaíso, Chile",
+    "Valperizo"
+   ],
+   "visits": [
+    {
+     "voyage": "darwin-1831",
+     "seq": 15,
+     "called_it": "Valparaiso",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    },
+    {
+     "voyage": "drake-1577",
+     "seq": 10,
+     "called_it": "Valperizo",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q33986",
+   "voyages": [
+    "darwin-1831",
+    "drake-1577"
+   ]
+  },
+  {
    "qid": "Q1536424",
    "name": "Vanikoro",
    "description": "island",
@@ -2103,6 +8043,39 @@
    "source_url": "https://www.wikidata.org/wiki/Q1536424",
    "voyages": [
     "boussole-1785"
+   ]
+  },
+  {
+   "qid": "Q79980",
+   "name": "Varanasi",
+   "description": "city on the banks of the Ganges in the Uttar Pradesh state of India",
+   "latitude": 25.31889,
+   "longitude": 83.01278,
+   "instance_of": [
+    "city",
+    "holy city"
+   ],
+   "aliases": [
+    "Banaras",
+    "Kashi",
+    "Benaras"
+   ],
+   "names_in_the_atlas": [
+    "P’o-lo-ni-sse (Bdnaras)",
+    "Varanasi, Uttar Pradesh, India"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 28,
+     "called_it": "P’o-lo-ni-sse (Bdnaras)",
+     "distance_km": 3.9,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q79980",
+   "voyages": [
+    "xuanzang-629"
    ]
   },
   {
@@ -2141,6 +8114,66 @@
    ]
   },
   {
+   "qid": "Q593137",
+   "name": "Veraguas Province",
+   "description": "province of Panama",
+   "latitude": 8.0,
+   "longitude": -81.0,
+   "instance_of": [
+    "province of Panama"
+   ],
+   "aliases": [],
+   "names_in_the_atlas": [
+    "Veragua",
+    "Veraguas, Panama"
+   ],
+   "visits": [
+    {
+     "voyage": "columbus-1492",
+     "seq": 34,
+     "called_it": "Veragua",
+     "distance_km": 28.6,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q593137",
+   "voyages": [
+    "columbus-1492"
+   ]
+  },
+  {
+   "qid": "Q2475760",
+   "name": "Vilcashuamán",
+   "description": "capital of Vilcas Huamán Province, Peru",
+   "latitude": -13.65311,
+   "longitude": -73.95396,
+   "instance_of": [
+    "city"
+   ],
+   "aliases": [
+    "Vilcashuaman",
+    "Vilcas Huamán",
+    "Vilcas Huaman"
+   ],
+   "names_in_the_atlas": [
+    "Vilcas",
+    "Vilcashuamán, Ayacucho, Peru"
+   ],
+   "visits": [
+    {
+     "voyage": "pizarro-1532",
+     "seq": 15,
+     "called_it": "Vilcas",
+     "distance_km": 0.0,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q2475760",
+   "voyages": [
+    "pizarro-1532"
+   ]
+  },
+  {
    "qid": "Q21899019",
    "name": "Whitsunday Passage",
    "description": "river in Australia",
@@ -2166,6 +8199,120 @@
    "source_url": "https://www.wikidata.org/wiki/Q21899019",
    "voyages": [
     "cook-1768"
+   ]
+  },
+  {
+   "qid": "Q12832321",
+   "name": "Yarkand",
+   "description": "county seat of Yarkant County, Xinjiang, China",
+   "latitude": 38.41667,
+   "longitude": 77.25,
+   "instance_of": [
+    "town of China"
+   ],
+   "aliases": [
+    "Yakan Town",
+    "Yakan",
+    "Yeken",
+    "Yeken Town",
+    "Town of Yeken",
+    "Town of Yakan",
+    "Town of Yarkand",
+    "Yarkand Town",
+    "Town of Yarkent",
+    "Yarkent Town",
+    "Yarkent",
+    "Shache",
+    "Shache Zhen",
+    "Shache Town",
+    "Town of Shache",
+    "Yarkend",
+    "Yarkend Town",
+    "Town of Yarkend",
+    "Yarkänd",
+    "So-chü",
+    "So-chu",
+    "Suoju"
+   ],
+   "names_in_the_atlas": [
+    "Yarkand",
+    "Shache (Yarkand), Xinjiang, China"
+   ],
+   "visits": [
+    {
+     "voyage": "faxian-399",
+     "seq": 6,
+     "called_it": "Yarkand",
+     "distance_km": 20.5,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q12832321",
+   "voyages": [
+    "faxian-399"
+   ]
+  },
+  {
+   "qid": "Q1324562",
+   "name": "Yumen Pass",
+   "description": "mountain pass",
+   "latitude": 40.35217,
+   "longitude": 93.86383,
+   "instance_of": [
+    "gate",
+    "mountain pass"
+   ],
+   "aliases": [
+    "Site of Yumen Pass and Beacons"
+   ],
+   "names_in_the_atlas": [
+    "gem-gate",
+    "Jade Gate (Yumen Pass), Gansu, China"
+   ],
+   "visits": [
+    {
+     "voyage": "xuanzang-629",
+     "seq": 2,
+     "called_it": "gem-gate",
+     "distance_km": 80.2,
+     "confidence": "approximate"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q1324562",
+   "voyages": [
+    "xuanzang-629"
+   ]
+  },
+  {
+   "qid": "Q128172",
+   "name": "Île d'Orléans",
+   "description": "island in the Saint Lawrence River, Quebec, Canada",
+   "latitude": 46.93583,
+   "longitude": -70.94722,
+   "instance_of": [
+    "river island",
+    "island"
+   ],
+   "aliases": [
+    "Orleans Island",
+    "Island of Orleans"
+   ],
+   "names_in_the_atlas": [
+    "island of Orleans",
+    "Île d'Orléans, Quebec, Canada"
+   ],
+   "visits": [
+    {
+     "voyage": "cartier-1534",
+     "seq": 14,
+     "called_it": "island of Orleans",
+     "distance_km": 7.7,
+     "confidence": "certain"
+    }
+   ],
+   "source_url": "https://www.wikidata.org/wiki/Q128172",
+   "voyages": [
+    "cartier-1534"
    ]
   }
  ]
