@@ -75,6 +75,35 @@ test("the ingestion pipeline stamps drafts with the version the gate will accept
   );
 });
 
+test("no Python file declares a Carta version of its own either", async () => {
+  /**
+   * The TypeScript check shipped first and the claim made for it — "no file
+   * can declare its own" — was not true: scripts/curator.py still held
+   * CARTA_VERSION = "0.1" and *enforced* it, so the gate that re-checks a
+   * draft would have rejected every draft the pipeline could build. Nothing
+   * failed loudly, because no draft had reached that gate since the Carta
+   * moved. Found by the same external Scribe, reading the branch rather than
+   * trusting the claim.
+   *
+   * extract.py is the one permitted literal: it is stamped into submissions
+   * and the test above pins it to the document.
+   */
+  const { execFileSync } = await import("node:child_process");
+  const root = new URL("..", import.meta.url).pathname;
+  const out = execFileSync(
+    "grep",
+    ["-rn", "--include=*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
+    { cwd: root, encoding: "utf8" },
+  ).trim();
+  const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract.py:")) : [];
+  assert.deepEqual(
+    offenders,
+    [],
+    `these Python files hard-code a Carta version instead of reading ` +
+      `MAGNA_CARTA.md:\n${offenders.join("\n")}`,
+  );
+});
+
 test("the amendment log records the current version", async () => {
   const md = await read("../MAGNA_CARTA.md");
   const v = await cartaDocVersion();

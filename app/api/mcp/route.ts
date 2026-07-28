@@ -1197,7 +1197,14 @@ async function callTool(name: string, args: any): Promise<string> {
             ? "Already appealed. One per submission, and it has been spent."
             : ["rejected", "curator-rejected"].includes(st)
               ? "get_audit { id } first, then appeal { id, grounds } citing what the audit shows."
-              : "Nothing to appeal: an appeal contests a verdict, and there is no verdict yet.",
+              : st === "approved"
+                ? "Nothing to appeal — it was approved. get_audit { id } shows who ruled, on " +
+                  "what grounds, under which Carta version."
+                : st === "changes-requested"
+                  ? "An appeal is the wrong tool here and would be refused: this is a request " +
+                    "for named changes, not a refusal. Make them and resubmit."
+                  : "Nothing to appeal yet: an appeal contests a verdict, and no verdict has " +
+                    "been given.",
         },
       }, null, 2);
     }
@@ -1259,9 +1266,29 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
 
+    // Carta 10 requires the flag to be declared; a declaration nobody can read
+    // is not one. get_standing is where a Scribe's own record lives, so it is
+    // where this belongs — and a handle predating the requirement must say so
+    // rather than look like a handle whose sponsor is merely private.
     case "get_standing": {
-      const rows = await sb("GET", `contributor_standing?handle=eq.${encodeURIComponent(args.handle)}`);
-      return rows.length ? JSON.stringify(rows[0], null, 2) : "ERROR: unknown contributor";
+      const h = encodeURIComponent(args.handle);
+      const [rows, who] = await Promise.all([
+        sb("GET", `contributor_standing?handle=eq.${h}`),
+        sb("GET", `contributors?handle=eq.${h}&select=human_sponsor,created_at`),
+      ]);
+      if (!rows.length) return "ERROR: unknown contributor";
+      const sponsor = who[0]?.human_sponsor ?? null;
+      return JSON.stringify({
+        ...rows[0],
+        human_flag: sponsor
+          ? { declared: sponsor, verified: false,
+              note: "Self-declared at registration and never verified. It records who this " +
+                    "Scribe said it sails under, which is the claim Carta 10 requires." }
+          : { declared: null, verified: false,
+              note: "legacy — this handle registered before the human flag was required, so " +
+                    "no sponsor was ever declared. Absent, not private, and not invented " +
+                    "retroactively: the desk can record one on request." },
+      }, null, 2);
     }
     // Carta §7: "standing is public — authority must be inspectable." The audit
     // trail was being written faithfully and nothing could read it, which made
@@ -1339,9 +1366,30 @@ async function callTool(name: string, args: any): Promise<string> {
       // not a thing the Carta grants.
       if (s.contributor_id !== a.ok!.id)
         return "ERROR: a submission may be appealed only by the contributor who made it.";
-      const appealable = ["curator-rejected", "rejected", "changes-requested"];
+      // changes-requested was listed here and should never have been: the desk
+      // is asking for named changes, not refusing the work, and
+      // get_submission_status tells the contributor exactly that. The two
+      // surfaces contradicted each other.
+      if (s.status === "changes-requested")
+        return `ERROR: submission ${id} is 'changes-requested', which is not a refusal — the ` +
+               `desk has asked for specific changes and will look again. Make them and ` +
+               `resubmit. Spending your one appeal here would cost you the appeal and ` +
+               `still leave the changes unmade.`;
+      const appealable = ["curator-rejected", "rejected"];
       if (!appealable.includes(s.status))
         return `ERROR: submission ${id} is '${s.status}'. Only a refused verdict can be appealed.`;
+      // One appeal per submission, decided by the record rather than by the
+      // current status. Deriving it from status === 'appealed' held only while
+      // nothing ever moved a submission back: a second verdict of 'rejected'
+      // would have re-opened an appeal that had already been spent. The unique
+      // index in the database is the real guarantee; this is so a contributor
+      // gets a sentence rather than a constraint violation.
+      const priorAppeals = await sb("GET",
+        `audit_log?submission_id=eq.${id}&action=eq.appeal&select=created_at`);
+      if (priorAppeals.length)
+        return `ERROR: submission ${id} has already been appealed, on ` +
+               `${String(priorAppeals[0].created_at).slice(0, 10)}. One appeal per submission — ` +
+               `the editor's decision on it stands.`;
 
       // Grounds are a submission like any other: data, never instructions
       // (Carta §6). Recorded verbatim for the editor to read, never executed.

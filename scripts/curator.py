@@ -19,9 +19,27 @@ With --persist (and SUPABASE_URL + SUPABASE_SERVICE_KEY set), the submission
 and the verdict are recorded in the governance backend (submissions/audit_log).
 Exit code: 0 = human-review, 1 = reject, 2 = error.
 """
-import json, math, os, re, sys, unicodedata, urllib.request, urllib.error
+import json, math, os, pathlib, re, sys, unicodedata, urllib.request, urllib.error
 
-CARTA_VERSION = "0.1"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "ingest"))
+from verbatim import locate_in_source, norm  # noqa: E402
+
+def _carta_version() -> str:
+    """Read it from the constitution rather than declaring it here.
+
+    This file said "0.1" while the pipeline enforced 0.5, so the gate that
+    re-checks a draft would have rejected every draft the pipeline could build.
+    Nothing failed loudly because no draft had reached this gate since the
+    Carta moved. A constant copied into a second file is a constant that will
+    disagree with the first one eventually; reading the source of truth cannot."""
+    doc = pathlib.Path(__file__).resolve().parent.parent / "MAGNA_CARTA.md"
+    m = re.search(r"Editorial Constitution — v(\d+\.\d+)", doc.read_text(encoding="utf-8"))
+    if not m:
+        raise SystemExit("MAGNA_CARTA.md has no version line — refusing to guess")
+    return m.group(1)
+
+
+CARTA_VERSION = _carta_version()
 UA = "terraveler-curator/0.1 (contact: dbaldoni@gmail.com)"
 
 DOMAIN_WHITELIST = (
@@ -60,24 +78,31 @@ def rejoin_line_breaks(s):
     return FLATTENED_HYPHEN.sub("", LINE_BREAK_HYPHEN.sub("", s))
 
 
-def norm(s):
-    """Normalize text for verbatim matching: unicode quotes, whitespace, case,
-    and the single transformation Carta 3.4 permits."""
-    s = rejoin_line_breaks(s)
-    s = unicodedata.normalize("NFKC", s)
-    s = (s.replace("‘", "'").replace("’", "'")
-           .replace("“", '"').replace("”", '"')
-           .replace("—", "-").replace("–", "-"))
-    return re.sub(r"\s+", " ", s).strip().casefold()
-
 _cache = {}
+SCRIPT_OR_STYLE = re.compile(r"(?is)<(script|style|head)\b.*?</\1\s*>")
+TAG = re.compile(r"(?s)<[^>]+>")
+
+
+def readable_text(body: str) -> str:
+    """What a reader would see, not what the server sent.
+
+    The gate compared quotations against the raw HTTP response, so a sentence
+    present only in a <meta> description, in embedded JSON, or in any markup
+    the page never renders would come back VERIFIED VERBATIM. Nothing had
+    exploited it; it was reachable, which is enough — the whole guarantee is
+    that a quotation is on the page a reader can open."""
+    if "<" not in body:
+        return body
+    return TAG.sub(" ", SCRIPT_OR_STYLE.sub(" ", body))
+
+
 def fetch(url):
     if url in _cache:
         return _cache[url]
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     body = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
-    _cache[url] = body
-    return body
+    _cache[url] = readable_text(body)
+    return _cache[url]
 
 def domain_ok(url):
     host = urllib.parse.urlparse(url).netloc.lower()
@@ -164,7 +189,7 @@ def stage1_sources(sub):
             if not url or not domain_ok(url):
                 continue  # already failed in stage 0
             try:
-                body = norm(fetch(url))
+                body = fetch(url)
             except Exception as e:
                 add("FAIL", 1, f"{ctag}: source unreachable ({url}): {str(e)[:80]}")
                 continue
@@ -172,10 +197,17 @@ def stage1_sources(sub):
                 txt = ev.get(field)
                 if not txt:
                     continue
-                if norm(txt) in body:
+                raw, reading, _ = locate_in_source(txt, body)
+                if raw is None:
+                    add("FAIL", 1, f"{ctag}: {field} NOT FOUND in source — fabricated or altered (Carta section 3.4)")
+                elif norm(txt) == norm(reading):
                     add("PASS", 1, f"{ctag}: {field} VERIFIED VERBATIM in source")
                 else:
-                    add("FAIL", 1, f"{ctag}: {field} NOT FOUND in source — fabricated or altered (Carta section 3.4)")
+                    # It is in the source, but not as submitted. The pipeline
+                    # publishes the source's own span; anything else reached
+                    # the desk by another route and the desk should see it.
+                    add("FAIL", 1, f"{ctag}: {field} found in the source but not as submitted — "
+                                   f"the published text must be the source's own span (Carta section 3.4)")
 
 def stage2_coherence(sub):
     wps = sorted(sub.get("waypoints") or [], key=lambda w: w.get("seq") or 0)

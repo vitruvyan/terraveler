@@ -1,5 +1,5 @@
 # The Magna Carta of the Seas
-**Terraveler's Editorial Constitution — v0.5 (draft)**
+**Terraveler's Editorial Constitution — v0.5**
 
 This document governs what may enter Terraveler, how, and why. It is read by
 humans and machines alike: every contributing AI (Scribe) must load it before
@@ -41,14 +41,21 @@ platform, or a promotional space.
 3. Every field carries a **confidence**: `certain | approximate | reconstructed
    | contested`. Declaring uncertainty and dispute is a duty, not a weakness.
 4. Quotations are **verbatim or absent** — no reconstructed quotes, ever.
-   Verbatim means the words the source **prints**, not the bytes a scan
-   happened to produce. Exactly one transformation is permitted, applied
-   identically to the quotation and to the source it is checked against: a word
-   divided **only** by a typographic line ending may be rejoined. The raw span
-   and the transformation are both recorded in provenance. Nothing else may be
-   changed — not a hyphen inside a line, not a lexical compound, not a
-   historical spelling, not punctuation, not capitalisation. Where the nature
-   of a hyphen is ambiguous, it stays.
+   A quotation is not transcribed, it is **located**: whoever offers it says
+   *which* passage matters, and the passage is then copied out of the source
+   character for character. Nothing a scribe types is ever published. Finding
+   the passage is deliberately forgiving — case, quotation marks, dashes,
+   ligatures, spacing and hyphenation all differ between a scan and a
+   transcription of it, and none of those differences means a different
+   passage — and being forgiving there is safe only because of the copying.
+   Exactly one change is then made to the copied span, and only for reading: a
+   word the right-hand margin divided is made whole, and the line breaks become
+   spaces. Where the hyphen might be the printer's rather than the margin's it
+   stays. The untouched span is stored beside the readable one, so any
+   quotation can be checked against the scan it came from. This is the only
+   permitted difference between what the atlas prints and what the page holds;
+   there is no clause under which a spelling, a capital or a mark of
+   punctuation may be tidied.
 5. Provenance is recorded forever: ideator, drafting model, sources, date, and
    the Carta version in force.
 6. Every voyage declares its **evidence basis** — what kind of record it comes
@@ -196,17 +203,19 @@ is a machine. This section governs the machines.
 
 *Signed aboard, before sailing.*
 
-*Amendments: v0.5 — amended §3.4: verbatim is fidelity to the printed words,
-not to the line breaks of a scan. A word split by the right-hand margin may be
-rejoined, by the same deterministic rule on both sides of the comparison, with
-the raw span kept in provenance. The old reading rewarded a scribe who copied a
-typographic accident and refused one who read the page correctly — seven of
-sixteen quotations from La Pérouse's 1799 edition were lost that way, and the
-nine that survived did so by chance. Proposed by an external Scribe reviewing
-its own onboarding, and adopted because it makes the guarantee stricter, not
-looser: the single permitted transformation is now named, bounded and logged,
-where before "verbatim" quietly meant "verbatim against whichever OCR we
-fetched". v0.4 — added 7.1, the ship's own instruments: an internal
+*Amendments: v0.5 — amended §3.4: a quotation is located in its source and
+copied from it, never transcribed. The clause first shipped in a weaker form
+that permitted one transformation "applied identically to both sides", and an
+external Scribe attacking it showed the flaw was older and larger than the
+amendment: the matcher had always folded case, unified dashes and quotation
+marks, decomposed ligatures and collapsed whitespace, and the QUOTER's text was
+what got stored — so a page printing "The Voyage began." could be published as
+"the voyage began." and the record would assert it was exact. Copying the span
+out of the source ends that whole class of error at once, and lets the search
+for the passage be as forgiving as an OCR requires. The occasion was La
+Pérouse's 1799 edition, where seven of sixteen quotations had been refused
+because the margin had split a word; the nine that survived did so by chance.
+v0.4 — added 7.1, the ship's own instruments: an internal
 contributor operated by the editor is granted a Navigator's drafting capacity
 without having earned it, and no other privilege. The rule was changed rather
 than worked around in code. v0.3 — added §3.6, evidence basis and what was lost: a voyage

@@ -623,51 +623,10 @@ def _now():
 
 
 # ---------------------------------------------------------------- text norm (verbatim check)
-# A word the right-hand margin cut in two: letter, hyphen, line break, letter.
-# Deliberately narrow. It will not touch a hyphen with a letter on both sides of
-# it on the same line, which is where compounds and every ambiguous case live.
-LINE_BREAK_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010]\s*\n\s*(?=\w)")
-
-# The same wound after the text has been flattened to a single line, which is
-# how an OCR'd page usually reaches us and how a model usually quotes it back.
-FLATTENED_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010] +(?=[a-z])")
-
-
-def rejoin_line_breaks(s):
-    """Put back together a word that only the page's margin divided.
-
-    Carta §3.4 (v0.5). Applied to BOTH sides of the verbatim comparison, so it
-    can never turn a non-match into a match by editing one of them: it removes
-    a typographic accident from the source and from the quotation alike.
-
-    The narrow case only. "an- chored" rejoins; "north-east" does not, and
-    neither does anything with a letter on each side of the hyphen on one line.
-    A hyphen whose nature is ambiguous stays, per the same clause."""
-    return FLATTENED_HYPHEN.sub("", LINE_BREAK_HYPHEN.sub("", s))
-
-
-def norm_as_printed(s):
-    """norm() minus the one permitted transformation: what the scan literally
-    holds. Kept so the pipeline can record WHICH of the two a quotation matched
-    rather than silently collapsing them."""
-    s = unicodedata.normalize("NFKC", s)
-    s = (s.replace("\u2018", "'").replace("\u2019", "'")
-           .replace("\u201c", '"').replace("\u201d", '"')
-           .replace("\u2014", "-").replace("\u2013", "-"))
-    return re.sub(r"\s+", " ", s).strip().casefold()
-
-
-def norm(s):
-    """Normalize text for verbatim matching: unicode quotes, whitespace, case,
-    and the one transformation Carta 3.4 permits — a word rejoined across a
-    line ending. Mirrors scripts/curator.py's norm() exactly — same
-    substring-match contract."""
-    s = rejoin_line_breaks(s)
-    s = unicodedata.normalize("NFKC", s)
-    s = (s.replace("‘", "'").replace("’", "'")
-           .replace("“", '"').replace("”", '"')
-           .replace("—", "-").replace("–", "-"))
-    return re.sub(r"\s+", " ", s).strip().casefold()
+# Lives in verbatim.py so the Curator gate can apply the identical rule
+# without importing psycopg2 or AXIS. Two copies had already drifted four
+# Carta versions apart.
+from verbatim import locate_in_source, norm  # noqa: E402
 
 
 _EN = re.compile(r"\b(the|and|of|to|was|were|which|that|with|from|they|we|had|there|this)\b", re.I)
@@ -1329,14 +1288,21 @@ def verify_node(ctx, corpus):
                     f"wp{w['seq']} verify '{w['place_historical']}'",
                     f"source unreachable ({url}): {str(e)[:100]}", _now()))
                 continue
-            # Carta 3.4 (v0.5): the exact form first, then the one permitted
-            # transformation. Recording which of the two matched is the point —
-            # "the single permitted transformation is named, bounded and
-            # logged" is the whole reason the clause could be relaxed at all.
-            exact = norm_as_printed(w["diary_excerpt"]) in norm_as_printed(live)
+            # Carta 3.4 (v0.5). The scribe says WHICH passage; the source says
+            # what it contains. Everything published from here is copied out of
+            # the live text, so no habit of the quoter — a lowered capital, a
+            # straightened quotation mark, a decomposed ligature, a tidied
+            # hyphen — can reach the page. That was the real defect underneath
+            # every false positive an external review demonstrated: the matcher
+            # had always folded those, and the QUOTER's version was what got
+            # stored.
+            raw, reading, exact = locate_in_source(w["diary_excerpt"], live)
             w["verbatim_exact"] = exact
-            w["normalizations"] = [] if exact else ["end-of-line-dehyphenation"]
-            if exact or norm(w["diary_excerpt"]) in norm(live):
+            w["normalizations"] = ([] if reading == raw
+                                   else ["end-of-line-dehyphenation"])
+            if raw is not None:
+                w["diary_excerpt"] = reading
+                w["diary_excerpt_raw"] = raw
                 # Verbatim is necessary and not sufficient. A quotation can be
                 # perfectly authentic and still unpublishable: Carta §4 says the
                 # published language is English, always, and an edition that
@@ -1352,8 +1318,8 @@ def verify_node(ctx, corpus):
                     continue
                 passed += 1
                 how = ("VERBATIM" if exact else
-                       "VERBATIM after rejoining a word the page broke across "
-                       "two lines (Carta 3.4)")
+                       "VERBATIM once the page's own line breaks were closed "
+                       "(Carta 3.4)")
                 state = state.with_decision(Decision(
                     f"wp{w['seq']} '{w['place_historical']}': diary_excerpt VERIFIED "
                     f"{how} against live source", _now()))
@@ -1416,6 +1382,11 @@ def assemble_node(ctx, corpus):
                 # character; the flag says so positively rather than by absence.
                 "verbatim_exact": w.get("verbatim_exact"),
                 "normalizations": w.get("normalizations") or [],
+                # The span exactly as the source holds it, line breaks and all.
+                # Carta 3.4 promises this is kept; publishing only the readable
+                # form and calling the promise met would be the same class of
+                # error the clause was written to end.
+                "raw_span": w.get("diary_excerpt_raw"),
             }
             claim_confidence = w["confidence"] if w.get("diary_excerpt") else (
                 "reconstructed" if w["confidence"] == "certain" else w["confidence"])
