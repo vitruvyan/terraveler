@@ -911,6 +911,23 @@ export async function POST(req: Request) {
   return rpcError(id, -32601, `Method not found: ${method}`);
 }
 
-export async function GET() {
-  return new NextResponse("terraveler-mcp: POST JSON-RPC here (MCP Streamable HTTP).", { status: 405 });
+/** A browser here is a person, not a bug.
+ *
+ *  This used to answer every GET with 405 and one line of plain text. But the
+ *  most natural thing anyone does with a URL is paste it into a browser, and
+ *  someone doing that has the address and is actively trying to use it — the
+ *  moment of highest intent, answered with "your request method is wrong".
+ *
+ *  So a client that says it accepts HTML is sent to a page that explains the
+ *  thing and hands over the config; anything else keeps the terse answer, which
+ *  is correct for a machine that guessed the verb. */
+export async function GET(req: Request) {
+  const accept = req.headers.get("accept") ?? "";
+  if (accept.includes("text/html")) {
+    return NextResponse.redirect(new URL("/connect", req.url), 302);
+  }
+  return new NextResponse(
+    "terraveler-mcp: POST JSON-RPC here (MCP Streamable HTTP). " +
+    "Humans: https://www.terraveler.com/connect",
+    { status: 405 });
 }

@@ -2612,3 +2612,119 @@ input[type="range"].scrubber::-moz-range-thumb {
   padding: 0 2px;
 }
 .tv-hint button:hover { color: var(--ink); }
+
+/* =====================================================================
+   /connect — where someone lands after pasting the MCP URL in a browser.
+   Built to be finished, not admired: one address, one client, one button.
+   ===================================================================== */
+
+.tv-eyebrow {
+  display: block;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  color: var(--brass);
+  margin-bottom: 3px;
+}
+
+.tv-connect { margin: 26px 0 8px; }
+
+/* The address gets its own block because it is the one thing everyone needs
+   and the thing they came here holding. */
+.tv-connect-url {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(70, 96, 138, 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 9px 9px 0;
+}
+.tv-connect-url code {
+  display: block;
+  font-size: 15px;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.tv-copy {
+  flex: none;
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--accent);
+  color: var(--parchment);
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+.tv-copy:hover { background: var(--accent-deep); }
+
+.tv-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 22px 0 4px;
+  border-bottom: 1px solid var(--parchment-deep);
+  padding-bottom: 10px;
+}
+.tv-tab {
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 6px 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.tv-tab:hover { color: var(--ink); border-color: var(--parchment-deep); }
+.tv-tab-on,
+.tv-tab-on:hover {
+  color: var(--parchment);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.tv-steps { margin: 18px 0 0; padding-left: 22px; }
+.tv-steps > li { margin-bottom: 13px; line-height: 1.6; }
+.tv-steps > li.tv-step-code { list-style: none; margin-left: -22px; }
+
+.tv-step-code {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 9px;
+  padding: 12px 14px;
+  margin: 14px 0 16px;
+}
+.tv-step-code pre {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  /* Wide commands scroll inside their own box; the page never does. */
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.tv-step-code code { white-space: pre; }
+
+.tv-connect-note {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--parchment-deep);
+  padding-left: 12px;
+  margin-top: 18px;
+}
+
+@media (max-width: 560px) {
+  .tv-connect-url { flex-wrap: wrap; }
+  .tv-copy { margin-left: 0; }
+  .tv-step-code { flex-direction: column; }
+  .tv-step-code .tv-copy { align-self: flex-start; }
+}
