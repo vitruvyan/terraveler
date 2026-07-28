@@ -940,17 +940,17 @@ input[type="range"].scrubber::-moz-range-thumb {
 .left-stack .lens-switch { position: static; }
 .map-wordmark {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-direction: column;
   justify-content: center;
   position: absolute;
   top: 14px;
   left: 64px;
   z-index: 6;
-  height: 42px;
+  height: 48px;
   color: #fff;
   font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: 1.45rem;
+  font-size: 1.65rem;
   font-weight: 700;
   line-height: 1;
   text-decoration: none;
@@ -964,6 +964,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-style: italic;
   font-weight: 500;
   line-height: 1;
+  text-align: left;
   white-space: nowrap;
 }
 .map-wordmark:focus-visible {
@@ -1000,29 +1001,31 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .cart-emblem:hover { background: var(--parchment-deep); }
 
-/* Map controls use the navigation accent; the event and voyage sliders keep
-   their parchment treatment so the map remains the visual focus. */
+/* Parchment keeps the map controls legible without muting their coloured
+   native icons. The tools rail stays distinct as an instrument surface. */
 .cart-emblem,
-.tr-btn,
 .lens-rail {
-  background: var(--accent);
-  border-color: var(--accent-deep);
+  border-color: var(--parchment-deep);
   box-shadow: 0 6px 18px rgba(43, 33, 23, 0.3);
 }
 .cart-emblem,
-.tr-btn,
+.tr-btn {
+  background: rgba(242, 230, 207, 0.94);
+  color: var(--ink);
+}
+.lens-rail {
+  background: #2d3e4f;
+  border-color: #20303f;
+}
 .lens-rail .lens-btn { color: #fff; }
 .cart-emblem:hover,
-.tr-btn:hover { background: var(--accent-deep); }
-.nav-icon {
-  width: 19px;
-  height: 19px;
-  display: block;
+.tr-btn:hover { background: var(--parchment-deep); }
+.lens-rail .lens-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
 }
-.lens-rail .lens-btn:hover { background: rgba(255, 255, 255, 0.13); }
 .lens-rail .lens-btn.active {
   background: var(--parchment-deep);
-  color: var(--accent-deep);
+  color: #2d3e4f;
 }
 .lens-rail .rail-close { color: rgba(242, 230, 207, 0.8); }
 .lens-rail .rail-div { background: rgba(242, 230, 207, 0.3); }
@@ -1045,9 +1048,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--accent-deep);
-  background: var(--accent);
-  color: #fff;
+  border: 1px solid var(--parchment-deep);
+  background: rgba(242, 230, 207, 0.94);
+  color: var(--ink);
   font-size: 17px;
   cursor: pointer;
   display: flex;
@@ -1056,7 +1059,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
 }
-.tr-btn:hover { background: var(--accent-deep); }
+.tr-btn:hover { background: var(--parchment-deep); }
 .tr-menu {
   position: absolute;
   top: 48px;

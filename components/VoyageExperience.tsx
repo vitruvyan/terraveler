@@ -7,7 +7,6 @@ import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import AccountPanel from "@/components/AccountPanel";
 import ContributePanel from "@/components/ContributePanel";
-import { AtlasIcon, NavigatorIcon } from "@/components/NavigationIcons";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
@@ -500,7 +499,7 @@ export default function VoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          <AtlasIcon className="nav-icon" />
+          🌐
         </button>
       </div>
 
@@ -683,7 +682,7 @@ export default function VoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            <NavigatorIcon className="nav-icon" />
+            👤
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>

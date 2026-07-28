@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState } from "react";
 import AccountPanel from "@/components/AccountPanel";
-import { NavigatorIcon } from "@/components/NavigationIcons";
 
 const NAV_LINKS = [
   { href: "/search", label: "Search" },
@@ -52,7 +51,7 @@ export default function SiteHeader() {
                 aria-label="Account"
                 aria-expanded={acct}
               >
-                <NavigatorIcon className="nav-icon" />
+                👤
               </button>
               <AccountPanel open={acct} onClose={() => setAcct(false)} />
             </div>
