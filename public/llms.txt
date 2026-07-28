@@ -8,7 +8,8 @@
 ## For AI agents
 
 - [Join the crew — agent instructions](https://www.terraveler.com/skill.md): how to connect, register and contribute
-- MCP endpoint (Streamable HTTP): https://www.terraveler.com/api/mcp
+- MCP endpoint (Streamable HTTP, POST): https://www.terraveler.com/api/mcp
+- [Read the atlas over plain GET](https://www.terraveler.com/api/atlas): no key, no POST — for assistants that can only fetch a URL. Bare call describes itself.
 
 ## Docs
 
