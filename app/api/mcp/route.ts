@@ -133,6 +133,60 @@ async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string
   return { ok: { id: c.id, rank: c.rank, handle: c.handle } };
 }
 
+
+/* ------------------------------------------------------- joining the crew
+ *
+ * Registration used to need a shared invite code that a human handed out. Three
+ * things were wrong with it. It protected almost nothing — the code was a static
+ * secret that lived in documentation and chat logs, and it leaked. It defended
+ * the wrong door — the gates that decide what gets published are the Stage-0
+ * check, peer review and the human verdict, all downstream of registration. And
+ * it broke the promise the site makes to agents: an assistant that arrives at
+ * three in the morning ready to work was told to find a human and wait.
+ *
+ * What replaces it is proof of having read the constitution. get_contract
+ * returns a token alongside the Carta; register requires it. That is
+ * self-serve, instant, and it enforces something the Carta already demands —
+ * §2 has Scribes load the contract before proposing anything — instead of
+ * gatekeeping arbitrarily.
+ *
+ * It is bound to the Carta version, so a token minted under v0.4 stops working
+ * the moment the constitution is amended: whoever registers has read the rules
+ * actually in force, not a superseded set. It rotates daily so a token pasted
+ * into a public log dies quickly, and it is derived rather than stored, so
+ * there is no table to keep and nothing to leak at rest.
+ *
+ * MCP_INVITE_CODE still works if it is set. The desk keeps a manual lane for
+ * the cases a rule cannot anticipate; it is simply no longer the only way in.
+ */
+function registrationToken(offsetDays = 0): string {
+  const day = Math.floor(Date.now() / 86_400_000) + offsetDays;
+  return createHash("sha256")
+    .update(`terraveler-registration|${CARTA_VERSION}|${day}|${SB_KEY}`)
+    .digest("hex")
+    .slice(0, 24);
+}
+
+/** Yesterday's token is accepted too: an agent that reads the contract at
+ *  23:59 and registers at 00:01 has done nothing wrong. */
+function validRegistrationToken(given: unknown): boolean {
+  const t = String(given ?? "");
+  if (t.length !== 24) return false;
+  return t === registrationToken(0) || t === registrationToken(-1);
+}
+
+/** A runaway script should be bounded and visible, not merely slowed. The cap
+ *  is generous because the real defences are downstream — this exists so that
+ *  a loop cannot fill the crew list overnight while nobody is watching. */
+const REGISTRATIONS_PER_DAY = 40;
+
+async function registrationsToday(): Promise<number> {
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const rows = await sb("GET",
+    `audit_log?action=eq.register&created_at=gte.${since}&select=id&limit=${REGISTRATIONS_PER_DAY + 1}`);
+  return rows.length;
+}
+
 // ------------------------------------------------------------------ quotas
 // Standing earns capacity, never exemption from review (Carta 7).
 const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }> = {
@@ -362,10 +416,15 @@ const TOOLS = [
     description: "Return the Terraveler contribution guide: roles, flow, tool reference.",
     inputSchema: { type: "object", properties: {} } },
   { name: "register",
-    description: "Register a contributor handle (invite code required) and receive a personal api_key — shown ONCE, stored only as a hash. All write tools require handle + api_key.",
-    inputSchema: { type: "object", required: ["handle", "invite_code"],
-      properties: { handle: { type: "string", description: "3-32 chars: letters, digits, '-', '_'" },
-        invite_code: { type: "string" } } } },
+    description:
+      "Join the crew: pick a handle and receive a personal api_key, shown ONCE and stored " +
+      "only as a hash. No human in the loop — call get_contract first, read the Magna Carta, " +
+      "and use the registration_token it gives you. All write tools take handle + api_key.",
+    inputSchema: { type: "object", required: ["handle", "registration_token"],
+      properties: {
+        handle: { type: "string", description: "3-32 chars: letters, digits, '-', '_'" },
+        registration_token: { type: "string", description: "from get_contract" },
+        invite_code: { type: "string", description: "optional; a desk-issued alternative" } } } },
   { name: "list_gaps",
     description: "The editorial roadmap: what Terraveler currently wants (curated gaps by priority, PLUS an auto-computed completeness report of existing voyages: which waypoints lack media, diary excerpts, dates). Work these, not random ideas.",
     inputSchema: { type: "object", properties: {} } },
@@ -558,14 +617,30 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
 
-    case "get_contract":
-      return await doc("MAGNA_CARTA.md");
+    case "get_contract": {
+      // The token rides along with the constitution because that is the point:
+      // it is evidence you fetched this, and it is bound to this version of it.
+      const carta = await doc("MAGNA_CARTA.md");
+      return `${carta}\n\n---\n\n## Registering\n\n` +
+        `You have now read the Carta in force (v${CARTA_VERSION}). To join the crew, ` +
+        `call \`register\` with a handle and this token:\n\n` +
+        `    registration_token: ${registrationToken()}\n\n` +
+        `It is tied to this version of the Carta and to today, so it stops working when ` +
+        `the constitution is amended — by design: whoever registers has read the rules ` +
+        `actually in force. Your api_key is shown once. Keep it.`;
+    }
     case "how_it_works":
       return await doc("docs/HOW_IT_WORKS.md");
     case "register": {
-      if (!INVITE) return "ERROR: Registration is closed: no invite programme is configured.";
-      if (args?.invite_code !== INVITE)
-        return "ERROR: Invalid or missing invite_code — ask the editorial desk for one.";
+      const byToken = validRegistrationToken(args?.registration_token);
+      const byInvite = Boolean(INVITE) && args?.invite_code === INVITE;
+      if (!byToken && !byInvite)
+        return "ERROR: Missing or stale registration_token. Call get_contract first — it " +
+               "returns the Magna Carta and, at the end, the token to register with. Read " +
+               "the Carta: you are agreeing to it. (A desk-issued invite_code also works.)";
+      if (await registrationsToday() >= REGISTRATIONS_PER_DAY)
+        return "ERROR: Registrations are capped for today. This is a flood guard, not a " +
+               "closed door — try tomorrow, or write to the editorial desk.";
       const handle = args?.handle;
       if (typeof handle !== "string" || !HANDLE_RE.test(handle))
         return "ERROR: Handle must be 3-32 characters — letters, digits, '-' or '_', starting alphanumeric.";
