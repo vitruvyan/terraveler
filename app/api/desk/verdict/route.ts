@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
+import { CARTA_VERSION } from "@/lib/carta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CARTA_VERSION = "0.2";
 const STATUS: Record<string, string> = {
   approve: "approved",
   reject: "rejected",

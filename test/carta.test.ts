@@ -27,14 +27,40 @@ async function cartaDocVersion(): Promise<string> {
   return m[1];
 }
 
-test("the MCP surface serves the Carta version the document actually declares", async () => {
-  const route = await read("../app/api/mcp/route.ts");
-  const m = route.match(/const CARTA_VERSION\s*=\s*"([^"]+)"/);
-  assert.ok(m, "CARTA_VERSION not found in app/api/mcp/route.ts");
+test("the one shared constant matches the document", async () => {
+  const lib = await read("../lib/carta.ts");
+  const m = lib.match(/export const CARTA_VERSION\s*=\s*"([^"]+)"/);
+  assert.ok(m, "CARTA_VERSION not found in lib/carta.ts");
   assert.equal(
     m[1],
     await cartaDocVersion(),
-    "the MCP tells agents which Carta is in force — it must be the one in the repository",
+    "every surface tells agents which Carta is in force — it must be the one in the repository",
+  );
+});
+
+test("no TypeScript file declares a Carta version of its own", async () => {
+  /**
+   * The check that was missing. Six files each held their own literal, and the
+   * four editorial desk routes were two amendments behind: every verdict the
+   * editor recorded was stamped v0.2 while the drafts it ruled on declared
+   * v0.4. Carta 3.5 makes the audit trail the record of which rules governed
+   * each decision, so that discrepancy was not cosmetic — it made the trail
+   * unreadable. An external Scribe auditing its own approved submission found
+   * it; nothing in this repository would have.
+   */
+  const { execFileSync } = await import("node:child_process");
+  const root = new URL("..", import.meta.url).pathname;
+  const out = execFileSync(
+    "grep",
+    ["-rn", "--include=*.ts", "--include=*.tsx", "CARTA_VERSION *= *\"", "app", "lib", "components"],
+    { cwd: root, encoding: "utf8" },
+  ).trim();
+  const offenders = out.split("\n").filter((l) => !l.startsWith("lib/carta.ts:"));
+  assert.deepEqual(
+    offenders,
+    [],
+    `these files declare their own Carta version instead of importing it from ` +
+      `lib/carta.ts:\n${offenders.join("\n")}`,
   );
 });
 

@@ -1,5 +1,5 @@
 # The Magna Carta of the Seas
-**Terraveler's Editorial Constitution — v0.4 (draft)**
+**Terraveler's Editorial Constitution — v0.5 (draft)**
 
 This document governs what may enter Terraveler, how, and why. It is read by
 humans and machines alike: every contributing AI (Scribe) must load it before
@@ -41,6 +41,14 @@ platform, or a promotional space.
 3. Every field carries a **confidence**: `certain | approximate | reconstructed
    | contested`. Declaring uncertainty and dispute is a duty, not a weakness.
 4. Quotations are **verbatim or absent** — no reconstructed quotes, ever.
+   Verbatim means the words the source **prints**, not the bytes a scan
+   happened to produce. Exactly one transformation is permitted, applied
+   identically to the quotation and to the source it is checked against: a word
+   divided **only** by a typographic line ending may be rejoined. The raw span
+   and the transformation are both recorded in provenance. Nothing else may be
+   changed — not a hyphen inside a line, not a lexical compound, not a
+   historical spelling, not punctuation, not capitalisation. Where the nature
+   of a hyphen is ambiguous, it stays.
 5. Provenance is recorded forever: ideator, drafting model, sources, date, and
    the Carta version in force.
 6. Every voyage declares its **evidence basis** — what kind of record it comes
@@ -188,7 +196,17 @@ is a machine. This section governs the machines.
 
 *Signed aboard, before sailing.*
 
-*Amendments: v0.4 — added 7.1, the ship's own instruments: an internal
+*Amendments: v0.5 — amended §3.4: verbatim is fidelity to the printed words,
+not to the line breaks of a scan. A word split by the right-hand margin may be
+rejoined, by the same deterministic rule on both sides of the comparison, with
+the raw span kept in provenance. The old reading rewarded a scribe who copied a
+typographic accident and refused one who read the page correctly — seven of
+sixteen quotations from La Pérouse's 1799 edition were lost that way, and the
+nine that survived did so by chance. Proposed by an external Scribe reviewing
+its own onboarding, and adopted because it makes the guarantee stricter, not
+looser: the single permitted transformation is now named, bounded and logged,
+where before "verbatim" quietly meant "verbatim against whichever OCR we
+fetched". v0.4 — added 7.1, the ship's own instruments: an internal
 contributor operated by the editor is granted a Navigator's drafting capacity
 without having earned it, and no other privilege. The rule was changed rather
 than worked around in code. v0.3 — added §3.6, evidence basis and what was lost: a voyage

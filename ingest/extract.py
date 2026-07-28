@@ -75,7 +75,7 @@ UA = "terraveler-extract/0.1 (contact: dbaldoni@gmail.com)"
 # three places disagreed about which constitution was in force and every draft
 # this pipeline produced would have been refused at the gate. test/carta.test.ts
 # now fails the build if the three ever separate again.
-CARTA_VERSION = "0.4"
+CARTA_VERSION = "0.5"
 
 # What kind of record a voyage survives through. Mirrors lib/evidence.ts and
 # the check constraint in supabase/evidence_basis.sql — keep the three in step.
@@ -623,9 +623,46 @@ def _now():
 
 
 # ---------------------------------------------------------------- text norm (verbatim check)
+# A word the right-hand margin cut in two: letter, hyphen, line break, letter.
+# Deliberately narrow. It will not touch a hyphen with a letter on both sides of
+# it on the same line, which is where compounds and every ambiguous case live.
+LINE_BREAK_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010]\s*\n\s*(?=\w)")
+
+# The same wound after the text has been flattened to a single line, which is
+# how an OCR'd page usually reaches us and how a model usually quotes it back.
+FLATTENED_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010] +(?=[a-z])")
+
+
+def rejoin_line_breaks(s):
+    """Put back together a word that only the page's margin divided.
+
+    Carta §3.4 (v0.5). Applied to BOTH sides of the verbatim comparison, so it
+    can never turn a non-match into a match by editing one of them: it removes
+    a typographic accident from the source and from the quotation alike.
+
+    The narrow case only. "an- chored" rejoins; "north-east" does not, and
+    neither does anything with a letter on each side of the hyphen on one line.
+    A hyphen whose nature is ambiguous stays, per the same clause."""
+    return FLATTENED_HYPHEN.sub("", LINE_BREAK_HYPHEN.sub("", s))
+
+
+def norm_as_printed(s):
+    """norm() minus the one permitted transformation: what the scan literally
+    holds. Kept so the pipeline can record WHICH of the two a quotation matched
+    rather than silently collapsing them."""
+    s = unicodedata.normalize("NFKC", s)
+    s = (s.replace("\u2018", "'").replace("\u2019", "'")
+           .replace("\u201c", '"').replace("\u201d", '"')
+           .replace("\u2014", "-").replace("\u2013", "-"))
+    return re.sub(r"\s+", " ", s).strip().casefold()
+
+
 def norm(s):
-    """Normalize text for verbatim matching: unicode quotes, whitespace, case.
-    Mirrors scripts/curator.py's norm() exactly — same substring-match contract."""
+    """Normalize text for verbatim matching: unicode quotes, whitespace, case,
+    and the one transformation Carta 3.4 permits — a word rejoined across a
+    line ending. Mirrors scripts/curator.py's norm() exactly — same
+    substring-match contract."""
+    s = rejoin_line_breaks(s)
     s = unicodedata.normalize("NFKC", s)
     s = (s.replace("‘", "'").replace("’", "'")
            .replace("“", '"').replace("”", '"')
@@ -1292,7 +1329,14 @@ def verify_node(ctx, corpus):
                     f"wp{w['seq']} verify '{w['place_historical']}'",
                     f"source unreachable ({url}): {str(e)[:100]}", _now()))
                 continue
-            if norm(w["diary_excerpt"]) in norm(live):
+            # Carta 3.4 (v0.5): the exact form first, then the one permitted
+            # transformation. Recording which of the two matched is the point —
+            # "the single permitted transformation is named, bounded and
+            # logged" is the whole reason the clause could be relaxed at all.
+            exact = norm_as_printed(w["diary_excerpt"]) in norm_as_printed(live)
+            w["verbatim_exact"] = exact
+            w["normalizations"] = [] if exact else ["end-of-line-dehyphenation"]
+            if exact or norm(w["diary_excerpt"]) in norm(live):
                 # Verbatim is necessary and not sufficient. A quotation can be
                 # perfectly authentic and still unpublishable: Carta §4 says the
                 # published language is English, always, and an edition that
@@ -1307,9 +1351,12 @@ def verify_node(ctx, corpus):
                     w["diary_excerpt"] = None
                     continue
                 passed += 1
+                how = ("VERBATIM" if exact else
+                       "VERBATIM after rejoining a word the page broke across "
+                       "two lines (Carta 3.4)")
                 state = state.with_decision(Decision(
                     f"wp{w['seq']} '{w['place_historical']}': diary_excerpt VERIFIED "
-                    f"VERBATIM against live source", _now()))
+                    f"{how} against live source", _now()))
             else:
                 dropped += 1
                 state = state.with_rejection(Rejection(
@@ -1318,7 +1365,11 @@ def verify_node(ctx, corpus):
                     "nulled per source-integrity rule (never fabricated)", _now()))
                 w["diary_excerpt"] = None
 
+        rejoined = sum(1 for w in corpus.waypoints
+                       if w.get("diary_excerpt") and w.get("normalizations"))
         state = state.with_fact(Fact("excerpts_verified", passed, "verify", _now()))
+        state = state.with_fact(Fact("excerpts_rejoined_across_lines", rejoined,
+                                     "verify", _now()))
         state = state.with_fact(Fact("excerpts_dropped", dropped, "verify", _now()))
         return state.with_decision(Decision(
             f"Verify: {passed} excerpts VERBATIM-confirmed against live source, "
@@ -1360,6 +1411,11 @@ def assemble_node(ctx, corpus):
                 "source_url": fetchable_source_url(src.get("source_url")),
                 "source_title": src.get("title"),
                 "license": src.get("license"),
+                # Provenance for the one transformation Carta 3.4 allows. Empty
+                # list means the quotation matched the source character for
+                # character; the flag says so positively rather than by absence.
+                "verbatim_exact": w.get("verbatim_exact"),
+                "normalizations": w.get("normalizations") or [],
             }
             claim_confidence = w["confidence"] if w.get("diary_excerpt") else (
                 "reconstructed" if w["confidence"] == "certain" else w["confidence"])

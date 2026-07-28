@@ -45,8 +45,25 @@ findings = []  # (level, stage, message)
 def add(level, stage, msg):
     findings.append((level, stage, msg))
 
+# Carta 3.4 (v0.5): a word divided only by a typographic line ending may be
+# rejoined, by the same rule on both sides of the comparison. These two patterns
+# and rejoin_line_breaks() must stay identical to ingest/extract.py's — the
+# curator is the gate that re-checks what the pipeline verified, and a gate
+# using a different rule than the check it audits is not a gate.
+LINE_BREAK_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010]\s*\n\s*(?=\w)")
+FLATTENED_HYPHEN = re.compile(r"(?<=\w)[-\u00ad\u2010] +(?=[a-z])")
+
+
+def rejoin_line_breaks(s):
+    """Put back together a word that only the page's margin divided. The narrow
+    case only: a hyphen with letters on both sides of it on one line stays."""
+    return FLATTENED_HYPHEN.sub("", LINE_BREAK_HYPHEN.sub("", s))
+
+
 def norm(s):
-    """Normalize text for verbatim matching: unicode quotes, whitespace, case."""
+    """Normalize text for verbatim matching: unicode quotes, whitespace, case,
+    and the single transformation Carta 3.4 permits."""
+    s = rejoin_line_breaks(s)
     s = unicodedata.normalize("NFKC", s)
     s = (s.replace("‘", "'").replace("’", "'")
            .replace("“", '"').replace("”", '"')

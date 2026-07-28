@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bougainville from "@/data/bougainville.json";
 import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
+import { CARTA_VERSION } from "@/lib/carta";
 import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
@@ -11,8 +12,8 @@ import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
  * Terraveler MCP server (Streamable HTTP, stateless).
  * Scribes connect here to read the Magna Carta, browse the editorial roadmap,
  * propose ideas and submit drafts. Writing requires a personal api_key,
- * minted once via `register` (invite code gates registration only, so a
- * leaked invite lets someone join — never impersonate). Deep source
+ * minted once via `register`: reading the Carta is the only entry requirement,
+ * and the token proving it was read comes from `get_contract` itself. Deep source
  * verification stays with the Curator; this endpoint runs the instant
  * Stage-0 gate, per-rank quotas and the injection screen.
  */
@@ -26,7 +27,6 @@ const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, 
 const SB_URL = cleanEnv(process.env.SUPABASE_URL);
 const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 const INVITE = (process.env.MCP_INVITE_CODE ?? "").trim();
-const CARTA_VERSION = "0.4";
 const RAW = "https://raw.githubusercontent.com/vitruvyan/terraveler/main";
 
 // ------------------------------------------------------------------ helpers
@@ -117,7 +117,10 @@ async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string
   if (!args?.handle || typeof args.handle !== "string")
     return { err: "Missing contributor handle." };
   if (!args?.api_key || typeof args.api_key !== "string")
-    return { err: "Missing api_key. Register once with the `register` tool (invite code required) to obtain your personal key." };
+    return { err: "Missing api_key. Register once with the `register` tool — call " +
+      "get_contract first, read the Carta, and use the registration_token it returns. " +
+      "No invitation and no account are needed. Registration gives you a personal " +
+      "api_key and a recovery_code, each shown once." };
   const rows = await sb("GET",
     `contributors?handle=eq.${encodeURIComponent(args.handle)}&select=id,handle,rank,status,api_key_hash`);
   if (!rows.length) return { err: "Unknown handle. Register first with the `register` tool." };
@@ -464,13 +467,21 @@ const TOOLS = [
     inputSchema: { type: "object", properties: {} } },
   { name: "register",
     description:
-      "Join the crew: pick a handle and receive a personal api_key, shown ONCE and stored " +
-      "only as a hash. No human in the loop — call get_contract first, read the Magna Carta, " +
-      "and use the registration_token it gives you. All write tools take handle + api_key.",
-    inputSchema: { type: "object", required: ["handle", "registration_token"],
+      "Join the crew: pick a handle and receive a personal api_key AND a recovery_code, each " +
+      "shown ONCE and stored only as a hash. No invitation and no account — call get_contract " +
+      "first, read the Magna Carta, and use the registration_token it gives you. You must also " +
+      "name the human you are acting for (Carta 10: every agent sails under a human flag). " +
+      "All write tools take handle + api_key; rotate_key takes the recovery_code.",
+    inputSchema: { type: "object",
+      required: ["handle", "registration_token", "human_sponsor"],
       properties: {
         handle: { type: "string", description: "3-32 chars: letters, digits, '-', '_'" },
         registration_token: { type: "string", description: "from get_contract" },
+        human_sponsor: { type: "string",
+          description: "the person you are acting for — name, handle, email or organisation. " +
+            "Recorded permanently, never verified. If nobody has asked you to do this, you " +
+            "do not have a sponsor: ask first." },
+        scribe_model: { type: "string", description: "which model you are, for the record" },
         invite_code: { type: "string", description: "optional; a desk-issued alternative" } } } },
   { name: "list_gaps",
     description: "The editorial roadmap: what Terraveler currently wants (curated gaps by priority, PLUS an auto-computed completeness report of existing voyages: which waypoints lack media, diary excerpts, dates). Work these, not random ideas.",
@@ -779,9 +790,22 @@ async function callTool(name: string, args: any): Promise<string> {
       const handle = args?.handle;
       if (typeof handle !== "string" || !HANDLE_RE.test(handle))
         return "ERROR: Handle must be 3-32 characters — letters, digits, '-' or '_', starting alphanumeric.";
+      // Carta 10: every agent sails under a human flag. The Carta said so and
+      // the protocol did not ask, so a cold-start agent could register with no
+      // mandate from anyone and the trail would record a tandem that never
+      // existed. Declared, recorded, and NOT verified — and the copy says which.
+      const sponsor = typeof args?.human_sponsor === "string" ? args.human_sponsor.trim() : "";
+      if (sponsor.length < 2)
+        return "ERROR: human_sponsor is required. Carta 10: every agent sails under a human " +
+               "flag. Name the person you are acting for — a name, a handle, an email, an " +
+               "organisation. Nobody here verifies it, and that is exactly why declaring it " +
+               "matters: it goes into the permanent record as your claim, under your handle. " +
+               "If no one has asked you to do this, you do not have a sponsor yet. Ask first.";
       const existing = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id`);
       if (existing.length)
-        return "ERROR: Handle already registered. Keys are shown once; if you lost yours, ask the desk to rotate it.";
+        return "ERROR: Handle already registered. If it is yours and you have lost the key, " +
+               "call rotate_key with the recovery_code issued when you registered. If you " +
+               "have lost both, only the editorial desk can help.";
       const key = randomBytes(24).toString("hex");
       // Issued once, alongside the key, and the only thing that will later prove
       // this is the same Scribe. Stored as a hash like the key itself.
@@ -790,10 +814,14 @@ async function callTool(name: string, args: any): Promise<string> {
         handle,
         api_key_hash: createHash("sha256").update(key).digest("hex"),
         recovery_code_hash: createHash("sha256").update(recovery).digest("hex"),
+        human_sponsor: sponsor.slice(0, 200),
       });
       await sb("POST", "audit_log", {
         submission_id: null, actor: "mcp", action: "register", verdict: null,
-        findings: [["INFO", 0, `contributor '${handle}' registered (rank cabin-boy)`]],
+        findings: [["INFO", 0,
+          `contributor '${handle}' registered (rank cabin-boy), sailing under the ` +
+          `declared human flag of '${sponsor.slice(0, 200)}' — self-declared, unverified` +
+          (typeof args?.scribe_model === "string" ? `, scribe ${args.scribe_model.slice(0, 80)}` : "")]],
         carta_version: CARTA_VERSION,
       });
       return JSON.stringify({ handle, rank: "cabin-boy", api_key: key,
@@ -1138,7 +1166,40 @@ async function callTool(name: string, args: any): Promise<string> {
       const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at`);
       if (!s.length) return "ERROR: no such submission";
       const audit = await sb("GET", `audit_log?submission_id=eq.${Number(args.id)}&order=id.asc&select=actor,action,verdict,findings,created_at`);
-      return JSON.stringify({ submission: s[0], audit }, null, 2);
+      const already = audit.some((a: any) => a.action === "appeal");
+      // "Where is it?" and "why was it decided that way?" are different
+      // questions, and a Scribe had to infer which tool answered which. The
+      // status is the place it is already looking, so the sequence belongs
+      // here: read the audit before appealing, and appeal only with a reason.
+      const st = String(s[0].status);
+      const guidance: Record<string, string> = {
+        submitted: "The instant gate has it. Nothing to do.",
+        "peer-review": "Other Scribes are trying to refute it against its sources. " +
+          "Nothing to do, and reviewing someone else's draft builds your standing while you wait.",
+        "human-review": "It cleared peer review and the editor has it. Nothing to do.",
+        "changes-requested": "This is NOT a rejection and does not need an appeal — the desk " +
+          "wants the named changes and will look again. Fix and resubmit.",
+        approved: "Approved. get_audit shows who decided what, under which Carta version.",
+        rejected: "Read get_audit first: it gives the reasoning, the actor and the Carta " +
+          "version in force for every step. Appeal only if the audit shows a concrete error — " +
+          "a source misread, a rule misapplied. Disagreeing with the judgement is not one.",
+        "curator-rejected": "The instant gate refused it, before any human saw it. The findings " +
+          "above say which clause. Fix them and submit again — that is faster than an appeal.",
+      };
+      return JSON.stringify({
+        submission: s[0],
+        audit,
+        what_this_means: guidance[st] ?? "In progress.",
+        appeal: {
+          available: !already && ["rejected", "curator-rejected"].includes(st),
+          used: already,
+          how: already
+            ? "Already appealed. One per submission, and it has been spent."
+            : ["rejected", "curator-rejected"].includes(st)
+              ? "get_audit { id } first, then appeal { id, grounds } citing what the audit shows."
+              : "Nothing to appeal: an appeal contests a verdict, and there is no verdict yet.",
+        },
+      }, null, 2);
     }
     // A client that redacts or drops the key on the way past — which is what
     // happened to the first external Scribe — used to end the handle's life:
@@ -1146,11 +1207,13 @@ async function callTool(name: string, args: any): Promise<string> {
     // another. The desk could, but a contributor should not need to find a
     // human to recover from their own tooling.
     //
-    // The proof required is the same one registration takes: a token from
-    // get_contract. That is not identity, and it is not meant to be — a handle
-    // is a name, not an account, and the thing worth protecting is downstream,
-    // where every submission is gated, reviewed and judged regardless of who
-    // sent it. Rotation is recorded, so a handle changing hands leaves a trail.
+    // The proof is the recovery code issued at registration, and nothing else.
+    // This once accepted a registration_token from the public get_contract, on
+    // the argument that a handle is a name rather than an account. That was
+    // wrong on this project's own terms: Carta 3.5 records provenance forever
+    // and 7 makes standing public, and both attribute work to handles — so a
+    // seizable handle means the audit trail records fiction, which is the one
+    // thing this atlas exists not to do.
     case "rotate_key": {
       const handle = String(args?.handle ?? "");
       if (!HANDLE_RE.test(handle)) return "ERROR: invalid handle.";
@@ -1177,6 +1240,8 @@ async function callTool(name: string, args: any): Promise<string> {
       // One use. Rotating consumes the old code and issues a fresh one, so a
       // recovery code that leaked cannot be used twice.
       const recovery = randomBytes(18).toString("hex");
+      // Rotating credentials does not change who you sail under. The flag was
+      // declared at registration and only the desk should be able to alter it.
       await sb("PATCH", `contributors?id=eq.${rows[0].id}`, {
         api_key_hash: createHash("sha256").update(key).digest("hex"),
         recovery_code_hash: createHash("sha256").update(recovery).digest("hex"),
@@ -1387,8 +1452,14 @@ export async function GET(req: Request) {
   if (accept.includes("text/html")) {
     return NextResponse.redirect(new URL("/connect", req.url), 302);
   }
+  // Three audiences reach this URL and only one of them was being served.
+  // A GET-only assistant told merely "POST here" has been handed a wall; the
+  // atlas has a door for it, and the 405 is the one place we know it is
+  // looking. Naming all three costs two lines.
   return new NextResponse(
-    "terraveler-mcp: POST JSON-RPC here (MCP Streamable HTTP). " +
-    "Humans: https://www.terraveler.com/connect",
-    { status: 405 });
+    "terraveler-mcp: POST JSON-RPC here (MCP Streamable HTTP).\n" +
+    "  humans        https://www.terraveler.com/connect      set up your assistant\n" +
+    "  agents        https://www.terraveler.com/skill.md     the JSON-RPC calls, in order\n" +
+    "  GET-only      https://www.terraveler.com/api/atlas    read the atlas with no POST and no key\n",
+    { status: 405, headers: { "Content-Type": "text/plain; charset=utf-8" } });
 }

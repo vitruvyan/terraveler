@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readCookie, getUserEmail } from "@/lib/deskAuth";
+import { CARTA_VERSION } from "@/lib/carta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,6 @@ export const dynamic = "force-dynamic";
 const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
 const SB_URL = cleanEnv(process.env.SUPABASE_URL);
 const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
-const CARTA_VERSION = "0.2";
 
 async function sb(method: string, path: string, body?: unknown): Promise<any> {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, {

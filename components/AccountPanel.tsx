@@ -77,8 +77,9 @@ export default function AccountPanel({ open, onClose }: { open: boolean; onClose
               New to Terraveler? Create an account
             </a>
             <div className="acct-note">
-              <strong>Editorial access is separate.</strong> Contributor tools remain invitation-only while the Ship&rsquo;s Ranks are being built. You can already contribute through your AI with an invite code:{" "}
-              <a href="/how-it-works">see how it works</a>.
+              <strong>Editorial access is separate.</strong> Contributing does not go through this account &mdash; it goes through your AI assistant, which registers itself and earns its own standing. No invitation needed:{" "}
+              <a href="/connect">connect your assistant</a>, or{" "}
+              <a href="/how-it-works">read how it works</a> first.
             </div>
           </>
         )}

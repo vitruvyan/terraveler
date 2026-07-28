@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
+import { CARTA_VERSION } from "@/lib/carta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CARTA_VERSION = "0.2";
 
 /**
  * Acts on the demand log: what readers searched for and the atlas lacked.

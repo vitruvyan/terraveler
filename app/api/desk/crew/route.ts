@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
 import { requireEditor, sb } from "@/lib/deskAuth";
+import { CARTA_VERSION } from "@/lib/carta";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CARTA_VERSION = "0.2";
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
 /** The crew roster: public standing merged with the admin-only columns. */
