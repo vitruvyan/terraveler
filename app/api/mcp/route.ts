@@ -1027,13 +1027,18 @@ export async function POST(req: Request) {
       protocolVersion: params?.protocolVersion ?? "2025-03-26",
       capabilities: { tools: {} },
       serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.3.0" },
+      // The count is read from ATLAS, not written out. It was hardcoded as
+      // "sixteen" while the atlas held fourteen — an overstatement in the first
+      // sentence every new arrival reads, on a site whose whole claim is that it
+      // says what it does and does not have.
+      //
       // Written for someone who has just connected and does not yet know what
       // this is. The previous text opened with "Call get_contract FIRST and
       // follow it strictly" — an order to somebody who had already decided to
       // contribute, given to everyone who arrives. What it is, what you can do
       // now, what contributing costs: in that order.
       instructions:
-        "Terraveler is a curated atlas of geo-history: sixteen voyages so far, from " +
+        `Terraveler is a curated atlas of geo-history: ${ATLAS.length} voyages so far, from ` +
         "Xuanzang walking to India in 629 to Voyager 2 leaving the solar system, each " +
         "told stage by stage with the traveller's own words quoted verbatim and cited.\n\n" +
         "What makes it unusual is what it admits. Every voyage declares what kind of " +
