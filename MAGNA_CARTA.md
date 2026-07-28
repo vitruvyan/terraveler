@@ -50,8 +50,12 @@ platform, or a promotional space.
    passage — and being forgiving there is safe only because of the copying.
    Exactly one change is then made to the copied span, and only for reading: a
    word the right-hand margin divided is made whole, and the line breaks become
-   spaces. Where the hyphen might be the printer's rather than the margin's it
-   stays. The untouched span is stored beside the readable one, so any
+   spaces. A capital letter on either side of the hyphen is taken as the
+   printer's mark and kept — X-ray, Anglo-Saxon. Two lower-case parts cannot be
+   told apart from a compound without the geometry of the page, and are
+   rejoined: "anchor-" and "ed" far outnumber "north-" and "east", but the rule
+   is a bet and the transformation is recorded on every quotation so that the
+   bet is visible rather than implied. The untouched span is stored beside the readable one, so any
    quotation can be checked against the scan it came from. This is the only
    permitted difference between what the atlas prints and what the page holds;
    there is no clause under which a spelling, a capital or a mark of
@@ -215,7 +219,11 @@ out of the source ends that whole class of error at once, and lets the search
 for the passage be as forgiving as an OCR requires. The occasion was La
 Pérouse's 1799 edition, where seven of sixteen quotations had been refused
 because the margin had split a word; the nine that survived did so by chance.
-v0.4 — added 7.1, the ship's own instruments: an internal
+The clause first said an ambiguous hyphen stays, which the
+implementation could not honour and did not: two lower-case parts are
+undecidable without page geometry, and refusing them all would have kept the
+margin's damage in every quotation. The sentence now describes the bet the code
+makes. v0.4 — added 7.1, the ship's own instruments: an internal
 contributor operated by the editor is granted a Navigator's drafting capacity
 without having earned it, and no other privilege. The rule was changed rather
 than worked around in code. v0.3 — added §3.6, evidence basis and what was lost: a voyage
