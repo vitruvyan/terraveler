@@ -79,6 +79,15 @@ this. Nothing further is required of the pipeline; something is required of
 anyone who reads a quotation from `cartier-1534`, `pizarro-1532` or
 `xuanzang-629` and assumes it matches a printed page character for character.
 
+**Seen in the wild, 2026-07-28.** Mungo Park's draft carries two quotations
+reading "on the ged day of May, 1795" and "arrived at Falmouth on the ged" —
+the scan's rendering of a printed "22d". Both passed verification, correctly:
+they are what the source says. So the gate does exactly what it promises and
+the promise does not include legibility. Where a garbled token sits inside a
+date, the safest reading is that the date came from the surrounding narrative
+and not from that string. Nothing to fix in the pipeline; something to know
+before quoting `mungopark-1795` in prose.
+
 ## Why each entry names the exact edition
 
 Three of the first source proposals for this queue were unusable, and in every
