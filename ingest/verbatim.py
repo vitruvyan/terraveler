@@ -91,6 +91,12 @@ def _for_reading(raw):
     out, done, i, n = [], [], 0, len(raw)
     while i < n:
         ch = raw[i]
+        if ch == "_":
+            # Gutenberg's emphasis markers. Kept in the raw span, dropped from
+            # what a reader is shown, and named in the transformations.
+            done.append("emphasis-markers-removed")
+            i += 1
+            continue
         if not ch.isspace():
             out.append(ch)
             i += 1
@@ -169,6 +175,14 @@ def _norm_with_origins(s):
         folded = _fold_punct(ch)
         if folded in "-\u2010\u00ad" and out and out[-1].isalnum() \
                 and i + 1 < n and s[i + 1].isalnum():
+            i += 1
+            continue
+        # Project Gutenberg marks emphasis with underscores: _Tierra Austral
+        # del Espiritù Santo_. They are formatting, not words — the same status
+        # as an <em> — and a scribe reading the passage does not transcribe
+        # them. Bougainville carried a published quotation that could not be
+        # found in its own source for exactly this reason.
+        if folded == "_":
             i += 1
             continue
         push(unicodedata.normalize("NFKC", folded).casefold(), i)

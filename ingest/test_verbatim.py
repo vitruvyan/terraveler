@@ -180,5 +180,26 @@ class SourceText(unittest.TestCase):
             "the wind held all day")
 
 
+class GutenbergMarkup(unittest.TestCase):
+    """Underscores are emphasis, not letters."""
+
+    def test_a_quotation_is_found_through_italic_markers(self):
+        # Bougainville had a published quotation that could not be located in
+        # its own source, because the source reads
+        # "_Tierra Austral del Espiritù Santo_" and no scribe transcribes the
+        # underscores.
+        src = ("As for ourselves, every thing conspired to persuade us that it "
+               "was the _Tierra Austral del Espiritù Santo_. Appearances")
+        self.assertEqual(
+            published("was the Tierra Austral del Espiritù Santo.", src),
+            "was the Tierra Austral del Espiritù Santo.")
+
+    def test_the_markers_are_named_and_the_raw_span_keeps_them(self):
+        raw, reading, t = locate_in_source("the _Tierra_ Austral", "the _Tierra_ Austral")
+        self.assertIn("_", raw)
+        self.assertNotIn("_", reading)
+        self.assertIn("emphasis-markers-removed", t)
+
+
 if __name__ == "__main__":
     unittest.main()
