@@ -22,7 +22,7 @@ Exit code: 0 = human-review, 1 = reject, 2 = error.
 import json, math, os, pathlib, re, sys, unicodedata, urllib.request, urllib.error
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "ingest"))
-from verbatim import locate_in_source, norm  # noqa: E402
+from verbatim import locate_in_source, norm, readable_text  # noqa: E402
 
 def _carta_version() -> str:
     """Read it from the constitution rather than declaring it here.
@@ -79,29 +79,14 @@ def rejoin_line_breaks(s):
 
 
 _cache = {}
-SCRIPT_OR_STYLE = re.compile(r"(?is)<(script|style|head)\b.*?</\1\s*>")
-TAG = re.compile(r"(?s)<[^>]+>")
-
-
-def readable_text(body: str) -> str:
-    """What a reader would see, not what the server sent.
-
-    The gate compared quotations against the raw HTTP response, so a sentence
-    present only in a <meta> description, in embedded JSON, or in any markup
-    the page never renders would come back VERIFIED VERBATIM. Nothing had
-    exploited it; it was reachable, which is enough — the whole guarantee is
-    that a quotation is on the page a reader can open."""
-    if "<" not in body:
-        return body
-    return TAG.sub(" ", SCRIPT_OR_STYLE.sub(" ", body))
-
-
 def fetch(url):
     if url in _cache:
         return _cache[url]
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    body = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
-    _cache[url] = readable_text(body)
+    with urllib.request.urlopen(req, timeout=60) as r:
+        body = r.read().decode("utf-8", "replace")
+        ctype = r.headers.get("Content-Type", "")
+    _cache[url] = readable_text(body, ctype)
     return _cache[url]
 
 def domain_ok(url):

@@ -20,7 +20,7 @@ Carta versions behind — there is one copy now.
 """
 import unittest
 
-from verbatim import locate_in_source, norm
+from verbatim import locate_in_source, norm, readable_text
 
 
 def published(quote, source):
@@ -68,8 +68,18 @@ class TheOnePermittedTransformation(unittest.TestCase):
         # for transcribing the hyphen — nor for omitting it.
         self.assertEqual(published("an X-ray plate", "an X-\nray plate"), "an X-ray plate")
 
-    def test_a_paragraph_break_does_not_divide_a_word(self):
-        self.assertIsNone(published("international", "inter-\n\nnational"))
+    def test_a_gap_wider_than_one_line_keeps_its_hyphen(self):
+        """A paragraph break does not divide a word; a page break does, and in
+        an OCR they are the same characters. So the match is allowed and the
+        hyphen survives into print, which is right either way.
+
+        Refusing the match cost a real quotation from La Pérouse's vol. II —
+        "to en-\n\n\ntreat", broken across a page with a running head in the
+        gap — and reported it as "fabricated or altered"."""
+        self.assertEqual(published("international", "inter-\n\nnational"),
+                         "inter-national")
+        self.assertEqual(published("to entreat us", "to en- \n\n\ntreat us"),
+                         "to en-treat us")
 
     def test_the_known_limit_is_a_limit_and_not_a_secret(self):
         """"north-\\neast" and "anchor-\\ned" are indistinguishable without the
@@ -106,6 +116,35 @@ class TheGateStillHolds(unittest.TestCase):
 class Matching(unittest.TestCase):
     def test_norm_is_only_for_finding_never_for_printing(self):
         self.assertEqual(norm("The  Voyage—began"), norm("the voyage-began"))
+
+
+class SourceText(unittest.TestCase):
+    """A gate that mistakes a book for a web page accuses people of forgery."""
+
+    def test_a_stray_angle_bracket_in_plain_text_destroys_nothing(self):
+        # An OCR'd 1929 volume held eight of these. Stripping "tags" from it
+        # deleted 318,658 characters, and four genuine quotations were then
+        # reported as "fabricated or altered".
+        book = ("I entered Damascus on Thursday 9th Ramadan 726 "
+                "< and lodged at the Malikite college, "
+                "and the price was 3 < 4 dinars, and we stayed.")
+        self.assertEqual(readable_text(book, "text/plain"), book)
+        self.assertEqual(readable_text(book, ""), book,
+                         "no Content-Type means no assumption")
+
+    def test_markup_is_still_stripped_when_the_server_says_html(self):
+        page = ('<html><head><meta name="d" content="a hidden quotation">'
+                "</head><body><p>the visible text</p></body></html>")
+        out = readable_text(page, "text/html; charset=utf-8")
+        self.assertIn("the visible text", out)
+        self.assertNotIn("hidden quotation", out,
+                         "a sentence only in a meta tag is not on the page")
+
+    def test_a_quotation_survives_a_source_with_brackets_in_it(self):
+        book = "we sailed at dawn < and the wind held all day"
+        self.assertEqual(
+            locate_in_source("the wind held all day", readable_text(book, "text/plain"))[1],
+            "the wind held all day")
 
 
 if __name__ == "__main__":

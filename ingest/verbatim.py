@@ -36,10 +36,17 @@ def _breaks_word(s, ws_start, ws_end):
     is published — the span is copied out of the source afterwards. It is the
     publication rule below that has to be careful.
 
-    One newline at most: "inter-\n\nnational" crosses a paragraph, and a
-    paragraph does not divide a word."""
-    if s.count("\n", ws_start, ws_end) > 1:
-        return False
+    Blank lines are allowed here and refused in the publication rule below.
+    "inter-\n\nnational" is a paragraph break, which does not divide a word —
+    but "to en-\n\n\ntreat" is a PAGE break, which does, and in an OCR the two
+    are the same characters. La Pérouse's vol. II breaks exactly that way, with
+    a running head and a page number sitting in the gap. Refusing both cost a
+    real quotation and reported it as "fabricated or altered".
+
+    So matching accepts them, because a false negative here is an accusation of
+    forgery; publication refuses them, because a false positive there prints a
+    word the page never had. The generous side is the safe one only because
+    the published span is copied rather than typed."""
     nxt = s[ws_end] if ws_end < len(s) else ""
     k = ws_start - 2
     return bool(nxt) and nxt.isalpha() and k >= 0 and s[k].isalpha()
@@ -58,6 +65,8 @@ def _division_is_unambiguous(s, ws_start, ws_end):
     limit of the clause rather than a defect hidden inside it."""
     if not _breaks_word(s, ws_start, ws_end):
         return False
+    if s.count("\n", ws_start, ws_end) > 1:
+        return False        # a paragraph or a page break: too far to be sure
     return s[ws_end].islower() and s[ws_start - 2].islower()
 
 
@@ -193,3 +202,33 @@ def norm(s):
     nothing a quoter typed survives into the atlas."""
     return _norm_with_origins(s)[0]
 
+
+
+# ---------------------------------------------------------------- source text
+
+_SCRIPTISH = re.compile(r"(?is)<(script|style|head)\b.*?</\1\s*>")
+_TAG = re.compile(r"(?s)<[^>]+>")
+
+
+def readable_text(body: str, content_type: str = "") -> str:
+    """What a reader would see on the page, given what the server said it sent.
+
+    Two failures, in opposite directions, produced this function.
+
+    A gate that matched against the raw HTTP response would verify a sentence
+    that appears only in a <meta> tag or in embedded JSON — text no reader can
+    see. So markup has to go.
+
+    But deciding "this is markup" by looking for a "<" destroys plain text. An
+    OCR'd 1929 book held eight stray angle brackets, and stripping everything
+    between each one and the next ">" deleted 318,658 characters — forty per
+    cent of the volume — after which four genuine quotations were reported as
+    NOT FOUND, which this pipeline words as "fabricated or altered". Accusing a
+    contributor of forgery because a scanner misread a bracket is the most
+    expensive mistake this code can make.
+
+    So the Content-Type decides, and nothing else does. When the server does not
+    say, the body is left exactly as it came."""
+    if "html" not in content_type.lower() and "xml" not in content_type.lower():
+        return body
+    return _TAG.sub(" ", _SCRIPTISH.sub(" ", body))
