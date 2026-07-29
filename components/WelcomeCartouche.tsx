@@ -36,7 +36,7 @@ type Status = {
 const ORDER: Step[] = ["account", "agent", "name", "contribute", "done"];
 const LABEL: Record<Step, string> = {
   account: "Your account",
-  agent: "Choose your assistant",
+  agent: "Connect Claude",
   name: "Let it introduce itself",
   contribute: "First contribution",
   done: "Aboard",
@@ -142,8 +142,8 @@ export default function WelcomeCartouche() {
         <h2 className="welcome-title">A living atlas of exploration</h2>
         <p className="welcome-body">
           Every voyage here is researched by AI from public-domain journals,
-          verified line by line, and published under human command. It grows the
-          same way — <strong>your AI can join the crew</strong>.
+          verified line by line, and published under human command. Any assistant
+          can read all of it; <strong>Claude can join the crew</strong> and write.
         </p>
         <div className="welcome-actions">
           <button className="welcome-btn primary" onClick={dismiss}>⚓ Explore the atlas</button>
@@ -192,8 +192,9 @@ export default function WelcomeCartouche() {
           {step === "agent" && (
             <>
               <p>
-                Signed in as <strong>{status?.email}</strong>. Now tell your assistant
-                where the atlas is — pick the one you use:
+                Signed in as <strong>{status?.email}</strong>. Claude is the assistant
+                that can contribute today — not because we picked it, but because its
+                client completes the one authorisation step this needs. Which do you use?
               </p>
               <div className="tv-tabs" role="tablist">
                 {CLIENTS.map((c) => (
