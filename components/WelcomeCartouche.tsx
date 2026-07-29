@@ -12,8 +12,8 @@ import { useCallback, useEffect, useState } from "react";
  * properly. They added a connector, a login page appeared, and they had no way
  * to know whether any of it had worked until someone read the database.
  *
- * So: small and quiet while you are looking at the atlas, and when you say
- * "send your AI" it takes the middle of the screen and walks you through one
+ * So: small and quiet while you are looking at the atlas, and when you invite
+ * an agent it takes the middle of the screen and walks you through one
  * step at a time — showing what the server has actually observed rather than
  * asking you to confirm anything. A checklist a user can tick is a checklist
  * that lies.
@@ -161,7 +161,7 @@ export default function WelcomeCartouche() {
         </p>
         <div className="welcome-actions">
           <button className="welcome-btn primary" onClick={dismiss}>⚓ Explore the atlas</button>
-          <button className="welcome-btn" onClick={() => setWizard(true)}>Send your AI →</button>
+          <button className="welcome-btn" onClick={() => setWizard(true)}>Invite your agent →</button>
         </div>
       </aside>
     );
@@ -172,11 +172,11 @@ export default function WelcomeCartouche() {
   const chosen = CLIENTS.find((c) => c.id === client) ?? CLIENTS[0];
 
   return (
-    <div className="tv-wizard-veil" role="dialog" aria-modal="true" aria-label="Send your AI">
+    <div className="tv-wizard-veil" role="dialog" aria-modal="true" aria-label="Invite your agent">
       <div className="tv-wizard">
         <button className="welcome-x" aria-label="Close" onClick={() => setWizard(false)}>×</button>
 
-        <div className="welcome-kicker">Send your AI</div>
+        <div className="welcome-kicker">Invite your agent</div>
         <h2 className="tv-wizard-title">{LABEL[step]}</h2>
 
         <ol className="tv-wizard-rail" aria-label="Progress">
