@@ -87,10 +87,36 @@ test("every write tool declares a scope, and no read tool does", async () => {
   // refused what the tools/list contract said was open.
   for (const [tool, scope] of guarded) {
     assert.ok((SCOPES as readonly string[]).includes(scope), `${tool} names an unknown scope`);
-    assert.match(route, new RegExp(`\\{ name: "${tool}",\\n\\s*securitySchemes: OAUTH\\("${scope}"\\)`),
+    // Search inside the tool's own block rather than assuming which field comes
+    // first — the assertion is "this tool advertises that scope", and pinning
+    // the order made it fail the day annotations were added, which is a test
+    // reporting on its own regex instead of on the contract.
+    const start = route.indexOf(`{ name: "${tool}",`);
+    assert.ok(start > 0, `${tool} is enforced but has no tool definition`);
+    const block = route.slice(start, route.indexOf('{ name: "', start + 10));
+    assert.ok(block.includes(`securitySchemes: OAUTH("${scope}")`),
       `${tool} is enforced at '${scope}' but does not advertise it in tools/list`);
   }
   assert.ok(guarded.length >= 7, "expected at least the seven writing tools");
+});
+
+test("every tool declares what a call costs if it goes wrong", async () => {
+  /**
+   * A host reads these to decide how much friction to put in front of a call.
+   * Declaring nothing leaves it to assume the worst — and an external Scribe's
+   * client refused a read-only queue listing before the request ever left the
+   * machine, which no amount of correctness on this end could have fixed.
+   */
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
+  const names = [...route.matchAll(/\{ name: "([a-z_]+)",/g)].map((m) => m[1]);
+  assert.ok(names.length >= 20, "expected the full catalogue");
+  for (const tool of names) {
+    const start = route.indexOf(`{ name: "${tool}",`);
+    const block = route.slice(start, route.indexOf('{ name: "', start + 10));
+    assert.ok(block.includes("annotations: {"), `${tool} declares no annotations`);
+    assert.ok(/readOnlyHint: (true|false)/.test(block), `${tool} does not say whether it writes`);
+  }
 });
 
 test("credentials are optional in every tool schema", () => {

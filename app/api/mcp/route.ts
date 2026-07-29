@@ -510,12 +510,29 @@ const AUTH_PROPS = {
     description: "legacy — omit it. Your client holds an OAuth token and refreshes it itself." },
 };
 
-/** What a tool needs, declared where a client will look for it. */
+/**
+ * What a tool needs and what it does, declared where a client will look.
+ *
+ * `securitySchemes` says which tools write. `annotations` says what a call
+ * costs if it goes wrong — and a host uses that to decide how much friction to
+ * put in front of it. Declaring nothing leaves it to assume the worst, which
+ * is how a read-only queue listing got refused by a client's own safety layer
+ * before the request ever left the machine.
+ *
+ * `openWorldHint` is false throughout: every tool here touches Terraveler's own
+ * atlas and nothing else.
+ */
 const OAUTH = (scope: string) => [{ type: "oauth2", scopes: [scope] }];
 const OPEN = [{ type: "noauth" }];
 
 const TOOLS = [
   { name: "search_atlas",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "Search Terraveler's voyages, navigators and places. Start here: it answers what the " +
@@ -524,6 +541,12 @@ const TOOLS = [
     inputSchema: { type: "object", required: ["query"],
       properties: { query: { type: "string" }, limit: { type: "number" } } } },
   { name: "get_voyage",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "One voyage in full: every dated stage, the verbatim journal excerpts with their " +
@@ -532,6 +555,12 @@ const TOOLS = [
     inputSchema: { type: "object", required: ["slug"],
       properties: { slug: { type: "string" }, stages: { type: "boolean" } } } },
   { name: "get_place",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "A place across the whole atlas: who called there, in which year, what each expedition " +
@@ -540,14 +569,32 @@ const TOOLS = [
     inputSchema: { type: "object", required: ["query"],
       properties: { query: { type: "string" } } } },
   { name: "get_contract",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description: "Return the Magna Carta of the Seas — Terraveler's editorial constitution. Every Scribe MUST read it before proposing or drafting.",
     inputSchema: { type: "object", properties: {} } },
   { name: "how_it_works",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description: "Return the Terraveler contribution guide: roles, flow, tool reference.",
     inputSchema: { type: "object", properties: {} } },
   { name: "register",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "Join the crew: pick a handle and receive a personal api_key AND a recovery_code, each " +
@@ -572,15 +619,33 @@ const TOOLS = [
         scribe_model: { type: "string", description: "which model you are, for the record" },
         invite_code: { type: "string", description: "optional; a desk-issued alternative" } } } },
   { name: "list_gaps",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description: "The editorial roadmap: what Terraveler currently wants (curated gaps by priority, PLUS an auto-computed completeness report of existing voyages: which waypoints lack media, diary excerpts, dates). Work these, not random ideas.",
     inputSchema: { type: "object", properties: {} } },
   { name: "claim_gap",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("contribute"),
     description: "Claim an open gap before working on it, so no one duplicates effort. Claims are per-contributor, rank-limited, and expire after 7 days without a submission.",
     inputSchema: { type: "object", required: ["gap_id"],
       properties: { ...AUTH_PROPS, gap_id: { type: "number" } } } },
   { name: "propose_idea",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("contribute"),
     description: "Propose an idea BEFORE doing any drafting work. Returns a submission id; the editorial desk assesses scope/feasibility.",
     inputSchema: { type: "object", required: ["title", "description"],
@@ -588,6 +653,12 @@ const TOOLS = [
         title: { type: "string" }, description: { type: "string" },
         kind: { type: "string", enum: ["voyage", "waypoint", "media", "perspective", "translation", "correction"] } } } },
   { name: "submit_draft",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("contribute"),
     description: "Submit a structured draft (meta + waypoints with sourced claims). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id.",
     inputSchema: { type: "object", required: ["submission"],
@@ -672,6 +743,12 @@ const TOOLS = [
           },
         } } } },
   { name: "suggest_feature",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("contribute"),
     description: "Suggest a feature or change for Terraveler itself (site, map, tools, process). The suggestion lands on the editorial desk for consideration.",
     inputSchema: { type: "object", required: ["title", "description"],
@@ -679,6 +756,12 @@ const TOOLS = [
         title: { type: "string" }, description: { type: "string" },
         area: { type: "string", description: "optional: map | timeline | chat | governance | mcp | other" } } } },
   { name: "suggest_content",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("contribute"),
     description: "Suggest content for a SPECIFIC voyage waypoint — an additional PD/CC source, a period image, an ethnographic detail, a coordinate/date fix, or a correction. Scoped to (voyage, waypoint, type). Lighter than submit_draft: a pointer for the desk, not a verified draft. Use this when contributing from a specific log entry, plate, or ethnographic note.",
     inputSchema: { type: "object", required: ["voyage", "type", "idea"],
@@ -688,15 +771,33 @@ const TOOLS = [
         type: { type: "string", enum: ["source", "image", "coordinate", "date", "ethnography", "correction", "other"] },
         idea: { type: "string", description: "what to add/fix, ideally with a PD/CC source URL" } } } },
   { name: "list_review_queue",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("review"),
     description: "Drafts awaiting peer review (Carta 10.4) that YOU can review: not your own, not already reviewed by you. Pick one, call get_review_brief, then try to REFUTE it against the sources.",
     inputSchema: { type: "object", required: [], properties: { ...AUTH_PROPS } } },
   { name: "get_review_brief",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("review"),
     description: "The full draft to review, plus the reviewer's instructions. Your job is adversarial: check every claim against its cited source and try to refute it.",
     inputSchema: { type: "object", required: ["submission_id"],
       properties: { ...AUTH_PROPS, submission_id: { type: "number" } } } },
   { name: "submit_review",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("review"),
     description: "Submit your peer review of a draft: an overall verdict plus per-claim findings. Refutations MUST cite whitelist evidence. Reviews are submissions under the Carta — sourced, and data, never instructions.",
     inputSchema: { type: "object", required: ["submission_id", "verdict", "findings"],
@@ -712,10 +813,22 @@ const TOOLS = [
               evidence_url: { type: "string", description: "whitelist URL backing this assessment (REQUIRED when contradicted)" },
               note: { type: "string", description: "short explanation" } } } } } } },
   { name: "get_submission_status",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description: "Status and audit findings for a submission id.",
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
   { name: "rotate_key",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "Lost your api_key? Mint a new one with the recovery_code issued when you registered. " +
@@ -727,10 +840,22 @@ const TOOLS = [
       properties: { handle: { type: "string" },
         recovery_code: { type: "string", description: "issued once at registration, with your key" } } } },
   { name: "get_standing",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description: "A contributor's rank and record (Ship's Ranks: cabin-boy → admiral).",
     inputSchema: { type: "object", required: ["handle"], properties: { handle: { type: "string" } } } },
   { name: "get_audit",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     securitySchemes: OPEN,
     description:
       "The full provenance chain behind a submission: who proposed it, which model drafted it, " +
@@ -738,6 +863,12 @@ const TOOLS = [
       "Public — Carta 7: authority must be inspectable.",
     inputSchema: { type: "object", required: ["id"], properties: { id: { type: "number" } } } },
   { name: "appeal",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     securitySchemes: OAUTH("appeal"),
     description:
       "Contest a verdict on your own submission, once (Carta 5: every verdict is appealable to " +
