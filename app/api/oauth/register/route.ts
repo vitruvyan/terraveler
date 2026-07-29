@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { sb } from "@/lib/deskAuth";
+import { sha256 } from "@/lib/oauth";
 
 /**
  * RFC 7591 — a client registering itself, with nobody provisioning anything.
@@ -17,7 +18,8 @@ import { sb } from "@/lib/deskAuth";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const PER_HOUR = 60;
+const PER_SOURCE_PER_HOUR = 10;
+const GLOBAL_PER_HOUR = 2000;
 
 function badRequest(error: string, description: string) {
   return NextResponse.json({ error, error_description: description }, { status: 400 });
@@ -49,13 +51,33 @@ export async function POST(req: Request) {
     clean.push(parsed.toString());
   }
 
+  // Per source first, and a far higher global ceiling behind it.
+  //
+  // One number for the whole system is a denial of service with sixty
+  // requests: an anonymous caller spends the hour's budget and every genuine
+  // person who tries to connect that hour is turned away. Throttling the
+  // source that is flooding leaves everyone else unaffected, and the global
+  // number stops being a door anyone can close.
   const since = new Date(Date.now() - 3600_000).toISOString();
-  const recent = await sb("GET", `oauth_clients?created_at=gte.${since}&select=id`);
-  if ((recent?.length ?? 0) >= PER_HOUR)
+  const source = sha256(
+    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown",
+  ).slice(0, 32);
+  const [mine, all] = await Promise.all([
+    sb("GET", `oauth_clients?created_at=gte.${since}&source_hash=eq.${source}&select=id`),
+    sb("GET", `oauth_clients?created_at=gte.${since}&select=id`),
+  ]);
+  if ((mine?.length ?? 0) >= PER_SOURCE_PER_HOUR)
     return NextResponse.json(
       { error: "temporarily_unavailable",
-        error_description: "client registrations are capped for this hour — a flood guard, " +
-          "not a closed door. Try again shortly, or write to the editorial desk." },
+        error_description: `you have registered ${mine.length} clients this hour, which is ` +
+          `the limit for one source. Nobody else is affected by this.` },
+      { status: 429 },
+    );
+  if ((all?.length ?? 0) >= GLOBAL_PER_HOUR)
+    return NextResponse.json(
+      { error: "temporarily_unavailable",
+        error_description: "registrations are paused site-wide for this hour — an emergency " +
+          "ceiling, not a normal one. Write to the editorial desk if you meet it." },
       { status: 429 },
     );
 
@@ -65,6 +87,7 @@ export async function POST(req: Request) {
     client_name: typeof body.client_name === "string" ? body.client_name.slice(0, 120) : null,
     redirect_uris: clean,
     registered_via: "dcr",
+    source_hash: source,
   });
 
   return NextResponse.json(

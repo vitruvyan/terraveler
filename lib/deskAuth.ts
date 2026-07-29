@@ -131,6 +131,21 @@ export function supabaseUrl(): string {
   return AUTH_URL;
 }
 
+/** A stored procedure, for the writes that must be one statement. */
+export async function rpc(name: string, args: Record<string, unknown>): Promise<any> {
+  const r = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
+  });
+  if (!r.ok) throw new Error(`rpc ${name}: ${r.status} ${(await r.text()).slice(0, 160)}`);
+  const t = await r.text();
+  return t ? JSON.parse(t) : null;
+}
+
 export async function sb(method: string, path: string, body?: unknown): Promise<any> {
   const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
     method,

@@ -3,7 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bougainville from "@/data/bougainville.json";
 import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
 import { CARTA_VERSION } from "@/lib/carta";
-import { type Bearer, type Scope, unauthorized, verifyBearer } from "@/lib/oauth";
+import { type Bearer, type Scope, insufficientScope, unauthorized, verifyBearer } from "@/lib/oauth";
 import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
@@ -221,6 +221,13 @@ function validRegistrationToken(given: unknown): boolean {
  * api_key registration is the legacy path and gates itself on the Carta token.
  */
 const SCOPE_FOR: Record<string, Scope | undefined> = {
+  // Both of these need to know who is asking — the queue hides your own
+  // drafts and the ones you have already reviewed — and get_review_brief
+  // hands back an unpublished draft, which anonymous callers had no business
+  // reading. Neither triggered a challenge, so a Scribe met the old
+  // credential problem before it ever reached submit_review.
+  list_review_queue: "review",
+  get_review_brief: "review",
   claim_gap: "contribute",
   propose_idea: "contribute",
   submit_draft: "contribute",
@@ -229,6 +236,9 @@ const SCOPE_FOR: Record<string, Scope | undefined> = {
   submit_review: "review",
   appeal: "appeal",
 };
+
+const RESOURCE_METADATA =
+  "https://www.terraveler.com/.well-known/oauth-protected-resource";
 
 const REGISTRATIONS_PER_DAY = 40;
 
@@ -678,11 +688,11 @@ const TOOLS = [
         type: { type: "string", enum: ["source", "image", "coordinate", "date", "ethnography", "correction", "other"] },
         idea: { type: "string", description: "what to add/fix, ideally with a PD/CC source URL" } } } },
   { name: "list_review_queue",
-    securitySchemes: OPEN,
+    securitySchemes: OAUTH("review"),
     description: "Drafts awaiting peer review (Carta 10.4) that YOU can review: not your own, not already reviewed by you. Pick one, call get_review_brief, then try to REFUTE it against the sources.",
     inputSchema: { type: "object", required: [], properties: { ...AUTH_PROPS } } },
   { name: "get_review_brief",
-    securitySchemes: OPEN,
+    securitySchemes: OAUTH("review"),
     description: "The full draft to review, plus the reviewer's instructions. Your job is adversarial: check every claim against its cited source and try to refute it.",
     inputSchema: { type: "object", required: ["submission_id"],
       properties: { ...AUTH_PROPS, submission_id: { type: "number" } } } },
@@ -992,7 +1002,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "claim_gap": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       // One statement: authenticate, reap stale claims, count, claim and audit.
       // Two agents racing for the last slot of a rank now lose or win inside a
       // single transaction instead of both passing a separate count.
@@ -1029,7 +1038,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
     }
     case "propose_idea": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["title", "description"]);
       if (bad) return `ERROR: ${bad}`;
       const one = await recordSubmission(args, {
@@ -1057,7 +1065,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
     }
     case "submit_draft": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const sub = args.submission;
       const fails = stage0(sub);
       const status = fails.length ? "curator-rejected" : "peer-review";
@@ -1099,7 +1106,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "suggest_feature": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["title", "description", "area"]);
       if (bad) return `ERROR: ${bad}`;
       const one = await recordSubmission(args, {
@@ -1129,7 +1135,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
     }
     case "suggest_content": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const bad = badText(args, ["voyage", "idea"]);
       if (bad) return `ERROR: ${bad}`;
       const contentNote = (id: number) =>
@@ -1206,7 +1211,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "submit_review": {
-      if (!args?.handle || !args?.api_key) return "ERROR: Missing handle or api_key.";
       const sid = Number(args.submission_id);
       // Validation of the review's shape stays here — it is about the Carta,
       // not the database — but everything that touches state happens in one
@@ -1547,8 +1551,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
 }
 
 // ------------------------------------------------------------------ JSON-RPC
-function rpcResult(id: any, result: any) {
-  return NextResponse.json({ jsonrpc: "2.0", id, result });
+function rpcResult(id: any, result: any, headers?: Record<string, string>) {
+  return NextResponse.json({ jsonrpc: "2.0", id, result }, headers ? { headers } : undefined);
 }
 function rpcError(id: any, code: number, message: string) {
   return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } });
@@ -1619,12 +1623,26 @@ export async function POST(req: Request) {
       // the first tool that writes, which is the moment it means something.
       const bearer = await verifyBearer(req);
       const need = SCOPE_FOR[String(params?.name)];
-      if (need && !bearer && !params?.arguments?.api_key)
-        return unauthorized(need);
+      if (need && !bearer && !params?.arguments?.api_key) {
+        // The HTTP header alone is not enough for every host. OpenAI's linking
+        // UI reads the challenge out of the JSON-RPC result's `_meta`, so a
+        // bare 401 leaves its user with a tool that fails and nothing offered
+        // to fix it. Both go out: the header for spec-compliant clients, the
+        // `_meta` for the ones that surface a "connect" button.
+        const challenge =
+          `Bearer realm="Terraveler", scope="${need}", ` +
+          `resource_metadata="${RESOURCE_METADATA}"`;
+        return rpcResult(id, {
+          content: [{ type: "text", text:
+            "ERROR: this tool writes to the atlas and needs authorising once. Your client " +
+            "should open a browser for your human to approve; if it cannot, see " +
+            "https://www.terraveler.com/connect." }],
+          isError: true,
+          _meta: { "mcp/www_authenticate": challenge },
+        }, { "WWW-Authenticate": challenge });
+      }
       if (need && bearer && !bearer.scopes.includes(need))
-        return unauthorized(need,
-          `This connection was authorised for ${bearer.scopes.join(", ") || "nothing"} ` +
-          `and this tool needs '${need}'. Ask your human to authorise again.`);
+        return insufficientScope(need, bearer.scopes);
       const text = await callTool(params?.name, params?.arguments ?? {}, bearer);
       return rpcResult(id, { content: [{ type: "text", text }], isError: text.startsWith("ERROR:") });
     } catch (e: any) {

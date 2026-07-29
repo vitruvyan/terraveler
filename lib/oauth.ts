@@ -24,6 +24,16 @@ export const CODE_TTL_S = 300;
 /** Short, because a leaked access token is only as bad as its lifetime. */
 export const ACCESS_TTL_S = 3600;
 export const REFRESH_TTL_S = 60 * 60 * 24 * 60;
+/**
+ * How long after a rotation a re-presented refresh token is a retry rather
+ * than a theft. Concurrent refreshes and flaky networks are ordinary client
+ * behaviour; detonating a connection over one would punish correctness. Ten
+ * seconds is what the widely-deployed implementations settle on.
+ */
+export const REUSE_GRACE_MS = 10_000;
+
+/** The one resource tokens from this server may be spent at. */
+export const MCP_RESOURCE = "https://www.terraveler.com/api/mcp";
 
 export const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 export const secret = () => randomBytes(32).toString("base64url");
@@ -62,18 +72,20 @@ export function redirectAllowed(registered: string[], given: string): boolean {
 
 export type TokenPair = { access_token: string; refresh_token: string; expires_in: number };
 
-export async function issueTokens(connectionId: number, scopes: Scope[]): Promise<TokenPair> {
+export async function issueTokens(
+  connectionId: number, scopes: Scope[], resource: string = MCP_RESOURCE,
+): Promise<TokenPair> {
   const access = secret();
   const refresh = secret();
   const now = Date.now();
   await sb("POST", "oauth_tokens", [
     {
       token_hash: sha256(access), kind: "access", connection_id: connectionId,
-      scopes, expires_at: new Date(now + ACCESS_TTL_S * 1000).toISOString(),
+      scopes, resource, expires_at: new Date(now + ACCESS_TTL_S * 1000).toISOString(),
     },
     {
       token_hash: sha256(refresh), kind: "refresh", connection_id: connectionId,
-      scopes, expires_at: new Date(now + REFRESH_TTL_S * 1000).toISOString(),
+      scopes, resource, expires_at: new Date(now + REFRESH_TTL_S * 1000).toISOString(),
     },
   ]);
   return { access_token: access, refresh_token: refresh, expires_in: ACCESS_TTL_S };
@@ -102,10 +114,13 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
   const rows = await sb(
     "GET",
     `oauth_tokens?token_hash=eq.${sha256(m[1].trim())}&kind=eq.access&select=` +
-      `scopes,expires_at,revoked_at,connection_id`,
+      `scopes,expires_at,revoked_at,connection_id,resource`,
   );
   const tok = rows?.[0];
   if (!tok || tok.revoked_at || new Date(tok.expires_at).getTime() < Date.now()) return null;
+  // Audience. A token minted for another MCP server must not be spendable here,
+  // which is the whole reason the spec makes `resource` mandatory.
+  if (tok.resource && tok.resource.replace(/\/+$/, "") !== MCP_RESOURCE) return null;
 
   const conns = await sb(
     "GET",
@@ -127,6 +142,35 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
     scopes: tok.scopes ?? [],
     human_principal_id: conn.human_principal_id,
   };
+}
+
+/**
+ * 403, not 401, when the token is good and the scope is not.
+ *
+ * A client that reads 401 concludes it has lost its authorisation and starts
+ * again from discovery; what it actually needs is to ask for one more scope.
+ * RFC 6750 has a name for that and clients act on it.
+ */
+export function insufficientScope(need: Scope, held: Scope[]) {
+  return new Response(
+    JSON.stringify({
+      error: "insufficient_scope",
+      message:
+        `You are authorised for ${held.join(", ") || "nothing"} and this tool needs ` +
+        `'${need}'. Your authorisation is intact — ask your human to approve the extra ` +
+        `scope rather than starting again.`,
+      required_scopes: [...new Set([...held, need])],
+    }),
+    {
+      status: 403,
+      headers: {
+        "Content-Type": "application/json",
+        "WWW-Authenticate":
+          `Bearer realm="Terraveler", error="insufficient_scope", scope="${need}", ` +
+          `resource_metadata="https://www.terraveler.com/.well-known/oauth-protected-resource"`,
+      },
+    },
+  );
 }
 
 /**

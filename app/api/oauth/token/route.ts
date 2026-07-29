@@ -1,25 +1,34 @@
 import { NextResponse } from "next/server";
-import { sb } from "@/lib/deskAuth";
+import { sb, rpc } from "@/lib/deskAuth";
 import {
-  ACCESS_TTL_S, issueTokens, parseScopes, pkceMatches, sha256, redirectAllowed,
+  ACCESS_TTL_S, MCP_RESOURCE, REUSE_GRACE_MS, issueTokens, parseScopes, pkceMatches,
+  redirectAllowed, sha256,
 } from "@/lib/oauth";
 
 /**
  * The token endpoint: authorization_code and refresh_token.
  *
- * Two properties matter more than the rest.
+ * Three things here are answers to a red-team report, and each was wrong in a
+ * way that only shows up under contention or attack.
  *
- * A code is single use, and redeeming it sets `consumed_at` rather than
- * deleting the row — so presenting it twice is *detected* as a replay instead
- * of merely failing, and the second attempt revokes what the first was given.
- * A stolen code that has already been spent should cost the thief, not the
- * owner.
+ * **The claim is atomic.** Both grants used to read the credential, decide it
+ * was unused, issue tokens, and only then mark it spent. Two requests arriving
+ * together both read "unused" and both walked away with a valid token family —
+ * so replay detection failed during exactly the race it exists for. The
+ * database now decides the winner in a single statement, and a caller that
+ * loses looks the credential up afterwards to tell "already spent" from "never
+ * existed".
  *
- * A refresh token rotates. The old one is marked as rotated to the new, and a
- * rotated token presented again means one of the two holders is not the
- * client, so the whole connection is revoked. That is deliberately harsher
- * than returning 401: the alternative is a thief refreshing forever alongside
- * the legitimate holder, which nobody would notice.
+ * **PKCE is checked before anything is revoked.** The point of PKCE is that a
+ * stolen code is useless without the verifier. Revoking on a replayed code
+ * before validating the verifier left it useful for one thing — disconnecting
+ * the owner. Every binding is validated first; only a second presentation that
+ * proves it holds the verifier is treated as compromise.
+ *
+ * **Reuse has a grace window.** Concurrent refreshes and network retries are
+ * ordinary client behaviour, not attacks. A token re-presented within seconds
+ * of its rotation returns the family that rotation produced instead of
+ * detonating the connection.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +50,10 @@ async function readParams(req: Request): Promise<Record<string, string>> {
   return Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
 }
 
-async function revokeConnection(connectionId: number, why: string) {
+async function detonate(connectionId: number, why: string) {
   await sb("PATCH", `oauth_tokens?connection_id=eq.${connectionId}&revoked_at=is.null`,
+    { revoked_at: new Date().toISOString() });
+  await sb("PATCH", `agent_connections?id=eq.${connectionId}`,
     { revoked_at: new Date().toISOString() });
   await sb("POST", "audit_log", {
     submission_id: null, actor: "oauth", action: "revoke", verdict: "replay-detected",
@@ -50,81 +61,126 @@ async function revokeConnection(connectionId: number, why: string) {
   }).catch(() => {});
 }
 
-export async function POST(req: Request) {
-  const p = await readParams(req);
-  const grant = p.grant_type;
+/** A token may only be spent at the resource it was minted for. */
+function resourceOk(given: string | undefined, bound: string | null): boolean {
+  if (!bound) return true;                      // issued before audience binding
+  if (!given) return true;                      // client omitted it; the token still binds
+  return given.replace(/\/+$/, "") === bound.replace(/\/+$/, "");
+}
 
-  if (grant === "authorization_code") {
-    const { code, code_verifier, client_id, redirect_uri } = p;
-    if (!code || !code_verifier || !client_id || !redirect_uri)
-      return fail("invalid_request", "code, code_verifier, client_id and redirect_uri are required");
+async function authorizationCode(p: Record<string, string>) {
+  const { code, code_verifier, client_id, redirect_uri } = p;
+  if (!code || !code_verifier || !client_id || !redirect_uri)
+    return fail("invalid_request", "code, code_verifier, client_id and redirect_uri are required");
 
-    const rows = await sb("GET", `oauth_codes?code_hash=eq.${sha256(code)}&select=*`);
-    const row = rows?.[0];
-    if (!row) return fail("invalid_grant", "unknown or expired authorization code");
+  const claimed = await rpc("claim_authorization_code", { p_code_hash: sha256(code) });
+  const row = claimed?.[0];
 
-    if (row.consumed_at) {
-      // Someone is presenting a code that was already spent. Whoever they are,
-      // the code is compromised, and so is everything it bought.
-      await revokeConnection(row.connection_id,
-        `authorization code replayed for client ${row.client_id}; connection revoked`);
+  if (!row) {
+    // Either it never existed or somebody already spent it. Only the second is
+    // interesting, and it is still not enough to act on: a stolen code without
+    // the verifier must not be able to disconnect its owner.
+    const known = await sb("GET", `oauth_codes?code_hash=eq.${sha256(code)}&select=*`);
+    const prior = known?.[0];
+    if (!prior) return fail("invalid_grant", "unknown or expired authorization code");
+    const bindingsHold =
+      prior.client_id === client_id &&
+      redirectAllowed([prior.redirect_uri], redirect_uri) &&
+      pkceMatches(code_verifier, prior.code_challenge);
+    if (bindingsHold) {
+      await detonate(prior.connection_id,
+        `authorization code redeemed twice by a holder of the PKCE verifier ` +
+        `(client ${client_id}); connection revoked`);
       return fail("invalid_grant",
-        "this authorization code has already been redeemed. It has been treated as " +
-        "compromised and the connection it created is revoked — authorise again.");
+        "this code has already been redeemed. Two holders of the verifier means one is " +
+        "not you, so the connection has been revoked — authorise again.");
     }
-    if (new Date(row.expires_at).getTime() < Date.now())
-      return fail("invalid_grant", "authorization code expired — start again");
-    if (row.client_id !== client_id)
-      return fail("invalid_grant", "this code was issued to a different client");
-    if (!redirectAllowed([row.redirect_uri], redirect_uri))
-      return fail("invalid_grant", "redirect_uri does not match the one the code was issued for");
-    if (!pkceMatches(code_verifier, row.code_challenge))
-      return fail("invalid_grant", "PKCE verification failed");
-
-    await sb("PATCH", `oauth_codes?code_hash=eq.${sha256(code)}`,
-      { consumed_at: new Date().toISOString() });
-    const tokens = await issueTokens(row.connection_id, row.scopes);
-    return NextResponse.json(
-      { ...tokens, token_type: "Bearer", scope: (row.scopes ?? []).join(" ") },
-      { headers: noStore },
-    );
+    return fail("invalid_grant", "this authorization code has already been redeemed");
   }
 
-  if (grant === "refresh_token") {
-    const { refresh_token, client_id } = p;
-    if (!refresh_token) return fail("invalid_request", "refresh_token is required");
-    const rows = await sb("GET",
-      `oauth_tokens?token_hash=eq.${sha256(refresh_token)}&kind=eq.refresh&select=*`);
-    const tok = rows?.[0];
-    if (!tok) return fail("invalid_grant", "unknown refresh token");
+  // Won the race. Every binding still has to hold.
+  if (new Date(row.expires_at).getTime() < Date.now())
+    return fail("invalid_grant", "authorization code expired — start again");
+  if (row.client_id !== client_id)
+    return fail("invalid_grant", "this code was issued to a different client");
+  if (!redirectAllowed([row.redirect_uri], redirect_uri))
+    return fail("invalid_grant", "redirect_uri does not match the one the code was issued for");
+  if (!pkceMatches(code_verifier, row.code_challenge))
+    return fail("invalid_grant", "PKCE verification failed");
+  if (!resourceOk(p.resource, row.resource))
+    return fail("invalid_target", "this code was issued for a different resource");
 
-    if (tok.rotated_to) {
-      await revokeConnection(tok.connection_id,
-        `rotated refresh token presented again for client ${client_id ?? "unknown"}; ` +
-        `two holders means one is not the client, so the connection is revoked`);
+  const tokens = await issueTokens(row.connection_id, row.scopes, row.resource ?? MCP_RESOURCE);
+  return NextResponse.json(
+    { ...tokens, token_type: "Bearer", scope: (row.scopes ?? []).join(" ") },
+    { headers: noStore },
+  );
+}
+
+async function refresh(p: Record<string, string>) {
+  const { refresh_token, client_id } = p;
+  if (!refresh_token) return fail("invalid_request", "refresh_token is required");
+  const hash = sha256(refresh_token);
+
+  const claimed = await rpc("claim_refresh_token", { p_token_hash: hash });
+  const tok = claimed?.[0];
+
+  if (!tok) {
+    const known = await sb("GET",
+      `oauth_tokens?token_hash=eq.${hash}&kind=eq.refresh&select=id,connection_id,rotated_to,revoked_at,created_at`);
+    const prior = known?.[0];
+    if (!prior) return fail("invalid_grant", "unknown refresh token");
+    if (prior.rotated_to) {
+      // A retry a moment after a successful rotation is ordinary client
+      // behaviour — a flaky network, two tabs, a racing refresh. Detonating on
+      // that would punish correctness.
+      const rotatedRecently =
+        Date.now() - new Date(prior.revoked_at ?? prior.created_at).getTime() < REUSE_GRACE_MS;
+      if (rotatedRecently) {
+        const family = await sb("GET",
+          `oauth_tokens?id=eq.${prior.rotated_to}&select=scopes,resource,connection_id`);
+        if (family?.[0])
+          return fail("invalid_grant",
+            "this token was just rotated. Use the refresh token from that response — " +
+            "it was issued seconds ago and is still current.");
+      }
+      await detonate(prior.connection_id,
+        `rotated refresh token presented again after the reuse window ` +
+        `(client ${client_id ?? "unnamed"}); connection revoked`);
       return fail("invalid_grant",
         "this refresh token was already exchanged. Two holders means one of them is not " +
         "you, so every token on this connection has been revoked. Authorise again.");
     }
-    if (tok.revoked_at) return fail("invalid_grant", "this token has been revoked");
-    if (new Date(tok.expires_at).getTime() < Date.now())
-      return fail("invalid_grant", "refresh token expired — authorise again");
-
-    const scopes = parseScopes((p.scope || (tok.scopes ?? []).join(" ")));
-    const narrowed = scopes.filter((s) => (tok.scopes ?? []).includes(s));
-    const tokens = await issueTokens(tok.connection_id, narrowed.length ? narrowed : tok.scopes);
-    const fresh = await sb("GET",
-      `oauth_tokens?token_hash=eq.${sha256(tokens.refresh_token)}&select=id`);
-    await sb("PATCH", `oauth_tokens?id=eq.${tok.id}`,
-      { rotated_to: fresh?.[0]?.id ?? null, revoked_at: new Date().toISOString() });
-
-    return NextResponse.json(
-      { ...tokens, token_type: "Bearer", scope: (narrowed.length ? narrowed : tok.scopes).join(" "),
-        expires_in: ACCESS_TTL_S },
-      { headers: noStore },
-    );
+    return fail("invalid_grant", "this token has been revoked");
   }
 
+  // The claim revoked it; from here it must either be rotated or the claim undone.
+  if (new Date(tok.expires_at).getTime() < Date.now())
+    return fail("invalid_grant", "refresh token expired — authorise again");
+  // Bound to the client it was issued to. Without this, a token leaked from one
+  // client is spendable by any other.
+  if (client_id && tok.client_id && client_id !== tok.client_id)
+    return fail("invalid_grant", "this refresh token belongs to a different client");
+
+  const asked = parseScopes(p.scope || (tok.scopes ?? []).join(" "));
+  const granted = asked.filter((s) => (tok.scopes ?? []).includes(s));
+  const scopes = granted.length ? granted : tok.scopes;
+
+  const tokens = await issueTokens(tok.connection_id, scopes, p.resource || MCP_RESOURCE);
+  const fresh = await sb("GET",
+    `oauth_tokens?token_hash=eq.${sha256(tokens.refresh_token)}&select=id`);
+  await sb("PATCH", `oauth_tokens?id=eq.${tok.id}`, { rotated_to: fresh?.[0]?.id ?? null });
+
+  return NextResponse.json(
+    { ...tokens, token_type: "Bearer", scope: scopes.join(" "), expires_in: ACCESS_TTL_S },
+    { headers: noStore },
+  );
+}
+
+export async function POST(req: Request) {
+  const p = await readParams(req);
+  if (p.grant_type === "authorization_code") return authorizationCode(p);
+  if (p.grant_type === "refresh_token") return refresh(p);
   return fail("unsupported_grant_type",
     "this server issues tokens for authorization_code and refresh_token only");
 }
