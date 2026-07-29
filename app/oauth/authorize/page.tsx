@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { COOKIE, getUser, sb } from "@/lib/deskAuth";
-import { SCOPES, parseScopes, type Scope } from "@/lib/oauth";
+import { MCP_RESOURCE, SCOPES, parseScopes, type Scope } from "@/lib/oauth";
 import ConsentForm from "@/components/ConsentForm";
 
 /**
@@ -57,6 +57,11 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
   const method = one(q.code_challenge_method) || "S256";
   const state = one(q.state);
   const scopes = parseScopes(one(q.scope));
+  // MCP makes `resource` mandatory at both endpoints so a token cannot be
+  // minted for one server and spent at another. It was read nowhere and stored
+  // nowhere, so every code was issued unbound — the audience check existed and
+  // had nothing to check against.
+  const resource = one(q.resource);
 
   // Every check that can be made before a person is shown anything, is. A
   // consent screen for a request that was going to be refused anyway teaches
@@ -67,6 +72,10 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
   if (method !== "S256")
     return <Refusal title="Unsupported challenge method"
       detail="This server accepts S256 only. The 'plain' method is in the specification and protects nothing." />;
+  if (resource && resource.replace(/\/+$/, "") !== MCP_RESOURCE)
+    return <Refusal title="Wrong resource"
+      detail={`This authorization server issues tokens for ${MCP_RESOURCE} and nothing else. ` +
+        `The request named a different one, so no code will be issued.`} />;
 
   const clients = await sb("GET",
     `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}&select=client_id,client_name,redirect_uris`);
@@ -133,6 +142,7 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
           codeChallenge={code_challenge}
           scopes={scopes}
           state={state}
+          resource={resource}
           clientLabel={label}
         />
       </main>

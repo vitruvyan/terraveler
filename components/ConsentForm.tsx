@@ -10,7 +10,7 @@ import { useState } from "react";
  * hanging tells the person their assistant is broken.
  */
 export default function ConsentForm({
-  clientId, redirectUri, codeChallenge, scopes, state, clientLabel,
+  clientId, redirectUri, codeChallenge, scopes, state, clientLabel, resource,
 }: {
   clientId: string;
   redirectUri: string;
@@ -18,6 +18,8 @@ export default function ConsentForm({
   scopes: string[];
   state: string;
   clientLabel: string;
+  /** Carried through so the code is bound to the server it was asked for. */
+  resource?: string;
 }) {
   const [busy, setBusy] = useState<"" | "approve" | "deny">("");
   const [error, setError] = useState("");
@@ -30,7 +32,7 @@ export default function ConsentForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         decision, client_id: clientId, redirect_uri: redirectUri,
-        code_challenge: codeChallenge, scope: scopes.join(" "), state,
+        code_challenge: codeChallenge, scope: scopes.join(" "), state, resource,
       }),
     });
     const j = await r.json().catch(() => ({}));

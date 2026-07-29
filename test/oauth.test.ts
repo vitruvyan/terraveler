@@ -161,3 +161,58 @@ test("discovery answers at the address the specification derives", async () => {
     await access(new URL(p, import.meta.url));
   }
 });
+
+test("the runtime challenge is a list, and carries what a host acts on", async () => {
+  /**
+   * OpenAI's linking UI reads the challenge out of the JSON-RPC result's
+   * `_meta` and expects an ARRAY of strings; it shipped as a bare string, so a
+   * host reading it as a list found no challenge, the tool simply failed, and
+   * its user was offered nothing. The header form stays for spec-compliant
+   * clients, which is how Claude has been reaching it all along.
+   */
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
+  assert.match(route, /"mcp\/www_authenticate": \[challenge\]/,
+    "the challenge must be wrapped in an array");
+  assert.match(route, /"WWW-Authenticate": challenge/,
+    "the header form must survive for clients that read it");
+  // Search forward from the challenge, not from the top of the file: rpcResult
+  // is declared long before it, so an indexOf from zero sliced backwards and
+  // the test was reporting on its own arithmetic.
+  const from = route.indexOf("const challenge =");
+  const built = route.slice(from, route.indexOf("_meta:", from));
+  for (const field of ["resource_metadata=", "scope=", 'error="invalid_token"', "error_description="]) {
+    assert.ok(built.includes(field), `the challenge omits ${field}`);
+  }
+});
+
+test("the review surfaces keep the classification they were given", async () => {
+  // list_review_queue public, get_review_brief behind `review`. Both were
+  // decided deliberately — the queue is a backlog like the audit trail, the
+  // brief hands back an unpublished draft — and neither may drift silently.
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
+  const map = route.match(/const SCOPE_FOR[^{]*\{([\s\S]*?)\n\};/)![1];
+  assert.equal(/^\s*list_review_queue:/m.test(map), false, "the queue must stay public");
+  assert.match(map, /^\s*get_review_brief: "review"/m, "the brief must stay behind `review`");
+
+  const block = (t: string) => {
+    const i = route.indexOf(`{ name: "${t}",`);
+    return route.slice(i, route.indexOf('{ name: "', i + 10));
+  };
+  assert.ok(block("list_review_queue").includes("securitySchemes: OPEN"));
+  assert.ok(block("get_review_brief").includes('securitySchemes: OAUTH("review")'));
+});
+
+test("resource is bound where the code is minted", async () => {
+  // The audience check existed and had nothing to check against: `resource` was
+  // read nowhere and stored nowhere, so every code was issued unbound.
+  const { readFile } = await import("node:fs/promises");
+  const read = (p: string) => readFile(new URL(p, import.meta.url), "utf8");
+  assert.match(await read("../app/oauth/authorize/page.tsx"), /const resource = one\(q\.resource\)/);
+  assert.match(await read("../components/ConsentForm.tsx"), /state, resource,/);
+  const approve = await read("../app/api/oauth/approve/route.ts");
+  assert.match(approve, /resource: resource \|\| MCP_RESOURCE/,
+    "a new code must be bound even when the client named nothing");
+  assert.match(approve, /invalid_target/, "a mismatched resource must be refused");
+});

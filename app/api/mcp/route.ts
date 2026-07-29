@@ -1756,7 +1756,7 @@ export async function POST(req: Request) {
       // way to notice the contract underneath it had been replaced — and a
       // stale snapshot is exactly how an external Scribe spent a test session
       // calling tools that no longer existed in that shape.
-      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.0" },
+      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.1" },
       // The count is read from ATLAS, not written out. It was hardcoded as
       // "sixteen" while the atlas held fourteen — an overstatement in the first
       // sentence every new arrival reads, on a site whose whole claim is that it
@@ -1813,16 +1813,26 @@ export async function POST(req: Request) {
         // bare 401 leaves its user with a tool that fails and nothing offered
         // to fix it. Both go out: the header for spec-compliant clients, the
         // `_meta` for the ones that surface a "connect" button.
+        // RFC 6750 fields, and `error`/`error_description` are not decoration:
+        // OpenAI's linking UI requires them, and a challenge without them is a
+        // challenge its host will not act on.
         const challenge =
-          `Bearer realm="Terraveler", scope="${need}", ` +
-          `resource_metadata="${RESOURCE_METADATA}"`;
+          `Bearer realm="Terraveler", ` +
+          `resource_metadata="${RESOURCE_METADATA}", ` +
+          `scope="${need}", ` +
+          `error="invalid_token", ` +
+          `error_description="Authorise once to contribute to Terraveler"`;
         return rpcResult(id, {
           content: [{ type: "text", text:
             "ERROR: this tool writes to the atlas and needs authorising once. Your client " +
             "should open a browser for your human to approve; if it cannot, see " +
             "https://www.terraveler.com/connect." }],
           isError: true,
-          _meta: { "mcp/www_authenticate": challenge },
+          // An ARRAY of challenges, which is what the field is specified to
+          // hold. It shipped as a bare string, and a host that reads it as a
+          // list found no challenge at all — so the tool failed and its user
+          // was offered nothing to fix it. One entry, correctly wrapped.
+          _meta: { "mcp/www_authenticate": [challenge] },
         }, { "WWW-Authenticate": challenge });
       }
       if (need && bearer && !bearer.scopes.includes(need))

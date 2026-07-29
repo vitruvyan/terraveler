@@ -61,9 +61,18 @@ async function detonate(connectionId: number, why: string) {
   }).catch(() => {});
 }
 
-/** A token may only be spent at the resource it was minted for. */
+/**
+ * A token may only be spent at the resource it was minted for.
+ *
+ * A null `bound` is tolerated only for codes issued before audience binding
+ * existed; every code minted now carries one, so the permissive branch is a
+ * migration allowance and not a rule. When both sides name something, they must
+ * name the same thing — that is the whole point of the parameter being
+ * mandatory, and trusting a null in the general case would have made the check
+ * decorative.
+ */
 function resourceOk(given: string | undefined, bound: string | null): boolean {
-  if (!bound) return true;                      // issued before audience binding
+  if (!bound) return true;                      // legacy code, issued unbound
   if (!given) return true;                      // client omitted it; the token still binds
   return given.replace(/\/+$/, "") === bound.replace(/\/+$/, "");
 }

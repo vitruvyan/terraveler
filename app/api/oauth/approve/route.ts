@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { COOKIE, getUser, readCookie, sb } from "@/lib/deskAuth";
-import { CODE_TTL_S, parseScopes, secret, sha256 } from "@/lib/oauth";
+import { CODE_TTL_S, MCP_RESOURCE, parseScopes, secret, sha256 } from "@/lib/oauth";
 
 /**
  * What the one click actually does.
@@ -37,6 +37,13 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const { decision, client_id, redirect_uri, code_challenge, state } = body ?? {};
+  const resource = String(body?.resource ?? "").replace(/\/+$/, "");
+  if (resource && resource !== MCP_RESOURCE)
+    return NextResponse.json(
+      { error: "invalid_target",
+        error_description: `tokens here are issued for ${MCP_RESOURCE} only` },
+      { status: 400 },
+    );
   const scopes = parseScopes(body?.scope);
   if (!client_id || !redirect_uri || !code_challenge)
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
@@ -92,6 +99,10 @@ export async function POST(req: Request) {
     code_challenge: String(code_challenge),
     code_challenge_method: "S256",
     scopes,
+    // Bound at issue. A code with no resource can only come from a client that
+    // named none; new flows always carry one, and the token endpoint refuses a
+    // mismatch rather than trusting a permissive null.
+    resource: resource || MCP_RESOURCE,
     expires_at: new Date(Date.now() + CODE_TTL_S * 1000).toISOString(),
   });
 
