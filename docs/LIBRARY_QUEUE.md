@@ -88,6 +88,35 @@ date, the safest reading is that the date came from the surrounding narrative
 and not from that string. Nothing to fix in the pipeline; something to know
 before quoting `mungopark-1795` in prose.
 
+## A fourth way apparatus gets in, found by a reviewer and not by a check
+
+The three failed detection attempts above were all aimed at footnotes. The first
+real peer review in the project's history — Claude Desktop on submission #27,
+Mungo Park — found a different shape, and found it by reading.
+
+Two of twelve quotations were **chapter-contents lines**:
+
+> *Some Account of the Inhabitants of Tallika—The Author proceeds for
+> Fatteconda—Incidents on the Road.—Crosses the Neriko, arrives at Koorkarany…*
+
+Verbatim, inside the calibrated narrative range, in English, naming the right
+place, and proving nothing: it is the book's own summary of what the chapter
+contains. Every mechanical check passed it, correctly, because every mechanical
+check was answering a different question.
+
+The reviewer's own framing was broader and worth keeping: in six waypoints the
+cited span stopped just before or just after the sentence that actually
+supported the claim. The facts were true and present in the same source; the
+quotation chosen did not carry them. A quotation that is verbatim, in the right
+book, and beside the evidence rather than on it satisfies §3.4 to the letter and
+defeats its purpose.
+
+`scripts/desk_review.py` now escalates a span whose fragments are joined by
+dashes with nobody speaking in it. That is a narrower signal than "detect
+apparatus" and it is an ESCALATE, never a FAIL — the boundary between an account
+and a summary of one is still semantic, and this is a hint for a reader rather
+than a solution.
+
 ## Why each entry names the exact edition
 
 Three of the first source proposals for this queue were unusable, and in every

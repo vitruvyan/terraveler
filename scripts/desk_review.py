@@ -254,8 +254,31 @@ def check_quotations(waypoints: list, f: Findings, basis: str | None = None,
                     f.escalate(where, "the span crosses a page break and carries the running "
                                       "head or page number into the quotation — verbatim, and "
                                       "not something a reader should be shown")
+                # A chapter-contents line. Verbatim, inside the narrative
+                # range, in English, naming the right place — and it proves
+                # nothing, because it is the book's own summary of what the
+                # chapter contains. Two reached a draft of Mungo Park and only
+                # a reader caught them; the mechanical checks had no reason to
+                # object to any of it.
+                #
+                # ESCALATE and never FAIL. docs/LIBRARY_QUEUE.md records three
+                # attempts to separate apparatus from account by pattern, all
+                # of which failed, and this is a narrower signal rather than a
+                # solution to that problem.
+                flat = " ".join(reading.split())
+                dashes = flat.count("—") + flat.count("--")
+                # Case-insensitive, or a sentence opening with "We sailed from
+                # Portsmouth" reads as nobody speaking — which it did, and the
+                # escalation it produced was noise that would have taught a
+                # reader to skim these.
+                first_person = re.search(r"\b(I|we|my|our|us|me)\b", flat, re.I)
+                if dashes >= 1 and not first_person and len(flat) > 40:
+                    f.escalate(where,
+                        "reads like a chapter-contents line rather than narrative — "
+                        "fragments joined by dashes, nobody speaking. Verbatim and in "
+                        f"the source, and it may still prove nothing: {flat[:110]!r}")
                 if (basis == "contemporary-journal" and len(quote) > 40
-                        and not re.search(r"\b(I|we|our|my|us)\b", quote)):
+                        and not first_person):
                     f.escalate(where, f"verbatim, but nobody in it speaks in the first "
                                       f"person, on a voyage whose own journal survives — "
                                       f"check this is the traveller and not the editor "
