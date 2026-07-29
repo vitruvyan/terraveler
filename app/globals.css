@@ -2221,6 +2221,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 1.15rem;
   margin: 0 0 6px;
   color: var(--ink);
+  line-height: 1.2;
+  text-wrap: balance;
 }
 .welcome-body {
   font-size: 13.5px;

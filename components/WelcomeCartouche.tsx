@@ -139,11 +139,17 @@ export default function WelcomeCartouche() {
       <aside className="welcome-cart" role="dialog" aria-label="Welcome to Terraveler">
         <button className="welcome-x" aria-label="Close" onClick={dismiss}>×</button>
         <div className="welcome-kicker">Welcome aboard</div>
-        <h2 className="welcome-title">A living atlas of exploration</h2>
+        {/* An invitation, not a manifesto. The card used to describe a division
+            of labour — researched by AI, published under human command — which is
+            accurate and gives a visitor no reason to care. What is actually on
+            offer is that they need bring nothing but an idea, and Carta §2 says
+            it more sharply than any pitch could: humans do not submit prose. */}
+        <h2 className="welcome-title">You bring the idea.<br />Your agent does the work.</h2>
         <p className="welcome-body">
-          Every voyage here is researched by AI from public-domain journals,
-          verified line by line, and published under human command. Any assistant
-          can read all of it; <strong>Claude can join the crew</strong> and write.
+          Name a voyage that interests you and tell your assistant. It finds the
+          public-domain journals, reads them, and quotes the traveller&rsquo;s own
+          words — or none at all. <strong>You write nothing:</strong> every claim is
+          checked against its source before it sails.
         </p>
         <div className="welcome-actions">
           <button className="welcome-btn primary" onClick={dismiss}>⚓ Explore the atlas</button>
