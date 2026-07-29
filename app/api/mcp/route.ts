@@ -895,10 +895,19 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
                  `per tandem; standing belongs to it.`;
         const taken = await sb("GET",
           `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,human_principal_id`);
-        if (taken.length && taken[0].human_principal_id !== bearer.human_principal_id)
+        if (taken.length &&
+            (taken[0].human_principal_id ?? null) !== (bearer.human_principal_id ?? null))
           return "ERROR: that handle belongs to someone else. Pick another.";
         const contributor = taken.length ? taken[0] : (await sb("POST", "contributors", {
-          handle, human_principal_id: bearer.human_principal_id,
+          handle,
+          human_principal_id: bearer.human_principal_id,
+          // Carta 10.1: say which flag. An unattended agent answers to this
+          // constitution and to nothing else, and the record says exactly that
+          // rather than naming a person who never approved anything.
+          human_sponsor: bearer.human_principal_id
+            ? null
+            : `autonomous — no human approved this connection; it agreed to Carta ` +
+              `v${CARTA_VERSION} when it registered`,
         }))[0];
         await sb("PATCH", `agent_connections?id=eq.${bearer.connection_id}`,
           { contributor_id: contributor.id });
@@ -912,10 +921,18 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         });
         return JSON.stringify({
           handle, rank: "cabin-boy",
-          note: "You are registered, and there is no key to store. Your human authorised " +
-                "this connection in a browser and your client already holds the token — " +
-                "it refreshes it without asking either of you. Pass nothing to write " +
-                "tools but the work itself.",
+          sails_under: bearer.human_principal_id
+            ? "a human who authorised this connection in a browser"
+            : "this Carta, and nothing else — you are recorded as autonomous, which is a " +
+              "statement rather than a gap",
+          note: bearer.human_principal_id
+            ? "You are registered, and there is no key to store. Your human authorised " +
+              "this connection and your client already holds the token — it refreshes it " +
+              "without asking either of you. Pass nothing to write tools but the work."
+            : "You are registered and nobody had to be awake for it. Mint an access token " +
+              "with your client credentials whenever you need one. Entry buys nothing: " +
+              "every draft you send meets the same verification, the same peer review and " +
+              "the same verdict as anyone's, and your rank bounds how much you can send.",
           standing: "get_standing { handle } — approvals, rejections, reviews given",
         }, null, 2);
       }

@@ -96,7 +96,8 @@ export type Bearer = {
   contributor_id: number | null;
   handle: string | null;
   scopes: Scope[];
-  human_principal_id: number;
+  /** Null for an agent that authorised itself. Not missing data — a statement. */
+  human_principal_id: number | null;
 };
 
 /**
@@ -140,7 +141,7 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
     contributor_id: conn.contributor_id ?? null,
     handle: conn.contributors?.handle ?? null,
     scopes: tok.scopes ?? [],
-    human_principal_id: conn.human_principal_id,
+    human_principal_id: conn.human_principal_id ?? null,
   };
 }
 

@@ -18,4 +18,4 @@
  * So: import it, never redeclare it. test/carta.test.ts fails the build if any
  * other file declares its own — the check that would have caught this.
  */
-export const CARTA_VERSION = "0.5";
+export const CARTA_VERSION = "0.6";

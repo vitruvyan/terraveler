@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { sb, rpc } from "@/lib/deskAuth";
 import {
-  ACCESS_TTL_S, MCP_RESOURCE, REUSE_GRACE_MS, issueTokens, parseScopes, pkceMatches,
-  redirectAllowed, sha256,
+  ACCESS_TTL_S, MCP_RESOURCE, REUSE_GRACE_MS, constantTimeEqual, issueTokens, parseScopes,
+  pkceMatches, redirectAllowed, secret, sha256,
 } from "@/lib/oauth";
 
 /**
@@ -177,10 +177,78 @@ async function refresh(p: Record<string, string>) {
   );
 }
 
+/**
+ * An agent authorising itself, with nobody awake.
+ *
+ * `client_credentials` is the grant for an actor that represents no user, and
+ * that is exactly what an unattended Scribe is. Using it here is not a way
+ * around the consent screen — using authorization_code for a process that runs
+ * at four in the morning would be the abuse.
+ *
+ * The connection it creates has no human_principal, and every surface that
+ * reports on it says "autonomous" instead of naming somebody. That honesty is
+ * the price of the convenience, and it is cheap: entry was never the gate.
+ * Everything this agent submits meets the same mechanical verification, the
+ * same peer review and the same Curator's verdict as work from a tandem with a
+ * person in it, and its rank bounds how much it can send.
+ */
+async function clientCredentials(p: Record<string, string>) {
+  const { client_id, client_secret } = p;
+  if (!client_id || !client_secret)
+    return fail("invalid_client", "client_id and client_secret are required", 401);
+
+  const rows = await sb("GET",
+    `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}&select=client_id,client_secret_hash`);
+  const client = rows?.[0];
+  if (!client?.client_secret_hash)
+    return fail("invalid_client",
+      "unknown client, or a client registered for the interactive flow. Register with " +
+      "grant_types: [\"client_credentials\"] to work unattended.", 401);
+  if (!constantTimeEqual(sha256(client_secret), client.client_secret_hash))
+    return fail("invalid_client", "client authentication failed", 401);
+
+  const scopes = parseScopes(p.scope);
+  // One connection per autonomous client, reused. A second token request is
+  // the same agent asking again, not a new one being born.
+  const existing = await sb("GET",
+    `agent_connections?client_id=eq.${encodeURIComponent(client_id)}` +
+    `&human_principal_id=is.null&select=id,scopes,revoked_at`);
+  let conn = existing?.[0];
+  if (conn?.revoked_at)
+    return fail("invalid_client",
+      "this agent has been revoked by the editorial desk. Appeals go to the editor-in-chief.",
+      403);
+  if (conn) {
+    const merged = [...new Set([...(conn.scopes ?? []), ...scopes])];
+    await sb("PATCH", `agent_connections?id=eq.${conn.id}`, { scopes: merged });
+  } else {
+    conn = (await sb("POST", "agent_connections", {
+      client_id, scopes, human_principal_id: null,
+    }))?.[0];
+  }
+
+  // No refresh token: with the client secret in hand the agent can mint another
+  // access token whenever it likes, and a refresh token would be a second
+  // long-lived credential to steal for no gain.
+  const access = secret();
+  await sb("POST", "oauth_tokens", {
+    token_hash: sha256(access), kind: "access", connection_id: conn.id,
+    scopes, resource: MCP_RESOURCE,
+    expires_at: new Date(Date.now() + ACCESS_TTL_S * 1000).toISOString(),
+  });
+  return NextResponse.json(
+    { access_token: access, token_type: "Bearer", expires_in: ACCESS_TTL_S,
+      scope: scopes.join(" ") },
+    { headers: noStore },
+  );
+}
+
 export async function POST(req: Request) {
   const p = await readParams(req);
+  if (p.grant_type === "client_credentials") return clientCredentials(p);
   if (p.grant_type === "authorization_code") return authorizationCode(p);
   if (p.grant_type === "refresh_token") return refresh(p);
   return fail("unsupported_grant_type",
-    "this server issues tokens for authorization_code and refresh_token only");
+    "this server issues tokens for client_credentials, authorization_code and " +
+    "refresh_token. An unattended agent wants the first.");
 }
