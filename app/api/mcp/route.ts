@@ -1587,9 +1587,24 @@ export async function POST(req: Request) {
 
   if (method === "initialize") {
     return rpcResult(id, {
-      protocolVersion: params?.protocolVersion ?? "2025-03-26",
+      // Echo what the client asked for, and default to the revision that
+      // introduced the authorization spec this server implements. Answering
+      // "2025-03-26" to a client that asked for nothing told it to expect a
+      // protocol without protected-resource metadata or the `resource`
+      // parameter — both of which are live here.
+      protocolVersion: params?.protocolVersion ?? "2025-06-18",
+      // `tools.listChanged` is deliberately NOT declared. This server is
+      // stateless HTTP with no channel to push a notification down, so
+      // advertising it would promise something that cannot happen — and a
+      // client that believed it would cache the catalogue harder, not less.
+      // The honest signal is the version below.
       capabilities: { tools: {} },
-      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.3.0" },
+      // Moves whenever the tool contract changes. It sat at 0.3.0 through the
+      // whole OAuth rewrite, which gave a client that caches its catalogue no
+      // way to notice the contract underneath it had been replaced — and a
+      // stale snapshot is exactly how an external Scribe spent a test session
+      // calling tools that no longer existed in that shape.
+      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.0" },
       // The count is read from ATLAS, not written out. It was hardcoded as
       // "sixteen" while the atlas held fourteen — an overstatement in the first
       // sentence every new arrival reads, on a site whose whole claim is that it
