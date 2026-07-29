@@ -142,3 +142,22 @@ test("credentials are optional in every tool schema", () => {
  *   - a token minted for another resource is refused here
  *   - the whole peer-review journey, which no contributor has ever completed
  */
+
+test("discovery answers at the address the specification derives", async () => {
+  /**
+   * RFC 9728 puts the resource's own path after the well-known segment: a
+   * resource at /api/mcp publishes its metadata at
+   * /.well-known/oauth-protected-resource/api/mcp. Only the root form existed,
+   * so a client following the spec asked for the derived address, got a 404,
+   * and had nothing left to follow — discovery ended before it began.
+   */
+  const { access } = await import("node:fs/promises");
+  for (const p of [
+    "../app/.well-known/oauth-protected-resource/route.ts",
+    "../app/.well-known/oauth-protected-resource/api/mcp/route.ts",
+    "../app/.well-known/oauth-authorization-server/route.ts",
+    "../app/.well-known/oauth-authorization-server/api/mcp/route.ts",
+  ]) {
+    await access(new URL(p, import.meta.url));
+  }
+});
