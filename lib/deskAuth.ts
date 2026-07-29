@@ -86,6 +86,25 @@ export async function getUserEmail(token: string): Promise<string | null> {
   return (j?.email ?? null) as string | null;
 }
 
+/**
+ * The signed-in account, whoever it is.
+ *
+ * getUserEmail() answers "which address" and verifyToken() answers "is this the
+ * editor". Neither answers "which account", which is what OAuth consent needs:
+ * the subject claim is the stable identifier a contributor's standing hangs
+ * from, and an email address is neither stable nor unique enough to be one.
+ */
+export async function getUser(token: string): Promise<{ sub: string; email: string | null } | null> {
+  if (!AUTH_URL || !AUTH_KEY || !token) return null;
+  const r = await fetch(`${AUTH_URL}/auth/v1/user`, {
+    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  const j = await r.json().catch(() => null);
+  if (!j?.id) return null;
+  return { sub: String(j.id), email: (j.email ?? null) as string | null };
+}
+
 export function editorEmail(): string {
   return EDITOR_EMAIL;
 }

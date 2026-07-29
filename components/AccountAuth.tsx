@@ -6,6 +6,20 @@ import AuthBackdrop, { GoogleMark } from "@/components/AuthBackdrop";
 
 type Mode = "login" | "signup";
 
+/**
+ * Where to go once signed in.
+ *
+ * The OAuth consent screen sends people here when they are not signed in, and
+ * dropping them on the account page afterwards would lose the authorisation
+ * request they were in the middle of. Only same-origin paths are honoured — an
+ * open `next=` is an open redirect, and this one is reachable without a login.
+ */
+function nextPath(): string {
+  if (typeof window === "undefined") return "";
+  const raw = new URLSearchParams(window.location.search).get("next") ?? "";
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "";
+}
+
 export default function AccountAuth({ mode }: { mode: Mode }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,6 +45,8 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
         setStatus("idle");
         return;
       }
+      const to = nextPath();
+      if (to) { window.location.href = to; return; }
       setMessage(mode === "signup" ? "Your Terraveler account is ready." : "You are signed in to Terraveler.");
       setStatus("complete");
     }).catch((reason: unknown) => {
@@ -59,6 +75,8 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
     }
 
     setPassword("");
+    const to = nextPath();
+    if (to && mode === "login") { window.location.href = to; return; }
     setMessage(body.message ?? (mode === "signup"
       ? "Check your inbox to confirm your email address."
       : "You are signed in to Terraveler."));

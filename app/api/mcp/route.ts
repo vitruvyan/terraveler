@@ -3,6 +3,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import bougainville from "@/data/bougainville.json";
 import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
 import { CARTA_VERSION } from "@/lib/carta";
+import { type Bearer, type Scope, unauthorized, verifyBearer } from "@/lib/oauth";
 import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
@@ -113,14 +114,39 @@ const HANDLE_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$/;
 type Contributor = { id: number; rank: string; handle: string };
 
 /** Write-tool auth: handle + personal api_key (stored server-side as sha256). */
-async function authenticate(args: any): Promise<{ ok?: Contributor; err?: string }> {
+/**
+ * Who is writing.
+ *
+ * Two ways in, and the first one is the future. A Bearer token means the human
+ * authorised this agent in a browser and the client holds the credential — no
+ * secret was ever handed to a person or typed by a model. The api_key path
+ * stays for handles that predate OAuth and is on its way out: it exists
+ * because migrating people is kinder than stranding them, not because carrying
+ * a key by hand was ever a good idea.
+ */
+async function authenticate(
+  args: any, bearer?: Bearer | null,
+): Promise<{ ok?: Contributor; err?: string }> {
+  if (bearer) {
+    if (!bearer.contributor_id || !bearer.handle)
+      return { err: "This connection has no contributor handle yet. Call `register` once " +
+        "with the handle you want — you are already authorised, so no key is issued and " +
+        "none is needed." };
+    const rows = await sb("GET",
+      `contributors?id=eq.${bearer.contributor_id}&select=id,handle,rank,status`);
+    const c = rows[0];
+    if (!c) return { err: "This connection points at a contributor that no longer exists." };
+    if (c.status !== "active")
+      return { err: "This contributor is suspended. Appeals go to the editor-in-chief." };
+    return { ok: { id: c.id, rank: c.rank, handle: c.handle } };
+  }
   if (!args?.handle || typeof args.handle !== "string")
     return { err: "Missing contributor handle." };
   if (!args?.api_key || typeof args.api_key !== "string")
-    return { err: "Missing api_key. Register once with the `register` tool — call " +
-      "get_contract first, read the Carta, and use the registration_token it returns. " +
-      "No invitation and no account are needed. Registration gives you a personal " +
-      "api_key and a recovery_code, each shown once." };
+    return { err: "Missing credentials. The way in is now OAuth: your client authorises " +
+      "once in a browser and holds the token itself, so nobody has to carry a key. If " +
+      "your client cannot do that, an api_key still works for handles that already have " +
+      "one — see https://www.terraveler.com/connect." };
   const rows = await sb("GET",
     `contributors?handle=eq.${encodeURIComponent(args.handle)}&select=id,handle,rank,status,api_key_hash`);
   if (!rows.length) return { err: "Unknown handle. Register first with the `register` tool." };
@@ -181,6 +207,29 @@ function validRegistrationToken(given: unknown): boolean {
 /** A runaway script should be bounded and visible, not merely slowed. The cap
  *  is generous because the real defences are downstream — this exists so that
  *  a loop cannot fill the crew list overnight while nobody is watching. */
+/**
+ * Which tools write, and under which scope.
+ *
+ * Anything absent from this map is a read and stays open to anyone. That is
+ * the whole progressive-authorisation idea in one table: an assistant can
+ * arrive knowing nothing, read the Carta, browse the queues and tell its human
+ * what Terraveler holds, and only meets a login when it first tries to change
+ * something.
+ *
+ * `register` is deliberately NOT here. A Bearer token means the human already
+ * authorised this agent, and a handle can be claimed on that authority; an
+ * api_key registration is the legacy path and gates itself on the Carta token.
+ */
+const SCOPE_FOR: Record<string, Scope | undefined> = {
+  claim_gap: "contribute",
+  propose_idea: "contribute",
+  submit_draft: "contribute",
+  suggest_feature: "contribute",
+  suggest_content: "contribute",
+  submit_review: "review",
+  appeal: "appeal",
+};
+
 const REGISTRATIONS_PER_DAY = 40;
 
 async function registrationsToday(): Promise<number> {
@@ -646,7 +695,7 @@ const TOOLS = [
                     id: { type: "number" }, grounds: { type: "string" } } } },
 ];
 
-async function callTool(name: string, args: any): Promise<string> {
+async function callTool(name: string, args: any, bearer?: Bearer | null): Promise<string> {
   switch (name) {
     // ---------------------------------------------------------------- reading
     //
@@ -778,6 +827,45 @@ async function callTool(name: string, args: any): Promise<string> {
     case "how_it_works":
       return await doc("docs/HOW_IT_WORKS.md");
     case "register": {
+      // Authorised already: the human clicked approve in a browser, so there is
+      // nothing left to prove and nothing to hand back. The handle is claimed
+      // on that authority, the sponsor is the account that authorised — not a
+      // string the model typed — and no key is minted, because the client is
+      // already holding a token it refreshes by itself.
+      if (bearer) {
+        const handle = args?.handle;
+        if (typeof handle !== "string" || !HANDLE_RE.test(handle))
+          return "ERROR: Handle must be 3-32 characters — letters, digits, '-' or '_', " +
+                 "starting alphanumeric.";
+        if (bearer.contributor_id)
+          return `ERROR: this connection already writes as '${bearer.handle}'. One handle ` +
+                 `per tandem; standing belongs to it.`;
+        const taken = await sb("GET",
+          `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,human_principal_id`);
+        if (taken.length && taken[0].human_principal_id !== bearer.human_principal_id)
+          return "ERROR: that handle belongs to someone else. Pick another.";
+        const contributor = taken.length ? taken[0] : (await sb("POST", "contributors", {
+          handle, human_principal_id: bearer.human_principal_id,
+        }))[0];
+        await sb("PATCH", `agent_connections?id=eq.${bearer.connection_id}`,
+          { contributor_id: contributor.id });
+        await sb("POST", "audit_log", {
+          submission_id: null, actor: "mcp", action: "register", verdict: null,
+          findings: [["INFO", 0,
+            `contributor '${handle}' claimed by an authorised connection ` +
+            `(${bearer.connection_id}) — sponsor is the account that authorised, not a ` +
+            `declaration`]],
+          carta_version: CARTA_VERSION,
+        });
+        return JSON.stringify({
+          handle, rank: "cabin-boy",
+          note: "You are registered, and there is no key to store. Your human authorised " +
+                "this connection in a browser and your client already holds the token — " +
+                "it refreshes it without asking either of you. Pass nothing to write " +
+                "tools but the work itself.",
+          standing: "get_standing { handle } — approvals, rejections, reviews given",
+        }, null, 2);
+      }
       const byToken = validRegistrationToken(args?.registration_token);
       const byInvite = Boolean(INVITE) && args?.invite_code === INVITE;
       if (!byToken && !byInvite)
@@ -876,7 +964,7 @@ async function callTool(name: string, args: any): Promise<string> {
         return JSON.stringify({ claimed: one.claimed,
           note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       await reapStaleClaims();
       const q = quotaFor(a.ok!.rank, a.ok!.handle);
@@ -910,7 +998,7 @@ async function callTool(name: string, args: any): Promise<string> {
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
           note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
@@ -946,7 +1034,7 @@ async function callTool(name: string, args: any): Promise<string> {
           gate_failures: fails, note: draftNote(fails.length > 0),
           ...nextSteps(one.submission_id, status) }, null, 2);
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
@@ -981,7 +1069,7 @@ async function callTool(name: string, args: any): Promise<string> {
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
           note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
@@ -1016,7 +1104,7 @@ async function callTool(name: string, args: any): Promise<string> {
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
           note: contentNote(one.submission_id) });
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
@@ -1039,7 +1127,7 @@ async function callTool(name: string, args: any): Promise<string> {
       });
     }
     case "list_review_queue": {
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const open = await sb("GET",
         `submissions?status=eq.peer-review&contributor_id=neq.${a.ok!.id}&order=created_at.asc&select=id,type,target_voyage,created_at&limit=25`);
@@ -1054,7 +1142,7 @@ async function callTool(name: string, args: any): Promise<string> {
       }, null, 2);
     }
     case "get_review_brief": {
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const rows = await sb("GET",
         `submissions?id=eq.${Number(args.submission_id)}&select=id,type,target_voyage,status,contributor_id,payload,carta_version`);
@@ -1100,7 +1188,7 @@ async function callTool(name: string, args: any): Promise<string> {
             : `Review recorded. ${REVIEWS_TO_ADVANCE - one.reviews_so_far} more review(s) needed before the desk rules. Reviewing builds your standing (Carta 10.6).`,
         }, null, 2);
       }
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const rows = await sb("GET",
         `submissions?id=eq.${sid}&select=id,status,contributor_id`);
@@ -1350,7 +1438,7 @@ async function callTool(name: string, args: any): Promise<string> {
     // contact the editor out of band, which is the arrangement §5 exists to
     // replace.
     case "appeal": {
-      const a = await authenticate(args);
+      const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const id = Number(args?.id);
       const grounds = typeof args?.grounds === "string" ? args.grounds.trim() : "";
@@ -1476,7 +1564,18 @@ export async function POST(req: Request) {
   if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
   if (method === "tools/call") {
     try {
-      const text = await callTool(params?.name, params?.arguments ?? {});
+      // Progressive: reading the atlas needs nothing, and demanding a login to
+      // see it would be the opposite of the point. Authorisation appears at
+      // the first tool that writes, which is the moment it means something.
+      const bearer = await verifyBearer(req);
+      const need = SCOPE_FOR[String(params?.name)];
+      if (need && !bearer && !params?.arguments?.api_key)
+        return unauthorized(need);
+      if (need && bearer && !bearer.scopes.includes(need))
+        return unauthorized(need,
+          `This connection was authorised for ${bearer.scopes.join(", ") || "nothing"} ` +
+          `and this tool needs '${need}'. Ask your human to authorise again.`);
+      const text = await callTool(params?.name, params?.arguments ?? {}, bearer);
       return rpcResult(id, { content: [{ type: "text", text }], isError: text.startsWith("ERROR:") });
     } catch (e: any) {
       return rpcResult(id, { content: [{ type: "text", text: `ERROR: ${String(e?.message || e)}` }], isError: true });
