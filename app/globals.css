@@ -2737,3 +2737,152 @@ input[type="range"].scrubber::-moz-range-thumb {
   .tv-step-code { flex-direction: column; }
   .tv-step-code .tv-copy { align-self: flex-start; }
 }
+
+/* ── the onboarding wizard ───────────────────────────────────────────────
+   The welcome cartouche stays docked and quiet while someone is reading the
+   atlas. Saying "send your AI" grows it into the middle of the screen, because
+   what follows is a sequence with state and a docked card cannot show a
+   sequence — the first person to walk this got lost precisely because nothing
+   ever told them where they were. */
+.tv-wizard-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(43, 33, 23, 0.52);
+  backdrop-filter: blur(2px);
+  animation: tv-veil-in 0.22s ease both;
+}
+@keyframes tv-veil-in { from { opacity: 0 } to { opacity: 1 } }
+
+.tv-wizard {
+  position: relative;
+  width: min(640px, 100%);
+  max-height: min(86vh, 780px);
+  overflow-y: auto;
+  padding: 26px 30px 24px;
+  background: rgba(242, 230, 207, 0.99);
+  border: 1px solid var(--parchment-deep);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgba(43, 33, 23, 0.42),
+              inset 0 0 0 1px rgba(169, 119, 47, 0.28);
+  /* Grows from the corner it was docked in, so the card and the wizard read as
+     the same object rather than as a card that vanished and a modal that came. */
+  transform-origin: bottom left;
+  animation: tv-wizard-grow 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes tv-wizard-grow {
+  from { opacity: 0; transform: scale(0.92) translateY(10px) }
+  to   { opacity: 1; transform: none }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-wizard-veil, .tv-wizard { animation: none }
+}
+
+.tv-wizard-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin: 4px 0 18px;
+}
+
+/* The rail. Four dots, and the one you are on is the only one that is loud. */
+.tv-wizard-rail {
+  display: flex;
+  gap: 4px;
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  flex-wrap: wrap;
+}
+.tv-wizard-rail li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 6px 10px 6px 6px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+.tv-wizard-rail li.done { opacity: 1 }
+.tv-wizard-rail li.now {
+  opacity: 1;
+  color: var(--ink);
+  background: rgba(169, 119, 47, 0.13);
+}
+.tv-wizard-dot {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  border: 1px solid var(--brass);
+  font-family: var(--font-display);
+  font-size: 11px;
+  line-height: 1;
+}
+.tv-wizard-rail li.done .tv-wizard-dot {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: var(--parchment);
+}
+.tv-wizard-rail li.now .tv-wizard-dot { background: rgba(255, 255, 255, 0.5) }
+.tv-wizard-rail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
+.tv-wizard-body { font-size: 15px; line-height: 1.6 }
+.tv-wizard-body p { margin: 0 0 14px }
+.tv-wizard-body .tv-tabs { margin: 4px 0 14px }
+.tv-wizard-body .tv-steps { margin: 0 0 10px }
+
+.tv-wizard-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px !important;
+}
+
+/* Waiting is a state, not an absence, and it should look like one. */
+.tv-wizard-waiting {
+  margin-top: 16px !important;
+  padding-left: 22px;
+  position: relative;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.tv-wizard-waiting::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brass);
+  animation: tv-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tv-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8) }
+  50%      { opacity: 1;    transform: scale(1) }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-wizard-waiting::before { animation: none; opacity: 0.7 }
+}
+
+.tv-wizard-seen {
+  margin: 20px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--parchment-deep);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 560px) {
+  .tv-wizard { padding: 22px 18px 18px; max-height: 92vh }
+  .tv-wizard-rail-label { display: none }
+  .tv-wizard-rail li { flex: 0 0 auto; padding: 6px }
+}
