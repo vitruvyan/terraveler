@@ -215,10 +215,13 @@ export default function WelcomeCartouche() {
                 )}
               </ol>
               <p className="tv-connect-note">
-                Using something else? Every assistant can <em>read</em> the whole atlas —
-                point it at the same address. Contributing needs a client that completes
-                the authorisation step, and today that is Claude.{" "}
-                <a href="/connect">Which clients do what →</a>
+                <strong>Anthropic clients only, for now.</strong> Every assistant can{" "}
+                <em>read</em> the whole atlas from the same address — there is no allowlist
+                and no privileged model. Contributing needs a client that completes the
+                authorisation handshake, and today Claude is the one that does. We are
+                working to extend it: nothing here has to change when another client
+                implements that step, and the moment one does it writes like any other.{" "}
+                <a href="/connect">Where each client stops →</a>
               </p>
               <p className="tv-wizard-waiting">
                 Then ask it for anything that writes — &ldquo;show me the review

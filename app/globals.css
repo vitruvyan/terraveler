@@ -2740,10 +2740,15 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* ── the onboarding wizard ───────────────────────────────────────────────
    The welcome cartouche stays docked and quiet while someone is reading the
-   atlas. Saying "send your AI" grows it into the middle of the screen, because
-   what follows is a sequence with state and a docked card cannot show a
+   atlas. Saying "invite your agent" grows it into the middle of the screen,
+   because what follows is a sequence with state and a docked card cannot show a
    sequence — the first person to walk this got lost precisely because nothing
-   ever told them where they were. */
+   ever told them where they were.
+
+   Everything here is the parchment vocabulary of the atlas: brass rules,
+   engraved numerals, a plate for anything you are meant to copy. It read as a
+   numbered list in a grey box, which is a form; this is a ship's document, and
+   the difference is most of why anyone trusts what it says. */
 .tv-wizard-veil {
   position: fixed;
   inset: 0;
@@ -2751,30 +2756,36 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(43, 33, 23, 0.52);
-  backdrop-filter: blur(2px);
-  animation: tv-veil-in 0.22s ease both;
+  background: radial-gradient(120% 100% at 50% 0%,
+              rgba(43, 33, 23, 0.42), rgba(43, 33, 23, 0.66));
+  backdrop-filter: blur(3px);
+  animation: tv-veil-in 0.24s ease both;
 }
 @keyframes tv-veil-in { from { opacity: 0 } to { opacity: 1 } }
 
 .tv-wizard {
   position: relative;
-  width: min(640px, 100%);
-  max-height: min(86vh, 780px);
+  width: min(660px, 100%);
+  max-height: min(88vh, 820px);
   overflow-y: auto;
-  padding: 26px 30px 24px;
-  background: rgba(242, 230, 207, 0.99);
+  padding: 30px 34px 26px;
+  color: var(--ink);
+  /* Two washes and a hairline: parchment that has been handled, not a panel. */
+  background:
+    radial-gradient(90% 60% at 12% 0%, rgba(255, 252, 244, 0.85), transparent 60%),
+    linear-gradient(180deg, rgba(246, 236, 216, 0.99), rgba(238, 226, 200, 0.99));
   border: 1px solid var(--parchment-deep);
-  border-radius: 14px;
-  box-shadow: 0 24px 64px rgba(43, 33, 23, 0.42),
-              inset 0 0 0 1px rgba(169, 119, 47, 0.28);
-  /* Grows from the corner it was docked in, so the card and the wizard read as
-     the same object rather than as a card that vanished and a modal that came. */
+  border-radius: 4px;
+  box-shadow:
+    0 30px 70px rgba(43, 33, 23, 0.4),
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 0 0 1px rgba(169, 119, 47, 0.3) inset,
+    0 0 0 7px rgba(242, 230, 207, 0.55);
   transform-origin: bottom left;
-  animation: tv-wizard-grow 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: tv-wizard-grow 0.3s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 @keyframes tv-wizard-grow {
-  from { opacity: 0; transform: scale(0.92) translateY(10px) }
+  from { opacity: 0; transform: scale(0.93) translateY(12px) }
   to   { opacity: 1; transform: none }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2783,106 +2794,278 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 .tv-wizard-title {
   font-family: var(--font-display);
-  font-size: 1.6rem;
-  margin: 4px 0 18px;
+  font-size: 1.85rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 3px 0 4px;
+  /* A shallow letterpress, the way a title is pressed into a chart. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.tv-wizard-title::after {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 2px;
+  margin: 14px 0 0;
+  background: linear-gradient(90deg, var(--brass), rgba(169, 119, 47, 0));
 }
 
-/* The rail. Four dots, and the one you are on is the only one that is loud. */
+/* The rail: four stations on one line, the way stages sit on a route. */
 .tv-wizard-rail {
+  position: relative;
   display: flex;
-  gap: 4px;
   list-style: none;
-  margin: 0 0 22px;
+  margin: 22px 0 24px;
   padding: 0;
-  flex-wrap: wrap;
+  gap: 0;
+}
+.tv-wizard-rail::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  top: 12px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg,
+    rgba(169, 119, 47, 0.5) 0 4px, transparent 4px 8px);
 }
 .tv-wizard-rail li {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 7px;
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 6px 10px 6px 6px;
-  border-radius: 999px;
-  font-size: 12.5px;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
   color: var(--ink-soft);
-  opacity: 0.55;
+  opacity: 0.5;
 }
-.tv-wizard-rail li.done { opacity: 1 }
-.tv-wizard-rail li.now {
-  opacity: 1;
-  color: var(--ink);
-  background: rgba(169, 119, 47, 0.13);
-}
+.tv-wizard-rail li.done { opacity: 0.95 }
+.tv-wizard-rail li.now { opacity: 1; color: var(--ink) }
 .tv-wizard-dot {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  width: 21px;
-  height: 21px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
-  border: 1px solid var(--brass);
+  background: var(--parchment);
+  border: 1px solid rgba(169, 119, 47, 0.6);
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
+  color: var(--ink-soft);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: transform 0.2s ease;
 }
 .tv-wizard-rail li.done .tv-wizard-dot {
   background: var(--brass);
   border-color: var(--brass);
-  color: var(--parchment);
+  color: #fffaf0;
 }
-.tv-wizard-rail li.now .tv-wizard-dot { background: rgba(255, 255, 255, 0.5) }
-.tv-wizard-rail-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.tv-wizard-rail li.now .tv-wizard-dot {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: scale(1.14);
+  box-shadow: 0 0 0 4px rgba(127, 38, 55, 0.1), 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.tv-wizard-rail li.now .tv-wizard-rail-label { font-weight: 600 }
+.tv-wizard-rail-label {
+  display: block;
+  max-width: 11ch;
+  overflow-wrap: break-word;
+}
 
-.tv-wizard-body { font-size: 15px; line-height: 1.6 }
-.tv-wizard-body p { margin: 0 0 14px }
-.tv-wizard-body .tv-tabs { margin: 4px 0 14px }
-.tv-wizard-body .tv-steps { margin: 0 0 10px }
+.tv-wizard-body { font-size: 15.5px; line-height: 1.68 }
+.tv-wizard-body p { margin: 0 0 15px }
+.tv-wizard-body em { font-style: italic }
+
+/* The instructions. Engraved numerals in the margin, hanging text — a
+   procedure, not an ordered list with full stops after the digits. */
+.tv-wizard-body .tv-steps {
+  list-style: none;
+  counter-reset: tvstep;
+  margin: 18px 0 6px;
+  padding: 0;
+}
+.tv-wizard-body .tv-steps > li {
+  counter-increment: tvstep;
+  position: relative;
+  padding: 0 0 15px 38px;
+}
+.tv-wizard-body .tv-steps > li::before {
+  content: counter(tvstep);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--parchment);
+  border: 1px solid rgba(169, 119, 47, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  color: var(--brass);
+}
+.tv-wizard-body .tv-steps > li.tv-step-code { padding-left: 38px }
+
+/* A plate for anything you are meant to copy: recessed, brass-edged, with the
+   button seated in it rather than floating beside it. */
+.tv-wizard-body .tv-step-code > pre,
+.tv-wizard .tv-step-code > pre {
+  margin: 0;
+  padding: 13px 15px;
+  overflow-x: auto;
+  background: linear-gradient(180deg, rgba(37, 29, 20, 0.055), rgba(37, 29, 20, 0.025));
+  border: 1px solid rgba(169, 119, 47, 0.42);
+  border-left: 3px solid var(--brass);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px rgba(43, 33, 23, 0.12);
+}
+.tv-wizard .tv-step-code {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.tv-wizard .tv-step-code > pre { flex: 1 1 auto; min-width: 0 }
+.tv-wizard .tv-step-code > pre code {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre;
+}
+.tv-wizard .tv-step-code .tv-copy {
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin-left: -1px;
+  padding: 0 15px;
+  border: 1px solid var(--btn-deep);
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--btn), var(--btn-deep));
+  color: #fdf6e8;
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.tv-wizard .tv-step-code .tv-copy:hover { filter: brightness(1.08) }
+
+/* The two Claude variants: one segmented control, not two loose pills. */
+.tv-wizard .tv-tabs {
+  display: inline-flex;
+  gap: 0;
+  margin: 6px 0 4px;
+  padding: 3px;
+  background: rgba(37, 29, 20, 0.05);
+  border: 1px solid rgba(169, 119, 47, 0.35);
+  border-radius: 999px;
+}
+.tv-wizard .tv-tab {
+  border: none;
+  background: none;
+  padding: 7px 17px;
+  border-radius: 999px;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.tv-wizard .tv-tab:hover { color: var(--ink) }
+.tv-wizard .tv-tab-on {
+  background: linear-gradient(180deg, var(--btn), var(--btn-deep));
+  color: #fdf6e8;
+  box-shadow: 0 1px 3px rgba(43, 33, 23, 0.25);
+}
+
+/* Who is supported, and who is not yet. An aside with a brass rule, because it
+   is a standing note about the state of the world rather than a warning. */
+.tv-wizard .tv-connect-note {
+  margin: 20px 0 0;
+  padding: 13px 16px;
+  background: rgba(169, 119, 47, 0.07);
+  border-left: 2px solid var(--brass);
+  border-radius: 0 3px 3px 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+.tv-wizard .tv-connect-note strong { color: var(--ink) }
+.tv-wizard .tv-connect-note a { color: var(--accent); text-decoration: underline }
 
 .tv-wizard-actions {
   display: flex;
-  gap: 10px;
+  gap: 11px;
   flex-wrap: wrap;
-  margin-top: 18px !important;
+  margin-top: 20px !important;
 }
 
 /* Waiting is a state, not an absence, and it should look like one. */
 .tv-wizard-waiting {
-  margin-top: 16px !important;
-  padding-left: 22px;
-  position: relative;
-  font-size: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  margin: 20px 0 0 !important;
+  padding: 12px 15px;
+  background: rgba(255, 252, 244, 0.6);
+  border: 1px dashed rgba(169, 119, 47, 0.45);
+  border-radius: 3px;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--ink-soft);
 }
 .tv-wizard-waiting::before {
   content: "";
-  position: absolute;
-  left: 0;
-  top: 6px;
+  flex: 0 0 auto;
+  position: relative;
+  top: 4px;
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--brass);
-  animation: tv-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(169, 119, 47, 0.55);
+  animation: tv-pulse 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 @keyframes tv-pulse {
-  0%, 100% { opacity: 0.25; transform: scale(0.8) }
-  50%      { opacity: 1;    transform: scale(1) }
+  0%   { box-shadow: 0 0 0 0 rgba(169, 119, 47, 0.5); opacity: 1 }
+  70%  { box-shadow: 0 0 0 9px rgba(169, 119, 47, 0); opacity: 0.55 }
+  100% { box-shadow: 0 0 0 0 rgba(169, 119, 47, 0); opacity: 1 }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tv-wizard-waiting::before { animation: none; opacity: 0.7 }
+  .tv-wizard-waiting::before { animation: none; opacity: 0.75 }
 }
 
+/* What the atlas last saw. Set as a footer note, because it is evidence rather
+   than instruction — and because silence with a timestamp is a diagnosis. */
 .tv-wizard-seen {
-  margin: 20px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid var(--parchment-deep);
-  font-size: 13px;
+  margin: 24px 0 0;
+  padding-top: 15px;
+  border-top: 1px solid rgba(169, 119, 47, 0.3);
+  font-size: 12.5px;
+  line-height: 1.6;
   color: var(--ink-soft);
+  font-style: italic;
 }
 
-@media (max-width: 560px) {
-  .tv-wizard { padding: 22px 18px 18px; max-height: 92vh }
+@media (max-width: 620px) {
+  .tv-wizard-veil { padding: 12px }
+  .tv-wizard { padding: 24px 20px 20px; max-height: 94vh; box-shadow: 0 20px 50px rgba(43, 33, 23, 0.4) }
+  .tv-wizard-title { font-size: 1.5rem }
   .tv-wizard-rail-label { display: none }
-  .tv-wizard-rail li { flex: 0 0 auto; padding: 6px }
+  .tv-wizard-rail::before { left: 12px; right: 12px }
+  .tv-wizard .tv-step-code { flex-direction: column }
+  .tv-wizard .tv-step-code .tv-copy {
+    margin: -1px 0 0;
+    padding: 9px 15px;
+    border-radius: 0 0 3px 3px;
+  }
 }
