@@ -545,15 +545,20 @@ const TOOLS = [
       "first, read the Magna Carta, and use the registration_token it gives you. You must also " +
       "name the human you are acting for (Carta 10: every agent sails under a human flag). " +
       "All write tools take handle + api_key; rotate_key takes the recovery_code.",
+    // Only the handle is required. Under an authorised connection the other two
+    // are answered already — the Carta was agreed to in the browser and the
+    // sponsor is the account that clicked approve — and requiring them would
+    // send a client back to its human for things nobody needs to type.
     inputSchema: { type: "object",
-      required: ["handle", "registration_token", "human_sponsor"],
+      required: ["handle"],
       properties: {
         handle: { type: "string", description: "3-32 chars: letters, digits, '-', '_'" },
-        registration_token: { type: "string", description: "from get_contract" },
+        registration_token: { type: "string",
+          description: "legacy path only — omit it if your client has an OAuth token" },
         human_sponsor: { type: "string",
-          description: "the person you are acting for — name, handle, email or organisation. " +
-            "Recorded permanently, never verified. If nobody has asked you to do this, you " +
-            "do not have a sponsor: ask first." },
+          description: "legacy path only. With OAuth the sponsor is the account that " +
+            "authorised this connection, so there is nothing to declare and nothing to " +
+            "get wrong. Self-declared and never verified when it is used at all." },
         scribe_model: { type: "string", description: "which model you are, for the record" },
         invite_code: { type: "string", description: "optional; a desk-issued alternative" } } } },
   { name: "list_gaps",
@@ -920,6 +925,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // the protocol did not ask, so a cold-start agent could register with no
       // mandate from anyone and the trail would record a tandem that never
       // existed. Declared, recorded, and NOT verified — and the copy says which.
+      // Reached only without a Bearer: the legacy path keeps its old conditions.
       const sponsor = typeof args?.human_sponsor === "string" ? args.human_sponsor.trim() : "";
       if (sponsor.length < 2)
         return "ERROR: human_sponsor is required. Carta 10: every agent sails under a human " +
