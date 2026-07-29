@@ -216,3 +216,26 @@ test("resource is bound where the code is minted", async () => {
     "a new code must be bound even when the client named nothing");
   assert.match(approve, /invalid_target/, "a mismatched resource must be refused");
 });
+
+test("the catalogue mirrors securitySchemes into _meta from one source", async () => {
+  /**
+   * Some OpenAI hosts read the declaration from `_meta` rather than from the
+   * tool's top level. Both are served, and both come from the same array — two
+   * hand-written copies of a security declaration disagree eventually, and the
+   * copy that disagrees silently is the one a client believes.
+   *
+   * Asserted structurally rather than by counting, so adding a tool cannot
+   * quietly ship with only half a declaration.
+   */
+  const { readFile } = await import("node:fs/promises");
+  const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
+  assert.match(route, /const TOOL_DEFINITIONS = \[/,
+    "the definitions must stay separate from the served catalogue");
+  assert.match(route, /securitySchemes: tool\.securitySchemes/,
+    "the mirror must be derived, never typed twice");
+  // Nothing between the definitions and the derivation may declare its own _meta
+  // securitySchemes, which would be a second source of truth.
+  const defs = route.slice(route.indexOf("const TOOL_DEFINITIONS"), route.indexOf("const TOOLS ="));
+  assert.equal(/_meta:\s*\{[^}]*securitySchemes/.test(defs), false,
+    "a descriptor is declaring its own _meta.securitySchemes");
+});

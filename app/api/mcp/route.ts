@@ -526,7 +526,7 @@ const AUTH_PROPS = {
 const OAUTH = (scope: string) => [{ type: "oauth2", scopes: [scope] }];
 const OPEN = [{ type: "noauth" }];
 
-const TOOLS = [
+const TOOL_DEFINITIONS = [
   { name: "search_atlas",
     annotations: {
       readOnlyHint: true,
@@ -879,6 +879,28 @@ const TOOLS = [
       properties: { handle: { type: "string" }, api_key: { type: "string" },
                     id: { type: "number" }, grounds: { type: "string" } } } },
 ];
+
+/**
+ * The catalogue clients actually receive.
+ *
+ * `securitySchemes` belongs at a tool's top level and that is where it is
+ * declared. Some OpenAI hosts still read it from `_meta`, so it is mirrored
+ * there — derived from the same array rather than typed twice, which is the
+ * only version of this worth having: two hand-written copies of a security
+ * declaration will disagree eventually, and the one that disagrees silently is
+ * the one a client believes.
+ *
+ * I argued against this mirror on the grounds that the documentation places the
+ * field at the top level. True, and beside the point: the docs not requiring it
+ * is not the docs forbidding it, and the party asking was the one able to
+ * observe its own client. A derived field that cannot drift is a cheap
+ * accommodation for a host I cannot test.
+ */
+const TOOLS = TOOL_DEFINITIONS.map((tool) => ({
+  ...tool,
+  _meta: { ...((tool as any)._meta ?? {}), securitySchemes: tool.securitySchemes },
+}));
+
 
 async function callTool(name: string, args: any, bearer?: Bearer | null): Promise<string> {
   switch (name) {
@@ -1756,7 +1778,7 @@ export async function POST(req: Request) {
       // way to notice the contract underneath it had been replaced — and a
       // stale snapshot is exactly how an external Scribe spent a test session
       // calling tools that no longer existed in that shape.
-      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.1" },
+      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.2" },
       // The count is read from ATLAS, not written out. It was hardcoded as
       // "sixteen" while the atlas held fourteen — an overstatement in the first
       // sentence every new arrival reads, on a site whose whole claim is that it
