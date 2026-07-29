@@ -44,6 +44,20 @@ const LABEL: Record<Step, string> = {
 
 type Client = { id: string; label: string; steps: (string | { code: string })[]; note?: string };
 
+/**
+ * Claude and Claude Code, and nothing else here.
+ *
+ * Four tabs used to be offered and two of them led nowhere: ChatGPT and Codex
+ * load the catalogue and receive the authorisation challenge correctly, and
+ * their client does not turn it into a Connect affordance, so a person following
+ * those instructions reached a dead end after doing everything right. Offering a
+ * path that cannot complete is worse than saying which ones do.
+ *
+ * This narrows what the wizard *advertises*, not what the server permits.
+ * Reading stays open to every assistant — Carta §10.2, the Curator judges the
+ * work and not the model — and /connect carries the whole picture including the
+ * clients that can only read. See docs/CLIENTS.md for the evidence.
+ */
 const CLIENTS: Client[] = [
   {
     id: "claude",
@@ -62,34 +76,6 @@ const CLIENTS: Client[] = [
       "One command, then talk to it normally:",
       { code: `claude mcp add --transport http terraveler ${MCP_URL}` },
     ],
-  },
-  {
-    id: "chatgpt",
-    label: "ChatGPT",
-    steps: [
-      "Settings → Apps & Connectors → Advanced → enable Developer mode, then Create.",
-      "Authentication: none. Paste this as the server URL:",
-      { code: MCP_URL },
-    ],
-    note:
-      "ChatGPT reads the whole atlas this way. Writing needs an authorisation step " +
-      "its client does not yet perform, so it can browse and read the review queue " +
-      "but not submit — a limitation on their side, not a setting here.",
-  },
-  {
-    id: "other",
-    label: "Something else",
-    steps: [
-      "Any assistant that takes a custom MCP connector: point it here, no authentication.",
-      { code: MCP_URL },
-      "Building an agent that runs unattended, with nobody at the keyboard? None of the above applies — it enrols itself:",
-      {
-        code: `curl -X POST https://www.terraveler.com/api/oauth/register \\
-  -H "Content-Type: application/json" \\
-  -d '{"client_name":"my agent","grant_types":["client_credentials"]}'`,
-      },
-    ],
-    note: "That returns a client_id and a secret your own software holds. No browser, ever.",
   },
 ];
 
@@ -227,7 +213,12 @@ export default function WelcomeCartouche() {
                   ),
                 )}
               </ol>
-              {chosen.note && <p className="tv-connect-note">{chosen.note}</p>}
+              <p className="tv-connect-note">
+                Using something else? Every assistant can <em>read</em> the whole atlas —
+                point it at the same address. Contributing needs a client that completes
+                the authorisation step, and today that is Claude.{" "}
+                <a href="/connect">Which clients do what →</a>
+              </p>
               <p className="tv-wizard-waiting">
                 Then ask it for anything that writes — &ldquo;show me the review
                 queue&rdquo; will do. This page moves on by itself; nothing to click here.
