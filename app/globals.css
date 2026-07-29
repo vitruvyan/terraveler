@@ -2765,10 +2765,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 .tv-wizard {
   position: relative;
-  width: min(660px, 100%);
-  max-height: min(88vh, 820px);
+  width: min(780px, 100%);
+  max-height: min(90vh, 860px);
   overflow-y: auto;
-  padding: 30px 34px 26px;
+  padding: 28px 36px 24px;
   color: var(--ink);
   /* Two washes and a hairline: parchment that has been handled, not a panel. */
   background:
@@ -2794,8 +2794,8 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 .tv-wizard-title {
   font-family: var(--font-display);
-  font-size: 1.85rem;
-  line-height: 1.15;
+  font-size: 1.75rem;
+  line-height: 1.14;
   letter-spacing: -0.01em;
   margin: 3px 0 4px;
   /* A shallow letterpress, the way a title is pressed into a chart. */
@@ -2806,7 +2806,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: block;
   width: 46px;
   height: 2px;
-  margin: 14px 0 0;
+  margin: 12px 0 0;
   background: linear-gradient(90deg, var(--brass), rgba(169, 119, 47, 0));
 }
 
@@ -2815,7 +2815,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   position: relative;
   display: flex;
   list-style: none;
-  margin: 22px 0 24px;
+  margin: 20px 0 22px;
   padding: 0;
   gap: 0;
 }
@@ -2853,11 +2853,12 @@ input[type="range"].scrubber::-moz-range-thumb {
   height: 25px;
   border-radius: 50%;
   background: var(--parchment);
-  border: 1px solid rgba(169, 119, 47, 0.6);
+  border: 1px solid var(--brass);
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
   line-height: 1;
-  color: var(--ink-soft);
+  color: var(--brass);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: transform 0.2s ease;
 }
@@ -2875,12 +2876,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 .tv-wizard-rail li.now .tv-wizard-rail-label { font-weight: 600 }
 .tv-wizard-rail-label {
   display: block;
-  max-width: 11ch;
+  max-width: 16ch;
   overflow-wrap: break-word;
 }
 
-.tv-wizard-body { font-size: 15.5px; line-height: 1.68 }
-.tv-wizard-body p { margin: 0 0 15px }
+.tv-wizard-body { font-size: 15px; line-height: 1.62 }
+.tv-wizard-body p { margin: 0 0 13px }
 .tv-wizard-body em { font-style: italic }
 
 /* The instructions. Engraved numerals in the margin, hanging text — a
@@ -2894,7 +2895,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .tv-wizard-body .tv-steps > li {
   counter-increment: tvstep;
   position: relative;
-  padding: 0 0 15px 38px;
+  padding: 0 0 13px 38px;
 }
 .tv-wizard-body .tv-steps > li::before {
   content: counter(tvstep);
@@ -2914,6 +2915,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--brass);
 }
 .tv-wizard-body .tv-steps > li.tv-step-code { padding-left: 38px }
+.tv-wizard-body .tv-steps > li.tv-step-code::before { top: 8px }
 
 /* A plate for anything you are meant to copy: recessed, brass-edged, with the
    button seated in it rather than floating beside it. */
@@ -2922,11 +2924,12 @@ input[type="range"].scrubber::-moz-range-thumb {
   margin: 0;
   padding: 13px 15px;
   overflow-x: auto;
-  background: linear-gradient(180deg, rgba(37, 29, 20, 0.055), rgba(37, 29, 20, 0.025));
-  border: 1px solid rgba(169, 119, 47, 0.42);
+  background: var(--ink);
+  border: 1px solid var(--ink);
   border-left: 3px solid var(--brass);
   border-radius: 3px;
-  box-shadow: inset 0 1px 3px rgba(43, 33, 23, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09),
+              0 1px 2px rgba(43, 33, 23, 0.3);
 }
 .tv-wizard .tv-step-code {
   display: flex;
@@ -2938,7 +2941,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
-  color: var(--ink);
+  color: var(--parchment);
   white-space: pre;
 }
 .tv-wizard .tv-step-code .tv-copy {
@@ -2990,14 +2993,14 @@ input[type="range"].scrubber::-moz-range-thumb {
 /* Who is supported, and who is not yet. An aside with a brass rule, because it
    is a standing note about the state of the world rather than a warning. */
 .tv-wizard .tv-connect-note {
-  margin: 20px 0 0;
-  padding: 13px 16px;
-  background: rgba(169, 119, 47, 0.07);
-  border-left: 2px solid var(--brass);
+  margin: 18px 0 0;
+  padding: 12px 15px;
+  background: rgba(169, 119, 47, 0.15);
+  border-left: 3px solid var(--brass);
   border-radius: 0 3px 3px 0;
   font-size: 13.5px;
   line-height: 1.6;
-  color: var(--ink-soft);
+  color: var(--ink);
 }
 .tv-wizard .tv-connect-note strong { color: var(--ink) }
 .tv-wizard .tv-connect-note a { color: var(--accent); text-decoration: underline }
@@ -3014,10 +3017,10 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   align-items: baseline;
   gap: 11px;
-  margin: 20px 0 0 !important;
-  padding: 12px 15px;
-  background: rgba(255, 252, 244, 0.6);
-  border: 1px dashed rgba(169, 119, 47, 0.45);
+  margin: 16px 0 0 !important;
+  padding: 11px 14px;
+  background: rgba(255, 252, 244, 0.82);
+  border: 1px dashed rgba(169, 119, 47, 0.6);
   border-radius: 3px;
   font-size: 13.5px;
   line-height: 1.55;
@@ -3047,8 +3050,8 @@ input[type="range"].scrubber::-moz-range-thumb {
 /* What the atlas last saw. Set as a footer note, because it is evidence rather
    than instruction — and because silence with a timestamp is a diagnosis. */
 .tv-wizard-seen {
-  margin: 24px 0 0;
-  padding-top: 15px;
+  margin: 20px 0 0;
+  padding-top: 13px;
   border-top: 1px solid rgba(169, 119, 47, 0.3);
   font-size: 12.5px;
   line-height: 1.6;
@@ -3056,7 +3059,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-style: italic;
 }
 
-@media (max-width: 620px) {
+@media (max-width: 720px) {
   .tv-wizard-veil { padding: 12px }
   .tv-wizard { padding: 24px 20px 20px; max-height: 94vh; box-shadow: 0 20px 50px rgba(43, 33, 23, 0.4) }
   .tv-wizard-title { font-size: 1.5rem }
