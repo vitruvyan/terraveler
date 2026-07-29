@@ -226,7 +226,8 @@ const SCOPE_FOR: Record<string, Scope | undefined> = {
   // hands back an unpublished draft, which anonymous callers had no business
   // reading. Neither triggered a challenge, so a Scribe met the old
   // credential problem before it ever reached submit_review.
-  list_review_queue: "review",
+  // list_review_queue is NOT here: the backlog is public, like the audit trail.
+  // get_review_brief is, because it returns an unpublished draft.
   get_review_brief: "review",
   claim_gap: "contribute",
   propose_idea: "contribute",
@@ -777,7 +778,7 @@ const TOOLS = [
       idempotentHint: true,
       openWorldHint: false,
     },
-    securitySchemes: OAUTH("review"),
+    securitySchemes: OPEN,
     description: "Drafts awaiting peer review (Carta 10.4) that YOU can review: not your own, not already reviewed by you. Pick one, call get_review_brief, then try to REFUTE it against the sources.",
     inputSchema: { type: "object", required: [], properties: { ...AUTH_PROPS } } },
   { name: "get_review_brief",
@@ -1323,19 +1324,39 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           " — it now appears on the editorial desk. Track it with get_submission_status.",
       });
     }
+    // Readable by anyone, and it should be.
+    //
+    // I gated this alongside get_review_brief, which was right about the brief
+    // — it hands back an unpublished draft — and wrong about the list. What is
+    // in the list is submission ids and voyage names, which Carta §7 already
+    // makes public through get_audit: standing is public, authority must be
+    // inspectable, and the desk's backlog is an invitation rather than a
+    // secret. Gating it meant an assistant that cannot complete an OAuth flow
+    // could not even see that work existed.
+    //
+    // Authenticated, the list is filtered to what YOU can review — not your own
+    // drafts, not ones you have already reviewed. Anonymous, it is the whole
+    // queue, with no claim about who may act on it.
     case "list_review_queue": {
-      const a = await authenticate(args, bearer);
-      if (a.err) return `ERROR: ${a.err}`;
+      const a = bearer || args?.api_key ? await authenticate(args, bearer) : { ok: undefined };
+      const mineClause = a.ok ? `&contributor_id=neq.${a.ok.id}` : "";
       const open = await sb("GET",
-        `submissions?status=eq.peer-review&contributor_id=neq.${a.ok!.id}&order=created_at.asc&select=id,type,target_voyage,created_at&limit=25`);
-      const mine = await sb("GET", `reviews?reviewer_id=eq.${a.ok!.id}&select=submission_id`);
-      const done = new Set(mine.map((r: any) => r.submission_id));
-      const queue = open.filter((s: any) => !done.has(s.id));
+        `submissions?status=eq.peer-review${mineClause}&order=created_at.asc&select=id,type,target_voyage,created_at&limit=25`);
+      let queue = open;
+      if (a.ok) {
+        const mine = await sb("GET", `reviews?reviewer_id=eq.${a.ok.id}&select=submission_id`);
+        const done = new Set(mine.map((r: any) => r.submission_id));
+        queue = open.filter((s: any) => !done.has(s.id));
+      }
       return JSON.stringify({
         review_queue: queue,
         note: queue.length
           ? "Pick one and call get_review_brief. Your job is adversarial: try to refute it against the sources."
-          : "Nothing awaits your review right now — check back after new drafts pass the gate.",
+          : "Nothing awaits review right now — check back after new drafts pass the gate.",
+        ...(a.ok ? {} : {
+          you_are: "not authorised, so this is the whole queue rather than the part you " +
+            "could review. Reading it needs nothing; reviewing needs the 'review' scope.",
+        }),
       }, null, 2);
     }
     case "get_review_brief": {
