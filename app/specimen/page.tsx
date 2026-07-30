@@ -1,6 +1,55 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./specimen.css";
+import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
+
+/* Il registro B non è più una finta: sono i componenti veri del Quarterdeck,
+   alimentati con le righe reali del 28-30 luglio 2026. Il desk sta dietro una
+   sessione, quindi questo è l'unico modo di guardare una modifica prima di
+   spedirla — e se qualcuno cambia quei componenti, questa pagina cambia con
+   loro invece di restare una promessa. */
+const DESK_FEED: LogEntry[] = [
+  {
+    submission_id: 27, actor: "peer-review", action: "review", verdict: "confirm",
+    created_at: "2026-07-29T20:19:09",
+    findings: [
+      "seq1.claim1 (Portsmouth departure): supported",
+      "seq2.claim1 (Pisania arrival, Dr. Laidley, Ainsley brothers): supported",
+    ],
+  },
+  {
+    submission_id: 27, actor: "curator-gate", action: "verdict", verdict: "pass·gate",
+    created_at: "2026-07-29T20:13:36", findings: [],
+  },
+  {
+    submission_id: null, actor: "mcp", action: "register", verdict: null,
+    created_at: "2026-07-29T20:11:35",
+    findings: ["contributor 'claude-desktop' claimed by an authorised connection (3)"],
+  },
+  {
+    submission_id: null, actor: "human:dbaldoni", action: "authorize", verdict: "granted",
+    created_at: "2026-07-29T19:43:35",
+    findings: [
+      "client tv_3211f62a20aed2369feab49ac8370b6e · connection 3",
+      "scopes: contribute, review, appeal",
+    ],
+  },
+  {
+    submission_id: 26, actor: "curator-desk", action: "verdict", verdict: "changes",
+    created_at: "2026-07-28T20:39:20",
+    findings: [
+      "Drafted under Carta v0.4, in force is v0.5 — and v0.5 changed what a quotation is: these were transcribed by the scribe rather than copied out of the source, so the draft must be regenerated rather than edited.",
+      "wp10: verbatim quotation, marked reconstructed — one of the two is wrong",
+    ],
+  },
+  ...[17, 18, 19, 20].map((id) => ({
+    submission_id: id, actor: "editor-in-chief", action: "correction",
+    verdict: "carta-version-misrecorded", created_at: "2026-07-28T19:59:23",
+    findings: [
+      "The verdict row records carta_version 0.2. That is not the constitution the verdict was given under: it is a stale constant that four editorial desk routes each declared separately and never updated. Fixed at source by moving the constant to lib/carta.ts.",
+    ],
+  })),
+];
 
 /* Tre famiglie, tutte OFL e self-hosted — la stessa legge che la Magna Carta
    impone alle fonti vale per i caratteri. Subsettate a latino: 240 KB in tutto,
@@ -272,161 +321,30 @@ export default function SpecimenPage() {
         <section>
           <span className="spec-eyebrow">III &middot; registro b &middot; il desk</span>
 
-          <div className="spec-desk-head">
-            <div>
-              <span className="spec-institution">Terraveler &middot; editorial desk</span>
-              <h2>Quarterdeck</h2>
-            </div>
-            <div className="spec-machine" style={{ color: "var(--ink-soft)" }}>
-              carta v0.5 &middot; in force
-            </div>
-          </div>
+          <DeskHeading
+            eyebrow="Terraveler · editorial desk"
+            title="Quarterdeck"
+            aside={<span className="spec-machine" style={{ color: "var(--ink-faint)" }}>carta v0.5 · in force</span>}
+          />
 
-          <div className="spec-demands">
-            <div className="spec-demand is-idle">
-              <span className="spec-demand-n">0</span>
-              <span className="spec-demand-l spec-institution">awaiting desk</span>
-            </div>
-            <div className="spec-demand is-live">
-              <span className="spec-demand-n">1</span>
-              <span className="spec-demand-l spec-institution">in peer review</span>
-            </div>
-            <div className="spec-demand is-live">
-              <span className="spec-demand-n">1</span>
-              <span className="spec-demand-l spec-institution">claimed gap, unfinished</span>
-            </div>
-          </div>
+          <DeskStanding
+            demands={[
+              { label: "awaiting desk", n: 0 },
+              { label: "in peer review", n: 1 },
+              { label: "claimed gaps, unfinished", n: 1 },
+            ]}
+            ledger={[
+              { label: "approved", n: 18 },
+              { label: "rejected", n: 6 },
+              { label: "reviews given", n: 3 },
+              { label: "open gaps", n: 4 },
+              { label: "crew", n: 8, suffix: " active" },
+              { label: "suspended", n: 1 },
+            ]}
+          />
 
-          <div className="spec-ledger spec-machine">
-            <span>
-              approved <b>18</b>
-            </span>
-            <span>
-              rejected <b>6</b>
-            </span>
-            <span>
-              reviews given <b>3</b>
-            </span>
-            <span>
-              open gaps <b>4</b>
-            </span>
-            <span>
-              crew <b>8</b> active, <b>1</b> suspended
-            </span>
-          </div>
-
-          <div className="spec-log">
-            <h3>Ship&rsquo;s log</h3>
-
-            <div className="spec-entry is-peer">
-              <div className="spec-entry-when spec-machine">
-                29 &middot; vii &middot; 2026
-                <br />
-                20:19:09
-              </div>
-              <div>
-                <span className="spec-entry-actor">peer-review</span>{" "}
-                <span className="spec-entry-action spec-machine">
-                  review &rarr; confirm &middot; #27
-                </span>
-                <div className="spec-entry-payload">
-                  <div className="spec-machine">
-                    seq1.claim1 (Portsmouth departure): supported
-                  </div>
-                  <div className="spec-machine">
-                    seq2.claim1 (Pisania arrival, Dr. Laidley, Ainsley brothers): supported
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="spec-entry is-curator">
-              <div className="spec-entry-when spec-machine">
-                29 &middot; vii &middot; 2026
-                <br />
-                20:13:36
-              </div>
-              <div>
-                <span className="spec-entry-actor">curator-gate</span>{" "}
-                <span className="spec-entry-action spec-machine">
-                  verdict &rarr; pass&middot;gate &middot; #27
-                </span>
-              </div>
-            </div>
-
-            <div className="spec-entry is-human">
-              <div className="spec-entry-when spec-machine">
-                29 &middot; vii &middot; 2026
-                <br />
-                19:43:35
-              </div>
-              <div>
-                <span className="spec-entry-actor">human &middot; dbaldoni</span>{" "}
-                <span className="spec-entry-action spec-machine">authorize &rarr; granted</span>
-                <div className="spec-entry-payload">
-                  <div className="spec-machine">
-                    client tv_3211f62a20aed2369feab49ac8370b6e &middot; connection 3
-                  </div>
-                  <div className="spec-machine">
-                    scopes: contribute, review, appeal
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="spec-entry is-curator">
-              <div className="spec-entry-when spec-machine">
-                28 &middot; vii &middot; 2026
-                <br />
-                20:39:20
-              </div>
-              <div>
-                <span className="spec-entry-actor">curator-desk</span>{" "}
-                <span className="spec-entry-action spec-machine">
-                  verdict &rarr; changes &middot; #26
-                </span>
-                <p className="spec-entry-reason">
-                  {"Drafted under Carta "}
-                  <span className="spec-machine">v0.4</span>
-                  {", in force is "}
-                  <span className="spec-machine">v0.5</span>
-                  {
-                    " — and it changed what a quotation is: these were transcribed by the scribe rather than copied out of the source, so the draft must be regenerated rather than edited."
-                  }
-                </p>
-                <div className="spec-entry-payload">
-                  <div className="spec-machine">
-                    wp10: verbatim quotation, marked reconstructed &mdash; one of the two is
-                    wrong
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="spec-entry">
-              <div className="spec-entry-when spec-machine">
-                28 &middot; vii &middot; 2026
-                <br />
-                19:59:23
-              </div>
-              <div>
-                <span className="spec-entry-actor">editor-in-chief</span>{" "}
-                <span className="spec-entry-action spec-machine">
-                  correction &rarr; carta-version-misrecorded
-                </span>{" "}
-                <span className="spec-count">&times;4 &nbsp;#17 #18 #19 #20</span>
-                <p className="spec-entry-reason">
-                  {"The verdict row records "}
-                  <span className="spec-machine">carta_version 0.2</span>
-                  {
-                    ". That is not the constitution the verdict was given under: it is a stale constant that four editorial desk routes each declared separately and never updated. Fixed at source by moving the constant to "
-                  }
-                  <span className="spec-machine">lib/carta.ts</span>
-                  {"."}
-                </p>
-              </div>
-            </div>
-          </div>
+          <h3 className="dk-section-title">Ship&rsquo;s log</h3>
+          <ShipsLog feed={DESK_FEED} />
 
           <div className="spec-note">
             <b>Tre cose cambiate, tutte di significato.</b> <b>Uno:</b> nove tessere identiche

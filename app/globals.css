@@ -3422,3 +3422,202 @@ main.prose {
   .crew-flight-stage { min-width: 0 }
   .crew-log-when { min-width: 0; width: 100% }
 }
+
+/* ============================================================================
+   THE QUARTERDECK — the editorial desk on the system
+   ----------------------------------------------------------------------------
+   The first surface built entirely on the token layer: no literal size, no
+   literal radius, no literal colour below. It is also the answer to the gap
+   the design skill records — /contribute had an editorial hero while the desk
+   was still a form. It does not get a photographic hero, because it is a
+   working surface you return to rather than a page you arrive at; it gets the
+   same typographic language instead.
+   ========================================================================= */
+
+.dk-page {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5) var(--space-9);
+}
+
+.dk-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.dk-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+}
+.dk-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: var(--step-6);
+  line-height: 1;
+  letter-spacing: -0.022em;
+  margin: var(--space-2) 0 0;
+}
+
+/* --- tabs: the institution speaking, so no cartouche at this size -------- */
+.dk-tabs {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.dk-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 var(--space-3);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.dk-tab:hover { color: var(--ink); }
+.dk-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brass); }
+
+/* --- what the desk is being asked to do --------------------------------- */
+.dk-demands {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+.dk-demand-n {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: var(--step-7);
+  line-height: 0.84;
+  font-variant-numeric: lining-nums;
+}
+.dk-demand.is-idle .dk-demand-n { color: var(--state-idle); }
+.dk-demand.is-live .dk-demand-n { color: var(--accent); }
+.dk-demand-l {
+  display: block;
+  margin-top: var(--space-3);
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+}
+
+/* --- what the desk has already done ------------------------------------- */
+.dk-ledger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--rule-hair);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink-soft);
+}
+.dk-ledger b { color: var(--ink); font-weight: 500; }
+
+/* --- the ship's log ------------------------------------------------------ */
+.dk-section-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-3);
+  letter-spacing: -0.01em;
+  margin: var(--space-7) 0 var(--space-5);
+}
+.dk-empty {
+  font-style: italic;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+.dk-entry {
+  display: grid;
+  grid-template-columns: 10.5rem 1fr;
+  gap: var(--space-5);
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--rule-hair);
+  border-left: 2px solid var(--state-idle);
+}
+.dk-entry.is-peer    { border-left-color: var(--state-review); }
+.dk-entry.is-curator { border-left-color: var(--brass); }
+.dk-entry.is-human   { border-left-color: var(--accent); }
+.dk-when {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink-faint);
+  text-align: right;
+}
+.dk-actor {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.dk-entry.is-peer    .dk-actor { color: var(--state-review); }
+.dk-entry.is-curator .dk-actor { color: var(--brass-text); }
+.dk-entry.is-human   .dk-actor { color: var(--accent); }
+.dk-action {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+.dk-payload {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink-soft);
+  margin-top: var(--space-2);
+  overflow-wrap: anywhere;
+}
+/* The one place serif appears in the log: a human explaining a decision. */
+.dk-reason {
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.56;
+  color: var(--ink);
+  max-width: var(--measure);
+  margin: var(--space-3) 0 0;
+}
+.dk-count {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.06em;
+  padding: 0.1em 0.5em;
+  border-radius: var(--radius-pill);
+  background: var(--parchment-deep);
+  color: var(--ink-soft);
+}
+
+@media (max-width: 760px) {
+  .dk-entry { grid-template-columns: 1fr; gap: var(--space-2); }
+  .dk-when { text-align: left; }
+  .dk-demands { gap: var(--space-6); }
+}
+
+/* An identifier inside human prose keeps the machine's voice — see
+   withIdentifiers() in components/desk/Quarterdeck.tsx for why it cannot be
+   marked by hand here. */
+.dk-id {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 0.9em;
+}

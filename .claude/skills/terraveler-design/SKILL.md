@@ -148,14 +148,33 @@ are editing is already migrated; check it. As of the typography commit:
   `AuthBackdrop.tsx`, `icon.tsx`, `VoyageExperience.tsx`, `SolarSystemMap.tsx`,
   `SolarSystem3D.tsx`, `ContributePanel.tsx`. Some are OG/icon rendering where
   a token cannot reach; the rest are ordinary debt.
-- **Page-level language is uneven** and this is the known gap: `/contribute`,
-  `/magna-carta`, `/voyages` have a real editorial hero; the Quarterdeck
-  (`/desk`) is still a form. Bringing the desk onto the system is pending
-  design work — do not improvise it in passing.
+- The **Quarterdeck overview is done** and is the reference for how a surface
+  looks on this system — see `components/desk/Quarterdeck.tsx`, the first
+  thing here built with no literal size, radius or colour. Its **submissions
+  and crew tabs are not**: they are still inline styles and raw px.
+- Other surfaces still off the system: the map chrome beyond the notes already
+  moved, `/search`, `/account/agents`, the contribute panel.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done
 when it is not.
+
+## Two traps that have already cost time
+
+**A surface behind a session cannot be looked at.** The desk needs a real
+login, so a change to it is unverifiable before it ships — unless the markup
+lives in components that something else can render with fixture data. That is
+why `components/desk/Quarterdeck.tsx` exists and why `/specimen` feeds it the
+real July 2026 log rows. Build any gated surface this way: same components,
+fixtures in the specimen. Do not go looking in `.env` for credentials.
+
+**The webfonts are subset, so an OpenType feature you did not ask for is not
+there.** `font-variant-numeric: lining-nums` silently did nothing until `lnum`
+was added to the subsetting command, and the Quarterdeck's figures rendered
+`O I I` instead of `0 1 1` — Cormorant's oldstyle zero reads as a letter. The
+cut in `app/fonts/` currently carries `kern, liga, calt, onum, lnum, tnum,
+pnum, smcp, c2sc, dlig, frac`. If you need a feature outside that list, the
+fonts must be re-subset; asking for it in CSS will fail quietly.
 
 ## Checking your work
 

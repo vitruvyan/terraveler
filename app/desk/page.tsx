@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import DeskLogin from "@/components/DeskLogin";
 import SiteHeader from "@/components/SiteHeader";
+import { DeskHeading, DeskStanding, ShipsLog } from "@/components/desk/Quarterdeck";
 
 type Sub = {
   id: number;
@@ -180,50 +181,51 @@ export default function Desk() {
   return (
     <>
     <SiteHeader />
-    <main style={{ maxWidth: 960, margin: "0 auto", padding: "34px 22px 80px", lineHeight: 1.55 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-            Terraveler · Editorial desk
-          </span>
-          <h1 style={{ margin: "4px 0 0", fontSize: "1.6rem" }}>
-            {tab === "overview" ? "Quarterdeck" : tab === "submissions" ? "Submissions" : "Crew"}
-          </h1>
-        </div>
-        <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); setAuthed(false); }}>
-          Sign out
-        </button>
-      </div>
+    <main className="dk-page">
+      <DeskHeading
+        eyebrow="Terraveler · editorial desk"
+        title={tab === "overview" ? "Quarterdeck" : tab === "submissions" ? "Submissions" : "Crew"}
+        aside={
+          <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); setAuthed(false); }}>
+            Sign out
+          </button>
+        }
+      />
 
-      <div style={{ display: "flex", gap: 6, marginTop: 18, borderBottom: "1px solid var(--parchment-deep)", paddingBottom: 10 }}>
+      <div className="dk-tabs" role="tablist">
         {(["overview", "submissions", "crew"] as Tab[]).map((t) => (
-          <button key={t} className="desk-btn" onClick={() => setTab(t)}
-            style={tab === t ? { background: "var(--accent)", color: "var(--parchment)", borderColor: "var(--accent-deep)" } : {}}>
-            {t === "overview" ? "⚓ Overview" : t === "submissions" ? `📜 Submissions${openCount ? ` (${openCount})` : ""}` : "🧑‍✈️ Crew"}
+          <button
+            key={t}
+            role="tab"
+            aria-selected={tab === t}
+            className="dk-tab"
+            onClick={() => setTab(t)}
+          >
+            {t === "submissions" && openCount ? `${t} (${openCount})` : t}
           </button>
         ))}
       </div>
 
       {tab === "overview" && overview && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 10, marginTop: 20 }}>
-            {[
-              ["Awaiting desk", overview.counts.submissions["human-review"] ?? 0],
-              ["In peer review", overview.counts.submissions["peer-review"] ?? 0],
-              ["Approved", overview.counts.submissions["approved"] ?? 0],
-              ["Rejected", (overview.counts.submissions["rejected"] ?? 0) + (overview.counts.submissions["curator-rejected"] ?? 0)],
-              ["Reviews given", overview.counts.reviews_total],
-              ["Open gaps", overview.counts.gaps["open"] ?? 0],
-              ["Claimed gaps", overview.counts.gaps["claimed"] ?? 0],
-              ["Active crew", overview.counts.contributors["active"] ?? 0],
-              ["Suspended", overview.counts.contributors["suspended"] ?? 0],
-            ].map(([label, n]) => (
-              <div key={String(label)} style={{ border: "1px solid var(--parchment-deep)", borderRadius: 10, background: "rgba(255,255,255,0.35)", padding: "12px 14px" }}>
-                <div style={{ fontSize: 26, fontFamily: "var(--font-display)" }}>{n}</div>
-                <div style={{ fontSize: 12, color: "var(--ink-soft)", letterSpacing: "0.04em" }}>{label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Three numbers that ask something of you, and a ledger for what is
+              already settled. Approved 18 and Awaiting 0 were the same size
+              before, which told the reader nothing about where to look. */}
+          <DeskStanding
+            demands={[
+              { label: "awaiting desk", n: overview.counts.submissions["human-review"] ?? 0 },
+              { label: "in peer review", n: overview.counts.submissions["peer-review"] ?? 0 },
+              { label: "claimed gaps, unfinished", n: overview.counts.gaps["claimed"] ?? 0 },
+            ]}
+            ledger={[
+              { label: "approved", n: overview.counts.submissions["approved"] ?? 0 },
+              { label: "rejected", n: (overview.counts.submissions["rejected"] ?? 0) + (overview.counts.submissions["curator-rejected"] ?? 0) },
+              { label: "reviews given", n: overview.counts.reviews_total },
+              { label: "open gaps", n: overview.counts.gaps["open"] ?? 0 },
+              { label: "crew", n: overview.counts.contributors["active"] ?? 0, suffix: " active" },
+              { label: "suspended", n: overview.counts.contributors["suspended"] ?? 0 },
+            ]}
+          />
 
           {overview.demand && overview.demand.length > 0 && (
             <>
@@ -263,24 +265,8 @@ export default function Desk() {
             </>
           )}
 
-          <h2 style={{ fontSize: "1.1rem", margin: "26px 0 10px" }}>Ship&apos;s log — latest activity</h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
-            {overview.feed.map((a, i) => (
-              <div key={i} style={{ borderBottom: "1px dashed var(--parchment-deep)", paddingBottom: 6 }}>
-                <strong>{a.actor}</strong> · {a.action}
-                {a.verdict ? ` → ${a.verdict}` : ""}
-                {a.submission_id != null ? ` · #${a.submission_id}` : ""}
-                <span style={{ color: "var(--ink-soft)" }}> · {new Date(a.created_at).toLocaleString()}</span>
-                {Array.isArray(a.findings) && a.findings.length > 0 && (
-                  <div style={{ color: "var(--ink-soft)", fontSize: 12, marginTop: 2 }}>
-                    {a.findings.slice(0, 2).map((f: any, j: number) => (
-                      <div key={j}>{Array.isArray(f) ? f[2] ?? f.join(" · ") : String(f)}</div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          <h2 className="dk-section-title">Ship&apos;s log</h2>
+          <ShipsLog feed={overview.feed} />
         </>
       )}
 
