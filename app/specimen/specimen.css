@@ -1,0 +1,559 @@
+/* ============================================================================
+   TERRAVELER — SAGGIO TIPOGRAFICO
+   Proposta di sistema. Tutto è scoped sotto .spec: questa pagina non può
+   toccare il sito vivo. I colori sono quelli di globals.css, non nuovi —
+   l'unico livello già governato non si tocca.
+   ========================================================================= */
+
+.spec {
+  /* ---- SCALA TIPOGRAFICA — ragione 1.2 -------------------------------------
+     Base 1.05rem e non 1rem: Garamond e Cormorant hanno x-height piccola,
+     chiedono più corpo, non meno. I 13px di oggi sono il motivo per cui la
+     pagina sembra compressa. */
+  --step--2: 0.72rem;
+  --step--1: 0.86rem;
+  --step-0:  1.05rem;
+  --step-1:  1.26rem;
+  --step-2:  1.51rem;
+  --step-3:  1.81rem;
+  --step-4:  2.18rem;
+  --step-5:  clamp(2.2rem, 3.4vw, 3.14rem);
+  --step-6:  clamp(2.8rem, 6.5vw, 5.2rem);
+  --step-7:  clamp(3.4rem, 10vw, 7.6rem);
+
+  /* ---- SPAZIO — una scala sola, niente valori a caso --------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 7rem;
+
+  /* ---- RAGGI — la carta non ha angoli stondati --------------------------
+     Oggi in globals.css ce ne sono dodici, da 2px a 12px. Tre bastano, e
+     il massimo è 3px: sopra i 6px un rettangolo smette di essere un
+     ritaglio di carta e diventa un widget. */
+  --radius-1: 1px;
+  --radius-2: 3px;
+  --radius-pill: 999px;
+
+  /* ---- FILETTI — il vero ornamento di un documento ----------------------- */
+  --rule-hair: rgba(43, 33, 23, 0.16);
+  --rule-mid:  rgba(43, 33, 23, 0.32);
+  --rule-firm: rgba(43, 33, 23, 0.58);
+
+  /* ---- ELEVAZIONE — la carta è piatta -----------------------------------
+     Una sola ombra, e solo per ciò che davvero galleggia sopra la pagina. */
+  --elev-0: none;
+  --elev-1: 0 14px 34px -14px rgba(43, 33, 23, 0.3);
+
+  /* ---- MISURA DI RIGA --------------------------------------------------- */
+  --measure: 33em;
+  --measure-narrow: 26em;
+
+  /* ---- MOVIMENTO ------------------------------------------------------- */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-1: 120ms;
+  --dur-2: 260ms;
+
+  /* ---- LE VOCI DEL REGISTRO -------------------------------------------- */
+  --voice-peer:    #4f6b52;
+  --voice-curator: var(--brass);
+  --voice-human:   var(--accent);
+  --voice-machine: var(--ink-soft);
+
+  position: relative;
+  min-height: 100vh;
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-text), Georgia, serif;
+  font-size: var(--step-1);
+  line-height: 1.62;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  overflow-x: hidden;
+}
+
+/* ---- LA CARTA ------------------------------------------------------------
+   Grana + vignettatura. Sotto lo 0.05 di opacità è texture; sopra è rumore. */
+.spec::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.055;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.spec::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(120% 80% at 50% 40%, transparent 55%, rgba(43, 33, 23, 0.09) 100%);
+}
+.spec > * { position: relative; z-index: 1; }
+
+.spec-sheet {
+  max-width: 74rem;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-9);
+}
+
+/* ============================================================================
+   LE CINQUE VOCI — ogni classe qui sotto è "chi parla", non "dove sta"
+   ========================================================================= */
+
+/* 1 · IL CARTIGLIO — Cormorant Garamond. Solo corpi grandi. */
+.spec-cartouche {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  line-height: 0.98;
+  letter-spacing: -0.018em;
+  margin: 0;
+}
+.spec-cartouche em { font-style: italic; font-weight: 300; }
+
+/* 4 · L'ISTITUZIONE — maiuscoletto spaziato del carattere da testo. */
+.spec-institution {
+  font-family: var(--font-text), Georgia, serif;
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+}
+
+/* 3 · LA MACCHINA — monospazio. Log, id, coordinate, timestamp, verdetti. */
+.spec-machine {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.01em;
+}
+
+/* 5 · IL MARGINE — la mano che annota a bordo pagina. */
+.spec-margin-note {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* eyebrow — macchina che annuncia una sezione */
+.spec-eyebrow {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+
+/* ---- Il commento editoriale: la mia voce, non quella dell'atlante ------- */
+.spec-note {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--1);
+  line-height: 1.66;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--brass);
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  margin: var(--space-6) 0;
+  max-width: var(--measure-narrow);
+}
+.spec-note b { color: var(--ink); font-weight: 500; }
+.spec-note::before {
+  content: "‹ nota ›";
+  display: block;
+  font-size: var(--step--2);
+  letter-spacing: 0.18em;
+  color: var(--brass);
+  margin-bottom: var(--space-2);
+}
+
+/* ---- Filetti: il regolo doppio del tipografo ---------------------------- */
+.spec-rule-double {
+  border: 0;
+  border-top: 2px solid var(--rule-firm);
+  border-bottom: 1px solid var(--rule-hair);
+  height: 4px;
+  margin: var(--space-8) 0 var(--space-7);
+}
+.spec-rule-hair {
+  border: 0;
+  border-top: 1px solid var(--rule-hair);
+  margin: var(--space-5) 0;
+}
+
+/* ============================================================================
+   TESTATA
+   ========================================================================= */
+
+.spec-masthead { margin-bottom: var(--space-8); }
+.spec-masthead h1 {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: var(--step-7);
+  line-height: 0.92;
+  letter-spacing: -0.022em;
+  margin: 0 0 var(--space-5);
+  max-width: 22ch;
+}
+.spec-masthead h1 em { font-style: italic; }
+.spec-lede {
+  font-size: var(--step-2);
+  line-height: 1.5;
+  font-style: italic;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+  margin: 0;
+}
+
+/* ============================================================================
+   I · LE TRE VOCI
+   ========================================================================= */
+
+.spec-voice {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: var(--space-6);
+  align-items: baseline;
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.spec-voice:last-of-type { border-bottom: 1px solid var(--rule-hair); }
+.spec-voice-label { text-align: right; }
+.spec-voice-label span { display: block; }
+.spec-voice-role {
+  font-size: var(--step-0);
+  font-style: italic;
+  color: var(--ink-soft);
+  margin: var(--space-3) 0 0;
+  max-width: var(--measure-narrow);
+}
+.spec-voice-sample { line-height: 1; }
+.spec-voice-sample.is-cartouche {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: var(--step-6);
+  letter-spacing: -0.02em;
+}
+.spec-voice-sample.is-text {
+  font-family: var(--font-text), Georgia, serif;
+  font-size: var(--step-4);
+  line-height: 1.24;
+}
+.spec-voice-sample.is-machine {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step-3);
+  letter-spacing: -0.01em;
+}
+
+/* la striscia della scala */
+.spec-scale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+.spec-scale span {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* ============================================================================
+   REGISTRO A · L'ATLANTE
+   La griglia asimmetrica con la colonna di marginalia: è questa mossa che
+   trasforma una pagina web in un'edizione critica.
+   ========================================================================= */
+
+.spec-atlas { display: grid; grid-template-columns: 10rem 1fr; gap: var(--space-7); }
+.spec-atlas-margin { text-align: right; padding-top: var(--space-2); }
+.spec-atlas-margin > * + * { margin-top: var(--space-4); }
+.spec-atlas-body { max-width: var(--measure); min-width: 0; }
+
+.spec-voyage-title {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: var(--step-6);
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-4);
+}
+.spec-voyage-title em { font-style: italic; }
+
+.spec-dateline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+.spec-dateline::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--brass);
+  opacity: 0.5;
+}
+
+/* Capolettera — tre righe di Cormorant */
+.spec-prose { margin: 0 0 var(--space-5); }
+.spec-prose.has-dropcap::first-letter {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: 4.1em;
+  line-height: 0.78;
+  float: left;
+  padding: 0.06em 0.08em 0 0;
+  color: var(--ink);
+}
+
+.spec-stage-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-7) 0 var(--space-4);
+}
+.spec-stage-head h3 {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 400;
+  font-size: var(--step-4);
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.05;
+}
+
+/* La citazione del viaggiatore: stesso inchiostro, premuto più forte. */
+.spec-quote {
+  position: relative;
+  margin: var(--space-6) 0 var(--space-4);
+  padding-left: var(--space-6);
+  border-left: 2px solid var(--brass);
+}
+.spec-quote blockquote {
+  margin: 0;
+  font-style: italic;
+  font-size: var(--step-2);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.spec-quote-mark {
+  position: absolute;
+  left: -0.42em;
+  top: -0.22em;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: var(--step-6);
+  line-height: 1;
+  color: var(--brass);
+  opacity: 0.42;
+  pointer-events: none;
+}
+.spec-attrib {
+  margin-top: var(--space-4);
+  padding-left: var(--space-6);
+  color: var(--ink-soft);
+}
+.spec-attrib a { color: var(--ink-soft); text-decoration-color: var(--brass); }
+
+/* Ciò che è andato perduto — l'onestà dell'atlante merita un trattamento. */
+.spec-lost {
+  margin: var(--space-7) 0 0;
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-2);
+  background: rgba(231, 213, 176, 0.4);
+}
+.spec-lost p {
+  margin: var(--space-3) 0 0;
+  font-style: italic;
+  font-size: var(--step-0);
+  line-height: 1.58;
+}
+
+/* Il badge di confidenza: parla la macchina, quindi è monospazio. */
+.spec-conf {
+  display: inline-block;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.18em 0.55em;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-1);
+  color: var(--brass);
+}
+.spec-conf.is-certain { color: var(--voice-peer); }
+
+/* ============================================================================
+   REGISTRO B · IL DESK
+   Stessa carta, stessi filetti, stessa griglia. Cambia il dosaggio.
+   ========================================================================= */
+
+.spec-desk-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-7);
+}
+.spec-desk-head h2 {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: var(--step-6);
+  letter-spacing: -0.02em;
+  margin: var(--space-2) 0 0;
+  line-height: 1;
+}
+
+/* --- Le due cifre che chiedono un'azione, e il libro mastro del resto ---- */
+.spec-demands {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.spec-demand-n {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 300;
+  font-size: var(--step-7);
+  line-height: 0.84;
+  display: block;
+  font-variant-numeric: lining-nums;
+}
+.spec-demand.is-idle .spec-demand-n { color: var(--ink-soft); opacity: 0.42; }
+.spec-demand.is-live .spec-demand-n { color: var(--accent); }
+.spec-demand-l { display: block; margin-top: var(--space-3); }
+
+.spec-ledger {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--rule-hair);
+  color: var(--ink-soft);
+}
+.spec-ledger b { color: var(--ink); font-weight: 500; }
+
+/* --- Il registro di bordo: chi parla si vede prima di leggere ------------ */
+.spec-log { margin-top: var(--space-7); }
+.spec-log h3 {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-weight: 400;
+  font-size: var(--step-3);
+  margin: 0 0 var(--space-5);
+  letter-spacing: -0.01em;
+}
+.spec-entry {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: var(--space-5);
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--rule-hair);
+  border-left: 2px solid var(--voice-machine);
+}
+.spec-entry.is-peer    { border-left-color: var(--voice-peer); }
+.spec-entry.is-curator { border-left-color: var(--voice-curator); }
+.spec-entry.is-human   { border-left-color: var(--voice-human); }
+.spec-entry-when { color: var(--ink-soft); text-align: right; }
+.spec-entry-actor {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--1);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.spec-entry.is-peer    .spec-entry-actor { color: var(--voice-peer); }
+.spec-entry.is-curator .spec-entry-actor { color: var(--voice-curator); }
+.spec-entry.is-human   .spec-entry-actor { color: var(--voice-human); }
+.spec-entry-action { color: var(--ink-soft); }
+.spec-entry-payload { margin-top: var(--space-3); }
+.spec-entry-payload div + div { margin-top: var(--space-1); }
+.spec-entry-payload .spec-machine { color: var(--ink-soft); }
+/* il ragionamento umano non è payload: è prosa, quindi serif */
+.spec-entry-reason {
+  margin: var(--space-3) 0 0;
+  font-size: var(--step-0);
+  line-height: 1.56;
+  max-width: var(--measure);
+}
+.spec-count {
+  display: inline-block;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.06em;
+  padding: 0.1em 0.45em;
+  border-radius: var(--radius-pill);
+  background: rgba(43, 33, 23, 0.09);
+  color: var(--ink-soft);
+}
+
+/* ============================================================================
+   CONFRONTO — prima / dopo
+   ========================================================================= */
+
+.spec-compare { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); }
+.spec-compare > figure { margin: 0; }
+.spec-compare figcaption {
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.spec-before {
+  background: #faf6ec;
+  border: 1px solid rgba(43, 33, 23, 0.12);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #2b2117;
+}
+.spec-before .n { font-size: 20px; font-family: Georgia, serif; }
+.spec-before .l { font-size: 11px; color: #5a4a34; }
+.spec-before-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.spec-before-tile {
+  flex: 1;
+  border: 1px solid rgba(43, 33, 23, 0.12);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+/* ============================================================================
+   RESPONSIVE — la colonna di marginalia collassa in testa al blocco
+   ========================================================================= */
+
+@media (max-width: 900px) {
+  .spec-atlas,
+  .spec-voice,
+  .spec-entry { grid-template-columns: 1fr; gap: var(--space-4); }
+  .spec-atlas-margin,
+  .spec-voice-label,
+  .spec-entry-when { text-align: left; }
+  .spec-atlas-margin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--rule-hair);
+  }
+  .spec-atlas-margin > * + * { margin-top: 0; }
+  .spec-compare { grid-template-columns: 1fr; }
+  .spec-sheet { padding: var(--space-7) var(--space-5) var(--space-8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spec * { animation: none !important; transition: none !important; }
+}
