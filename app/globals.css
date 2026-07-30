@@ -895,13 +895,28 @@ input[type="range"].scrubber::-moz-range-thumb {
   z-index: 1;
   width: min(100%, 436px);
   margin-right: min(42vw, 550px);
-  padding: 34px;
-  border: 1px solid rgba(231, 213, 176, 0.72);
-  border-radius: 8px;
-  background: rgba(242, 230, 207, 0.92);
-  box-shadow: 0 18px 55px rgba(18, 11, 7, 0.42);
-  backdrop-filter: blur(8px);
+  padding: var(--space-6);
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  /* Opaque, and no blur. A panel you type a password into over a photograph
+     was letting the engraving through at 0.92 — the same defect the account
+     popover had. A surface that carries a form is paper all the way down. */
+  background: var(--parchment);
+  box-shadow: var(--elev-1);
+  overflow: hidden;
 }
+/* Same grain as the frontispiece and the specimen — texture that does not move
+   the substrate it textures. */
+.auth-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.auth-panel > * { position: relative; }
 .auth-account-panel {
   border-color: rgba(231, 213, 176, 0.86);
   box-shadow: 0 25px 70px rgba(18, 11, 7, 0.52);
@@ -914,10 +929,11 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .auth-kicker {
   display: block;
-  margin-top: 18px;
-  letter-spacing: 0.2em;
+  margin-top: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  font-size: 12px;
   color: var(--brass-text);
 }
 .auth-panel h1 {
@@ -935,15 +951,18 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: var(--space-3);
   min-height: 48px;
-  border: 1px solid rgba(83, 68, 48, 0.32);
-  border-radius: 6px;
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-2);
+  /* Google's own white and grey, and its own face. The one place a foreign
+     brand's rules outrank ours: a sign-in button people do not recognise is a
+     sign-in button people do not press. */
   background: #fff;
-  box-shadow: 0 1px 2px rgba(18, 11, 7, 0.15);
+  box-shadow: none;
   color: #3c4043;
   font-family: Arial, sans-serif;
-  font-size: 14px;
+  font-size: var(--step-0);
   font-weight: 600;
   text-decoration: none;
 }
@@ -956,10 +975,13 @@ input[type="range"].scrubber::-moz-range-thumb {
 .auth-divider {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 20px 0;
-  color: var(--ink-soft);
-  font-size: 12px;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }
 .auth-divider::before,
 .auth-divider::after {
@@ -973,15 +995,29 @@ input[type="range"].scrubber::-moz-range-thumb {
   flex-direction: column;
   gap: 10px;
 }
-.auth-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; }
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* The institution asking, not the narrator. */
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.14em;
+  font-size: var(--step-0);
+  font-weight: 500;
+  color: var(--ink-soft);
+}
 .auth-form input {
   min-height: 44px;
-  padding: 9px 11px;
-  border: 1px solid rgba(90, 74, 52, 0.34);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.75);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
   color: var(--ink);
-  font: inherit;
+  font-family: var(--font-body);
+  font-size: var(--step-1);
+  font-variant-caps: normal;
+  letter-spacing: normal;
 }
 .auth-form input:focus { outline: 2px solid rgba(176, 135, 58, 0.48); outline-offset: 1px; }
 .auth-submit,
@@ -1005,9 +1041,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 13px;
 }
 .auth-error {
-  margin: 12px 0 0;
-  color: #a3402c;
-  font-size: 13px;
+  margin: var(--space-3) 0 0;
+  color: var(--state-no);
+  font-size: var(--step-0);
 }
 .auth-switch,
 .auth-desk-link { margin: 20px 0 0; color: var(--ink-soft); font-size: 13px; text-align: center; }
@@ -1015,28 +1051,30 @@ input[type="range"].scrubber::-moz-range-thumb {
 .auth-switch a,
 .auth-desk-link a { color: var(--ink); font-weight: 700; }
 .auth-complete {
-  border: 1px solid rgba(79, 138, 91, 0.45);
-  border-radius: 6px;
-  background: rgba(241, 248, 238, 0.82);
-  padding: 18px;
-  color: #23482d;
+  border: 1px solid var(--state-ok);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+  padding: var(--space-5);
+  color: var(--ink);
 }
 .auth-complete p { margin: 8px 0 16px; color: var(--ink-soft); }
 .auth-primary-link { display: flex; align-items: center; justify-content: center; }
 .auth-image-credit {
   position: absolute;
-  right: 18px;
-  bottom: 14px;
+  right: var(--space-5);
+  bottom: var(--space-4);
   z-index: 1;
   max-width: min(560px, calc(100vw - 36px));
   margin: 0;
-  padding: 6px 9px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid rgba(242, 230, 207, 0.2);
-  border-radius: 6px;
-  background: rgba(18, 11, 7, 0.52);
-  color: rgba(242, 230, 207, 0.78);
-  font-size: 11px;
-  line-height: 1.35;
+  border-radius: var(--radius-2);
+  background: rgba(18, 11, 7, 0.6);
+  /* Provenance is the machine speaking, here as everywhere else. */
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: rgba(242, 230, 207, 0.82);
+  line-height: 1.4;
   text-align: right;
 }
 .auth-image-credit a {
