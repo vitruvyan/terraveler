@@ -2,13 +2,36 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const ebGaramond = localFont({
+/* The three voices of the atlas. All OFL, self-hosted, subset to latin — the
+   same law the Magna Carta puts on sources applies to the type. Six cuts come
+   to 240 KB, a fifth of what the three unsubsetted weights cost before.
+   globals.css points --font-display / --font-body / --font-mono at these, so
+   the 400-odd var() calls already in the stylesheet inherit them for free. */
+
+const cartouche = localFont({
   src: [
-    { path: "./fonts/EBGaramond-500.ttf", weight: "500", style: "normal" },
-    { path: "./fonts/EBGaramond-600.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/EBGaramond-700.ttf", weight: "700", style: "normal" },
+    { path: "./fonts/cormorant-var.woff2", weight: "300 700", style: "normal" },
+    { path: "./fonts/cormorant-italic-var.woff2", weight: "300 700", style: "italic" },
   ],
-  variable: "--font-logo",
+  variable: "--font-cartouche",
+  display: "swap",
+});
+
+const text = localFont({
+  src: [
+    { path: "./fonts/ebgaramond-var.woff2", weight: "400 700", style: "normal" },
+    { path: "./fonts/ebgaramond-italic-var.woff2", weight: "400 700", style: "italic" },
+  ],
+  variable: "--font-text",
+  display: "swap",
+});
+
+const machine = localFont({
+  src: [
+    { path: "./fonts/plexmono-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/plexmono-500.woff2", weight: "500", style: "normal" },
+  ],
+  variable: "--font-machine",
   display: "swap",
 });
 
@@ -49,7 +72,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={ebGaramond.variable}>
+    <html
+      lang="en"
+      className={`${cartouche.variable} ${text.variable} ${machine.variable}`}
+    >
       <body>
         {children}
         <script

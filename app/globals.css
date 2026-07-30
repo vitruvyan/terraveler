@@ -10,8 +10,73 @@
   --btn: #9b3c46;
   --btn-deep: #742733;
   --brass: #a9772f;
-  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-body: Georgia, "Times New Roman", serif;
+
+  /* ---- THE THREE VOICES ---------------------------------------------------
+     Loaded in app/layout.tsx. The division that matters is not atlas versus
+     desk, it is who is speaking: the atlas narrates, the traveller is quoted,
+     the machine records. Chrome that states a fact — coordinates, timestamps,
+     identifiers, verdicts — is the machine speaking and takes --font-mono.
+     Specimen: /specimen. */
+  --font-display: var(--font-cartouche), "Iowan Old Style", Palatino, Georgia, serif;
+  --font-body: var(--font-text), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-machine), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-logo: var(--font-cartouche), "Iowan Old Style", Palatino, Georgia, serif;
+  /* The institution speaking: buttons, nav, tabs, chips, panel titles. It is
+     the text face, not the cartouche — Cormorant is cut for display and goes
+     spindly below about 20px, which is where nearly all UI chrome lives. Use
+     --font-display only at display sizes; below that this is the token. */
+  --font-ui: var(--font-text), Georgia, "Times New Roman", serif;
+
+  /* ---- TYPE SCALE — ratio 1.2 --------------------------------------------
+     Nine steps, not the twenty half-pixel sizes this file used to carry.
+     Base is deliberately larger than before: Garamond has a small x-height
+     and needs more size, not less. */
+  --step--2: 0.72rem;
+  --step--1: 0.86rem;
+  --step-0:  1.05rem;
+  --step-1:  1.26rem;
+  --step-2:  1.51rem;
+  --step-3:  1.81rem;
+  --step-4:  2.18rem;
+  --step-5:  clamp(2.2rem, 3.4vw, 3.14rem);
+  --step-6:  clamp(2.8rem, 6.5vw, 5.2rem);
+  --step-7:  clamp(3.4rem, 10vw, 7.6rem);
+
+  /* ---- SPACE ------------------------------------------------------------- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 7rem;
+
+  /* ---- RADII — paper does not have rounded corners ------------------------
+     Three, and the largest is 3px. Above 6px a rectangle stops reading as a
+     cut sheet and starts reading as a widget. */
+  --radius-1: 1px;
+  --radius-2: 3px;
+  --radius-pill: 999px;
+
+  /* ---- RULES — the real ornament of a document --------------------------- */
+  --rule-hair: rgba(43, 33, 23, 0.16);
+  --rule-mid:  rgba(43, 33, 23, 0.32);
+  --rule-firm: rgba(43, 33, 23, 0.58);
+
+  /* ---- ELEVATION — paper is flat; only what floats casts a shadow -------- */
+  --elev-0: none;
+  --elev-1: 0 14px 34px -14px rgba(43, 33, 23, 0.3);
+
+  /* ---- MEASURE ----------------------------------------------------------- */
+  --measure: 33em;
+  --measure-narrow: 26em;
+
+  /* ---- MOTION ------------------------------------------------------------ */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-1: 120ms;
+  --dur-2: 260ms;
 }
 
 * { box-sizing: border-box; }
@@ -27,11 +92,18 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Cormorant is a Garamond cut for large sizes: it wants a light weight and
+   tightened tracking as it grows, where Georgia wanted bold and loose. The
+   old 600 / +0.02em was correct for the face this file used to assume and is
+   wrong for the one it now loads. */
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
 }
+h1 { font-weight: 400; letter-spacing: -0.018em; line-height: 1.02; }
+h2 { letter-spacing: -0.012em; }
 
 a { color: var(--ink); text-decoration-color: var(--brass); }
 
@@ -43,6 +115,8 @@ a { color: var(--ink); text-decoration-color: var(--brass); }
 .maplibregl-ctrl-attrib {
   background: rgba(242, 230, 207, 0.72) !important;
   font-size: 10px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .maplibregl-ctrl-attrib a { color: var(--ink-soft); }
 
@@ -129,6 +203,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   border: 1px solid var(--ink-soft);
   color: var(--ink-soft);
   white-space: nowrap;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 .play-btn {
@@ -167,7 +243,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   border: none;
   background: transparent;
   color: var(--ink-soft);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   letter-spacing: 0.03em;
   padding: 5px 11px;
@@ -192,7 +268,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink-soft);
 }
 .instruments strong {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 1.15rem;
   color: var(--ink);
 }
@@ -202,6 +278,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-style: italic;
   color: var(--ink-soft);
   line-height: 1.5;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* --- Historical-borders honesty note --- */
@@ -218,6 +296,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   border: 1px solid var(--parchment-deep);
   border-radius: 6px;
   padding: 5px 9px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 /* --- Cartographer lens: legend + toggle --- */
@@ -233,6 +313,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   gap: 7px;
   font-size: 12px;
   color: var(--ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .legend-sw {
   width: 13px;
@@ -255,7 +337,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .plates-group:last-child { margin-bottom: 4px; }
 .plates-place {
   margin: 0 0 8px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -281,8 +363,14 @@ input[type="range"].scrubber::-moz-range-thumb {
 .plates-thumb-btn:hover { border-color: var(--brass); }
 .plates-thumb-btn img { display: block; width: 100%; height: 90px; object-fit: cover; max-width: 100%; }
 .plates-caption { font-size: 11px; line-height: 1.35; color: var(--ink); }
-.plates-credit { font-size: 10px; color: var(--ink-soft); font-style: italic; }
-.plates-source { font-size: 10px; color: var(--brass); text-decoration: none; }
+.plates-credit { font-size: 10px; color: var(--ink-soft); font-style: italic;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.plates-source { font-size: 10px; color: var(--brass); text-decoration: none;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
 .plates-source:hover { text-decoration: underline; }
 
 .plates-lightbox {
@@ -314,7 +402,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .plates-lightbox-cap { margin-top: 10px; font-size: 13px; color: var(--ink); line-height: 1.45; }
 .plates-lightbox-cap strong { font-family: var(--font-display); }
-.plates-lightbox-credit { font-size: 11px; color: var(--ink-soft); font-style: italic; margin-top: 2px; }
+.plates-lightbox-credit { font-size: 11px; color: var(--ink-soft); font-style: italic; margin-top: 2px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
 .plates-lightbox-cap a { font-size: 11px; color: var(--brass); }
 .plates-lightbox-close {
   position: absolute;
@@ -335,7 +426,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* --- Contribute flow: quill affordances + the contextual panel --- */
 .contrib-btn {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.03em;
   padding: 3px 9px;
@@ -387,7 +478,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .contrib-ai-btn {
   flex: 1 1 84px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   padding: 9px 8px;
   border-radius: 8px;
@@ -460,10 +551,15 @@ input[type="range"].scrubber::-moz-range-thumb {
   letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--brass);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .wt-current { font-size: 13px; line-height: 1.35; color: var(--ink); }
 .wt-current.wt-muted { color: var(--ink-soft); font-style: italic; }
-.wt-src { font-size: 11px; }
+.wt-src { font-size: 11px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+}
 .wt-track { position: relative; height: 14px; }
 .wt-track::before {
   content: "";
@@ -572,7 +668,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .win-bar:active { cursor: grabbing; }
 .win-title {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13px;
   letter-spacing: 0.03em;
   color: var(--ink);
@@ -604,7 +700,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .pig-launch { position: fixed; right: 18px; bottom: 116px; z-index: 20; }
 .pig-pill {
   display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-display); font-size: 14px; color: var(--parchment);
+  font-family: var(--font-ui); font-size: 14px; color: var(--parchment);
   background: var(--btn); border: none; border-radius: 22px; padding: 10px 18px;
   cursor: pointer; box-shadow: 0 6px 20px rgba(43, 33, 23, 0.3);
 }
@@ -614,7 +710,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   background: rgba(242, 230, 207, 0.98); border: 1px solid var(--parchment-deep);
   border-radius: 10px; padding: 12px 14px; box-shadow: 0 8px 24px rgba(43, 33, 23, 0.25);
 }
-.pig-mini-title { font-family: var(--font-display); font-size: 14px; color: var(--ink); }
+.pig-mini-title { font-family: var(--font-ui); font-size: 14px; color: var(--ink); }
 .pig-mini-sub { font-size: 12px; color: var(--ink-soft); margin: 3px 0 8px; line-height: 1.4; }
 .pig-dock-toggle { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-soft); cursor: pointer; }
 
@@ -698,7 +794,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink);
 }
 .desk-btn {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13px;
   padding: 8px 14px;
   border: 1px solid var(--ink-soft);
@@ -849,7 +945,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   background: var(--btn);
   color: var(--parchment);
   cursor: pointer;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 14px;
   text-align: center;
   text-decoration: none;
@@ -1085,7 +1181,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   color: var(--ink);
   font-size: 14px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
 }
 .tr-menu > a:hover { background: rgba(43, 33, 23, 0.08); }
 .tr-menu-foot {
@@ -1210,7 +1306,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .sh-tagline { font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
 .sh-nav { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
 .sh-nav a {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 14.5px;
   color: var(--ink);
   text-decoration: none;
@@ -1372,7 +1468,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.42);
   color: var(--ink);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13px;
   cursor: pointer;
 }
@@ -1420,27 +1516,35 @@ input[type="range"].scrubber::-moz-range-thumb {
   margin: 0 auto;
   padding: 72px 22px 58px;
 }
+/* An eyebrow states which department of the atlas you are in. That is the
+   institution speaking, not the narrator: monospace, spaced, small. */
 .ed-eyebrow {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-4);
   color: #d8b25c;
-  font-size: 12px;
-  letter-spacing: 0.2em;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
+/* The hero is where the cartouche earns its keep: light weight, tight
+   tracking, large. Georgia needed 600 to hold at this size; Cormorant at 600
+   would read as a shout. */
 .ed-hero h1 {
-  max-width: 790px;
+  max-width: 15ch;
   margin: 0;
-  font-size: clamp(2.35rem, 6vw, 5.2rem);
-  line-height: 0.98;
-  letter-spacing: 0;
+  font-weight: 300;
+  font-size: var(--step-7);
+  line-height: 0.94;
+  letter-spacing: -0.022em;
 }
 .ed-hero p {
-  max-width: 720px;
-  margin: 20px 0 0;
+  max-width: var(--measure);
+  margin: var(--space-5) 0 0;
   color: rgba(242, 230, 207, 0.88);
-  font-size: clamp(1rem, 1.6vw, 1.28rem);
-  line-height: 1.55;
+  font-size: var(--step-2);
+  line-height: 1.5;
+  font-style: italic;
 }
 .ed-hero-row {
   display: flex;
@@ -1463,7 +1567,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   padding: 9px 15px;
   border-radius: 8px;
   border: 1px solid rgba(242, 230, 207, 0.42);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 14px;
   text-decoration: none;
 }
@@ -1485,11 +1589,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 .ed-meta span {
   padding: 5px 9px;
   border: 1px solid rgba(216, 178, 92, 0.46);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(18, 12, 8, 0.28);
   color: rgba(242, 230, 207, 0.84);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 .ed-credit {
@@ -1499,10 +1604,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   z-index: 1;
   padding: 5px 8px;
   border: 1px solid rgba(242, 230, 207, 0.18);
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   background: rgba(18, 12, 8, 0.42);
   color: rgba(242, 230, 207, 0.72);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
 }
 .ed-body {
   width: min(840px, 100%);
@@ -1565,7 +1671,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   flex-wrap: wrap;
 }
 .ed-card-head strong {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 1.08rem;
 }
 .ed-badges {
@@ -1635,7 +1741,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-transform: uppercase;
 }
 .ed-voyage-main strong {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 1.08rem;
   line-height: 1.18;
   letter-spacing: 0;
@@ -1680,8 +1786,18 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* --- Markdown prose pages (Magna Carta, How it works) --- */
 .prose {
-  line-height: 1.7;
-  font-size: 15.5px;
+  line-height: 1.68;
+  font-size: var(--step-1);
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  text-wrap: pretty;
+}
+/* Code and identifiers are the machine speaking, even inside a paragraph the
+   atlas is narrating. Without this, Garamond's oldstyle figures render a
+   version like v0.4 with a short zero that reads as the letter o. */
+.prose code, .prose pre, .prose kbd {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: 0.86em;
 }
 /* A page whose main IS the prose has to centre itself.
  *
@@ -1801,7 +1917,7 @@ main.prose {
     border-radius: 7px;
     color: var(--ink);
     text-decoration: none;
-    font-family: var(--font-display);
+    font-family: var(--font-ui);
     font-size: 15px;
   }
   .sh-mobile-menu a:hover { background: rgba(43, 33, 23, 0.08); }
@@ -1886,7 +2002,7 @@ main.prose {
   color: var(--brass);
 }
 .cart-atlas a {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   color: var(--ink-soft);
   text-decoration: none;
@@ -1931,7 +2047,7 @@ main.prose {
 }
 .voy-card:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.6); }
 .voy-card.cur { border-color: var(--brass); box-shadow: inset 3px 0 0 var(--brass); }
-.voy-card strong { font-family: var(--font-display); font-size: 14px; }
+.voy-card strong { font-family: var(--font-ui); font-size: 14px; }
 .voy-meta { font-size: 12px; color: var(--ink-soft); }
 .voy-blurb { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
 .voy-more { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
@@ -2000,7 +2116,7 @@ main.prose {
 }
 .atlas-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .atlas-chip {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 11.5px;
   letter-spacing: 0.04em;
   padding: 3px 10px;
@@ -2047,12 +2163,18 @@ main.prose {
   --btn: #3f6fb0;
   --btn-deep: #345c93;
   --brass: #d8b25c;
-  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* The register shift here is deliberate and stays: Voyager 2 is not a
+     parchment voyage. But the shift belongs inside the three families rather
+     than outside them — and the right voice for a probe is the machine's own.
+     Its whole log is telemetry, so the theme reads in monospace and the
+     cartouche is kept only for titles. The system UI stack it used before was
+     the one place on the site that spoke with a face nobody chose. */
+  --font-body: var(--font-machine), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-mono: var(--font-machine), ui-monospace, SFMono-Regular, Menlo, monospace;
   background: var(--parchment);
   color: var(--ink);
 }
-.space h1, .space h2, .space h3 { font-weight: 700; letter-spacing: 0; }
+.space h1, .space h2, .space h3 { font-weight: 500; letter-spacing: -0.005em; }
 .space a { text-decoration-color: var(--brass); }
 
 /* Starfield backdrop, behind everything inside .space (.space is the
@@ -2225,7 +2347,7 @@ main.prose {
 }
 .welcome-x:hover { color: var(--ink); }
 .welcome-kicker {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2261,7 +2383,7 @@ main.prose {
 }
 .welcome-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .welcome-btn {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13px;
   letter-spacing: 0.03em;
   padding: 8px 14px;
@@ -2301,7 +2423,7 @@ main.prose {
 .log-full-link {
   display: inline-block;
   margin-top: 10px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   letter-spacing: 0.02em;
   color: var(--accent);
@@ -2321,7 +2443,7 @@ main.prose {
   margin: 2px 0 8px;
 }
 .atlas-search-grouphead {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2362,7 +2484,7 @@ main.prose {
 .atlas-search-browseall {
   display: inline-block;
   margin: 10px 0 2px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12px;
   letter-spacing: 0.03em;
   color: var(--accent);
@@ -2510,7 +2632,7 @@ main.prose {
   border: 0;
   color: var(--ink);
   text-align: left;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 15px;
   cursor: pointer;
 }
@@ -2871,7 +2993,7 @@ main.prose {
   border-radius: 50%;
   background: var(--parchment);
   border: 1px solid var(--brass);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1;
@@ -2927,7 +3049,7 @@ main.prose {
   background: var(--parchment);
   border: 1px solid rgba(169, 119, 47, 0.55);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 12.5px;
   color: var(--brass);
 }
@@ -2970,7 +3092,7 @@ main.prose {
   border-radius: 0 3px 3px 0;
   background: linear-gradient(180deg, var(--btn), var(--btn-deep));
   color: #fdf6e8;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 11px;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -2994,7 +3116,7 @@ main.prose {
   background: none;
   padding: 7px 17px;
   border-radius: 999px;
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 13.5px;
   color: var(--ink-soft);
   cursor: pointer;
@@ -3116,7 +3238,7 @@ main.prose {
   gap: 10px;
 }
 .crew-card h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-ui);
   font-size: 1.12rem;
   margin: 0;
   overflow-wrap: anywhere;
