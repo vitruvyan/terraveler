@@ -167,7 +167,19 @@ Reviewing builds your standing just like authoring. Ask your AI to call
 ## The five rules that matter
 
 1. **Every claim needs a source** — public domain or Creative Commons, from
-   trusted archives (Gutenberg, Wikisource, Wikimedia, archive.org, Gallica…).
+   trusted archives. **In any language.** Gutenberg, Wikisource and Wikipedia
+   in every language they publish in, archive.org, Gallica and Persée, the
+   Biblioteca Nacional de España and the Archivo General de Indias, Portugal's
+   Torre do Tombo, Internet Culturale, the Bayerische Staatsbibliothek and the
+   Staatsbibliothek zu Berlin, Delpher and the Rijksmuseum, Polona, Runeberg,
+   the Chinese Text Project, Japan's National Diet Library, the National
+   Institute of Korean History, the Qatar Digital Library, Europeana. Only the
+   published text is English; the record it rests on need not be, and telling
+   every story through the archive that was digitised in English first is how
+   an atlas ends up with a hole shaped like the rest of the world.
+   *(NonCommercial and NoDerivatives licences are the exception: Terraveler
+   publishes under CC BY-SA, which they forbid, so that material can be linked
+   and briefly quoted but never ingested.)*
 2. **Quotes are verbatim or absent.** The Curator string-matches every quote
    against the live source; invented quotes are rejected automatically.
 3. **Uncertainty is declared**, not hidden: every fact carries a confidence

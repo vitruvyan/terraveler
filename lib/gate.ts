@@ -14,8 +14,52 @@ import { CARTA_VERSION } from "@/lib/carta";
  * gate must answer instantly and answer the same way twice.
  */
 // ------------------------------------------------------------------ stage-0 gate
-export const DOMAINS = ["gutenberg.org", "wikisource.org", "wikipedia.org", "wikimedia.org",
-  "wikidata.org", "archive.org", "gallica.bnf.fr", "loc.gov", "davidrumsey.com"];
+/**
+ * Where evidence may come from. Suffix-matched, so a language edition or a
+ * digital-collections subdomain is covered by its parent.
+ *
+ * Carta §4 has always said sources may be in any language and only the
+ * published text must be English. This list did not honour that: nine domains,
+ * eight of them Anglo-American, one French. A Scribe working on a Spanish
+ * voyage could cite the Archivo General de Indias only by finding an English
+ * book about it — which is how an atlas ends up telling every story through
+ * the archive that happens to have been digitised in English first.
+ *
+ * These are the addresses of institutions, not a claim about their contents.
+ * Almost none of them is wholesale open: a national library holds in-copyright
+ * material beside its incunabula, and Europeana is an aggregator whose rights
+ * statement differs per item. That is what the licence field is for, and what
+ * the Curator's deep pass verifies. Being on this list means the URL leads
+ * somewhere a verifier can go and will still lead there next year — nothing
+ * more. The stricter question, what a machine may ingest unattended, is
+ * answered by ingest/whitelist.py, which is a different list for a reason.
+ */
+export const DOMAINS = [
+  // Wherever the wiki projects run, in every language they run in.
+  "wikisource.org", "wikipedia.org", "wikimedia.org", "wikidata.org",
+  // Anglophone and general
+  "gutenberg.org", "gutendex.com", "archive.org", "hathitrust.org", "loc.gov",
+  "davidrumsey.com", "biodiversitylibrary.org", "europeana.eu",
+  // French
+  "gallica.bnf.fr", "persee.fr", "manioc.org",
+  // Spanish
+  "bne.es", "cervantesvirtual.com", "pares.cultura.gob.es", "memoriachilena.gob.cl",
+  // Portuguese
+  "purl.pt", "arquivos.pt", "bn.gov.br",
+  // Italian
+  "internetculturale.it", "liberliber.it",
+  // German-speaking
+  "digitale-sammlungen.de", "deutsche-digitale-bibliothek.de",
+  "staatsbibliothek-berlin.de", "e-rara.ch", "onb.ac.at",
+  // Dutch, Nordic, Polish
+  "delpher.nl", "kb.nl", "rijksmuseum.nl", "runeberg.org", "nb.no", "polona.pl",
+  // East Asia
+  "ctext.org", "nlc.cn", "ndl.go.jp", "nijl.ac.jp", "nich.go.jp", "history.go.kr",
+  // Gulf
+  "qdl.qa",
+  // Open-access museum collections, for plates
+  "metmuseum.org", "si.edu", "getty.edu", "nga.gov",
+];
 // Two wordings this refused that are not in doubt, both found the first time it
 // was pointed at images rather than books.
 //
@@ -27,6 +71,24 @@ export const DOMAINS = ["gutenberg.org", "wikisource.org", "wikipedia.org", "wik
 // licence there is was the one licence the gate would not take, which cost us
 // the Rijksmuseum, whose entire donation to Commons is CC0.
 export const LICENSE_OK = /public domain|no known copyright restrictions|^cc(0|[ -])/i;
+
+/**
+ * Not every Creative Commons licence can be published under CC BY-SA.
+ *
+ * Carta §3.2 admits "public domain or openly licensed (CC)" and §8 publishes
+ * the result under CC BY-SA. NonCommercial and NoDerivatives satisfy the first
+ * and make the second impossible: an NC source cannot be relicensed by us, and
+ * an ND source cannot be built on at all. LICENSE_OK took them, because it
+ * asked whether a string began with "cc" and not what the letters said.
+ *
+ * This mattered little while the whitelist was nine Anglo-American archives of
+ * public-domain books. It matters now that it reaches European museums, where
+ * BY-NC-SA is the house style. §3.2's own second sentence is the answer for
+ * that material: it may be linked and briefly quoted, never ingested.
+ */
+export const LICENSE_CLOSED = /\bnc\b|\bnd\b|non-?commercial|no-?deriv/i;
+export const licenceUsable = (lic: string) =>
+  LICENSE_OK.test(lic ?? "") && !LICENSE_CLOSED.test(lic ?? "");
 export const CONFIDENCES = ["certain", "approximate", "reconstructed", "contested"];
 export const INJECTION = [
   /ignore (all|any|previous|prior)/i, /disregard (the|all|previous)/i,
@@ -126,6 +188,8 @@ export function stage0(sub: any): string[] {
       if (!c?.evidence) { fails.push(`${ctag}: CLAIM WITHOUT SOURCE (Carta 3.1)`); continue; }
       if (!c.evidence.excerpt || !c.evidence.source_url) fails.push(`${ctag}: evidence incomplete`);
       if (!LICENSE_OK.test(c.evidence.license ?? "")) fails.push(`${ctag}: licence not PD/CC (Carta 3.2)`);
+      else if (LICENSE_CLOSED.test(c.evidence.license ?? ""))
+        fails.push(`${ctag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
       if (c.evidence.source_url && !domainOk(c.evidence.source_url))
         fails.push(`${ctag}: source domain not whitelisted`);
     }
@@ -140,6 +204,8 @@ export function stage0(sub: any): string[] {
       for (const f of ["url", "caption", "credit", "license", "source_url"])
         if (!p?.[f]) fails.push(`${ptag}: field '${f}' missing — a plate carries its provenance or it does not enter (Carta 3.1)`);
       if (!LICENSE_OK.test(p?.license ?? "")) fails.push(`${ptag}: licence not PD/CC (Carta 3.2)`);
+      else if (LICENSE_CLOSED.test(p?.license ?? ""))
+        fails.push(`${ptag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
       if (p?.url && !domainOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
       if (p?.source_url && !domainOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
       // Not a formality. The plate that fits a stage best is often drawn later

@@ -34,14 +34,26 @@ ALLOWED_DOMAINS = {
     "gutenberg.org": "Public domain",
     "www.gutenberg.org": "Public domain",
     "gutendex.com": "Public domain",              # index over Gutenberg
-    "en.wikipedia.org": "CC BY-SA 4.0",
-    "fr.wikipedia.org": "CC BY-SA 4.0",
-    "es.wikipedia.org": "CC BY-SA 4.0",
-    "en.wikisource.org": "Public domain",
-    "fr.wikisource.org": "Public domain",
-    "commons.wikimedia.org": "per-file (PD/CC, verified)",
-    "upload.wikimedia.org": "per-file (PD/CC, verified)",
+    "runeberg.org": "Public domain",              # Nordic public-domain texts
     # planned: "gallica.bnf.fr", "www.biodiversitylibrary.org"
+}
+
+# Suffix rules, for families of hosts that differ only by language.
+#
+# The wiki projects were listed one host at a time — en and fr Wikisource, en,
+# fr and es Wikipedia — and the effect was a language policy nobody wrote down.
+# Carta §4 says sources may be in any language; this file said they could be in
+# two. A German, Italian, Portuguese, Chinese or Japanese Wikisource text was
+# refused as an off-whitelist domain, though it is the same project under the
+# same licence, and the refusal fell hardest on exactly the voyages whose
+# records were never kept in English.
+#
+# The guarantee is a property of the project, not of the language it is written
+# in, so it is expressed as one.
+ALLOWED_SUFFIXES = {
+    ".wikisource.org": "Public domain",
+    ".wikipedia.org": "CC BY-SA 4.0",
+    ".wikimedia.org": "per-file (PD/CC, verified)",
 }
 
 # Domains admitted only after per-item verification — see verify_archive_item.
@@ -75,14 +87,28 @@ def domain_of(url: str) -> str:
     return (urlparse(url).netloc or "").lower()
 
 
+def _guaranteed(host: str):
+    """The wholesale licence guarantee for a host, or None.
+
+    Exact hosts win over suffixes so a single subdomain can still be pinned to
+    something narrower than its family if one ever needs to be.
+    """
+    if host in ALLOWED_DOMAINS:
+        return ALLOWED_DOMAINS[host]
+    for suffix, lic in ALLOWED_SUFFIXES.items():
+        if host.endswith(suffix):
+            return lic
+    return None
+
+
 def is_allowed(url: str) -> bool:
     """True only for domains whose licence is guaranteed wholesale. archive.org
     is deliberately excluded here: it needs verify_source()."""
-    return domain_of(url) in ALLOWED_DOMAINS
+    return _guaranteed(domain_of(url)) is not None
 
 
 def license_for(url: str):
-    return ALLOWED_DOMAINS.get(domain_of(url))
+    return _guaranteed(domain_of(url))
 
 
 def archive_identifier(url: str):
@@ -191,8 +217,9 @@ def verify_source(url: str, fetch_json=None):
     is precisely where the check was missing.
     """
     host = domain_of(url)
-    if host in ALLOWED_DOMAINS:
-        return True, ALLOWED_DOMAINS[host]
+    guaranteed = _guaranteed(host)
+    if guaranteed is not None:
+        return True, guaranteed
     if host in VERIFIED_DOMAINS:
         return verify_archive_item(url, fetch_json=fetch_json)
     return False, f"off-whitelist domain: {host or url!r}"

@@ -109,9 +109,6 @@ class LicenceGate(unittest.TestCase):
         self.assertIsNone(W.archive_identifier("https://archive.org/"))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class CanonicalLicence(unittest.TestCase):
     """The gate's answer is a sentence for a human; the corpus stores a label
@@ -136,3 +133,47 @@ class CanonicalLicence(unittest.TestCase):
         for reason in ["Public domain", "Public domain (published 1924)",
                        "public domain (published 1829)"]:
             self.assertEqual(W.canonical_license(reason).lower(), "public domain", reason)
+
+
+class LanguageOfTheSources(unittest.TestCase):
+    """Carta §4: sources may be in any language, only the published text is English.
+
+    The wiki hosts were listed one at a time — en and fr Wikisource, en, fr and
+    es Wikipedia — which quietly made that clause false. A Chinese, Japanese,
+    German, Italian or Portuguese Wikisource text was refused as off-whitelist
+    while the identical project in French was admitted, and the refusal fell
+    hardest on the voyages whose records were never kept in English at all.
+    """
+
+    def test_wikisource_is_admitted_in_every_language(self):
+        for lang in ("de", "it", "pt", "es", "zh", "ja", "ru", "nl", "la"):
+            url = f"https://{lang}.wikisource.org/wiki/Anything"
+            ok, lic = W.verify_source(url)
+            self.assertTrue(ok, f"{lang}.wikisource.org refused: {lic}")
+            self.assertEqual(lic, "Public domain")
+
+    def test_wikipedia_and_commons_follow_the_same_rule(self):
+        self.assertTrue(W.is_allowed("https://ja.wikipedia.org/wiki/X"))
+        self.assertEqual(W.license_for("https://ja.wikipedia.org/wiki/X"), "CC BY-SA 4.0")
+        self.assertTrue(W.is_allowed("https://upload.wikimedia.org/wikipedia/commons/6/62/P.jpg"))
+
+    def test_a_suffix_rule_is_not_a_substring_rule(self):
+        """The whole point of matching on '.wikisource.org' rather than on
+        'wikisource.org' anywhere in the host: a lookalike must not pass."""
+        for url in ("https://wikisource.org.attacker.example/x",
+                    "https://evil-wikisource.org.attacker.example/x",
+                    "https://notwikisource.org/x"):
+            self.assertFalse(W.is_allowed(url), url)
+
+    def test_an_exact_host_still_outranks_its_family(self):
+        self.assertEqual(W.license_for("https://www.gutenberg.org/ebooks/1"), "Public domain")
+        self.assertEqual(W.license_for("https://runeberg.org/nordisk/"), "Public domain")
+
+    def test_off_whitelist_is_still_off_whitelist(self):
+        ok, why = W.verify_source("https://example.com/a-book")
+        self.assertFalse(ok)
+        self.assertIn("off-whitelist", why)
+
+
+if __name__ == "__main__":
+    unittest.main()
