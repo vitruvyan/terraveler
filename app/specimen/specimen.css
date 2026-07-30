@@ -755,3 +755,83 @@
   .spec-mark-row { grid-template-columns: 1fr; }
   .spec-mark-label { text-align: left; }
 }
+
+/* ============================================================================
+   CAPITOLO IV — le tavole
+   ========================================================================= */
+
+/* La montatura: margine di carta, un filetto, e nient'altro. Nessun angolo
+   stondato, nessuna ombra — la tavola sta dentro la pagina, non sopra. */
+.spec-plate { margin: var(--space-6) 0; max-width: 100%; }
+.spec-plate.is-inset { max-width: var(--measure); }
+.spec-plate-mount {
+  padding: var(--space-4);
+  background: var(--parchment-raised);
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-1);
+}
+.spec-plate-mount img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule-hair);
+}
+.spec-plate figcaption { margin-top: var(--space-3); max-width: var(--measure); }
+.spec-plate-cap {
+  margin: 0;
+  font-size: var(--step-0);
+  line-height: 1.55;
+  color: var(--ink);
+}
+.spec-plate-prov {
+  margin-top: var(--space-2);
+  color: var(--ink-faint);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.spec-plate-prov a { color: var(--brass-text); }
+.spec-plate-sep { color: var(--rule-mid); }
+
+/* Il contratto dei cinque campi. */
+.spec-contract { margin-top: var(--space-5); }
+.spec-contract-row {
+  display: grid;
+  grid-template-columns: 8rem 1fr 6rem;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.spec-contract-row:last-child { border-bottom: 1px solid var(--rule-hair); }
+.spec-contract-field { color: var(--ink); }
+.spec-contract-why { font-size: var(--step-0); color: var(--ink-soft); line-height: 1.5; }
+.spec-contract-voice {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: right;
+}
+.spec-contract-voice.is-machine  { color: var(--ink-faint); }
+.spec-contract-voice.is-narrator { color: var(--accent); }
+
+/* Le posizioni. */
+.spec-plate-places { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-7); }
+.spec-contact { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); margin-top: var(--space-4); }
+.spec-contact figure { margin: 0; }
+.spec-contact img {
+  display: block;
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-1);
+}
+.spec-contact figcaption { margin-top: var(--space-1); color: var(--ink-faint); font-size: var(--step--2); }
+
+@media (max-width: 900px) {
+  .spec-contract-row { grid-template-columns: 1fr; gap: var(--space-1); }
+  .spec-contract-voice { text-align: left; }
+  .spec-plate-places { grid-template-columns: 1fr; }
+}

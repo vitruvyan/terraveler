@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./specimen.css";
+import Chapters from "./Chapters";
+import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 
 /* Il registro B non è più una finta: sono i componenti veri del Quarterdeck,
@@ -135,14 +137,7 @@ export default function SpecimenPage() {
           </p>
         </header>
 
-        <nav className="spec-chapters">
-          <a className="spec-chapter" href="/specimen" aria-current="page">
-            i &middot; type
-          </a>
-          <a className="spec-chapter" href="/specimen/palette">
-            ii &middot; colour
-          </a>
-        </nav>
+        <Chapters current="/specimen" />
 
         <div className="spec-note">
           <b>Cosa stai guardando.</b> Una pagina sola, con contenuto vero: la tappa 8 di
@@ -152,7 +147,7 @@ export default function SpecimenPage() {
           funziona già. Cambia tutto il resto: caratteri, scala, ritmo, filetti, gerarchia.
         </div>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         {/* ================= I · LE TRE VOCI ================= */}
         <section>
@@ -230,7 +225,7 @@ export default function SpecimenPage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         {/* ================= II · REGISTRO A — L'ATLANTE ================= */}
         <section>
@@ -315,7 +310,7 @@ export default function SpecimenPage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         {/* ================= III · REGISTRO B — IL DESK ================= */}
         <section>
@@ -358,7 +353,7 @@ export default function SpecimenPage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         {/* ================= IV · PRIMA / DOPO ================= */}
         <section>
@@ -441,7 +436,7 @@ export default function SpecimenPage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         {/* ================= V · COSA RESTA UGUALE ================= */}
         <section>

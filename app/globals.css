@@ -3699,3 +3699,38 @@ main.prose {
   .dk-tabs { flex-wrap: wrap; }
   .dk-tabs-aside { margin-left: 0; width: 100%; }
 }
+
+/* ============================================================================
+   THE OPENING INITIAL
+   ----------------------------------------------------------------------------
+   A manuscript gesture, and the one place this site is allowed to be
+   decorative about a letter. Once per chapter, never twice on a page: an
+   initial says "the argument starts here", and two of them say nothing.
+   Cormorant at three lines, floated, with the optical padding a display face
+   needs so the following text does not collide with the letter's overhang.
+   ========================================================================= */
+.dropcap::first-letter {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 4.1em;
+  line-height: 0.78;
+  float: left;
+  padding: 0.06em 0.09em 0 0;
+  color: var(--ink);
+}
+/* A dropped initial needs a real first line to drop into. Below the editorial
+   breakpoint the measure is too narrow for three lines beside a letter, and
+   the paragraph tears; it reverts to plain text rather than break. */
+@media (max-width: 640px) {
+  .dropcap::first-letter {
+    font-size: inherit;
+    float: none;
+    padding: 0;
+    line-height: inherit;
+  }
+}
+
+/* Ornament placement. The mark is --brass and is never a word, so it carries
+   no meaning a screen reader needs — the component sets aria-hidden. */
+.ornament-break { margin: var(--space-8) auto; max-width: 22rem; opacity: 0.85; }
+.ornament-tail { margin: var(--space-7) auto var(--space-4); width: 4rem; opacity: 0.7; }

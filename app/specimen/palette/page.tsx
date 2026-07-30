@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import "../specimen.css";
+import Chapters from "../Chapters";
+import Ornament from "@/components/Ornament";
 
 /* ---------------------------------------------------------------------------
    Questa pagina non contiene nessun valore di colore e nessun numero di
@@ -195,14 +197,7 @@ export default function PalettePage() {
           </p>
         </header>
 
-        <nav className="spec-chapters">
-          <a className="spec-chapter" href="/specimen">
-            i &middot; type
-          </a>
-          <a className="spec-chapter" href="/specimen/palette" aria-current="page">
-            ii &middot; colour
-          </a>
-        </nav>
+        <Chapters current="/specimen/palette" />
 
         <div className="spec-note">
           <b>Questa pagina si misura da sola.</b> Non contiene un solo valore di
@@ -213,7 +208,7 @@ export default function PalettePage() {
           invece di ricopiarla.
         </div>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         <section>
           <span className="spec-eyebrow">i &middot; substrato &middot; la carta</span>
@@ -315,7 +310,7 @@ export default function PalettePage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         <section>
           <span className="spec-eyebrow">vii &middot; lo stesso su fondo scuro</span>
@@ -329,7 +324,7 @@ export default function PalettePage() {
           </div>
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         <section>
           <span className="spec-eyebrow">viii &middot; la legge</span>

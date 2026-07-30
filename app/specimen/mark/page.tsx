@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "../specimen.css";
+import Chapters from "../Chapters";
+import Ornament from "@/components/Ornament";
 import Icon, { type IconName } from "@/components/Icon";
 
 /* Capitolo III — il marchio e le icone.
@@ -95,11 +97,7 @@ export default function MarkPage() {
           </p>
         </header>
 
-        <nav className="spec-chapters">
-          <a className="spec-chapter" href="/specimen">i &middot; type</a>
-          <a className="spec-chapter" href="/specimen/palette">ii &middot; colour</a>
-          <a className="spec-chapter" href="/specimen/mark" aria-current="page">iii &middot; mark</a>
-        </nav>
+        <Chapters current="/specimen/mark" />
 
         <div className="spec-note">
           <b>Il problema di oggi.</b> Il wordmark è Cormorant a <b>peso 700</b>,{" "}
@@ -110,7 +108,7 @@ export default function MarkPage() {
           d&rsquo;essere.
         </div>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         <section>
           <span className="spec-eyebrow">i &middot; le candidate</span>
@@ -151,7 +149,7 @@ export default function MarkPage() {
           />
         </section>
 
-        <hr className="spec-rule-double" />
+        <Ornament name="break" className="ornament-break" />
 
         <section>
           <span className="spec-eyebrow">ii &middot; le icone</span>

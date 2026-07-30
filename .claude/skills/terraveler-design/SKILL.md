@@ -30,13 +30,16 @@ It is the same publishing house, in the room where the telegraph is.
 | The type system, with real content | `/specimen` → `app/specimen/` | Both registers side by side. Look before you argue. |
 | The palette, with every contrast ratio | `/specimen/palette` | **Measures itself** from the computed tokens. If you change a colour, this page will tell you what you did to it. |
 | The wordmark and the icon set | `/specimen/mark` | Candidates at real header size, and every icon beside the emoji it replaced. |
-
+| How an image is presented | `/specimen/plates` | The five fields a plate must carry, its mount, and where it may sit. |
 | The three families | `app/layout.tsx` | Loaded via `next/font/local`, self-hosted, OFL. |
 
-The three specimen chapters sit **behind the editor session**
+The four specimen chapters sit **behind the editor session**
 (`app/specimen/layout.tsx`) and are linked from the desk's own tab row. They
 are working documents about the site, not pages of the atlas: noindex was not
-enough, since they carry notes on what is wrong with the stylesheet.
+enough, since they carry notes on what is wrong with the stylesheet. The gate
+is **open on a dev server** — a page whose purpose is to be looked at while you
+edit CSS is useless if it needs a session to load — and closed wherever
+`NODE_ENV` is `production`.
 
 If a value you need is not in `:root`, **add a token** — do not inline the
 number. That is how the twenty-odd hardcoded sizes below get retired instead of
@@ -120,6 +123,25 @@ exception.
   two-tone. **Test it at 16–18px**, which is where it lives; a drawing that
   only works at 48 is not finished. Three of the first sixteen had to be
   redrawn for exactly that reason.
+
+- **A plate carries five fields or it does not publish.** `url`, `caption`,
+  `credit`, `license`, `source_url` — four of the five are provenance, which is
+  the same discipline the Carta puts on a quotation. The caption is the
+  narrator and is serif; credit, licence and source are the machine and are
+  mono. Mount it with a paper margin and a hairline: no rounded corner, no
+  shadow, no card. The lightbox is the one place a plate may float, and the
+  only sanctioned use of `--elev-1`.
+
+- **Ornament is a printer's, not a decorator's.** `components/Ornament.tsx`
+  holds a lozenge-and-swash break, a fleuron, a tail and a corner — the sober
+  end of what the reference sheets offer, because florid corner-pieces on a
+  page of measured contrast ratios undo the argument the rest of the site
+  makes. They are marks, so they take `--brass` and are `aria-hidden`.
+
+- **One dropped initial per chapter, never two on a page.** `.dropcap` on the
+  opening paragraph; it says "the argument starts here", and a second one says
+  nothing. It reverts to plain text below 640px, where the measure is too
+  narrow for three lines beside a letter.
 
 - **A token nobody uses gets deleted.** `--sea` was declared in two themes and
   used nowhere in the repo; a dead token is worse than a missing one, because

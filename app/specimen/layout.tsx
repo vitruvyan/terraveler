@@ -25,6 +25,13 @@ export default async function SpecimenLayout({
 }: {
   children: React.ReactNode;
 }) {
+  /* Open on a dev server. The gate is what makes the specimen private in
+     production, but it also locks out the person building the site — a page
+     whose whole purpose is to be looked at while you change CSS is useless if
+     you have to hold an editor session to load it. NODE_ENV is "production"
+     on Vercel, so this cannot open the door where it matters. */
+  if (process.env.NODE_ENV !== "production") return <>{children}</>;
+
   const token = (await cookies()).get(COOKIE)?.value;
   const ok = token ? (await verifyToken(token)).ok : false;
   if (!ok) redirect("/desk");
