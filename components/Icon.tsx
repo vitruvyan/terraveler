@@ -12,8 +12,16 @@
  * inherit colour and size from whatever they sit in, so a lens button that
  * goes active or a header on the starfield theme needs no icon variant.
  *
- * Rules if you add one: 24×24 box, stroke only, weight 1.3, no fill, no
- * two-tone. It has to read at 16px — test it there, not at 48.
+ * Rules if you add one: 24×24 box, weight 1.3, no two-tone, and it has to read
+ * at 16px — test it there, not at 48.
+ *
+ * Stroke is the default and the morion is the single exception: it arrives as
+ * a filled outline drawing rather than a stroked one. That is allowed because
+ * the drawing's own bands measure ~1.4 units at this scale, which is the
+ * weight everything else is stroked at — the exception is in how it is
+ * expressed, not in how it looks. It also declares a floor of 22px, since a
+ * double outline cannot survive 16. An icon may raise its floor; it may not
+ * quietly ship below one.
  */
 
 export type IconName =
@@ -118,19 +126,26 @@ const PATHS: Record<IconName, React.ReactNode> = {
   menu: <path d="M3.8 7h16.4M3.8 12h16.4M3.8 17h16.4" />,
 
   /* The reader. A morion — the comb-crested, up-swept helmet the
-     conquistadores actually wore — rather than the generic bust.
-     Drawn in profile, because that is the only view in which a morion is
-     unmistakable: the brim sweeps down and turns up to a point at each end,
-     and the crest rides over the bowl. Seen head-on it reads as a bridge. */
+     conquistadores actually wore.
+
+     This is not a redrawing: it is the artwork itself, taken from a hand-drawn
+     SVG and rebased into the 24-unit box. The transform was pure scale and
+     translation, so the coordinates are baked in exactly rather than
+     approximated; the source's degenerate segments (twenty-nine of them, the
+     usual wobble a drawing tool leaves) are dropped and the precision trimmed
+     to two decimals, which is far finer than a 24-unit box can show.
+
+     It is the one FILLED icon in the set. That is not an exception to the
+     stroke rule so much as a consequence of the drawing: measured, its black
+     bands come to about 1.4 units at this scale, which is the weight the rest
+     of the set is stroked at. Filled or stroked, it reads the same.
+
+     Its floor is 22px, not the set's 16. The drawing carries a double outline
+     — the outer silhouette and the bowl inside it — and below about 22 those
+     two lines merge into a blob. Declared here rather than discovered later.
+     Every call site passes 23 or more. */
   morion: (
-    <>
-      {/* the brim, swept up to a spike fore and aft */}
-      <path d="M1.9 16.2c3.3 3.6 6.7 5.1 10.1 5.1s6.8-1.5 10.1-5.1" />
-      <path d="M1.9 16.2 6.4 13.4M22.1 16.2 17.6 13.4" />
-      {/* Skull and comb as one silhouette. Drawn as two arcs the comb floated
-          above the dome and the apex turned to mush; the comb IS the point. */}
-      <path d="M6.2 15.1C6.2 9.7 8.1 5 12 2.1c3.9 2.9 5.8 7.6 5.8 13" />
-    </>
+    <path fillRule="evenodd" d="M13.48,3.14C13.57,3.2,14.53,3.56,16.12,5.31C16.63,6.13,16.89,6.94,17.08,7.46C17.15,7.67,17.21,7.84,17.27,7.93C17.77,8.66,18.24,8.97,18.69,9.01C19.02,9.04,19.33,8.93,19.63,8.74C19.93,8.55,20.21,8.27,20.47,8C20.87,7.56,21.22,7.11,21.48,6.92C21.61,6.82,21.72,6.79,21.82,6.83C21.98,6.9,22.11,7.05,22.21,7.28C22.34,7.6,22.41,8.07,22.4,8.64C22.37,10.82,21.28,14.44,19.34,16.43C19.04,16.82,14.55,21.98,6.89,21.74C4.43,21.66,2.87,21.02,2.29,20.42C2.09,20.21,2.01,20,2.04,19.82C2.08,19.64,2.23,19.49,2.51,19.39C3.36,19.09,4.09,18.93,4.58,18.73C4.87,18.61,5.07,18.48,5.18,18.28C5.25,18.14,5.27,17.97,5.22,17.75C5.17,17.52,5.05,17.23,4.85,16.89C4.68,16.58,4.29,16.19,3.85,15.69C2.8,14.5,1.41,12.66,1.62,9.7C2.04,3.73,8.46,0.6,13.48,3.14ZM19.83,14.55C21.67,11.62,21.79,8.91,21.6,8.07C21.58,7.97,21.56,7.9,21.53,7.86L21.51,7.84C21.36,7.96,21.29,8.09,21.2,8.24C21,8.58,20.76,9.01,19.58,9.55C19.36,9.65,19.17,9.68,19.04,9.72C18.95,9.75,18.88,9.78,18.84,9.84C18.79,9.91,18.77,10.01,18.76,10.18C18.75,11.6,19.14,11.97,18.02,14.3C16.32,16.49,15.54,17.16,14.02,17.93C13.21,18.34,12.18,18.76,10.64,19.17C8.66,19.48,7.31,19.04,6.57,18.78C6.38,18.71,6.23,18.66,6.12,18.63C6.06,18.61,6.01,18.61,5.98,18.62C5.95,18.62,5.93,18.64,5.89,18.67C5.79,18.76,5.55,18.97,4.62,19.47C4.42,19.57,3.31,19.85,2.98,20.06C2.95,20.07,2.93,20.09,2.92,20.11L2.91,20.13C2.95,20.17,3.12,20.24,3.35,20.33C3.89,20.54,4.76,20.81,5.09,20.87C6.82,21.16,8.27,21.11,10.07,20.85C10.1,20.84,10.13,20.83,10.17,20.83C10.98,20.74,13.85,19.84,15.69,18.74C16.51,18.25,17.89,17.29,18.5,16.49C19.82,14.77,19.44,15.21,19.83,14.54ZM8.04,7.04C6.71,7.7,5.95,9.16,5.56,10.74C4.96,13.12,5.17,15.8,5.43,16.5C5.89,17.71,6.84,18.29,7.86,18.52C8.87,18.75,9.96,18.63,10.69,18.44C11.71,18.22,14.8,17.61,17.28,14.19C17.51,13.9,17.48,13.89,17.62,13.55C18.12,12.33,18.36,11.44,18.23,10.65C18.09,9.86,17.58,9.16,16.57,8.31C12.84,5.18,9.72,6.36,8.54,6.72C8.28,6.86,8.29,6.86,8.04,7.04ZM4.4,14.9C4.4,14.88,4.4,14.76,4.41,14.57C4.45,13.79,4.61,11.84,4.85,10.6C5.39,7.84,7.45,6.01,10.17,5.63C11.99,5.37,14.06,5.82,16.16,7.23C16.21,7.26,16.25,7.28,16.29,7.29C16.31,7.3,16.33,7.29,16.35,7.29C16.37,7.28,16.38,7.26,16.39,7.24C16.4,7.21,16.4,7.18,16.39,7.14C16.33,6.85,15.92,6.16,15.89,6.11C14.4,4.24,12.73,3.29,11.09,2.96C7.25,2.2,3.55,4.9,2.65,7.66C1.67,10.65,2.67,12.77,3.52,14.33C3.56,14.38,3.8,14.71,4,14.92C4.1,15.01,4.18,15.08,4.25,15.1C4.32,15.11,4.36,15.11,4.38,15.09C4.4,15.07,4.41,15.05,4.42,15.02C4.42,14.99,4.41,14.95,4.4,14.9Z" />
   ),
 
   pin: (
@@ -190,6 +205,11 @@ const PATHS: Record<IconName, React.ReactNode> = {
   pause: <path d="M9 5v14M15 5v14" />,
 };
 
+/* Everything here is stroked except the morion, which arrives as a filled
+   outline drawing. Kept as a set rather than a per-icon flag so the exception
+   stays countable. */
+const FILLED = new Set<IconName>(["morion"]);
+
 export default function Icon({
   name,
   size = 18,
@@ -207,8 +227,8 @@ export default function Icon({
       width={size}
       height={size}
       className={className}
-      fill="none"
-      stroke="currentColor"
+      fill={FILLED.has(name) ? "currentColor" : "none"}
+      stroke={FILLED.has(name) ? "none" : "currentColor"}
       strokeWidth={1.3}
       strokeLinecap="round"
       strokeLinejoin="round"

@@ -119,10 +119,19 @@ exception.
   rendered by Apple or Google or Microsoft depending on who is looking, so the
   mark of the atlas would not be ours and not the same twice — and they arrive
   full of cartoon colour on a page whose whole argument is ink on parchment.
-  New icons: 24×24 box, stroke only in `currentColor`, weight 1.3, no fill, no
-  two-tone. **Test it at 16–18px**, which is where it lives; a drawing that
-  only works at 48 is not finished. Three of the first sixteen had to be
-  redrawn for exactly that reason.
+  New icons: 24×24 box, `currentColor`, weight 1.3, no two-tone. **Test it at
+  16–18px**, which is where it lives; a drawing that only works at 48 is not
+  finished. Three of the first sixteen had to be redrawn for exactly that
+  reason.
+
+  Stroke is the default and the morion is the one exception — it is real
+  artwork, filled rather than stroked, kept in `art/` and rebased into the box.
+  It is allowed because its own bands measure ~1.4 units, the weight everything
+  else is stroked at: the exception is in how it is expressed, not in how it
+  looks. It also **declares a floor of 22px**, because a double outline cannot
+  survive 16. An icon may raise its floor; it may not quietly ship below one,
+  and the specimen renders it at its floor rather than at 18 — showing an icon
+  below the size it works at is a rigged test.
 
 - **A plate carries five fields or it does not publish.** `url`, `caption`,
   `credit`, `license`, `source_url` — four of the five are provenance, which is

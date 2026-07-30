@@ -177,12 +177,19 @@ export default function MarkPage() {
           <div className="spec-note">
             <b>Provale a 18px, non a 48.</b> È la dimensione in cui vivono nella
             barra e nella rail, ed è lì che un disegno troppo fitto collassa.
+            <br />
+            <br />
+            <b>Il morione fa eccezione</b>, e la dichiara: è il disegno vero —
+            non una mia ricostruzione — e porta un doppio contorno che sotto i{" "}
+            <b>22px</b> si fonde. Nella riga qui sotto lo vedi al suo pavimento
+            e non a 18, perché mostrare un&rsquo;icona sotto la soglia a cui
+            funziona sarebbe una prova truccata.
           </div>
 
           <div className="spec-icons-small">
             {ICONS.map((i) => (
               <span key={i.name} className="spec-icon-small">
-                <Icon name={i.name} size={18} />
+                <Icon name={i.name} size={i.name === "morion" ? 23 : 18} />
               </span>
             ))}
           </div>

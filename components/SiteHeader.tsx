@@ -171,7 +171,7 @@ export default function SiteHeader() {
               aria-label="Account"
               aria-expanded={acct}
             >
-              <Icon name="morion" size={20} />
+              <Icon name="morion" size={23} />
             </button>
             <AccountPanel open={acct} onClose={() => setAcct(false)} />
           </div>

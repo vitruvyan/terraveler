@@ -683,7 +683,7 @@ export default function VoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            <Icon name="morion" size={20} />
+            <Icon name="morion" size={23} />
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>
