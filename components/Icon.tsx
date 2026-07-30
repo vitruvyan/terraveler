@@ -29,6 +29,8 @@ export type IconName =
   | "morion"
   | "pin"
   | "hourglass"
+  | "key"
+  | "wheel"
   | "arrow-up"
   | "check"
   | "close"
@@ -143,6 +145,25 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M7 3.6h10M7 20.4h10" />
       <path d="M8.2 3.6v3.3c0 2 3.8 3.6 3.8 5.1s-3.8 3.1-3.8 5.1v3.3" />
       <path d="M15.8 3.6v3.3c0 2-3.8 3.6-3.8 5.1s3.8 3.1 3.8 5.1v3.3" />
+    </>
+  ),
+
+  /* Connecting an assistant: the handshake hands over a key. */
+  key: (
+    <>
+      <circle cx="7.4" cy="12" r="3.6" />
+      <path d="M11 12h9.8" />
+      <path d="M17.4 12v3.6M20.4 12v2.7" />
+    </>
+  ),
+
+  /* The crew. A ship's wheel — hub, rim and handles. */
+  wheel: (
+    <>
+      <circle cx="12" cy="12" r="6.1" />
+      <circle cx="12" cy="12" r="1.9" />
+      <path d="M12 5.9V2.2M12 21.8v-3.7M5.9 12H2.2M21.8 12h-3.7" />
+      <path d="M7.7 7.7 5.1 5.1M16.3 7.7l2.6-2.6M7.7 16.3l-2.6 2.6M16.3 16.3l2.6 2.6" />
     </>
   ),
 

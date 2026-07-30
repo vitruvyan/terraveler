@@ -21,11 +21,17 @@
   /* -- MARK: provenance and the atlas's own hand. ------------------------
      --brass is the MARK: rules, borders, dots, underlines, decoration. It is
      3.17:1 and must never carry text. --brass-text is the same hue (H35°)
-     taken down to 4.51:1 for the labels, credits and source lines that
-     actually say something — they are the smallest text on the site, so this
-     was the palette's real defect rather than a checklist item. */
+     taken down for the labels, credits and source lines that actually say
+     something — they are the smallest text on the site, so this was the
+     palette's real defect rather than a checklist item.
+
+     It is cut to 5.24:1 rather than to the 4.5 line, and the headroom is the
+     point. At 4.51:1 it cleared AA by one hundredth and nothing else: put it
+     on the account panel, whose paper carries a grain, and the same token
+     measured 4.09:1. A colour with no margin fails the first time a surface
+     is anything other than flat parchment. */
   --brass: #a9772f;
-  --brass-text: #896026;        /*  4.51:1 on parchment */
+  --brass-text: #7c5723;        /*  5.24:1 on parchment, 4.74:1 on grain */
   --brass-on-dark: #d8b25c;     /*  8.48:1 on a hero shade */
 
   /* -- ACCENT: the bordeaux identity, and the interactive ramp. ----------
@@ -1481,26 +1487,42 @@ input[type="range"].scrubber::-moz-range-thumb {
   top: calc(100% + 12px);
   z-index: 60;
   width: min(326px, calc(100vw - 28px));
-  border: 1px solid rgba(231, 213, 176, 0.9);
-  border-radius: 8px;
-  background: rgba(242, 230, 207, 0.96);
-  box-shadow: 0 18px 42px rgba(43, 33, 23, 0.28);
-  padding: 14px;
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  /* Opaque, and the blur is gone with the translucency. The panel used to be
+     0.96 over a backdrop-filter, which on a page with a photographic hero let
+     the picture through: measured behind the menu, the worst pixel came out
+     #d0b4c1 and --ink-soft fell to 4.46:1. A popover you read has to be paper
+     all the way down, not a window onto whatever happens to be under it. */
+  background: var(--parchment);
+  box-shadow: var(--elev-1);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   animation: acct-in 0.16s ease-out;
-  backdrop-filter: blur(8px);
 }
 .acct-panel::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background:
-    linear-gradient(180deg, rgba(242, 230, 207, 0.78), rgba(242, 230, 207, 0.94)),
-    url("/login-backgrounds/ortelius-world-map-1570.jpg") center / cover;
-  filter: saturate(0.75) contrast(0.95);
+  /* Ortelius used to sit here, washed over. It had to go, and the reason is a
+     rule this file already states: every surface re-declares its own layers,
+     and a token measured against parchment lies anywhere that is not
+     parchment. Even at a 0.955 wash the map dragged the panel's base down to
+     #d9d3c8, where --brass-text — cut to clear 4.5:1 on parchment — measured
+     3.75:1. So the choice was a map plus a set of panel-only colour variants,
+     or paper. Paper: flat --parchment with the same grain the specimen uses,
+     which is texture without moving the base colour a single step. */
+  background-color: var(--parchment);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+  /* Low. At 0.6 the grain multiplied the base down from #f2e6cf to #e7ddc4,
+     which is enough to drag --brass-text below AA — the token is cut to clear
+     4.5:1 against parchment, and this stopped being parchment. Texture must
+     not move the substrate it textures. */
+  opacity: 0.22;
 }
 .acct-panel::after {
   content: "";
@@ -1509,9 +1531,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   right: 17px;
   width: 12px;
   height: 12px;
-  border-top: 1px solid rgba(231, 213, 176, 0.9);
-  border-left: 1px solid rgba(231, 213, 176, 0.9);
-  background: rgba(242, 230, 207, 0.96);
+  border-top: 1px solid var(--parchment-deep);
+  border-left: 1px solid var(--parchment-deep);
+  background: var(--parchment);
   transform: rotate(45deg);
 }
 .acct-panel > * {
@@ -3745,3 +3767,65 @@ main.prose {
    no meaning a screen reader needs — the component sets aria-hidden. */
 .ornament-break { margin: var(--space-8) auto; max-width: 22rem; opacity: 0.85; }
 .ornament-tail { margin: var(--space-7) auto var(--space-4); width: 4rem; opacity: 0.7; }
+
+/* ============================================================================
+   THE ACCOUNT MENU
+   ----------------------------------------------------------------------------
+   Signed in, the panel is a menu rather than a receipt. Which menu depends on
+   who is holding the account: a reader's is a keyring, the editor's is a desk.
+   ========================================================================= */
+
+.acct-waiting { color: var(--ink-soft); margin: 0; }
+
+.acct-who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--rule-hair);
+  color: var(--ink);
+}
+.acct-who-text { display: flex; flex-direction: column; min-width: 0; }
+.acct-who-mail {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.acct-who-role {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin-top: 2px;
+}
+
+.acct-menu { display: flex; flex-direction: column; }
+.acct-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  margin: 0 calc(var(--space-2) * -1);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+  text-decoration: none;
+  transition: background var(--dur-1) var(--ease);
+}
+.acct-menu-item:hover { background: var(--parchment-deep); }
+.acct-menu-item svg { margin-top: 2px; color: var(--ink-soft); }
+.acct-menu-item:hover svg { color: var(--brass-text); }
+.acct-menu-label {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  line-height: 1.25;
+}
+.acct-menu-note {
+  font-size: var(--step--1);
+  font-style: italic;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}

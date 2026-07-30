@@ -7,6 +7,8 @@
  *  identity provider (Google OAuth lives there). AUTH_* defaults to the
  *  NEXT_PUBLIC_ vars, which still point at that project. */
 
+import type { NextResponse } from "next/server";
+
 const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
 const SB_URL = cleanEnv(process.env.SUPABASE_URL);
 const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
@@ -16,14 +18,72 @@ const AUTH_KEY = cleanEnv(process.env.SUPABASE_AUTH_KEY || process.env.NEXT_PUBL
 const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "").trim().toLowerCase();
 
 export const COOKIE = "desk_token";
+/** Supabase access tokens live about an hour and cannot be extended. Storing
+ *  only the access token meant a session simply ended after sixty minutes,
+ *  with no warning and no way to renew — in the middle of authorising an
+ *  assistant, for instance. The refresh token is what makes a session last. */
+export const COOKIE_REFRESH = "desk_refresh";
 
-export function readCookie(req: Request): string | null {
+function readNamed(req: Request, name: string): string | null {
   const raw = req.headers.get("cookie") ?? "";
-  const m = raw.match(new RegExp(`(?:^|;\\s*)${COOKIE}=([^;]+)`));
+  const m = raw.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-type AuthResult = { token?: string; error?: string };
+export function readCookie(req: Request): string | null {
+  return readNamed(req, COOKIE);
+}
+
+export function readRefreshCookie(req: Request): string | null {
+  return readNamed(req, COOKIE_REFRESH);
+}
+
+/** One place for the cookie flags. They were repeated in four route handlers,
+ *  which is how the two of them drifted out of step in the first place. */
+export function setSession(res: NextResponse, token: string, refresh?: string) {
+  const common = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    path: "/",
+  };
+  res.cookies.set({ ...common, name: COOKIE, value: token, maxAge: 3600 });
+  if (refresh) {
+    res.cookies.set({ ...common, name: COOKIE_REFRESH, value: refresh, maxAge: 60 * 60 * 24 * 30 });
+  }
+}
+
+export function clearSession(res: NextResponse) {
+  const common = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    path: "/",
+    value: "",
+    maxAge: 0,
+  };
+  res.cookies.set({ ...common, name: COOKIE });
+  res.cookies.set({ ...common, name: COOKIE_REFRESH });
+}
+
+/** Trades a refresh token for a fresh pair. Returns nothing if the refresh
+ *  token has itself expired or been revoked, which is a real sign-out. */
+export async function refreshSession(
+  refresh: string,
+): Promise<{ token: string; refresh: string } | null> {
+  if (!authConfigured() || !refresh) return null;
+  const r = await fetch(`${AUTH_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refresh }),
+  });
+  if (!r.ok) return null;
+  const j = await r.json().catch(() => null);
+  if (!j?.access_token) return null;
+  return { token: j.access_token as string, refresh: (j.refresh_token ?? refresh) as string };
+}
+
+type AuthResult = { token?: string; refresh?: string; error?: string };
 
 function authConfigured(): boolean {
   return Boolean(AUTH_URL && AUTH_KEY);
@@ -47,7 +107,7 @@ export async function signInAccount(email: string, password: string): Promise<Au
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) return { error: authError(r.status, j, "invalid credentials") };
-  return { token: j.access_token as string };
+  return { token: j.access_token as string, refresh: j.refresh_token as string | undefined };
 }
 
 /** Creates a regular account with the configured Supabase Auth provider. */
@@ -61,19 +121,19 @@ export async function signUpAccount(email: string, password: string): Promise<Au
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) return { error: authError(r.status, j, "could not create account") };
-  return { token: j.access_token as string | undefined };
+  return { token: j.access_token as string | undefined, refresh: j.refresh_token as string | undefined };
 }
 
-export async function signIn(email: string, password: string): Promise<{ token?: string; error?: string }> {
+export async function signIn(email: string, password: string): Promise<AuthResult> {
   if (!EDITOR_EMAIL) return { error: "server not configured" };
-  const { token, error } = await signInAccount(email, password);
+  const { token, refresh, error } = await signInAccount(email, password);
   if (!token) return { error };
   const j = await fetch(`${AUTH_URL}/auth/v1/user`, {
     headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
   }).then((r) => r.ok ? r.json() : null);
   const mail = (j?.email ?? "").toLowerCase();
   if (mail !== EDITOR_EMAIL) return { error: "not an editor account" };
-  return { token };
+  return { token, refresh };
 }
 
 export async function getUserEmail(token: string): Promise<string | null> {

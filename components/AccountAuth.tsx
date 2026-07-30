@@ -14,10 +14,45 @@ type Mode = "login" | "signup";
  * request they were in the middle of. Only same-origin paths are honoured — an
  * open `next=` is an open redirect, and this one is reachable without a login.
  */
+function safePath(raw: string): string {
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "";
+}
+
 function nextPath(): string {
   if (typeof window === "undefined") return "";
-  const raw = new URLSearchParams(window.location.search).get("next") ?? "";
-  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "";
+  return safePath(new URLSearchParams(window.location.search).get("next") ?? "");
+}
+
+/* Where to come back to after the Google round trip.
+ *
+ * The destination cannot travel with the request: the button leaves for
+ * /api/desk/google, which hands Supabase a redirect_to of a bare path, and
+ * Google returns to that path with the tokens in the fragment and no query
+ * string at all. So `?next=` was silently dropped every time, and signing in
+ * with Google from a gated page left you sitting on /login reading "you are
+ * signed in" instead of arriving anywhere. Email and password kept working,
+ * because that flow never leaves the page — which is why the two methods
+ * behaved differently.
+ *
+ * Putting the destination in redirect_to would need Supabase's allow-list to
+ * accept a query string, which is configuration we cannot verify from here.
+ * Remembering it in the tab is the version that cannot be broken by a setting
+ * on someone else's dashboard. */
+const RETURN_KEY = "tv:after-signin";
+
+function rememberDestination() {
+  const to = nextPath() || safePath(window.location.pathname + window.location.search);
+  try { sessionStorage.setItem(RETURN_KEY, to); } catch { /* private mode */ }
+}
+
+function takeDestination(): string {
+  const fromQuery = nextPath();
+  if (fromQuery) return fromQuery;
+  try {
+    const stored = sessionStorage.getItem(RETURN_KEY) ?? "";
+    sessionStorage.removeItem(RETURN_KEY);
+    return safePath(stored);
+  } catch { return ""; }
 }
 
 export default function AccountAuth({ mode }: { mode: Mode }) {
@@ -28,7 +63,9 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const token = window.location.hash.match(/access_token=([^&]+)/)?.[1];
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const token = hash.get("access_token");
+    const refresh = hash.get("refresh_token");
     if (!token) return;
 
     const controller = new AbortController();
@@ -37,7 +74,7 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
     fetch("/api/desk/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ access_token: decodeURIComponent(token) }),
+      body: JSON.stringify({ access_token: token, refresh_token: refresh ?? undefined }),
       signal: controller.signal,
     }).then(async (response) => {
       if (!response.ok) {
@@ -45,8 +82,8 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
         setStatus("idle");
         return;
       }
-      const to = nextPath();
-      if (to) { window.location.href = to; return; }
+      const to = takeDestination();
+      if (to && to !== window.location.pathname) { window.location.href = to; return; }
       setMessage(mode === "signup" ? "Your Terraveler account is ready." : "You are signed in to Terraveler.");
       setStatus("complete");
     }).catch((reason: unknown) => {
@@ -105,7 +142,11 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
           </div>
         ) : (
           <>
-            <a href={`/api/desk/google?next=/${mode}`} className="auth-google-button">
+            <a
+              href={`/api/desk/google?next=/${mode}`}
+              className="auth-google-button"
+              onClick={rememberDestination}
+            >
               <GoogleMark />
               <span>{isSignup ? "Sign up with Google" : "Continue with Google"}</span>
             </a>

@@ -85,13 +85,16 @@ export default function Desk() {
 
   useEffect(() => {
     // Returning from Google OAuth: the token arrives in the URL hash.
-    const m = window.location.hash.match(/access_token=([^&]+)/);
-    if (m) {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const access = hash.get("access_token");
+    if (access) {
       window.history.replaceState(null, "", window.location.pathname);
       fetch("/api/desk/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: decodeURIComponent(m[1]) }),
+        /* The refresh token rides in the same fragment and used to be thrown
+           away, which is what capped a desk session at an hour. */
+        body: JSON.stringify({ access_token: access, refresh_token: hash.get("refresh_token") ?? undefined }),
       }).then(async (r) => {
         if (!r.ok) setErr((await r.json()).error ?? "sign-in refused");
         load();
