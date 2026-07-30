@@ -489,7 +489,7 @@ export default function VoyageExperience({
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
       {/* The atlas emblem opens the voyage picker. */}
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
-      <a className="map-wordmark" href="/" aria-label="Terraveler home">
+      <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
         <span>Terraveler</span>
         <span className="map-tagline">An atlas of geo-history, written in tandem</span>
       </a>

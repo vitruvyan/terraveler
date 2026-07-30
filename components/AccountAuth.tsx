@@ -92,7 +92,7 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
   return (
     <AuthBackdrop>
       <section className="auth-panel auth-account-panel" aria-labelledby="account-auth-title">
-        <Link href="/" className="auth-wordmark">Terraveler</Link>
+        <Link href="/" className="wordmark auth-wordmark">Terraveler</Link>
         <span className="auth-kicker">{isSignup ? "Your place in the atlas" : "Terraveler account"}</span>
         <h1 id="account-auth-title">{title}</h1>
         <p className="auth-intro">{description}</p>

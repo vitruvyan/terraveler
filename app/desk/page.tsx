@@ -204,6 +204,14 @@ export default function Desk() {
             {t === "submissions" && openCount ? `${t} (${openCount})` : t}
           </button>
         ))}
+        {/* The specimen lives behind this same session — it is a working
+            document about the site, not a page of the atlas. */}
+        <span className="dk-tabs-aside">
+          <span className="dk-tabs-aside-label">the system</span>
+          <a className="dk-tab-link" href="/specimen">type</a>
+          <a className="dk-tab-link" href="/specimen/palette">colour</a>
+          <a className="dk-tab-link" href="/specimen/mark">mark</a>
+        </span>
       </div>
 
       {tab === "overview" && overview && (

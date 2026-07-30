@@ -23,7 +23,7 @@ export default function DeskLogin({
   return (
     <AuthBackdrop variant="desk">
       <section className="auth-panel auth-desk-panel" aria-labelledby="desk-login-title">
-        <Link href="/" className="auth-wordmark">Terraveler</Link>
+        <Link href="/" className="wordmark auth-wordmark">Terraveler</Link>
         <span className="auth-kicker">Editorial desk</span>
         <h1 id="desk-login-title">Sign in to the desk</h1>
         <p className="auth-intro">For the editor and the crew entrusted with Terraveler&rsquo;s record.</p>

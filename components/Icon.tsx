@@ -120,10 +120,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
      and the crest rides over the bowl. Seen head-on it reads as a bridge. */
   morion: (
     <>
-      <path d="M2.8 15.4c2.7 2.6 5.8 3.9 9.2 3.9s6.5-1.3 9.2-3.9" />
-      <path d="M2.8 15.4 5.3 13.1M21.2 15.4 18.7 13.1" />
-      <path d="M5.6 14.6c0-4.7 2.9-8.4 6.4-8.4s6.4 3.7 6.4 8.4" />
-      <path d="M9.3 7.4C10 4.9 10.9 3.6 12 3.6s2 1.3 2.7 3.8" />
+      {/* the brim, swept up to a spike fore and aft */}
+      <path d="M1.9 16.2c3.3 3.6 6.7 5.1 10.1 5.1s6.8-1.5 10.1-5.1" />
+      <path d="M1.9 16.2 6.4 13.4M22.1 16.2 17.6 13.4" />
+      {/* Skull and comb as one silhouette. Drawn as two arcs the comb floated
+          above the dome and the apex turned to mush; the comb IS the point. */}
+      <path d="M6.2 15.1C6.2 9.7 8.1 5 12 2.1c3.9 2.9 5.8 7.6 5.8 13" />
     </>
   ),
 

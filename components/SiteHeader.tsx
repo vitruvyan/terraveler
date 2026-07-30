@@ -26,7 +26,7 @@ export default function SiteHeader() {
       <header className="site-header">
         <div className="sh-inner">
           <div className="sh-brand">
-            <Link href="/" className="sh-wordmark">Terraveler</Link>
+            <Link href="/" className="wordmark sh-wordmark">Terraveler</Link>
             <span className="sh-tagline">An atlas of geo-history, written in tandem</span>
           </div>
           <nav className="sh-nav" aria-label="Primary navigation">

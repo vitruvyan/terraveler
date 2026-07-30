@@ -6,7 +6,7 @@ export default function SiteFooter() {
     <footer className="site-footer2">
       <div className="sf-inner">
         <div className="sf-col sf-brandcol">
-          <div className="sf-wordmark">Terraveler</div>
+          <div className="wordmark sf-wordmark">Terraveler</div>
           <div className="sf-tag">
             An atlas of geo-history — authoritative, sourced, alive. Humans bring
             the ideas; AI writes; everything is verified before it sails.

@@ -29,7 +29,14 @@ It is the same publishing house, in the room where the telegraph is.
 | Every token (colour, type scale, space, radii, rules, elevation, measure, motion) | `:root` in `app/globals.css` | The SSOT. Values drift; read them, never restate them. |
 | The type system, with real content | `/specimen` → `app/specimen/` | Both registers side by side. Look before you argue. |
 | The palette, with every contrast ratio | `/specimen/palette` | **Measures itself** from the computed tokens. If you change a colour, this page will tell you what you did to it. |
+| The wordmark and the icon set | `/specimen/mark` | Candidates at real header size, and every icon beside the emoji it replaced. |
+
 | The three families | `app/layout.tsx` | Loaded via `next/font/local`, self-hosted, OFL. |
+
+The three specimen chapters sit **behind the editor session**
+(`app/specimen/layout.tsx`) and are linked from the desk's own tab row. They
+are working documents about the site, not pages of the atlas: noindex was not
+enough, since they carry notes on what is wrong with the stylesheet.
 
 If a value you need is not in `:root`, **add a token** — do not inline the
 number. That is how the twenty-odd hardcoded sizes below get retired instead of
@@ -166,10 +173,11 @@ are editing is already migrated; check it. As of the typography commit:
 - **Emoji survive in `SpaceVoyageExperience.tsx`** (📡📊🖼🪐💽📜☰👤) and in the
   **map waypoint markers**. The Earth atlas, the site header and the search are
   done; the Voyager theme and the markers are not.
-- The **wordmark is unresolved.** `/specimen/mark` holds the candidates
-  measured at real header size. Until it is decided, `--font-logo` points at
-  Cormorant and `.sh-wordmark` is still weight 700 at +0.06em — which is the
-  setting that suited EB Garamond and does not suit this face.
+- The **wordmark is settled**: engraved small caps, Cormorant 500, +0.2em, via
+  the shared `.wordmark` class. Page titles are already Cormorant light in
+  roman, so a roman wordmark would have stopped being a mark and become one
+  more heading; and the wide tracking this file always asked of it is wrong in
+  roman and obligatory in small caps.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done

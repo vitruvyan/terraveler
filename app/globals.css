@@ -904,11 +904,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .auth-wordmark {
   display: block;
   color: var(--ink);
-  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 1.46rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-decoration: none;
+  font-size: 1.32rem;
 }
 .auth-kicker {
   display: block;
@@ -1080,21 +1076,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .left-stack .lens-switch { position: static; }
 .map-wordmark {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  justify-content: center;
-  position: absolute;
-  top: 14px;
-  left: 64px;
   z-index: 6;
   height: 48px;
+  display: flex;
+  align-items: center;
   color: #fff;
-  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  font-size: 1.65rem;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
+  font-size: 1.45rem;
   text-shadow: 0 2px 8px rgba(24, 30, 40, 0.72);
 }
 .map-wordmark:hover { color: rgba(255, 255, 255, 0.84); }
@@ -1339,14 +1326,35 @@ input[type="range"].scrubber::-moz-range-thumb {
   gap: 18px;
   flex-wrap: wrap;
 }
+/* ============================================================================
+   THE WORDMARK
+   ----------------------------------------------------------------------------
+   Engraved small caps, not upper-and-lower. Two reasons, and neither is
+   decoration. Page titles are already Cormorant light in roman — set the
+   wordmark the same way and it stops being a mark and becomes one more
+   heading. And the wide tracking this file has always asked of the wordmark
+   is wrong in roman and obligatory in small caps, so the letterform finally
+   matches the setting it was given.
+
+   Weight 500 rather than 700: Cormorant is cut for display and thickens into
+   mush above 600, which is what made the old wordmark look blunt the moment
+   the face changed under it. */
+.wordmark {
+  font-family: var(--font-logo);
+  font-weight: 500;
+  font-variant-caps: all-small-caps;
+  font-variant-numeric: lining-nums;
+  letter-spacing: 0.2em;
+  /* small caps sit optically left of the margin without this */
+  text-indent: 0.2em;
+  text-decoration: none;
+  line-height: 1.1;
+}
+
 .sh-brand { display: flex; flex-direction: column; margin-right: auto; }
 .sh-wordmark {
-  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-weight: 700;
-  font-size: 1.7rem;
-  letter-spacing: 0.06em;
   color: var(--ink);
-  text-decoration: none;
+  font-size: 1.5rem;
 }
 .sh-tagline { font-size: 11.5px; color: var(--ink-soft); font-style: italic; }
 .sh-nav { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
@@ -1396,11 +1404,8 @@ input[type="range"].scrubber::-moz-range-thumb {
 .sf-col a { color: var(--ink); text-decoration: none; }
 .sf-col a:hover { color: var(--ink); text-decoration: underline; }
 .sf-wordmark {
-  font-family: var(--font-logo), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-weight: 700;
-  font-size: 1.4rem;
-  letter-spacing: 0.06em;
   color: var(--accent);
+  font-size: 1.26rem;
 }
 .sf-tag { font-size: 13px; line-height: 1.5; color: var(--ink-soft); max-width: 340px; }
 .sf-company { font-size: 13px; margin-top: 4px; }
@@ -3622,4 +3627,38 @@ main.prose {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
   font-size: 0.9em;
+}
+
+/* The specimen links, sat at the far end of the desk's own tabs. They are
+   references rather than tabs, so they read as links and never take the
+   selected rule. */
+.dk-tabs-aside {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+}
+.dk-tabs-aside-label {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.dk-tab-link {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-1) var(--ease);
+}
+.dk-tab-link:hover { border-bottom-color: var(--brass); }
+
+@media (max-width: 760px) {
+  .dk-tabs { flex-wrap: wrap; }
+  .dk-tabs-aside { margin-left: 0; width: 100%; }
 }
