@@ -1683,6 +1683,21 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1.7;
   font-size: 15.5px;
 }
+/* A page whose main IS the prose has to centre itself.
+ *
+ * `.prose` carries type and nothing else, which is right — the editorial pages
+ * nest it inside a wrapper that handles layout. But five pages written later
+ * used it as the page's own <main> with only an inline maxWidth, and a
+ * max-width with no auto margin sits flush against the left edge. It looked
+ * like a stylesheet that had failed to load, on the pages where a stranger
+ * decides whether this project is serious.
+ *
+ * Scoped to main.prose so the nested editorial articles are untouched, and the
+ * voyage log keeps overriding it inline as it already did. */
+main.prose {
+  margin-inline: auto;
+  padding: 40px 22px 80px;
+}
 .editorial-prose > h1:first-child { display: none; }
 .prose h1 { font-size: 2.3rem; margin: 0 0 10px; letter-spacing: 0; }
 .prose h2 {
