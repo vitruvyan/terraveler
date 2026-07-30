@@ -40,3 +40,10 @@ Orchestrated by **AXIS** (immutable GraphState trace = the audit):
 Development itself is multi-agent, by the same rule as the product: **match model
 power to task difficulty.** See **SUBAGENTS.md** (which model for which dev task)
 and **SKILLS.md** (repeatable procedures).
+
+**Anything visual — a page, a component, CSS, a size, a colour — is governed by
+`.claude/skills/terraveler-design/`.** It loads itself when the work is visual;
+read it before styling rather than after. The tokens it points at live in
+`:root` of `app/globals.css` and the system is rendered with real content at
+`/specimen`. More than one agent works in this repo: the law is written down so
+we build the same site.

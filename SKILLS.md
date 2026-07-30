@@ -2,6 +2,11 @@
 
 Each skill names the subagent tier that should carry it (see SUBAGENTS.md).
 
+> This file holds **procedures** — the steps of a job. The **visual law** is not
+> a procedure and does not live here: it is a loadable skill at
+> `.claude/skills/terraveler-design/`, which the agent picks up by itself
+> whenever the work touches a page, a component or CSS.
+
 ## add-subject — put a biography/voyage into the pipeline
 1. *(architect, if a new kind)* choose the slug + subject query.
 2. **Preview** *(scout)*: on the VPS, `cd ~/terraveler/ingest && python3 scout.py --subject "<subject>"`
