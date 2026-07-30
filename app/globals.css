@@ -1075,31 +1075,39 @@ input[type="range"].scrubber::-moz-range-thumb {
   max-width: min(340px, calc(100vw - 130px));
 }
 .left-stack .lens-switch { position: static; }
-/* This rule lost its positioning when the wordmark was moved onto the shared
-   .wordmark class: the rewrite replaced the whole block instead of only the
-   type in it, and absolute/top/left went with it. The mark was still rendered,
-   still white, and sat wherever the flow put it — which on a full-bleed map is
-   nowhere you can see. */
+/* The wordmark on the map.
+   ---------------------------------------------------------------------------
+   It was #fff with a drop shadow, which is right over a dark hero and wrong
+   over this basemap: measured under the mark, the ocean is #d4dadc and white
+   lands at 1.41:1 — below even the large-text floor, and a shadow cannot
+   rescue white from a light ground.
+
+   But the fix is not "use a dark colour": it is that the wordmark was the only
+   control on the map without a ground under it. The emblem beside it is a
+   parchment disc, the world strip is a parchment plate, so are the lens rail
+   and the transport bar. Given the same plate the mark reads at 11:1 wherever
+   the map is panned, it matches the chrome it sits among, and because it now
+   uses tokens rather than a raw hex the starfield theme gets it right for
+   free — .space redeclares both --parchment and --ink. */
 .map-wordmark {
   position: absolute;
   top: 14px;
   left: 64px;
   z-index: 6;
-  height: 48px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  color: #fff;
-  /* 136px is all there is between the emblem and the world strip. Small caps
-     at the header's own size measured 160px and ran under the strip, so this
-     instance is sized to the space it actually has rather than to the size
-     the mark takes elsewhere. */
+  padding: 5px 12px 6px;
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  background: rgba(242, 230, 207, 0.95);
+  box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
+  color: var(--ink);
   font-size: 1.15rem;
   letter-spacing: 0.16em;
-  text-shadow: 0 2px 8px rgba(24, 30, 40, 0.72);
 }
-.map-wordmark:hover { color: rgba(255, 255, 255, 0.84); }
+.map-wordmark:hover { border-color: var(--brass); }
 /* On the map the .wordmark class sits on the anchor, which wraps the tagline
    too — so all-small-caps and the 0.2em tracking inherited straight into it
    and the strapline came out as a 400px-wide band of spaced capitals running
@@ -1118,6 +1126,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1;
   text-align: left;
   white-space: nowrap;
+  color: var(--ink-soft);
 }
 .map-wordmark:focus-visible {
   outline: 2px solid var(--brass);
@@ -1328,7 +1337,7 @@ input[type="range"].scrubber::-moz-range-thumb {
    unnoticed. Between the mobile layout and that width, hold it clear.
    Not a wordmark bug: the same overlap was there before the mark changed. */
 @media (min-width: 681px) and (max-width: 1439px) {
-  .world-strip { width: calc(100vw - 500px); }
+  .world-strip { width: calc(100vw - 520px); }
 }
 .ws-kicker {
   font-size: 10px;
@@ -2408,7 +2417,9 @@ main.prose {
 .space .win-bar { border-bottom-color: rgba(0, 0, 0, 0.3); }
 .space .win-btn:hover { background: rgba(255, 255, 255, 0.1); }
 .space .cart-emblem,
+.space .map-wordmark,
 .space .tr-btn { background: rgba(16, 20, 31, 0.92); box-shadow: 0 5px 18px rgba(0, 0, 0, 0.4); }
+.space .map-wordmark { border-color: var(--parchment-deep); }
 .space .tr-menu { background: rgba(16, 20, 31, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
 .space .tr-menu > a:hover { background: rgba(255, 255, 255, 0.08); }
 .space .world-strip { background: rgba(16, 20, 31, 0.82); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
