@@ -29,6 +29,7 @@ export type IconName =
   | "morion"
   | "pin"
   | "hourglass"
+  | "arrow-up"
   | "check"
   | "close"
   | "play"
@@ -145,6 +146,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
 
+  "arrow-up": (
+    <>
+      <path d="M12 20.2V4.6" />
+      <path d="M5.4 11.2 12 4.6l6.6 6.6" />
+    </>
+  ),
   check: <path d="M4.6 12.4 9.5 17.4 19.4 6.6" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,
   play: <path d="M8.4 4.8 18.6 12 8.4 19.2z" />,

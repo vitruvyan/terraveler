@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "../specimen.css";
 import Chapters from "../Chapters";
+import BackToTop from "../BackToTop";
 import Ornament from "@/components/Ornament";
 import Icon from "@/components/Icon";
 
@@ -216,6 +217,7 @@ export default function PlatesPage() {
         </section>
 
         <Ornament name="tail" className="ornament-tail" />
+        <BackToTop />
       </div>
     </div>
   );

@@ -835,3 +835,54 @@
   .spec-contract-voice { text-align: left; }
   .spec-plate-places { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================
+   USCITE — il ritorno al desk e il ritorno in cima
+   ========================================================================= */
+
+/* Il link di uscita si stacca dai capitoli: non è un capitolo, è la porta. */
+.spec-chapter-out {
+  margin-left: auto;
+  color: var(--ink-faint);
+  border-bottom-color: transparent;
+}
+.spec-chapter-out:hover { color: var(--ink); border-bottom-color: var(--brass); }
+
+/* Uno dei pochi elementi che galleggia davvero sopra la pagina, che è l'uso
+   sanzionato di --elev-1. Compare solo quando c'è un posto dove tornare. */
+.spec-totop {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+  color: var(--ink-soft);
+  box-shadow: var(--elev-1);
+  cursor: pointer;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition: opacity var(--dur-2) var(--ease), transform var(--dur-2) var(--ease),
+    color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.spec-totop.is-shown { opacity: 1; transform: none; pointer-events: auto; }
+.spec-totop:hover { color: var(--ink); border-color: var(--brass); }
+.spec-totop:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spec-totop { transition: opacity var(--dur-1) linear; transform: none; }
+}
+@media (max-width: 640px) {
+  .spec-totop { right: var(--space-4); bottom: var(--space-4); }
+  .spec-chapter-out { margin-left: 0; width: 100%; }
+}

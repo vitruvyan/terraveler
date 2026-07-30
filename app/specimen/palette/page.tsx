@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import "../specimen.css";
 import Chapters from "../Chapters";
+import BackToTop from "../BackToTop";
 import Ornament from "@/components/Ornament";
 
 /* ---------------------------------------------------------------------------
@@ -336,6 +337,7 @@ export default function PalettePage() {
             <li>{"Un token non usato si cancella."}</li>
           </ul>
         </section>
+        <BackToTop />
       </div>
     </div>
   );

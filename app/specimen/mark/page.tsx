@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "../specimen.css";
 import Chapters from "../Chapters";
+import BackToTop from "../BackToTop";
 import Ornament from "@/components/Ornament";
 import Icon, { type IconName } from "@/components/Icon";
 
@@ -186,6 +187,7 @@ export default function MarkPage() {
             ))}
           </div>
         </section>
+        <BackToTop />
       </div>
     </div>
   );

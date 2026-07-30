@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./specimen.css";
 import Chapters from "./Chapters";
+import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 
@@ -467,6 +468,7 @@ export default function SpecimenPage() {
             </span>
           </div>
         </section>
+        <BackToTop />
       </div>
     </div>
   );

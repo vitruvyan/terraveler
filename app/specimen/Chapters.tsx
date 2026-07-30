@@ -21,6 +21,11 @@ export default function Chapters({ current }: { current: string }) {
           {c.n} &middot; {c.label}
         </a>
       ))}
+      {/* The way out. The specimen is reached from the desk and has no other
+          navigation, so without this the only exit is the back button. */}
+      <a className="spec-chapter spec-chapter-out" href="/desk">
+        &larr; the desk
+      </a>
     </nav>
   );
 }
