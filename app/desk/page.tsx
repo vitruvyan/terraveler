@@ -43,14 +43,17 @@ type Overview = {
   demand?: Demand[];
 };
 
+/* Where a submission stands. The values live in :root — four of the seven
+   hexes that used to sit here failed AA on parchment while being the text
+   colour of the badge that carries them. */
 const STATUS_COLOR: Record<string, string> = {
-  submitted: "#b0873a",
-  "peer-review": "#46608a",
-  "human-review": "#3f8a8a",
-  approved: "#4f8a5b",
-  rejected: "#a3402c",
-  "curator-rejected": "#a3402c",
-  "changes-requested": "#8a5a9a",
+  submitted: "var(--state-wait)",
+  "peer-review": "var(--state-review)",
+  "human-review": "var(--state-desk)",
+  approved: "var(--state-ok)",
+  rejected: "var(--state-no)",
+  "curator-rejected": "var(--state-no)",
+  "changes-requested": "var(--state-changes)",
 };
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
@@ -411,7 +414,13 @@ export default function Desk() {
                       )}
                     </td>
                     <td style={{ padding: "8px" }}>
-                      <span className="conf-badge" style={c.status === "suspended" ? { borderColor: "#a3402c", color: "#a3402c" } : { borderColor: "#4f8a5b", color: "#4f8a5b" }}>
+                      <span
+                        className="conf-badge"
+                        style={{
+                          borderColor: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                          color: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                        }}
+                      >
                         {c.status}
                       </span>
                     </td>

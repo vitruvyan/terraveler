@@ -557,3 +557,136 @@
 @media (prefers-reduced-motion: reduce) {
   .spec * { animation: none !important; transition: none !important; }
 }
+
+/* ============================================================================
+   SAGGIO DELLA PALETTA — /specimen/palette
+   I numeri di contrasto NON sono scritti qui né nel TSX: la pagina li misura
+   dai token calcolati nel browser. Se un token cambia, la pagina lo dice.
+   ========================================================================= */
+
+.spec-chapters {
+  display: flex;
+  gap: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--rule-hair);
+  margin-bottom: var(--space-7);
+}
+.spec-chapter {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid transparent;
+}
+.spec-chapter[aria-current="page"] { color: var(--ink); border-bottom-color: var(--brass); }
+
+/* --- una riga della tavola dei colori ----------------------------------- */
+.spec-swatch {
+  display: grid;
+  grid-template-columns: 3.5rem 12rem 1fr 6rem 5.5rem;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.spec-swatch:last-child { border-bottom: 1px solid var(--rule-hair); }
+.spec-chip {
+  height: 2.6rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--rule-mid);
+}
+.spec-swatch-name {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--1);
+  color: var(--ink);
+}
+/* Un codice esadecimale è un identificatore, quindi voce della macchina anche
+   qui: senza cifre allineate #F2E6CF esce in numeri antichi e si legge male. */
+.spec-swatch-hex {
+  display: block;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.spec-swatch-role {
+  font-size: var(--step-0);
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+.spec-ratio {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+  text-align: right;
+  color: var(--ink);
+}
+.spec-verdict {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.2em 0.5em;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-1);
+}
+.spec-verdict.is-aaa  { color: var(--state-ok); }
+.spec-verdict.is-aa   { color: var(--state-ok); }
+.spec-verdict.is-lrg  { color: var(--state-wait); }
+.spec-verdict.is-fail { color: var(--state-no); }
+.spec-verdict.is-na   { color: var(--ink-faint); border-style: dashed; }
+
+/* --- il confronto sul brass -------------------------------------------- */
+.spec-brass-demo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+.spec-brass-demo > div {
+  padding: var(--space-5);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+}
+.spec-brass-label {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: var(--space-4);
+}
+.spec-brass-sample { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* --- il fondo scuro ----------------------------------------------------- */
+/* Porta la classe .space vera, così i rapporti sono misurati sui token del
+   tema reale e non su copie. Ma il campo stellato va spento: una tavola di
+   contrasto deve mostrare esattamente il fondo contro cui misura, altrimenti
+   i numeri dicono una cosa e l'occhio ne vede un'altra. */
+.spec-dark {
+  position: relative;
+  background: #10141f;
+  padding: var(--space-6);
+  border-radius: var(--radius-2);
+  margin-top: var(--space-5);
+}
+.spec-dark::before { display: none !important; }
+.spec-dark .spec-swatch { border-color: rgba(232, 236, 245, 0.16); }
+.spec-dark .spec-swatch-name { color: #e8ecf5; }
+.spec-dark .spec-swatch-hex, .spec-dark .spec-swatch-role { color: #8b96b3; }
+.spec-dark .spec-ratio { color: #e8ecf5; }
+
+@media (max-width: 900px) {
+  .spec-swatch { grid-template-columns: 3rem 1fr; row-gap: var(--space-2); }
+  .spec-swatch-role, .spec-ratio, .spec-verdict { grid-column: 2; text-align: left; }
+  .spec-verdict { justify-self: start; }
+  .spec-brass-demo { grid-template-columns: 1fr; }
+}

@@ -1,15 +1,56 @@
 :root {
+  /* ==== COLOUR =============================================================
+     Four layers, and the layer a colour belongs to decides what it may do.
+     Contrast figures are against --parchment unless stated; anything carrying
+     text at any size must clear 4.5:1, which is why the marks and the words
+     are separate tokens even when they are the same hue. Specimen with every
+     ratio measured live: /specimen/palette. */
+
+  /* -- SUBSTRATE: the paper. Never carries text. ------------------------- */
   --parchment: #f2e6cf;
   --parchment-deep: #e7d5b0;
-  --ink: #2b2117;
-  --ink-soft: #5a4a34;
-  --sea: #a8b8a0;
-  --route: #7a2e1d;        /* map content only: the voyage line & ship */
-  --accent: #7f2637;       /* UI accent: bordeaux */
-  --accent-deep: #581522;
-  --btn: #9b3c46;
-  --btn-deep: #742733;
+  --parchment-raised: #f8f0de;  /* panels that lift off the page */
+
+  /* -- INK: everything written on it. Three weights, all AA. ------------- */
+  --ink: #2b2117;               /* 12.75:1 — primary */
+  --ink-soft: #5a4a34;          /*  6.90:1 — secondary */
+  --ink-faint: #746652;         /*  4.51:1 — tertiary. Use this instead of
+                                   reaching for --brass or a raw rgba when
+                                   text needs to recede. */
+
+  /* -- MARK: provenance and the atlas's own hand. ------------------------
+     --brass is the MARK: rules, borders, dots, underlines, decoration. It is
+     3.17:1 and must never carry text. --brass-text is the same hue (H35°)
+     taken down to 4.51:1 for the labels, credits and source lines that
+     actually say something — they are the smallest text on the site, so this
+     was the palette's real defect rather than a checklist item. */
   --brass: #a9772f;
+  --brass-text: #896026;        /*  4.51:1 on parchment */
+  --brass-on-dark: #d8b25c;     /*  8.48:1 on a hero shade */
+
+  /* -- ACCENT: the bordeaux identity, and the interactive ramp. ----------
+     Two ramps: --accent marks (borders, emphasis, active state), --btn acts
+     (buttons and their hovers). They overlap in the file today and the
+     overlap is recorded as debt in the design skill rather than churned. */
+  --accent: #7f2637;            /*  7.60:1 */
+  --accent-deep: #581522;
+  --btn: #9b3c46;               /*  5.43:1 */
+  --btn-deep: #742733;
+
+  /* -- STATE: where a submission stands. These lived as seven raw hexes in
+     app/desk/page.tsx, four of which failed AA on parchment while being used
+     as the text colour of a badge. Same hues, taken to 4.5:1. ------------- */
+  --state-ok: #41724b;          /*  4.55:1 — approved, active, supported */
+  --state-no: #a3402c;          /*  5.11:1 — rejected, suspended, refuted */
+  --state-wait: #82632b;        /*  4.51:1 — submitted, awaiting the desk */
+  --state-review: #46608a;      /*  5.15:1 — with the Scribes, in peer review */
+  --state-desk: #347171;        /*  4.54:1 — with the Curator, human review */
+  --state-changes: #855694;     /*  4.52:1 — changes requested */
+  --state-idle: var(--ink-faint);    /* nothing is being asked of you */
+
+  /* -- DOMAIN: meanings that belong to the atlas, not to the UI. ---------
+     Map content only — a stroke and a fill, never a foreground on parchment. */
+  --route: #7a2e1d;             /* the voyage line & the ship */
 
   /* ---- THE THREE VOICES ---------------------------------------------------
      Loaded in app/layout.tsx. The division that matters is not atlas versus
@@ -367,7 +408,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
-.plates-source { font-size: 10px; color: var(--brass); text-decoration: none;
+.plates-source { font-size: 10px; color: var(--brass-text); text-decoration: none;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
@@ -406,7 +447,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
-.plates-lightbox-cap a { font-size: 11px; color: var(--brass); }
+.plates-lightbox-cap a { font-size: 11px; color: var(--brass-text); }
 .plates-lightbox-close {
   position: absolute;
   top: 8px;
@@ -449,7 +490,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .plates-contrib-mini {
   border: none;
   background: none;
-  color: var(--brass);
+  color: var(--brass-text);
   font-size: 11px;
   padding: 0;
   cursor: pointer;
@@ -507,7 +548,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
 }
 .contrib-copy-btn:hover { border-color: var(--brass); color: var(--ink); }
-.contrib-toast { font-size: 11.5px; color: var(--brass); font-style: italic; }
+.contrib-toast { font-size: 11.5px; color: var(--brass-text); font-style: italic; }
 .contrib-note {
   margin-top: 12px;
   padding-top: 10px;
@@ -550,7 +591,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 11px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
@@ -745,7 +786,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .pig-user .pig-bubble { background: var(--btn); color: var(--parchment); }
 .pig-typing { font-style: italic; color: var(--ink-soft); }
 .pig-sources { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
-.pig-src-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.pig-src-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass-text); }
 .pig-src {
   font-size: 11px; color: var(--ink-soft); background: rgba(43, 33, 23, 0.06);
   border: 1px solid var(--parchment-deep); border-radius: 8px; padding: 2px 7px; text-decoration: none;
@@ -871,7 +912,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   font-size: 12px;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .auth-panel h1 {
   margin: 6px 0 10px;
@@ -1080,7 +1121,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-size: 10.5px;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .cart-title { margin: 3px 0 4px; font-size: 1.12rem; line-height: 1.25; }
 .cart-nav { font-size: 13px; color: var(--ink); }
@@ -1265,7 +1306,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
   margin-bottom: 4px;
 }
 
@@ -1346,7 +1387,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .sf-col a { color: var(--ink); text-decoration: none; }
 .sf-col a:hover { color: var(--ink); text-decoration: underline; }
@@ -1475,11 +1516,15 @@ input[type="range"].scrubber::-moz-range-thumb {
 .acct-ghost-cta:hover {
   background: rgba(255, 255, 255, 0.64);
 }
+/* First use of the raised step of the substrate ladder. The rgba(255,255,255)
+   lifts elsewhere in this file are NOT all the same thing: over the map their
+   translucency is doing real work, and flattening them to an opaque token
+   would be wrong. This one sits on the page, so it takes the token. */
 .acct-note {
   font-size: 12.8px;
   line-height: 1.55;
   color: var(--ink-soft);
-  background: rgba(255, 255, 255, 0.58);
+  background: var(--parchment-raised);
   border: 1px solid rgba(231, 213, 176, 0.82);
   border-radius: 8px;
   padding: 10px 12px;
@@ -1700,7 +1745,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   letter-spacing: 0.04em;
 }
 .ed-index-section h2 span {
-  color: var(--brass);
+  color: var(--brass-text);
   font-size: 13px;
 }
 .ed-voyage-grid {
@@ -1735,7 +1780,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
 }
 .ed-voyage-kicker {
-  color: var(--brass);
+  color: var(--brass-text);
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1999,7 +2044,7 @@ main.prose {
   font-size: 9.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .cart-atlas a {
   font-family: var(--font-ui);
@@ -2154,15 +2199,35 @@ main.prose {
 .space {
   --parchment: #10141f;
   --parchment-deep: #1b2233;
+  --parchment-raised: #1a2132;
   --ink: #e8ecf5;
-  --ink-soft: #8b96b3;
-  --sea: #1b2740;
+  --ink-soft: #8b96b3;      /* 6.23:1 on this ground */
+  --ink-faint: #8c7c63;     /* 4.53:1 */
   --route: #6fd1ff;
   --accent: #6fd1ff;
   --accent-deep: #4fa8d6;
   --btn: #3f6fb0;
   --btn-deep: #345c93;
   --brass: #d8b25c;
+  /* Every layer of the palette has to be re-declared for a dark ground, not
+     inherited: a token that clears 4.5:1 on parchment fails on a starfield.
+     These are the same hues taken back up to AA against #10141f. */
+  --brass-text: #d8b25c;    /* 9.14:1 — on this ground the mark is legible */
+  --brass-on-dark: #d8b25c;
+  --state-ok: #4f8b5b;      /* 4.53:1 */
+  --state-no: #cc5b44;      /* 4.51:1 */
+  --state-wait: #9d7834;    /* 4.53:1 */
+  --state-review: #617faf;  /* 4.52:1 */
+  --state-desk: #3f8989;    /* 4.51:1 */
+  --state-changes: #9b6daa; /* 4.52:1 */
+  --state-idle: var(--ink-faint);
+  /* .space::before is an absolutely positioned starfield that assumes this
+     class establishes the containing block. It did not: the one component
+     using it set position:relative inline, so the assumption held by luck.
+     Applied anywhere else the starfield escapes to the nearest positioned
+     ancestor and paints over the whole page. Declared here so the class is
+     self-contained. */
+  position: relative;
   /* The register shift here is deliberate and stays: Voyager 2 is not a
      parchment voyage. But the shift belongs inside the three families rather
      than outside them — and the right voice for a probe is the machine's own.
@@ -2351,7 +2416,7 @@ main.prose {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
   margin-bottom: 4px;
 }
 .welcome-title {
@@ -2447,7 +2512,7 @@ main.prose {
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
   margin: 8px 0 4px;
 }
 .atlas-search-group { margin-bottom: 4px; }
@@ -2771,7 +2836,7 @@ main.prose {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-size: 10.5px;
-  color: var(--brass);
+  color: var(--brass-text);
   margin-bottom: 3px;
 }
 
@@ -2997,7 +3062,7 @@ main.prose {
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1;
-  color: var(--brass);
+  color: var(--brass-text);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   transition: transform 0.2s ease;
 }
@@ -3051,7 +3116,7 @@ main.prose {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
   font-family: var(--font-ui);
   font-size: 12.5px;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .tv-wizard-body .tv-steps > li.tv-step-code { padding-left: 38px }
 .tv-wizard-body .tv-steps > li.tv-step-code::before { top: 8px }
@@ -3248,7 +3313,7 @@ main.prose {
   font-size: 10.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .crew-flag {
   margin: 6px 0 12px;
@@ -3303,7 +3368,7 @@ main.prose {
   font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--brass);
+  color: var(--brass-text);
 }
 .crew-flight-by { font-size: 12.5px; color: var(--ink-soft) }
 

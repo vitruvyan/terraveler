@@ -26,8 +26,9 @@ It is the same publishing house, in the room where the telegraph is.
 
 | What | Where | Note |
 |---|---|---|
-| Every token (type scale, space, radii, rules, elevation, measure, motion) | `:root` in `app/globals.css` | The SSOT. Values drift; read them, never restate them. |
-| The system rendered, with real content | `/specimen` → `app/specimen/` | Both registers side by side. Look before you argue. |
+| Every token (colour, type scale, space, radii, rules, elevation, measure, motion) | `:root` in `app/globals.css` | The SSOT. Values drift; read them, never restate them. |
+| The type system, with real content | `/specimen` → `app/specimen/` | Both registers side by side. Look before you argue. |
+| The palette, with every contrast ratio | `/specimen/palette` | **Measures itself** from the computed tokens. If you change a colour, this page will tell you what you did to it. |
 | The three families | `app/layout.tsx` | Loaded via `next/font/local`, self-hosted, OFL. |
 
 If a value you need is not in `:root`, **add a token** — do not inline the
@@ -86,10 +87,27 @@ exception.
   an action and a number that is history must not have the same visual weight.
   Nine identical tiles is a form, not a dashboard.
 
-- **Colour is the one layer that already worked — keep it that way.** Use
-  `--parchment`, `--parchment-deep`, `--ink`, `--ink-soft`, `--brass`,
-  `--accent`, `--sea`, `--route`. Never introduce a raw hex in a component. If
-  a colour is missing, add a token.
+- **Colour has four layers, and the layer decides what a colour may do.**
+  *Substrate* (`--parchment*`) never carries text. *Ink* (`--ink`,
+  `--ink-soft`, `--ink-faint`) is what is written. *Mark* — `--brass` makes
+  marks (rules, borders, dots) and **never carries a word**; `--brass-text` is
+  the same hue at AA for the words. *State* (`--state-*`) is where a
+  submission stands. Plus the accent ramps and the map-only `--route`.
+
+- **Anything carrying text clears 4.5:1, at every size.** Not 3:1 because
+  "it's large" — on this site that text is nearly always 10 or 11px. Check on
+  `/specimen/palette`, which measures rather than claims.
+
+- **Every theme re-declares every layer.** A token that passes on parchment
+  fails on a starfield. Inheriting colour onto a different ground is the
+  fastest way to break contrast without noticing — it is exactly how
+  `--state-changes` shipped at 3.29:1 inside `.space` and got caught.
+
+- **Never a raw hex in a component.** If a colour is missing, add a token.
+
+- **A token nobody uses gets deleted.** `--sea` was declared in two themes and
+  used nowhere in the repo; a dead token is worse than a missing one, because
+  the next person takes it for real.
 
 - **Repetition is a content-design problem before it is a CSS one.** Four
   identical log entries collapse into one with a count, they do not get
@@ -119,10 +137,17 @@ are editing is already migrated; check it. As of the typography commit:
 - **15 distinct hardcoded `border-radius` values** remain. Same treatment.
 - `--rule-*` and `--elev-*` have **zero** usages so far — the hairlines and
   shadows in the file are still ad hoc.
-- **285 colour literals** remain in `globals.css`. Many are legitimate token
-  definitions and alpha overlays; the rest want tokenising.
-- The **palette itself** has not been revisited. That is the next piece of
-  work, and it is deliberate that nobody has touched it yet.
+- **~300 colour literals** remain in `globals.css`. A good share are the token
+  declarations themselves and alpha overlays doing real work; the rest want
+  tokenising. Note the `rgba(255,255,255,0.x)` lifts are **not** all the same
+  thing — over the map their translucency is load-bearing and must not be
+  flattened to `--parchment-raised` without looking.
+- **`--parchment-raised` has one use** (`.acct-note`). The rest of the raised
+  panels are pending case-by-case migration, per the point above.
+- Raw hexes remain in a handful of components — `opengraph-image.tsx`,
+  `AuthBackdrop.tsx`, `icon.tsx`, `VoyageExperience.tsx`, `SolarSystemMap.tsx`,
+  `SolarSystem3D.tsx`, `ContributePanel.tsx`. Some are OG/icon rendering where
+  a token cannot reach; the rest are ordinary debt.
 - **Page-level language is uneven** and this is the known gap: `/contribute`,
   `/magna-carta`, `/voyages` have a real editorial hero; the Quarterdeck
   (`/desk`) is still a form. Bringing the desk onto the system is pending

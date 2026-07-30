@@ -86,6 +86,15 @@ export default function SpecimenPage() {
           </p>
         </header>
 
+        <nav className="spec-chapters">
+          <a className="spec-chapter" href="/specimen" aria-current="page">
+            i &middot; type
+          </a>
+          <a className="spec-chapter" href="/specimen/palette">
+            ii &middot; colour
+          </a>
+        </nav>
+
         <div className="spec-note">
           <b>Cosa stai guardando.</b> Una pagina sola, con contenuto vero: la tappa 8 di
           Xuanzang come sta in <b>data/xuanzang-629.json</b>, e il registro del Quarterdeck
