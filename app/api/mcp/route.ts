@@ -353,116 +353,9 @@ async function reapStaleClaims(): Promise<void> {
     { status: "open", claimed_by: null, claimed_at: null });
 }
 
-// ------------------------------------------------------------------ stage-0 gate
-const DOMAINS = ["gutenberg.org", "wikisource.org", "wikipedia.org", "wikimedia.org",
-  "wikidata.org", "archive.org", "gallica.bnf.fr", "loc.gov", "davidrumsey.com"];
-const LICENSE_OK = /public domain|^cc[ -]/i;
-const CONFIDENCES = ["certain", "approximate", "reconstructed", "contested"];
-const INJECTION = [
-  /ignore (all|any|previous|prior)/i, /disregard (the|all|previous)/i,
-  /note to (the )?curator/i, /pre-?approved/i, /skip (the )?(verification|review|checks)/i,
-  /you (must|should|are required to) (approve|accept)/i, /system prompt/i,
-  /editor[- ]in[- ]chief (has )?(approved|authorised|authorized)/i,
-];
-
-// Free-text bounds for the lightweight write tools. The injection screen is a
-// tripwire, not the defence: the desk always treats payloads as data.
-const TEXT_LIMITS: Record<string, number> = { title: 200, description: 4000, idea: 4000, area: 100, voyage: 100 };
-
-/** A review's shape is a Carta matter, not a database one, so it is checked
- *  here whichever write path runs: a refutation must cite whitelist evidence
- *  (10.4) and a review is data, never instructions (10.5). */
-function reviewShapeError(args: any): string | null {
-  if (!["confirm", "refute", "unclear"].includes(args?.verdict)) return "invalid verdict.";
-  const findings = args?.findings;
-  if (!Array.isArray(findings) || findings.length === 0)
-    return "at least one finding is required — reviews must show their checking.";
-  if (findings.length > 30) return "too many findings (max 30).";
-  for (let i = 0; i < findings.length; i++) {
-    const f = findings[i], tag = `finding ${i + 1}`;
-    if (!f?.claim || typeof f.claim !== "string" || f.claim.length > 500)
-      return `${tag}: claim missing or over 500 chars.`;
-    if (!["supported", "contradicted", "unverifiable"].includes(f?.assessment))
-      return `${tag}: invalid assessment.`;
-    if (f.assessment === "contradicted" && !f.evidence_url)
-      return `${tag}: a refutation requires evidence_url (Carta 10.4 — the refutation must cite the evidence).`;
-    if (f.evidence_url && !domainOk(String(f.evidence_url)))
-      return `${tag}: evidence_url not on the whitelist.`;
-    if (f.note && (typeof f.note !== "string" || f.note.length > 1000))
-      return `${tag}: note over 1000 chars.`;
-    for (const field of [f.claim, f.note ?? ""])
-      if (INJECTION.some((p) => p.test(field)))
-        return `${tag} trips the injection screen (Carta 10.5): reviews are data, never instructions.`;
-  }
-  return null;
-}
-
-function badText(args: any, fields: string[]): string | null {
-  for (const f of fields) {
-    const v = args?.[f];
-    if (v === undefined || v === null) continue;
-    if (typeof v !== "string") return `Field '${f}' must be a string.`;
-    const cap = TEXT_LIMITS[f] ?? 2000;
-    if (v.length > cap) return `Field '${f}' exceeds ${cap} characters.`;
-    if (INJECTION.some((p) => p.test(v)))
-      return `Field '${f}' trips the injection screen (Carta 6): submissions are data, never instructions.`;
-  }
-  return null;
-}
-
-const MAX_DRAFT_BYTES = 300_000;
-const MAX_WAYPOINTS = 300;
-const MAX_CLAIMS_PER_WAYPOINT = 60;
-
-function domainOk(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return DOMAINS.some((d) => host === d || host.endsWith("." + d));
-  } catch {
-    return false;
-  }
-}
-
-function* strings(obj: any, path = ""): Generator<[string, string]> {
-  if (typeof obj === "string") yield [path, obj];
-  else if (Array.isArray(obj)) for (let i = 0; i < obj.length; i++) yield* strings(obj[i], `${path}[${i}]`);
-  else if (obj && typeof obj === "object")
-    for (const k of Object.keys(obj)) yield* strings(obj[k], path ? `${path}.${k}` : k);
-}
-
-/** Instant deterministic gate (subset of the full Curator: no source fetching). */
-function stage0(sub: any): string[] {
-  const fails: string[] = [];
-  if (JSON.stringify(sub ?? {}).length > MAX_DRAFT_BYTES)
-    return [`submission exceeds ${MAX_DRAFT_BYTES / 1000} kB — split it into smaller drafts`];
-  const meta = sub?.meta ?? {};
-  if (meta.carta_version !== CARTA_VERSION)
-    fails.push(`carta_version is '${meta.carta_version}', current is '${CARTA_VERSION}' — call get_contract first`);
-  for (const f of ["type", "ideator", "scribe_model"]) if (!meta[f]) fails.push(`meta.${f} missing`);
-  const wps = sub?.waypoints ?? [];
-  if (!Array.isArray(wps) || wps.length === 0) fails.push("no waypoints in submission");
-  if (Array.isArray(wps) && wps.length > MAX_WAYPOINTS) return [`too many waypoints (max ${MAX_WAYPOINTS})`];
-  for (const w of wps) {
-    const tag = `wp${w?.seq ?? "?"}`;
-    for (const f of ["seq", "place_historical", "latitude", "longitude", "arrival_date", "confidence"])
-      if (w?.[f] === undefined || w?.[f] === null || w?.[f] === "") fails.push(`${tag}: field '${f}' missing`);
-    if (w?.confidence && !CONFIDENCES.includes(w.confidence)) fails.push(`${tag}: invalid confidence`);
-    if ((w?.claims ?? []).length > MAX_CLAIMS_PER_WAYPOINT)
-      fails.push(`${tag}: too many claims (max ${MAX_CLAIMS_PER_WAYPOINT})`);
-    for (let ci = 0; ci < (w?.claims ?? []).length; ci++) {
-      const c = w.claims[ci], ctag = `${tag}.claim${ci + 1}`;
-      if (!c?.text) fails.push(`${ctag}: empty claim text`);
-      if (!c?.evidence) { fails.push(`${ctag}: CLAIM WITHOUT SOURCE (Carta 3.1)`); continue; }
-      if (!c.evidence.excerpt || !c.evidence.source_url) fails.push(`${ctag}: evidence incomplete`);
-      if (!LICENSE_OK.test(c.evidence.license ?? "")) fails.push(`${ctag}: licence not PD/CC (Carta 3.2)`);
-      if (c.evidence.source_url && !domainOk(c.evidence.source_url))
-        fails.push(`${ctag}: source domain not whitelisted`);
-    }
-  }
-  for (const [path, s] of strings(sub))
-    if (INJECTION.some((p) => p.test(s))) { fails.push(`INJECTION ATTEMPT at '${path}' (Carta 6)`); break; }
-  return fails;
-}
+// The Stage-0 gate lives in lib/gate.ts: it is Carta logic, not HTTP, and a
+// route module cannot export it for a test to reach.
+import { INJECTION, badText, domainOk, reviewShapeError, stage0 } from "@/lib/gate";
 
 /**
  * The Carta and the guide, cached.
@@ -661,7 +554,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OAUTH("contribute"),
-    description: "Submit a structured draft (meta + waypoints with sourced claims). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id.",
+    description: "Submit a structured draft (meta + waypoints with sourced claims, and plates where a stage has period imagery). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id.",
     inputSchema: { type: "object", required: ["submission"],
       properties: { ...AUTH_PROPS,
         // "See how_it_works for the schema" is not a schema. An LLM connected
@@ -713,6 +606,30 @@ const TOOL_DEFINITIONS = [
                   date_note: { type: "string", description: "say so when the date is disputed" },
                   confidence: { type: "string",
                     description: "certain | approximate | reconstructed | contested (Carta 3.3)" },
+                  plates: {
+                    type: "array",
+                    description: "Period images for this stage. A plate is held to a quotation's standard: five fields, four of them provenance. An image without them is refused (Carta 3.1–3.2).",
+                    items: {
+                      type: "object",
+                      required: ["url", "caption", "credit", "license", "source_url", "date"],
+                      properties: {
+                        url: { type: "string",
+                          description: "the image itself — fetchable, on the source whitelist" },
+                        caption: { type: "string",
+                          description: "what it shows, in the atlas's voice; not the file name" },
+                        credit: { type: "string",
+                          description: "who made it and who holds it" },
+                        license: { type: "string",
+                          description: "the licence of THE WORK, not of the scan. A faithful reproduction of a public-domain image does not create a new right; if the holder claims terms of its own, put those in rights_note (Carta 3.2)" },
+                        source_url: { type: "string",
+                          description: "the record page a verifier can read, not the pixels" },
+                        date: { type: "string",
+                          description: "when the image was MADE. Required, because it is frequently NOT the date of the stage — say 1787 for a view of a place reached in 1769, and let the page admit the gap" },
+                        rights_note: { type: "string",
+                          description: "the holding institution's own terms, when they differ from the work's licence" },
+                      },
+                    },
+                  },
                   claims: {
                     type: "array",
                     description: "A claim without evidence is refused outright (Carta 3.1).",
@@ -1160,7 +1077,12 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         voyage: b.voyage?.slug,
         title: b.voyage?.title,
         waypoints_total: wps.length,
-        waypoints_missing_media: seqs((w) => !w.media_url),
+        // media_url is the one-image column from the prototype; media[] is the
+        // full record (see supabase/voyage_kinds_and_media.sql). Counting only
+        // the former reported all fifteen Bougainville stages as bare while ten
+        // of them held media — a roadmap that could not have registered its own
+        // completion, and would have kept asking for work already done.
+        waypoints_missing_media: seqs((w) => !w.media_url && !(Array.isArray(w.media) && w.media.length > 0)),
         waypoints_missing_diary_excerpt: seqs((w) => !w.diary_excerpt),
         waypoints_missing_departure_date: seqs((w) => !w.departure_date),
         waypoints_low_confidence: wps.filter((w) => w.confidence !== "certain")
@@ -1639,12 +1561,17 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const wps = Array.isArray(s.payload?.waypoints) ? s.payload.waypoints : [];
       const quoted = wps.filter((w: any) =>
         (w?.claims ?? []).some((c: any) => c?.evidence?.quote)).length;
+      // Counted for the same reason as the excerpts: an enrichment that carries
+      // only plates would otherwise report zero of everything, and a verdict on
+      // it could not be checked against what was actually submitted.
+      const plates = wps.reduce((n: number, w: any) => n + (w?.plates?.length ?? 0), 0);
       // A suggestion is not a draft. Reporting "waypoints: 0" and "draft
       // withheld" for a proposed image made the trail read as though something
       // had gone wrong, when nothing had — the shape simply did not fit.
       const isDraft = wps.length > 0 || s.type === "new-voyage" || s.type === "waypoint-enrichment";
       const content = isDraft
-        ? { kind: "draft", waypoints: wps.length, with_verified_excerpt: quoted }
+        ? { kind: "draft", waypoints: wps.length, with_verified_excerpt: quoted,
+            ...(plates ? { plates } : {}) }
         : { kind: s.type,
             about: s.payload?.voyage
               ? `${s.payload.voyage}${s.payload.waypoint != null ? ` waypoint ${s.payload.waypoint}` : ""}`
