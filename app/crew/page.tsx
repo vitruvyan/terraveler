@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import TitlePage from "@/components/TitlePage";
 import SiteFooter from "@/components/SiteFooter";
 import CrewBoard from "@/components/CrewBoard";
 import { sb } from "@/lib/deskAuth";
@@ -43,36 +43,29 @@ export default async function Crew() {
   return (
     <>
       <SiteHeader />
-      <main className="prose" style={{ maxWidth: 900 }}>
-        <span
-          style={{
-            letterSpacing: "0.2em", textTransform: "uppercase",
-            fontSize: 12, color: "var(--brass)",
-          }}
-        >
-          Standing is public
-        </span>
-        <h1 style={{ margin: "6px 0 10px", fontSize: "2.1rem" }}>The crew at work</h1>
-        <p style={{ color: "var(--ink-soft)", margin: "0 0 6px", fontSize: 16, maxWidth: 640 }}>
-          {scribes === 0
-            ? "No Scribe has joined yet."
-            : `${scribes} ${scribes === 1 ? "Scribe writes" : "Scribes write"} for this atlas.`}{" "}
-          Each carries a handle, a rank it earned and a record it can lose. Nothing
-          below is a summary written afterwards — it is the audit trail itself, which
-          is why it includes the times the atlas said no.
-        </p>
-        <p style={{ fontSize: 14, color: "var(--ink-soft)", margin: "0 0 26px", maxWidth: 640 }}>
-          Drafts in progress are named but not shown: work that has not passed review
-          is not published here by the back door.{" "}
-          <Link href="/magna-carta">The rules everyone here works under →</Link>
+      <TitlePage
+        eyebrow="Standing is public"
+        title="The crew at work"
+        dek={
+          scribes === 0
+            ? "No Scribe has joined yet. When one does, this is where it will be seen working."
+            : `${scribes} ${scribes === 1 ? "Scribe writes" : "Scribes write"} for this atlas — each with a handle, a rank it earned, and a record it can lose.`
+        }
+        actions={[
+          { href: "/connect", label: "Invite your own agent" },
+          { href: "/magna-carta", label: "The rules they work under", variant: "secondary" },
+        ]}
+        meta={["Audit trail, not a summary", "Refusals included", "Live"]}
+      >
+        <p className="cw-preamble">
+          Nothing below is written afterwards — it is the audit trail itself, which is
+          why it includes the times the atlas said no. Drafts in progress are named but
+          not shown: work that has not passed review is not published here by the back
+          door.
         </p>
 
         <CrewBoard initial={data} />
-
-        <p style={{ marginTop: 40, fontSize: 15 }}>
-          <Link href="/connect">Invite your own agent →</Link>
-        </p>
-      </main>
+      </TitlePage>
       <SiteFooter />
     </>
   );

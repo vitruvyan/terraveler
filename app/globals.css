@@ -4176,3 +4176,205 @@ main.prose {
     font-size: inherit; float: none; padding: 0; line-height: inherit;
   }
 }
+
+/* ============================================================================
+   THE WATCH BILL — /crew
+   ----------------------------------------------------------------------------
+   Who has the deck now, who is below, what is on the stocks. Hierarchy encodes
+   meaning here more than anywhere else on the site: a Scribe that worked ninety
+   seconds ago and one that has not worked since March must not be the same
+   size, and they used to be.
+   ========================================================================= */
+
+.cw-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin: var(--space-8) 0 var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.cw-h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-3);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.cw-count {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* A statement of silence, not an empty box. */
+.cw-quiet {
+  max-width: var(--measure);
+  font-style: italic;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+/* --- on deck: full cards ------------------------------------------------- */
+.cw-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-4);
+}
+.cw-card {
+  padding: var(--space-4);
+  border: 1px solid var(--rule-hair);
+  border-left: 2px solid var(--brass);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+}
+.cw-card header { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); }
+.cw-card h3 {
+  font-family: var(--font-mono);
+  font-size: var(--step-0);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.cw-rank {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+  color: var(--brass-text);
+  white-space: nowrap;
+}
+.cw-flag {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--step--1);
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.cw-figures { display: flex; gap: var(--space-4); margin: 0; }
+.cw-figures dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.cw-figures dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-2);
+  font-variant-numeric: lining-nums;
+  line-height: 1.1;
+}
+.cw-seen {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule-hair);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+.cw-client { color: var(--ink-soft); }
+
+/* --- below and ashore: rows, not cards ----------------------------------- */
+.cw-list { list-style: none; margin: 0; padding: 0; }
+.cw-row {
+  display: grid;
+  grid-template-columns: 12rem 8rem 1fr auto;
+  gap: var(--space-4);
+  align-items: baseline;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule-hair);
+  font-size: var(--step--1);
+}
+.cw-row.is-ashore { color: var(--ink-faint); }
+.cw-row-handle { font-family: var(--font-mono); color: var(--ink); overflow-wrap: anywhere; }
+.cw-row.is-ashore .cw-row-handle { color: var(--ink-faint); }
+.cw-row-rank {
+  font-family: var(--font-ui);
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+}
+.cw-row-figs { font-family: var(--font-mono); color: var(--ink-faint); }
+.cw-row-seen { font-family: var(--font-mono); font-size: var(--step--2); color: var(--ink-faint); text-align: right; }
+
+/* --- on the stocks: the stage as a position ------------------------------ */
+.cw-flight { list-style: none; margin: 0; padding: 0; }
+.cw-flight li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.cw-flight-title { display: flex; flex-direction: column; gap: 2px; }
+.cw-flight-by { font-family: var(--font-mono); font-size: var(--step--2); color: var(--ink-faint); }
+.cw-track { display: flex; align-items: center; gap: var(--space-2); }
+.cw-pip {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--brass);
+  border-radius: 50%;
+}
+.cw-pip.is-done { background: var(--brass); }
+.cw-track-label {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin-left: var(--space-2);
+}
+
+/* --- the log ------------------------------------------------------------- */
+.cw-log { list-style: none; margin: 0; padding: 0; }
+.cw-log-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-4);
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
+  border-top: 1px solid var(--rule-hair);
+  border-left: 2px solid var(--state-idle);
+}
+.cw-log-row.is-scribe { border-left-color: var(--state-review); }
+.cw-log-row.is-curator { border-left-color: var(--brass); }
+.cw-log-row.is-human { border-left-color: var(--accent); }
+.cw-log-when {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+  text-align: right;
+}
+.cw-log-what { font-size: var(--step-0); line-height: 1.5; }
+.cw-log-who { font-family: var(--font-mono); font-size: 0.9em; color: var(--ink); }
+
+.cw-checked {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-7);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+
+@media (max-width: 760px) {
+  .cw-row { grid-template-columns: 1fr auto; row-gap: var(--space-1); }
+  .cw-row-figs { grid-column: 1 / -1; }
+  .cw-log-row { grid-template-columns: 1fr; }
+  .cw-log-when { text-align: left; }
+}
+
+.cw-preamble {
+  max-width: var(--measure);
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  margin: 0 0 var(--space-5);
+}

@@ -203,8 +203,16 @@ are editing is already migrated; check it. As of the typography commit:
   thing here built with no literal size, radius or colour. Its **submissions
   and crew tabs are not**: they are still inline styles and raw px.
 - Other surfaces still off the system: the map chrome beyond the notes already
-  moved, `/account/agents`, the contribute panel, `/crew` and `/connect` (which
-  never had an opening at all).
+  moved, `/account/agents`, the contribute panel, and `/connect` (which still
+  has no opening at all).
+
+- **A live view says when it is idle.** `/crew` is the watch bill: who has the
+  deck now, who is below, what is on the stocks. Liveness is carried by facts
+  that change — an elapsed time, a Scribe crossing from below to the watch, a
+  new line in the log — and never by a pulsing dot, a glow or a shimmer, which
+  the ornament rule forbids anyway. When nothing is happening the page says so
+  in a sentence, on the same principle that makes a voyage declare a burnt
+  archive: a dashboard that looks alive while idle is lying quietly.
 - The **paper grain** is on `.tp-page` and on the specimen, and nowhere else.
   Extending it to the rest of the site is a decision nobody has taken.
 - **Emoji survive in `SpaceVoyageExperience.tsx`** (📡📊🖼🪐💽📜☰👤) and in the
