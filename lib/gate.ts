@@ -42,8 +42,17 @@ export const DOMAINS = [
   "davidrumsey.com", "biodiversitylibrary.org", "europeana.eu",
   // French
   "gallica.bnf.fr", "persee.fr", "manioc.org",
-  // Spanish
-  "bne.es", "cervantesvirtual.com", "pares.cultura.gob.es", "memoriachilena.gob.cl",
+  // Spanish. PARES is two hosts and the difference matters to a machine:
+  // pares.cultura.gob.es is the portal, and it serves an FNMT certificate
+  // without the intermediate, so every client that does not chase the AIA
+  // extension — curl, Python, anything server-side — fails to verify it. The
+  // catalogue itself answers on pares.mcu.es, which sends a complete chain and
+  // validates, and which is where /catalogo/description/<id> and the
+  // parameterless image endpoint /catalogo/showimgud/<id> actually live. Cite
+  // the portal for a reader; fetch mcu.es for a verifier. Both are listed
+  // because a citation should survive the migration between them.
+  "bne.es", "cervantesvirtual.com", "pares.cultura.gob.es", "pares.mcu.es",
+  "memoriachilena.gob.cl",
   // Portuguese
   "purl.pt", "arquivos.pt", "bn.gov.br",
   // Italian

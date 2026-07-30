@@ -145,6 +145,11 @@ test("evidence may come from an archive in any language", () => {
     "https://www.persee.fr/doc/crai_0065-0536_1911_num_55_9_72896",
     // Spanish, and the archive of the Indies in particular
     "https://pares.cultura.gob.es/pares/search.form",
+    // The AGI catalogue answers on the older host, and that is where a
+    // verifier's client can actually reach it — the portal's certificate chain
+    // is incomplete, so anything that does not chase the AIA extension fails.
+    "https://pares.mcu.es/ParesBusquedas20/catalogo/description/121461",
+    "https://pares.mcu.es/ParesBusquedas20/catalogo/showimgud/17876",
     "https://bdh.bne.es/bnesearch/detalle/bdh0000012345",
     "https://www.cervantesvirtual.com/obra/historia-general",
     // Portuguese
