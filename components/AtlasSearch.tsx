@@ -1,5 +1,6 @@
 "use client";
 
+import Icon, { type IconName } from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -25,11 +26,11 @@ type Result = {
   missing?: { query: string } | null;
 };
 
-const ICON: Record<string, string> = {
-  voyage: "⚓",
-  navigator: "🧭",
-  place: "📍",
-  era: "🕰",
+const ICON: Record<string, IconName> = {
+  voyage: "anchor",
+  navigator: "compass",
+  place: "pin",
+  era: "hourglass",
 };
 
 function contributionPrompt(query: string) {
@@ -176,7 +177,7 @@ export default function AtlasSearch({
               </div>
               {res.featured.map((it) => (
                 <a key={it.href} className="atlas-search-hit" href={it.href}>
-                  <span className="atlas-search-ico" aria-hidden="true">⚓</span>
+                  <span className="atlas-search-ico" aria-hidden="true"><Icon name="anchor" size={16} /></span>
                   <span>
                     <strong>{it.label}</strong>
                     <span className="atlas-search-sub">{it.sublabel}</span>
@@ -201,7 +202,9 @@ export default function AtlasSearch({
               <div className="atlas-search-grouphead">{g.label}</div>
               {g.items.map((it) => (
                 <a key={it.href + it.label} className="atlas-search-hit" href={it.href}>
-                  <span className="atlas-search-ico" aria-hidden="true">{ICON[it.type] ?? "•"}</span>
+                  <span className="atlas-search-ico" aria-hidden="true">
+                    {ICON[it.type] ? <Icon name={ICON[it.type]} size={16} /> : "\u00b7"}
+                  </span>
                   <span>
                     <strong>{it.label}</strong>
                     {it.sublabel && <span className="atlas-search-sub">{it.sublabel}</span>}
@@ -221,7 +224,7 @@ export default function AtlasSearch({
               </p>
               <div className="atlas-search-actions">
                 <button type="button" className="welcome-btn primary" onClick={copyPrompt}>
-                  {copied ? "Copied ✓" : "Copy the prompt for your AI"}
+                  {copied ? "Copied" : "Copy the prompt for your AI"}
                 </button>
                 <a className="welcome-btn" href="/how-it-works">How contributing works</a>
               </div>

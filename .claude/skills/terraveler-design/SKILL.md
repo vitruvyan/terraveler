@@ -105,6 +105,15 @@ exception.
 
 - **Never a raw hex in a component.** If a colour is missing, add a token.
 
+- **Icons are drawn, never emoji.** Use `components/Icon.tsx`. An emoji is
+  rendered by Apple or Google or Microsoft depending on who is looking, so the
+  mark of the atlas would not be ours and not the same twice — and they arrive
+  full of cartoon colour on a page whose whole argument is ink on parchment.
+  New icons: 24×24 box, stroke only in `currentColor`, weight 1.3, no fill, no
+  two-tone. **Test it at 16–18px**, which is where it lives; a drawing that
+  only works at 48 is not finished. Three of the first sixteen had to be
+  redrawn for exactly that reason.
+
 - **A token nobody uses gets deleted.** `--sea` was declared in two themes and
   used nowhere in the repo; a dead token is worse than a missing one, because
   the next person takes it for real.
@@ -154,6 +163,13 @@ are editing is already migrated; check it. As of the typography commit:
   and crew tabs are not**: they are still inline styles and raw px.
 - Other surfaces still off the system: the map chrome beyond the notes already
   moved, `/search`, `/account/agents`, the contribute panel.
+- **Emoji survive in `SpaceVoyageExperience.tsx`** (📡📊🖼🪐💽📜☰👤) and in the
+  **map waypoint markers**. The Earth atlas, the site header and the search are
+  done; the Voyager theme and the markers are not.
+- The **wordmark is unresolved.** `/specimen/mark` holds the candidates
+  measured at real header size. Until it is decided, `--font-logo` points at
+  Cormorant and `.sh-wordmark` is still weight 700 at +0.06em — which is the
+  setting that suited EB Garamond and does not suit this face.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done

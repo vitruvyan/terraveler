@@ -36,10 +36,8 @@ const MARK: Row[] = [
 ];
 
 const ACCENT: Row[] = [
-  { token: "--accent", role: "The bordeaux identity. Marks: active state, emphasis, the rule beside a claim.", ground: "light" },
+  { token: "--accent", role: "The bordeaux. It marks and it acts: the rule beside a claim, and the primary button.", ground: "light" },
   { token: "--accent-deep", role: "Its pressed and hovered end.", ground: "light" },
-  { token: "--btn", role: "The interactive ramp. Acts: the primary button and what it does under the cursor.", ground: "light" },
-  { token: "--btn-deep", role: "Its pressed and hovered end.", ground: "light" },
 ];
 
 const STATE: Row[] = [
@@ -273,11 +271,12 @@ export default function PalettePage() {
           <span className="spec-eyebrow">iv &middot; accento &middot; il bordeaux</span>
           <Table rows={ACCENT} light={light} dark={dark} />
           <div className="spec-note">
-            <b>Due rampe, non cinque rossi.</b> <b>--accent</b> segna,{" "}
-            <b>--btn</b> agisce. Nel foglio oggi si sovrappongono — separarle
-            regola per regola sarebbe molto lavoro con resa visiva quasi nulla,
-            quindi la sovrapposizione è registrata come debito nella skill
-            invece di essere rimescolata adesso.
+            <b>Una rampa sola.</b> Ce n&rsquo;erano due: un secondo bordeaux sotto{" "}
+            <b>--btn</b>, una sfumatura più chiaro, che faceva lo stesso lavoro.
+            Il risultato era che il bottone <b>Ask Pigafetta</b> usciva di un
+            rosso diverso da ogni accento accanto a lui sulla stessa schermata —
+            e due rossi a una sfumatura di distanza si leggono come un errore,
+            non come una distinzione. Trenta regole ripuntate, token ritirati.
           </div>
         </section>
 

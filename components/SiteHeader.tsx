@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import Link from "next/link";
 import { useState } from "react";
 import AccountPanel from "@/components/AccountPanel";
@@ -42,7 +43,7 @@ export default function SiteHeader() {
               aria-expanded={menuOpen}
               aria-controls="site-mobile-nav"
             >
-              {menuOpen ? "×" : "☰"}
+              <Icon name={menuOpen ? "close" : "menu"} size={19} />
             </button>
             <div className="acct-anchor">
               <button
@@ -52,7 +53,7 @@ export default function SiteHeader() {
                 aria-label="Account"
                 aria-expanded={acct}
               >
-                👤
+                <Icon name="morion" size={20} />
               </button>
               <AccountPanel open={acct} onClose={() => setAcct(false)} />
             </div>

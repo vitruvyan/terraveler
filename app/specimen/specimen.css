@@ -690,3 +690,68 @@
   .spec-verdict { justify-self: start; }
   .spec-brass-demo { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================
+   CAPITOLO III — marchio e icone
+   ========================================================================= */
+
+.spec-mark-row {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: var(--space-6);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.spec-mark-row:last-of-type { border-bottom: 1px solid var(--rule-hair); }
+.spec-mark-label { text-align: right; }
+.spec-mark-label span { display: block; }
+
+/* Il riquadro che riproduce la testata vera: stesso fondo, stessa misura. */
+.spec-mark-real {
+  display: inline-block;
+  padding: var(--space-4) var(--space-5);
+  border: 1px dashed var(--rule-mid);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+}
+.spec-mark-tag {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.spec-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--space-5);
+}
+.spec-icon-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+}
+.spec-icon-pair { display: flex; align-items: center; gap: var(--space-3); color: var(--ink); }
+.spec-icon-was { font-size: 22px; filter: grayscale(1) opacity(0.45); }
+.spec-icon-arrow { color: var(--ink-faint); font-size: var(--step--1); }
+.spec-icon-name { color: var(--ink); }
+.spec-icon-role { font-size: var(--step--1); font-style: italic; color: var(--ink-soft); }
+
+.spec-icons-small {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  align-items: center;
+  padding: var(--space-5);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .spec-mark-row { grid-template-columns: 1fr; }
+  .spec-mark-label { text-align: left; }
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
@@ -499,7 +500,7 @@ export default function VoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          🌐
+          <Icon name="globe" size={22} />
         </button>
       </div>
 
@@ -513,7 +514,7 @@ export default function VoyageExperience({
             title="Tools"
             onClick={() => setRailOpen(true)}
           >
-            {lens === "log" ? "⚓" : lens === "chart" ? "🗺" : lens === "plates" ? "🖼" : "🧭"}
+            <Icon name={lens === "log" ? "anchor" : lens === "chart" ? "map" : lens === "plates" ? "plates" : "compass"} size={19} />
           </button>
         ) : (
           <>
@@ -527,7 +528,7 @@ export default function VoyageExperience({
                 setRailOpen(false);
               }}
             >
-              ⚓
+              <Icon name="anchor" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}
@@ -539,7 +540,7 @@ export default function VoyageExperience({
                 setRailOpen(false);
               }}
             >
-              🗺
+              <Icon name="map" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "carto" ? "active" : ""}`}
@@ -551,7 +552,7 @@ export default function VoyageExperience({
                 setRailOpen(false);
               }}
             >
-              🧭
+              <Icon name="compass" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "plates" ? "active" : ""}`}
@@ -563,7 +564,7 @@ export default function VoyageExperience({
                 setRailOpen(false);
               }}
             >
-              🖼
+              <Icon name="plates" size={19} />
             </button>
             {/* A moai rather than a feather. The feather is pan-ethnic shorthand
                 that belongs to no actual people — it says "native" the way a
@@ -574,7 +575,7 @@ export default function VoyageExperience({
                 in stone because no journal of theirs survives. Art outliving
                 the record is the whole argument. See issue #11. */}
             <button className="lens-btn lens-btn-ico" disabled title="Peoples — coming soon" aria-label="Peoples (coming soon)">
-              🗿
+              <Icon name="antiquity" size={19} />
             </button>
             {isMobile && (
               <button
@@ -607,7 +608,7 @@ export default function VoyageExperience({
             </div>
             <div className="cart-ships">{voyage.ships}</div>
             <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-              📜 Read this voyage&rsquo;s log as text →
+              <Icon name="scroll" size={16} /> Read this voyage&rsquo;s log as text →
             </a>
           </div>
           <div className="atlas-chips">
@@ -655,7 +656,7 @@ export default function VoyageExperience({
       <div className="tr-cluster">
         <div style={{ position: "relative" }}>
           <button className="tr-btn" onClick={() => setMenuOpen((m) => !m)} aria-label="Menu" title="Menu">
-            ☰
+            <Icon name="menu" size={19} />
           </button>
           {menuOpen && (
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
@@ -682,7 +683,7 @@ export default function VoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            👤
+            <Icon name="morion" size={20} />
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>
@@ -824,7 +825,7 @@ export default function VoyageExperience({
                             onClick={() => setContribute({ waypoint: wp, contentType: "image" })}
                             title={`Suggest an image or source for ${wp.place_historical || wp.place_modern}`}
                           >
-                            ✒ Contribute
+                            <Icon name="quill" size={15} /> Contribute
                           </button>
                         )}
                       </div>
@@ -868,7 +869,7 @@ export default function VoyageExperience({
                                     aria-label={`Suggest a fix or replacement for: ${m.caption}`}
                                     title="Suggest a fix or replacement for this image"
                                   >
-                                    ✒
+                                    <Icon name="quill" size={15} />
                                   </button>
                                 )}
                               </div>
@@ -900,7 +901,7 @@ export default function VoyageExperience({
                       onClick={() => setContribute({ waypoint: current, contentType: "log" })}
                       title="Suggest a source, correction, or detail for this stop"
                     >
-                      ✒ Contribute
+                      <Icon name="quill" size={15} /> Contribute
                     </button>
                   </div>
                 )}
@@ -950,7 +951,7 @@ export default function VoyageExperience({
                 {/* The whole journal, as a plain readable page — the reader is
                     already reading one entry; offer them all of them. */}
                 <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-                  📜 Read the whole log as text →
+                  <Icon name="scroll" size={16} /> Read the whole log as text →
                 </a>
               </>
             ) : (
@@ -1010,7 +1011,7 @@ export default function VoyageExperience({
 
       <div className="transport-bar">
         <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
-          {playing ? "❚❚" : "▶"}
+          <Icon name={playing ? "pause" : "play"} size={17} />
         </button>
         <div style={{ minWidth: 150 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem" }}>{dateLabel}</div>

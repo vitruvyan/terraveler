@@ -322,7 +322,7 @@ export default function ContributePanel({
                 style={{
                   padding: "6px 14px", borderRadius: 6, border: "none",
                   cursor: sending || !idea.trim() ? "default" : "pointer",
-                  background: "var(--btn, #c98977)", color: "#fff", fontSize: 13,
+                  background: "var(--accent)", color: "#fff", fontSize: 13,
                   opacity: sending || !idea.trim() ? 0.6 : 1,
                 }}
               >
