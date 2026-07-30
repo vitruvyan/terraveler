@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { marked } from "marked";
 import type { Metadata } from "next";
-import EditorialPage from "@/components/EditorialPage";
+import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -19,7 +19,7 @@ export default function MagnaCarta() {
   return (
     <>
       <SiteHeader />
-      <EditorialPage
+      <TitlePage
         eyebrow="Editorial constitution"
         title="The Magna Carta of the Seas"
         dek="The rules that keep Terraveler sourced, inspectable and human-authorized before anything enters the public atlas."
@@ -32,7 +32,7 @@ export default function MagnaCarta() {
         meta={["v0.4 draft", "Sources are sacred", "Audit everything"]}
       >
         <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
-      </EditorialPage>
+      </TitlePage>
       <SiteFooter />
     </>
   );

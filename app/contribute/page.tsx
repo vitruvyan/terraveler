@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import EditorialPage from "@/components/EditorialPage";
+import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -56,7 +56,7 @@ export default async function Contribute() {
   return (
     <>
     <SiteHeader />
-    <EditorialPage
+    <TitlePage
       eyebrow="Contribute"
       title="What the atlas is looking for"
       dek="The live editorial roadmap: open voyages, missing media, uncertain landfalls and source gaps ready for a Scribe."
@@ -112,7 +112,7 @@ export default async function Contribute() {
         <code>list_gaps</code> once connected.
       </p>
 
-    </EditorialPage>
+    </TitlePage>
     <SiteFooter />
     </>
   );

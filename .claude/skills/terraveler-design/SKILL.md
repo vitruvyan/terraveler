@@ -151,10 +151,22 @@ exception.
   identical log entries collapse into one with a count, they do not get
   restyled.
 
-- **Reuse the shell before inventing one.** `EditorialPage` (hero + eyebrow +
-  dek + actions + meta + credit), `SiteHeader`, `SiteFooter` already carry the
-  editorial language. A new page that reinvents a hero is an error, not a
-  feature.
+- **Reuse the shell before inventing one.** `TitlePage` (frontispiece + mounted
+  plate), `SiteHeader`, `SiteFooter` already carry the editorial language. A
+  new page that reinvents an opening is an error, not a feature.
+
+- **A page opens as a frontispiece, not as a poster.** Eyebrow, cartouche, dek,
+  a printer's break, the actions — on paper. The map goes below it, *mounted*,
+  where it can be looked at and where it carries its five fields. Four pages
+  used to open with the same darkened full-bleed photograph and you could not
+  tell them apart; the treatment erased what made each engraving different, and
+  none of the four could be read. `EditorialPage` still exists for anything
+  that genuinely wants a photographic band, but the default is the frontispiece.
+
+- **A mount hugs its plate.** These images run from near-square to wide, so a
+  fixed-width mount strands a portrait plate in a field of parchment — which is
+  what a passe-partout exists to prevent. Size the mount to the image, not the
+  image to the mount.
 
 ## Before you add a surface
 
@@ -191,7 +203,10 @@ are editing is already migrated; check it. As of the typography commit:
   thing here built with no literal size, radius or colour. Its **submissions
   and crew tabs are not**: they are still inline styles and raw px.
 - Other surfaces still off the system: the map chrome beyond the notes already
-  moved, `/search`, `/account/agents`, the contribute panel.
+  moved, `/account/agents`, the contribute panel, `/crew` and `/connect` (which
+  never had an opening at all).
+- The **paper grain** is on `.tp-page` and on the specimen, and nowhere else.
+  Extending it to the rest of the site is a decision nobody has taken.
 - **Emoji survive in `SpaceVoyageExperience.tsx`** (📡📊🖼🪐💽📜☰👤) and in the
   **map waypoint markers**. The Earth atlas, the site header and the search are
   done; the Voyager theme and the markers are not.

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { marked } from "marked";
 import type { Metadata } from "next";
-import EditorialPage from "@/components/EditorialPage";
+import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -19,7 +19,7 @@ export default function HowItWorks() {
   return (
     <>
       <SiteHeader />
-      <EditorialPage
+      <TitlePage
         eyebrow="Contributor guide"
         title="How the tandem works"
         dek="A practical route from idea to source discovery, curator review, human authorization and public atlas entry."
@@ -32,7 +32,7 @@ export default function HowItWorks() {
         meta={["MCP-ready", "Audited workflow", "Desk reviewed"]}
       >
         <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
-      </EditorialPage>
+      </TitlePage>
       <SiteFooter />
     </>
   );

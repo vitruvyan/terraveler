@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import EditorialPage from "@/components/EditorialPage";
+import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import AtlasSearch from "@/components/AtlasSearch";
@@ -69,7 +69,7 @@ export default async function Voyages({
   return (
     <>
       <SiteHeader />
-      <EditorialPage
+      <TitlePage
         eyebrow="The Atlas"
         title="Choose a route through time"
         dek="Every voyage is a verified sequence of places, dates, documents and confidence marks, from ocean crossings to journeys beyond Earth."
@@ -127,7 +127,7 @@ export default async function Voyages({
           Missing a voyage? The atlas grows by request —{" "}
           <a href="/contribute">see what it is looking for</a>.
         </p>
-      </EditorialPage>
+      </TitlePage>
       <SiteFooter />
     </>
   );
