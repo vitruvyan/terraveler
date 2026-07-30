@@ -9,6 +9,7 @@ const NAV_LINKS = [
   { href: "/voyages", label: "The Atlas" },
   { href: "/about", label: "About" },
   { href: "/contribute", label: "Contribute" },
+  { href: "/crew", label: "The crew" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/magna-carta", label: "The Magna Carta" },
 ];

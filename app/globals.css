@@ -3074,3 +3074,149 @@ input[type="range"].scrubber::-moz-range-thumb {
     border-radius: 0 0 3px 3px;
   }
 }
+
+/* ── the crew at work ────────────────────────────────────────────────────
+   The audit trail rendered for a reader. Cards for the Scribes, a log for the
+   record — deliberately closer to a ship's book than to a dashboard, because it
+   is a record of judgements and not a set of metrics. */
+.crew-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 0 0 34px;
+}
+.crew-card {
+  padding: 16px 18px 13px;
+  background: linear-gradient(180deg, rgba(255, 252, 244, 0.75), rgba(242, 230, 207, 0.6));
+  border: 1px solid var(--parchment-deep);
+  border-left: 3px solid var(--brass);
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+.crew-card.crew-quiet { opacity: 0.55 }
+.crew-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.crew-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.crew-rank {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.crew-flag {
+  margin: 6px 0 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.crew-figures {
+  display: flex;
+  gap: 18px;
+  margin: 0 0 12px;
+  padding: 11px 0 0;
+  border-top: 1px solid rgba(169, 119, 47, 0.28);
+}
+.crew-figures div { display: flex; flex-direction: column; gap: 1px }
+.crew-figures dt {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.crew-figures dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.crew-card footer { font-size: 11.5px; color: var(--ink-soft) }
+
+.crew-h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin: 32px 0 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(169, 119, 47, 0.35);
+}
+
+.crew-flight { list-style: none; margin: 0; padding: 0 }
+.crew-flight li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 0;
+  border-bottom: 1px dotted rgba(169, 119, 47, 0.3);
+  font-size: 14.5px;
+}
+.crew-flight-stage {
+  flex: 0 0 auto;
+  min-width: 148px;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.crew-flight-by { font-size: 12.5px; color: var(--ink-soft) }
+
+/* The log. A rule down the left with a mark per entry: a ship's book, and the
+   colour says who acted without a legend nobody would read. */
+.crew-log {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 20px;
+  border-left: 1px solid rgba(169, 119, 47, 0.35);
+}
+.crew-log li {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 7px 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.crew-log li::before {
+  content: "";
+  position: absolute;
+  left: -24px;
+  top: 14px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--parchment-deep);
+  border: 1px solid var(--brass);
+}
+.crew-log li[data-kind="scribe"]::before { background: var(--brass); border-color: var(--brass) }
+.crew-log li[data-kind="human"]::before  { background: var(--accent); border-color: var(--accent) }
+.crew-log-when {
+  flex: 0 0 auto;
+  min-width: 92px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+.crew-log-what { flex: 1 1 260px }
+
+.crew-checked {
+  margin-top: 26px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 560px) {
+  .crew-flight-stage { min-width: 0 }
+  .crew-log-when { min-width: 0; width: 100% }
+}
