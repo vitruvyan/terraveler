@@ -1913,6 +1913,20 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-variant-numeric: oldstyle-nums proportional-nums;
   text-wrap: pretty;
 }
+
+/* The measure. .ed-body is 840px wide and the prose inside it had no limit of
+   its own, so a line ran ~796px against the specimen's 665 — twenty per cent
+   longer than the length the system was designed at, and the single largest
+   reason these pages do not read like the specimen. It is set on the text
+   rather than the container so tables, images and code can still use the full
+   width of the page. */
+.prose > p,
+.prose > ul,
+.prose > ol,
+.prose > blockquote,
+.prose > h3 { max-width: var(--measure); }
+.prose > h1,
+.prose > h2 { max-width: 22ch; }
 /* Code and identifiers are the machine speaking, even inside a paragraph the
    atlas is narrating. Without this, Garamond's oldstyle figures render a
    version like v0.4 with a short zero that reads as the letter o. */
@@ -1937,12 +1951,13 @@ main.prose {
   padding: 40px 22px 80px;
 }
 .editorial-prose > h1:first-child { display: none; }
-.prose h1 { font-size: 2.3rem; margin: 0 0 10px; letter-spacing: 0; }
+.prose h1 { font-size: var(--step-5); font-weight: 400; margin: 0 0 var(--space-3); letter-spacing: -0.018em; }
 .prose h2 {
   position: relative;
-  font-size: 1.42rem;
-  margin-top: 42px;
-  padding-left: 14px;
+  font-size: var(--step-3);
+  font-weight: 400;
+  margin-top: var(--space-8);
+  padding-left: var(--space-4);
 }
 .prose h2::before {
   content: "";
@@ -1954,7 +1969,7 @@ main.prose {
   border-radius: 2px;
   background: var(--brass);
 }
-.prose h3 { font-size: 1.1rem; margin-top: 24px; }
+.prose h3 { font-size: var(--step-1); font-weight: 500; margin-top: var(--space-6); }
 .prose blockquote {
   margin: 22px 0;
   padding: 14px 18px;
