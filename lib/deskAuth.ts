@@ -124,17 +124,11 @@ export async function signUpAccount(email: string, password: string): Promise<Au
   return { token: j.access_token as string | undefined, refresh: j.refresh_token as string | undefined };
 }
 
-export async function signIn(email: string, password: string): Promise<AuthResult> {
-  if (!EDITOR_EMAIL) return { error: "server not configured" };
-  const { token, refresh, error } = await signInAccount(email, password);
-  if (!token) return { error };
-  const j = await fetch(`${AUTH_URL}/auth/v1/user`, {
-    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
-  }).then((r) => r.ok ? r.json() : null);
-  const mail = (j?.email ?? "").toLowerCase();
-  if (mail !== EDITOR_EMAIL) return { error: "not an editor account" };
-  return { token, refresh };
-}
+/* signIn() is gone with /api/desk/login. It signed someone in and then refused
+   them if they were not the editor, which put a role check on the front door
+   of a second sign-in page. The desk is protected where it should be: every
+   /api/desk/* route calls requireEditor, and the desk page asks
+   /api/desk/me whose it is. One door in, the role checked at the room. */
 
 export async function getUserEmail(token: string): Promise<string | null> {
   if (!AUTH_URL || !AUTH_KEY) return null;

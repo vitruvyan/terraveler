@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import DeskLogin from "@/components/DeskLogin";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, ShipsLog } from "@/components/desk/Quarterdeck";
 
@@ -60,10 +59,14 @@ const STATUS_COLOR: Record<string, string> = {
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 type Tab = "overview" | "submissions" | "crew";
 
+/* Signed out is not the same as signed in without the desk, and the old
+   boolean could not tell them apart — /api/desk/overview answers 401 to both.
+   So the desk showed a login form to someone already holding a session. */
+type Standing = "checking" | "guest" | "not-editor" | "editor";
+
 export default function Desk() {
-  const [authed, setAuthed] = useState<boolean | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [standing, setStanding] = useState<Standing>("checking");
+  const [me, setMe] = useState<{ email?: string }>({});
   const [err, setErr] = useState("");
   const [tab, setTab] = useState<Tab>("overview");
   const [subs, setSubs] = useState<Sub[]>([]);
@@ -73,11 +76,20 @@ export default function Desk() {
   const [rankPick, setRankPick] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
 
+  /* One door for everyone: whoever is not signed in goes to the same /login
+     as any reader, and comes back here. The desk no longer carries a sign-in
+     form of its own — the five API routes behind it each call requireEditor,
+     so the role is enforced where it matters rather than at a second front
+     door with its own copy to keep in step. */
   async function load() {
+    const who = await fetch("/api/desk/me").then((r) => r.json()).catch(() => ({ signed_in: false }));
+    if (!who.signed_in) { window.location.href = "/login?next=/desk"; return; }
+    setMe({ email: who.email });
+    if (!who.is_editor) { setStanding("not-editor"); return; }
+    setStanding("editor");
+
     const r = await fetch("/api/desk/overview");
-    if (r.status === 401) { setAuthed(false); return; }
-    setOverview(await r.json());
-    setAuthed(true);
+    if (r.ok) setOverview(await r.json());
     const [rs, rc] = await Promise.all([fetch("/api/desk/submissions"), fetch("/api/desk/crew")]);
     if (rs.ok) setSubs((await rs.json()).submissions ?? []);
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
@@ -105,18 +117,6 @@ export default function Desk() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function login(e: React.FormEvent) {
-    e.preventDefault();
-    setErr("");
-    const r = await fetch("/api/desk/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!r.ok) { setErr((await r.json()).error ?? "login failed"); return; }
-    setPassword("");
-    load();
-  }
 
   async function verdict(id: number, v: string) {
     setBusy(true);
@@ -166,17 +166,38 @@ export default function Desk() {
     load();
   }
 
-  if (authed === null) return <main style={{ padding: 40 }}>…</main>;
+  if (standing === "checking" || standing === "guest") {
+    /* err carries a failure from the OAuth hand-off. It used to be rendered by
+       the desk's own sign-in screen; with that gone it had nowhere to surface
+       and was being set and swallowed. */
+    return (
+      <main className="dk-page">
+        {err ? <p className="dk-standing">{err} — <a href="/login?next=/desk">try signing in again</a>.</p>
+             : <p className="dk-empty">…</p>}
+      </main>
+    );
+  }
 
-  if (!authed) {
-    return <DeskLogin
-      email={email}
-      password={password}
-      error={err}
-      onEmailChange={setEmail}
-      onPasswordChange={setPassword}
-      onSubmit={login}
-    />;
+  if (standing === "not-editor") {
+    return (
+      <>
+        <SiteHeader />
+        <main className="dk-page">
+          <DeskHeading eyebrow="Terraveler · editorial desk" title="Not your desk" />
+          <p className="dk-standing">
+            You are signed in as <span className="dk-id">{me.email}</span>, and this account
+            does not hold the desk. Nothing is wrong: the desk is one person, and contributing
+            never goes through it. The atlas is written by scribes, and yours is yours to
+            connect.
+          </p>
+          <p className="dk-standing-links">
+            <a href="/account/agents">Your scribes</a>
+            <a href="/connect">Connect a scribe</a>
+            <a href="/">Back to the atlas</a>
+          </p>
+        </main>
+      </>
+    );
   }
 
   const openCount = (overview?.counts.submissions["human-review"] ?? 0) + (overview?.counts.submissions["peer-review"] ?? 0);
@@ -189,7 +210,7 @@ export default function Desk() {
         eyebrow="Terraveler · editorial desk"
         title={tab === "overview" ? "Quarterdeck" : tab === "submissions" ? "Submissions" : "Crew"}
         aside={
-          <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); setAuthed(false); }}>
+          <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); window.location.href = "/"; }}>
             Sign out
           </button>
         }

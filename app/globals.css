@@ -3829,3 +3829,29 @@ main.prose {
   color: var(--ink-soft);
   margin-top: 2px;
 }
+
+/* The desk, held by someone it does not belong to. Not an error state — the
+   desk is one person, and contributing never goes through it. */
+.dk-standing {
+  max-width: var(--measure);
+  font-size: var(--step-1);
+  line-height: 1.6;
+  margin-top: var(--space-6);
+}
+.dk-id { font-family: var(--font-mono); font-size: 0.9em; }
+.dk-standing-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.dk-standing-links a {
+  color: var(--brass-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.dk-standing-links a:hover { border-bottom-color: var(--brass); }

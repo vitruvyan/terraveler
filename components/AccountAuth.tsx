@@ -172,7 +172,6 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
           {isSignup ? "Already have an account?" : "New to Terraveler?"}{" "}
           <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create an account"}</Link>
         </p>
-        <p className="auth-desk-link"><Link href="/desk">Editorial desk sign in</Link></p>
       </section>
     </AuthBackdrop>
   );
