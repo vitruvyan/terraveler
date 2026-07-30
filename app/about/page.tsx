@@ -3,7 +3,7 @@ import path from "path";
 import { marked } from "marked";
 import type { Metadata } from "next";
 import Link from "next/link";
-import EditorialPage from "@/components/EditorialPage";
+import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -36,7 +36,7 @@ export default function About() {
   return (
     <>
       <SiteHeader />
-      <EditorialPage
+      <TitlePage
         eyebrow="About Terraveler"
         title="An atlas that shows its evidence"
         dek="Voyages, landfalls, documents and silences, presented as living charts with the provenance still visible."
@@ -53,7 +53,7 @@ export default function About() {
           <Link href="/voyages">Browse the atlas</Link>
           <Link href="/contribute">See what the atlas is looking for</Link>
         </div>
-      </EditorialPage>
+      </TitlePage>
       <SiteFooter />
     </>
   );
