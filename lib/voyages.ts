@@ -142,7 +142,7 @@ const ATLAS_ENTRIES = [
     href: "/voyage/xuanzang-629",
     title: "Xuanzang's Journey to the Western Regions (629-645)",
     navigator: "Xuanzang",
-    years: "",
+    years: "629–645",
     blurb:
       "Sixteen years on foot and by camel, out of Tang China against an imperial ban: the northern Silk Road, Samarkand, Bamiyan, and the years of study at Nalanda.",
   },
@@ -196,7 +196,7 @@ const ATLAS_ENTRIES = [
     href: "/voyage/faxian-399",
     title: "Faxian's Journey to the Buddhist Kingdoms (399-414)",
     navigator: "Faxian",
-    years: "",
+    years: "399–414",
     blurb:
       "Overland through Dunhuang and the desert to Khotan, over the Pamirs to Gandhara and the Ganges plain, years at Pataliputra copying texts, then Ceylon, and home by merchant ship\u2026",
   },

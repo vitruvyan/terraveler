@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import EditorialPage from "@/components/EditorialPage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import AtlasSearch from "@/components/AtlasSearch";
 import { ATLAS, voyageLogPath, type AtlasEntry } from "@/lib/voyages";
 
 export const metadata: Metadata = {
@@ -21,6 +22,15 @@ const KIND_LABEL: Record<string, string> = {
  *  the grouping grows with the atlas and needs no upkeep. */
 const BEYOND_EARTH_KEY: Record<string, number> = { surface: 9998, space: 9999 };
 
+/** 1st, 2nd, 3rd, 4th — and 11th through 13th, which break the pattern. The
+ *  old code printed "th" onto every number, so a correct grouping still came
+ *  out as "21th century". */
+function ordinal(n: number): string {
+  const tens = n % 100;
+  if (tens >= 11 && tens <= 13) return `${n}th`;
+  return `${n}${["th", "st", "nd", "rd"][n % 10] ?? "th"}`;
+}
+
 function era(v: AtlasEntry): { key: number; label: string } {
   const kind = v.kind ?? "earth";
   // Voyages off Earth group by where they went, not by century — and each kind
@@ -28,11 +38,26 @@ function era(v: AtlasEntry): { key: number; label: string } {
   if (kind !== "earth") {
     return { key: BEYOND_EARTH_KEY[kind] ?? 9997, label: KIND_LABEL[kind] ?? "Beyond Earth" };
   }
-  const century = Math.floor(Number(v.years.slice(0, 4)) / 100) + 1;
-  return { key: century, label: `${century}th century` };
+  /* `years` reads "629–645", and slice(0, 4) took "629–" — Number() of that is
+     NaN, NaN + 1 is NaN, and every voyage whose start year has three digits
+     landed in one bogus bucket that rendered as "1th century". Xuanzang and
+     Faxian were in it. Match the first run of digits instead of counting
+     characters, and treat a year we cannot read as unknown rather than as
+     century one. */
+  const year = Number(v.years.match(/\d{3,4}/)?.[0]);
+  if (!Number.isFinite(year)) return { key: 9996, label: "Undated" };
+  const century = Math.floor((year - 1) / 100) + 1;
+  return { key: century, label: `${ordinal(century)} century` };
 }
 
-export default function Voyages() {
+export default async function Voyages({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  /* The atlas absorbed /search, which was forty-three lines wrapping this same
+     component in a hero. Results belong where the things are. */
+  const q = (await searchParams).q?.trim() ?? "";
   const groups = new Map<number, { label: string; items: AtlasEntry[] }>();
   for (const v of ATLAS) {
     const { key, label } = era(v);
@@ -51,7 +76,7 @@ export default function Voyages() {
         background="/login-backgrounds/cellarius-scenographia-copernicani.jpg"
         credit="Scenographia Systematis Copernicani · 1660 · Andreas Cellarius"
         actions={[
-          { href: "/search", label: "Search the atlas" },
+          { href: "#find", label: "Search the atlas" },
           { href: "/contribute", label: "Suggest a voyage", variant: "secondary" },
         ]}
         meta={[`${ATLAS.length} voyages published`, "Earth and beyond", "Logs available"]}
@@ -62,10 +87,16 @@ export default function Voyages() {
             Every voyage on Terraveler is verified before it sails: real routes, the
             navigators&rsquo; own words, sources cited. Choose a route and scrub through time.
           </p>
-          <p>
-            {ATLAS.length} voyages published · <a href="/search">search the atlas</a> for a
-            place, a navigator or an era.
+        </section>
+
+        <section id="find" className="ed-find">
+          <h2 className="ed-find-title">Find a voyage</h2>
+          <p className="ed-find-note">
+            {ATLAS.length} published. Search by place, navigator or era — and if the atlas
+            does not hold it, that empty result becomes editorial signal for what it should
+            hold next.
           </p>
+          <AtlasSearch initialQuery={q} autoFocus={Boolean(q)} />
         </section>
 
         {ordered.map(([key, g]) => (

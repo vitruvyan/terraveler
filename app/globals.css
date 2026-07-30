@@ -3855,3 +3855,138 @@ main.prose {
   border-bottom: 1px solid transparent;
 }
 .dk-standing-links a:hover { border-bottom-color: var(--brass); }
+
+/* ============================================================================
+   THE NAVBAR — hierarchy, where you are, and search as an action
+   ========================================================================= */
+
+/* The page you are on, marked with the brass rule the site uses for "current"
+   everywhere else. Nothing said this before. */
+.sh-nav a[aria-current="page"],
+.sh-nav-btn[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--brass);
+}
+
+.sh-nav-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 0 2px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.sh-nav-btn:hover { border-bottom-color: var(--brass); }
+
+/* The three project pages, folded behind one word. Same mechanics as the
+   account panel — a disclosure, not a hover menu: a menu that opens because
+   the pointer passed over it opens by accident. */
+.sh-disclosure { position: relative; display: inline-flex; }
+.sh-submenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+  padding: var(--space-2);
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  background: var(--parchment);
+  box-shadow: var(--elev-1);
+}
+.sh-submenu a {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-2);
+  border-bottom: 0;
+  font-size: var(--step-0);
+  color: var(--ink);
+  text-decoration: none;
+}
+.sh-submenu a:hover { background: var(--parchment-deep); }
+.sh-submenu a[aria-current="page"] { color: var(--brass-text); }
+
+/* Search opens in the bar and takes the nav's place, because the two are
+   alternatives: you are either navigating or looking for something. */
+.sh-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1 1 auto;
+  max-width: 30rem;
+  margin-right: auto;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--parchment-deep);
+  border-bottom-color: var(--brass);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+  color: var(--ink-soft);
+}
+.sh-search input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  color: var(--ink);
+}
+.sh-search input::placeholder { color: var(--ink-faint); font-style: italic; }
+.sh-search-close {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink-faint);
+}
+.sh-search-close:hover { color: var(--ink); }
+
+.sh-mobile-menu a[aria-current="page"] { color: var(--brass-text); }
+
+@media (max-width: 900px) {
+  .sh-search { max-width: none; }
+}
+
+/* The atlas's own search, where /search used to be a page of its own. */
+.ed-find { margin: var(--space-7) 0 var(--space-6); }
+.ed-find-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: var(--step-3);
+  letter-spacing: -0.01em;
+  margin: 0 0 var(--space-2);
+}
+.ed-find-note {
+  max-width: var(--measure);
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  line-height: 1.55;
+  margin: 0 0 var(--space-4);
+}
+
+/* ============================================================================
+   FIELDS — the focus ring, and the browser's own clear button
+   ----------------------------------------------------------------------------
+   .desk-input had no focus style, so every field fell back to the user agent's
+   black ring — the one off-system mark on the most-looked-at control in the
+   atlas. And type="search" brings WebKit's blue ✕, which is the only blue
+   pixel on the site. Both were visible the moment search moved into the page.
+   ========================================================================= */
+.desk-input:focus-visible,
+.desk-input:focus {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+  border-color: var(--brass);
+}
+.atlas-search-input::-webkit-search-cancel-button {
+  /* Hidden rather than restyled: the shadow-DOM button cannot be recoloured,
+     and Escape still clears the field where the browser offers it. */
+  -webkit-appearance: none;
+  appearance: none;
+}

@@ -29,6 +29,7 @@ export type IconName =
   | "morion"
   | "pin"
   | "hourglass"
+  | "lens"
   | "key"
   | "wheel"
   | "arrow-up"
@@ -145,6 +146,16 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M7 3.6h10M7 20.4h10" />
       <path d="M8.2 3.6v3.3c0 2 3.8 3.6 3.8 5.1s-3.8 3.1-3.8 5.1v3.3" />
       <path d="M15.8 3.6v3.3c0 2-3.8 3.6-3.8 5.1s3.8 3.1 3.8 5.1v3.3" />
+    </>
+  ),
+
+  /* Searching. A reading glass — the instrument you actually hold over a
+     chart, rather than the abstract magnifier. */
+  lens: (
+    <>
+      <circle cx="10.6" cy="10.6" r="6.4" />
+      <path d="M15.2 15.2 20.4 20.4" />
+      <path d="M7.6 8.4a4.2 4.2 0 0 1 2.6-1.6" />
     </>
   ),
 
