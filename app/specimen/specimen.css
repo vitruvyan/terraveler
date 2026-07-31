@@ -10,6 +10,7 @@
      Base 1.05rem e non 1rem: Garamond e Cormorant hanno x-height piccola,
      chiedono più corpo, non meno. I 13px di oggi sono il motivo per cui la
      pagina sembra compressa. */
+  --step--3: 0.62rem;
   --step--2: 0.72rem;
   --step--1: 0.86rem;
   --step-0:  1.05rem;
@@ -513,20 +514,20 @@
 .spec-before {
   background: #faf6ec;
   border: 1px solid rgba(43, 33, 23, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-2);
   padding: 16px;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 13px;
+  font-size: var(--step--1);
   line-height: 1.45;
   color: #2b2117;
 }
-.spec-before .n { font-size: 20px; font-family: Georgia, serif; }
-.spec-before .l { font-size: 11px; color: #5a4a34; }
+.spec-before .n { font-size: var(--step-2); font-family: Georgia, serif; }
+.spec-before .l { font-size: var(--step--2); color: #5a4a34; }
 .spec-before-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .spec-before-tile {
   flex: 1;
   border: 1px solid rgba(43, 33, 23, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-2);
   padding: 10px;
   background: #fff;
 }
@@ -664,7 +665,7 @@
   display: block;
   margin-bottom: var(--space-4);
 }
-.spec-brass-sample { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.spec-brass-sample { font-size: var(--step--2); letter-spacing: 0.08em; text-transform: uppercase; }
 
 /* --- il fondo scuro ----------------------------------------------------- */
 /* Porta la classe .space vera, così i rapporti sono misurati sui token del
@@ -715,7 +716,7 @@
   background: var(--parchment-raised);
 }
 .spec-mark-tag {
-  font-size: 11.5px;
+  font-size: var(--step--2);
   color: var(--ink-soft);
   font-style: italic;
   margin-top: 2px;
@@ -735,7 +736,7 @@
   border-radius: var(--radius-2);
 }
 .spec-icon-pair { display: flex; align-items: center; gap: var(--space-3); color: var(--ink); }
-.spec-icon-was { font-size: 22px; filter: grayscale(1) opacity(0.45); }
+.spec-icon-was { font-size: var(--step-2); filter: grayscale(1) opacity(0.45); }
 .spec-icon-arrow { color: var(--ink-faint); font-size: var(--step--1); }
 .spec-icon-name { color: var(--ink); }
 .spec-icon-role { font-size: var(--step--1); font-style: italic; color: var(--ink-soft); }
