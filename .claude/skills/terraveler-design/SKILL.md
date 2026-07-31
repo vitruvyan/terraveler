@@ -201,13 +201,17 @@ exception.
 The token layer is **declared, not yet enforced**. Do not assume a surface you
 are editing is already migrated; check it. As of the typography commit:
 
-- **25 distinct hardcoded `font-size` values** remain in `globals.css`
-  (13px, 12.5px, 11px, 12px, 11.5px, 14px, 13.5px, 10.5px…). They come out
-  surface by surface, mapped onto `--step-*`.
-- **15 distinct hardcoded `border-radius` values** remain. Same treatment.
+- Sizes and radii are **done**. 156 literal `font-size` values and 69
+  `border-radius` values were mapped onto the scale in one pass. What is left
+  is one 7px badge on a map marker — a pip, not text — and five `pt` sizes
+  inside `@media print`, where points are the correct unit.
+- The scale grew `--step--3` (0.62rem) doing it. The map's labels, kickers and
+  readouts genuinely live at nine and ten pixels, and rounding them up to
+  `--step--2` would have grown every legend by a fifth. A scale that does not
+  reach where the design already is is not a scale.
 - `--rule-*` and `--elev-*` have **zero** usages so far — the hairlines and
   shadows in the file are still ad hoc.
-- **~300 colour literals** remain in `globals.css`. A good share are the token
+- **~290 colour literals** remain in `globals.css`. A good share are the token
   declarations themselves and alpha overlays doing real work; the rest want
   tokenising. Note the `rgba(255,255,255,0.x)` lifts are **not** all the same
   thing — over the map their translucency is load-bearing and must not be
@@ -242,9 +246,10 @@ are editing is already migrated; check it. As of the typography commit:
   archive: a dashboard that looks alive while idle is lying quietly.
 - The **paper grain** is on `.tp-page` and on the specimen, and nowhere else.
   Extending it to the rest of the site is a decision nobody has taken.
-- **Emoji survive in `SpaceVoyageExperience.tsx`** (📡📊🖼🪐💽📜☰👤) and in the
-  **map waypoint markers**. The Earth atlas, the site header and the search are
-  done; the Voyager theme and the markers are not.
+- **No emoji remain in the interface.** The only ones in the repo are the
+  specimen's "was" column and the comment in `Icon.tsx`, both of which exist to
+  record what was replaced. The map's waypoint markers are drawn by MapLibre
+  from data and are a separate question.
 - The **wordmark is settled**: engraved small caps, Cormorant 500, +0.2em, via
   the shared `.wordmark` class. Page titles are already Cormorant light in
   roman, so a roman wordmark would have stopped being a mark and become one
