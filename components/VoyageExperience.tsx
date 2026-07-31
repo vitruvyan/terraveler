@@ -301,7 +301,12 @@ export default function VoyageExperience({
         style: basemapStyle(body),
         center: [L[0]?.lng ?? 0, L[0]?.lat ?? 0],
         zoom: 2,
-        renderWorldCopies: true,
+        /* World copies are right for Earth, where a Pacific crossing runs off
+           one edge and back on the other. On another body they tile it: the
+           Moon was rendering MARE CRISIUM, MARE MARGINIS and MARE AUSTRALE
+           twice each, which reads as wallpaper rather than as a world, and is
+           the actual reason it did not look like the Moon. */
+        renderWorldCopies: isEarth,
       });
       mapRef.current = map;
 
@@ -398,7 +403,12 @@ export default function VoyageExperience({
         // Frame the whole voyage.
         const bounds = new gl.LngLatBounds();
         full.forEach((c) => bounds.extend(c));
-        map.fitBounds(bounds, { padding: 70, duration: 0 });
+        /* Apollo 11's whole traverse is a few hundred metres wide, so framing
+           it exactly puts the reader on the ground with no way to tell which
+           ground. Off Earth the opening view stays far enough out that the
+           maria are legible and the body identifies itself; the scrubber and
+           the waypoints are how you go down to the surface. */
+        map.fitBounds(bounds, { padding: 70, duration: 0, ...(isEarth ? {} : { maxZoom: 3 }) });
 
         setReady(true);
       });
