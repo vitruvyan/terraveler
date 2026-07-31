@@ -31,12 +31,17 @@
      measured 4.09:1. A colour with no margin fails the first time a surface
      is anything other than flat parchment. */
   --brass: #a9772f;
-  /* The lift: the halo that separates ink from a busy map. It was written as
-     literal parchment in every rule that used it, which made it the one layer
-     of the palette a theme could not re-declare — so on the starfield the
-     wordmark wore a cream fog and the caption read as dark-on-dark. A lift is
-     the ground bleeding through, so it is the ground's colour, per theme. */
-  --lift: 242, 230, 207;
+  /* The paper, in components — the one layer of the palette that had no token
+     because it is never used whole. Two things need it: the halo that lifts
+     ink off a busy map, and every instrument that floats over one, which is
+     paper at some opacity. Both were written as a literal, which is what made
+     this the layer a theme could not re-declare: on the starfield the wordmark
+     wore a cream fog, and on the Moon the instruments stayed Age-of-Sail. */
+  --paper-rgb: 242, 230, 207;
+  --lens-log: #26607f;          /*  5.55:1 */
+  --lens-chart: #3c6a56;        /*  5.02:1 */
+  --lens-carto: #8a5f22;        /*  4.54:1 */
+  --lens-plates: #74497f;       /*  5.66:1 */
   --brass-text: #7c5723;        /*  5.24:1 on parchment, 4.74:1 on grain */
   --brass-on-dark: #d8b25c;     /*  8.48:1 on a hero shade */
 
@@ -175,7 +180,7 @@ a { color: var(--ink); text-decoration-color: var(--brass); }
   filter: saturate(0.95) brightness(1);
 }
 .maplibregl-ctrl-attrib {
-  background: rgba(242, 230, 207, 0.72) !important;
+  background: rgba(var(--paper-rgb), 0.72) !important;
   font-size: var(--step--3);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
@@ -190,32 +195,43 @@ a { color: var(--ink); text-decoration-color: var(--brass); }
   border: 2px solid var(--ink);
   background: var(--brass);
   cursor: pointer;
-  box-shadow: 0 0 0 2px rgba(242, 230, 207, 0.85);
+  box-shadow: 0 0 0 2px rgba(var(--paper-rgb), 0.85);
   transition: transform 0.15s ease;
 }
 .wp-dot:hover { transform: scale(1.45); }
 .wp-dot.conf-approximate { background: #c9a24a; }
 .wp-dot.conf-reconstructed { background: transparent; border-style: dashed; }
 
-/* Small framed badge marking landfalls with photographic plates. */
+/* Small framed badge marking landfalls with photographic plates.
+   The mark used to be `content: "\1F4F7"` — an emoji, and the last one left in
+   the interface. It was hiding in CSS `content` rather than in JSX, which is
+   why the sweep that cleared the rest never found it; on a machine with no
+   emoji font it rendered as tofu, a literal box, on the map beside a landfall.
+   It is drawn now, and split in two: ::after is the frame, ::before is the
+   plate, masked so it takes currentColor and themes with everything else. */
 .wp-dot.has-media { position: relative; }
-.wp-dot.has-media::after {
-  content: "📷";
+.wp-dot.has-media::after,
+.wp-dot.has-media::before {
+  content: "";
   position: absolute;
   top: -9px;
   right: -9px;
   width: 12px;
   height: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 7px;
-  line-height: 1;
+  border-radius: var(--radius-2);
+  pointer-events: none;
+}
+.wp-dot.has-media::after {
   background: var(--parchment);
   border: 1px solid var(--brass);
-  border-radius: var(--radius-2);
   box-shadow: 0 1px 2px rgba(43, 33, 23, 0.35);
-  pointer-events: none;
+}
+.wp-dot.has-media::before {
+  --plate-mark: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M2.4 3.4h11.2v9.2H2.4z' fill='none' stroke='black' stroke-width='1.7'/><path d='M2.4 10.6 5.9 7.1 8.4 9.6 10.9 7.1 13.6 9.8' fill='none' stroke='black' stroke-width='1.7' stroke-linejoin='round'/></svg>");
+  z-index: 1;
+  -webkit-mask: var(--plate-mark) center / 8px 8px no-repeat;
+  mask: var(--plate-mark) center / 8px 8px no-repeat;
+  background-color: var(--ink-soft);
 }
 
 /* --- Moving ship marker --- */
@@ -295,7 +311,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   flex-wrap: wrap;
   max-width: calc(100% - 32px);
   gap: 2px;
-  background: rgba(242, 230, 207, 0.9);
+  background: rgba(var(--paper-rgb), 0.9);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   padding: 3px;
@@ -362,7 +378,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: var(--step--3);
   line-height: 1.35;
   color: var(--ink-soft);
-  background: rgba(242, 230, 207, 0.8);
+  background: rgba(var(--paper-rgb), 0.8);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   padding: 5px 9px;
@@ -613,7 +629,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* --- Territory hover tooltip --- */
 .hist-popup .maplibregl-popup-content {
-  background: rgba(242, 230, 207, 0.96);
+  background: rgba(var(--paper-rgb), 0.96);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   padding: 5px 9px;
@@ -742,7 +758,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .win {
   z-index: 12;
   max-width: 86vw;
-  background: rgba(242, 230, 207, 0.96);
+  background: rgba(var(--paper-rgb), 0.96);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 6px 24px rgba(43, 33, 23, 0.2);
@@ -824,7 +840,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .pig-pill:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .pig-mini {
   position: absolute; right: 0; bottom: 52px; width: 250px;
-  background: rgba(242, 230, 207, 0.98); border: 1px solid var(--parchment-deep);
+  background: rgba(var(--paper-rgb), 0.98); border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2); padding: 12px 14px; box-shadow: 0 8px 24px rgba(43, 33, 23, 0.25);
 }
 .pig-mini-title { font-family: var(--font-ui); font-size: var(--step-0); color: var(--ink); }
@@ -834,7 +850,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .pig-dock {
   position: fixed; top: 0; right: 0; height: 100dvh; width: min(380px, 92vw);
   z-index: 20; display: flex; flex-direction: column;
-  background: rgba(242, 230, 207, 0.97); border-left: 1px solid var(--parchment-deep);
+  background: rgba(var(--paper-rgb), 0.97); border-left: 1px solid var(--parchment-deep);
   box-shadow: -6px 0 24px rgba(43, 33, 23, 0.18);
 }
 .pig-dock-bar {
@@ -1222,8 +1238,8 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: clamp(1.75rem, 2.2vw, 2.3rem);
   letter-spacing: 0.2em;
   text-shadow:
-    0 1px 0 rgba(var(--lift), 0.85),
-    0 0 10px rgba(var(--lift), 0.9);
+    0 1px 0 rgba(var(--paper-rgb), 0.85),
+    0 0 10px rgba(var(--paper-rgb), 0.9);
 }
 .map-wordmark:hover { color: var(--accent); }
 
@@ -1236,7 +1252,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-style: italic;
   line-height: 1.35;
   color: var(--ink-soft);
-  text-shadow: 0 1px 0 rgba(var(--lift), 0.9), 0 0 8px rgba(var(--lift), 0.9);
+  text-shadow: 0 1px 0 rgba(var(--paper-rgb), 0.9), 0 0 8px rgba(var(--paper-rgb), 0.9);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1294,7 +1310,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 .cartouche {
-  background: rgba(242, 230, 207, 0.95);
+  background: rgba(var(--paper-rgb), 0.95);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
@@ -1315,7 +1331,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   height: 42px;
   border-radius: 50%;
   border: 1px solid var(--parchment-deep);
-  background: rgba(242, 230, 207, 0.95);
+  background: rgba(var(--paper-rgb), 0.95);
   cursor: pointer;
   box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
   /* The emoji this held was text, and inline layout centred it for free. An
@@ -1337,27 +1353,35 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .cart-emblem,
 .tr-btn {
-  background: rgba(242, 230, 207, 0.94);
+  background: rgba(var(--paper-rgb), 0.94);
   color: var(--ink);
 }
 .lens-rail {
-  background: rgba(242, 230, 207, 0.96);
+  background: rgba(var(--paper-rgb), 0.96);
   border-color: var(--parchment-deep);
 }
 .lens-rail .lens-btn { color: var(--ink-soft); }
 .cart-emblem:hover,
 .tr-btn:hover { background: var(--parchment-deep); }
+/* rgba(127, 38, 55, …) was --accent written out by hand, which is why the
+   Moon's instruments kept an Age-of-Sail wine tint. Mixed from the token now,
+   so it follows whichever accent the theme resolved to. */
 .lens-rail .lens-btn:hover {
-  background: rgba(127, 38, 55, 0.1);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .lens-rail .lens-btn.active {
-  background: rgba(127, 38, 55, 0.12);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent-deep);
 }
-.lens-rail .lens-btn[aria-label="Ship's Log"] { color: #32759a; }
-.lens-rail .lens-btn[aria-label="Navigation Chart"] { color: #4d7c68; }
-.lens-rail .lens-btn[aria-label="Cartographer"] { color: #a9772f; }
-.lens-rail .lens-btn[aria-label="Plates"] { color: #8a5a9a; }
+/* Each lens keeps its own hue — that idea is right and stays. What was wrong
+   is that the four were literals, so they were Earth's four everywhere: over
+   regolith the Cartographer's amber fell to 2.77:1, below even the 3:1 floor
+   that applies to a graphic. They are a declared layer now, and every theme
+   states its four. Ratios are against that theme's rail. */
+.lens-rail .lens-btn[aria-label="Ship's Log"] { color: var(--lens-log); }
+.lens-rail .lens-btn[aria-label="Navigation Chart"] { color: var(--lens-chart); }
+.lens-rail .lens-btn[aria-label="Cartographer"] { color: var(--lens-carto); }
+.lens-rail .lens-btn[aria-label="Plates"] { color: var(--lens-plates); }
 .lens-rail .lens-btn[aria-label="Peoples (coming soon)"] { color: #896657; }
 .lens-rail .rail-close { color: var(--ink-soft); }
 .lens-rail .rail-div { background: var(--parchment-deep); }
@@ -1399,7 +1423,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   top: 48px;
   right: 0;
   min-width: 230px;
-  background: rgba(242, 230, 207, 0.98);
+  background: rgba(var(--paper-rgb), 0.98);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 8px 24px rgba(43, 33, 23, 0.25);
@@ -1433,7 +1457,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   z-index: 5;
   width: min(560px, 44vw);
   padding: 6px 12px;
-  background: rgba(242, 230, 207, 0.82);
+  background: rgba(var(--paper-rgb), 0.82);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 4px 14px rgba(43, 33, 23, 0.15);
@@ -1456,7 +1480,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   align-items: center;
   gap: 14px;
   padding: 9px 14px;
-  background: rgba(242, 230, 207, 0.94);
+  background: rgba(var(--paper-rgb), 0.94);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 8px 26px rgba(43, 33, 23, 0.24);
@@ -1855,7 +1879,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--parchment);
 }
 .ed-action.secondary {
-  background: rgba(242, 230, 207, 0.08);
+  background: rgba(var(--paper-rgb), 0.08);
   color: var(--parchment);
 }
 .ed-action:hover { filter: brightness(1.06); }
@@ -2314,7 +2338,7 @@ main.prose {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  background: rgba(242, 230, 207, 0.96);
+  background: rgba(var(--paper-rgb), 0.96);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   padding: 4px;
@@ -2458,7 +2482,11 @@ main.prose {
   /* Every layer of the palette has to be re-declared for a dark ground, not
      inherited: a token that clears 4.5:1 on parchment fails on a starfield.
      These are the same hues taken back up to AA against #10141f. */
-  --lift: 16, 20, 31;       /* this ground, not parchment */
+  --paper-rgb: 16, 20, 31;
+  --lens-log: #7fc4e6;      /* 9.58:1 */
+  --lens-chart: #8ec9a8;    /* 9.69:1 */
+  --lens-carto: #dcae63;    /* 9.00:1 */
+  --lens-plates: #c39ad2;   /* 7.77:1 */       /* this ground, not parchment */
   --brass-text: #d8b25c;    /* 9.14:1 — on this ground the mark is legible */
   --brass-on-dark: #d8b25c;
   --state-ok: #4f8b5b;      /* 4.53:1 */
@@ -2486,6 +2514,83 @@ main.prose {
   background: var(--parchment);
   color: var(--ink);
 }
+
+/* Worlds — the regolith register.
+ *
+ * The third atlas had no register of its own. The split between the themes ran
+ * along the *renderer* (orrery versus MapLibre), which is a technical fact, so
+ * a surface traverse rendered through the Earth component and inherited
+ * parchment wholesale: Apollo 11 was shown on Age-of-Sail paper.
+ *
+ * The register belongs to the body, not to the engine that draws it.
+ *
+ * One register serves the whole family — Moon today, Mars and Titan later —
+ * because a theme per rock over-fits a family of one. The body's own colour is
+ * not painted into the chrome; it arrives through the basemap tiles, which is
+ * where it is true. Only the accent is keyed to the body, one line of data
+ * each, below.
+ *
+ * The body font is NOT re-declared here, and that is the editorial point.
+ * .space reads in monospace because a probe has no words of its own and its
+ * whole log is telemetry. A surface traverse is a human walking, and the human
+ * speaks — Apollo 11 is quoted verbatim like any other traveller. The voice
+ * stays the traveller's.
+ *
+ * Every ratio below was measured against BOTH the ground (#1a1917) and the
+ * raised panel (#232220), and every one of them clears 4.5:1 on the panel,
+ * which is the harder surface. The pair is written as ground/panel. */
+/* Measured, not guessed: the OpenPlanetary lunar basemap renders at 151/255,
+   so the Moon is a PALE body. A basalt register fought its own map — mid-grey
+   ink on mid-grey tiles — and lost. Regolith is pale, so the paper is pale:
+   Earth is cream paper, Worlds is grey paper, Space is a starfield. The
+   cartouche survives into the third atlas by changing material rather than by
+   disappearing. Ratios below are against this ground, the darker of the two
+   text surfaces and so the harder one. */
+.worlds {
+  --parchment: #dbd9d3;        /* regolith paper */
+  --parchment-deep: #c3c0b8;
+  --parchment-raised: #e9e7e2;
+  --ink: #22211e;              /* basalt · 11.41:1 */
+  --ink-soft: #55524b;         /*  5.52:1 */
+  --ink-faint: #5e5a53;        /*  4.86:1 */
+  --brass: #6f5620;
+  --brass-text: #6f5620;       /*  4.91:1 */
+  --brass-on-dark: #c9a24a;
+  --state-ok: #2f6438;         /*  4.96:1 */
+  --state-no: #a33a22;         /*  4.67:1 */
+  --state-wait: #6e5118;       /*  5.21:1 */
+  --state-review: #3d5a86;     /*  4.95:1 */
+  --state-desk: #1f6060;       /*  5.13:1 */
+  --state-changes: #6e447c;    /*  5.35:1 */
+  --state-idle: var(--ink-faint);
+  --paper-rgb: 219, 217, 211;
+  --lens-log: #255a79;         /*  5.28:1 */
+  --lens-chart: #365d4b;       /*  5.27:1 */
+  --lens-carto: #75501e;       /*  5.09:1 */
+  --lens-plates: #6b4278;      /*  5.56:1 */       /* this ground, not parchment */
+  /* Defaults, for a body not yet given an accent. */
+  --accent: #54514a;
+  --accent-deep: #3e3c36;
+  --route: var(--accent);
+  position: relative;
+  background: var(--parchment);
+  color: var(--ink);
+}
+
+/* The accent is the one thing keyed to the body. Its pair: the link colour on
+   the ground, then --accent-deep, which is a hover GROUND carrying --parchment
+   as text. Both clear 4.5:1. */
+.worlds[data-body="moon"]    { --accent: #43566b; --accent-deep: #2f4155; } /* cold steel · 5.35 / 7.41 */
+.worlds[data-body="mars"]    { --accent: #9c3f26; --accent-deep: #7d3019; } /* oxide      · 4.72 / 6.44 */
+.worlds[data-body="titan"]   { --accent: #6f5620; --accent-deep: #584214; } /* smog       · 4.91 / 6.75 */
+.worlds[data-body="venus"]   { --accent: #665a28; --accent-deep: #4e451c; } /* sulphur    · 4.87 / 6.79 */
+.worlds[data-body="mercury"] { --accent: #54514a; --accent-deep: #3e3c36; } /* iron       · 5.61 / 7.81 */
+
+/* The one thing the paper token cannot reach: on Earth the wordmark carries no
+   ground at all — its halo is its ground — and a halo alone does not hold up
+   over tiles this close to it in value. Everything else here needs nothing,
+   which is the whole point. */
+.worlds .map-wordmark { background: rgba(var(--paper-rgb), 0.92); }
 .space h1, .space h2, .space h3 { font-weight: 500; letter-spacing: -0.005em; }
 .space a { text-decoration-color: var(--brass); }
 
@@ -2601,23 +2706,28 @@ main.prose {
 }
 .scale-opt.active { background: var(--accent); color: #05070d; font-weight: 600; }
 
-/* A handful of shared-chrome rules bake in the parchment RGB directly
-   (rgba(242,230,207,…)) rather than referencing var(--parchment), so the
-   custom-property override above can't reach them. Re-declare just those,
-   scoped to .space, so windows/buttons/menus/bars actually go dark instead
-   of staying parchment-coloured floating over the starfield. Everything
-   else (borders, text, fonts) already follows the var() overrides above. */
-.space .win { background: rgba(16, 20, 31, 0.94); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
+/* This block used to re-declare a background for each of nine instruments,
+   because every one of them baked the parchment RGB in directly and the
+   var() overrides above could not reach them. That is also why the third
+   atlas was born broken: adding a theme meant knowing to copy this list, and
+   nobody did, so a Moon traverse floated Age-of-Sail instruments over the
+   regolith. The list is gone — paper is --paper-rgb now and every instrument
+   follows the theme that declares it.
+
+   What remains is only what is genuinely not paper: a shadow soft enough for
+   a lit page vanishes on a dark one, and a hover tint has to run toward the
+   light here rather than away from it. */
+.space .win { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
 .space .win-bar { border-bottom-color: rgba(0, 0, 0, 0.3); }
 .space .win-btn:hover { background: rgba(255, 255, 255, 0.1); }
 .space .cart-emblem,
 .space .map-wordmark,
-.space .tr-btn { background: rgba(16, 20, 31, 0.92); box-shadow: 0 5px 18px rgba(0, 0, 0, 0.4); }
-.space .tr-menu { background: rgba(16, 20, 31, 0.97); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+.space .tr-btn,
+.space .lens-rail,
+.space .tr-menu,
+.space .world-strip,
+.space .transport-bar { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
 .space .tr-menu > a:hover { background: rgba(255, 255, 255, 0.08); }
-.space .world-strip { background: rgba(16, 20, 31, 0.82); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); }
-.space .transport-bar { background: rgba(16, 20, 31, 0.92); box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); }
-.space .lens-rail { background: rgba(16, 20, 31, 0.92); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
 .space .desk-input,
 /* The mount takes --parchment-raised, which .space re-declares for itself, so
    the starfield no longer needs an overlay of its own here. */
@@ -2642,7 +2752,7 @@ main.prose {
   z-index: 45;
   width: min(360px, calc(100vw - 36px));
   padding: 16px 18px 15px;
-  background: rgba(242, 230, 207, 0.97);
+  background: rgba(var(--paper-rgb), 0.97);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 10px 32px rgba(43, 33, 23, 0.28), inset 0 0 0 1px rgba(169, 119, 47, 0.25);

@@ -34,6 +34,15 @@ type WorldEvent = {
 
 // Great powers and colours now come from the era's entry in lib/historical-maps.
 
+/* What moves along the route. A caravel was crossing the Sea of Tranquillity,
+   because this marker is built in JS and so the icon set never reached it.
+   A surface traverse is walked, and it leaves the same print the log is
+   marked with — the same drawing, filled, at marker size. */
+const BOOT_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <path d="M8.2 12.4c-.9-2.6-.6-5.2.9-7.6.8-1.3 2-1.9 3.6-1.7 2.2.3 3.6 1.7 4.1 4 .5 2.2.2 4.3-.9 6.2-.6 1-1.5 1.5-2.7 1.5H11c-1.3 0-2.3-.7-2.8-2.4z"/>
+  <path d="M9.2 18.6c0-1.3 1.2-2.1 2.9-2.1s2.9.8 2.9 2.1c0 .7-.1 1.4-.4 2-.4.9-1.2 1.4-2.5 1.4s-2.1-.5-2.5-1.4c-.3-.6-.4-1.3-.4-2z"/>
+</svg>`;
+
 const SHIP_SVG = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
   <path d="M3 15h18l-2.1 4.1a2 2 0 0 1-1.8 1.1H6.9a2 2 0 0 1-1.8-1.1L3 15z"/>
   <path d="M12.6 2.2c2.9 3 3.9 7 3.2 11h-3.2V2.2z"/>
@@ -281,6 +290,12 @@ export default function VoyageExperience({
       if (cancelled || !containerRef.current) return;
 
       const L = legsRef.current;
+      /* The route is painted by MapLibre onto a canvas, so it never passes
+         through the cascade and a theme cannot reach it. It was a literal, and
+         so the Moon's traverse ran in Age-of-Sail oxide. Read the token the
+         theme actually resolved to and hand it over. */
+      const routeColor =
+        getComputedStyle(containerRef.current).getPropertyValue("--route").trim() || "#7a2e1d";
       map = new gl.Map({
         container: containerRef.current,
         style: basemapStyle(body),
@@ -348,7 +363,7 @@ export default function VoyageExperience({
           source: "route-full",
           layout: { "line-cap": "round", "line-join": "round" },
           paint: {
-            "line-color": "#7a2e1d",
+            "line-color": routeColor,
             "line-width": 1.5,
             "line-opacity": 0.35,
             "line-dasharray": [2, 3],
@@ -359,7 +374,7 @@ export default function VoyageExperience({
           type: "line",
           source: "route-done",
           layout: { "line-cap": "round", "line-join": "round" },
-          paint: { "line-color": "#7a2e1d", "line-width": 3 },
+          paint: { "line-color": routeColor, "line-width": 3 },
         });
 
         // Waypoint markers (click to jump there in time).
@@ -375,7 +390,7 @@ export default function VoyageExperience({
         // The moving ship.
         const shipEl = document.createElement("div");
         shipEl.className = "ship-marker";
-        shipEl.innerHTML = SHIP_SVG;
+        shipEl.innerHTML = isEarth ? SHIP_SVG : BOOT_SVG;
         shipMarkerRef.current = new gl.Marker({ element: shipEl })
           .setLngLat([L[0].lng, L[0].lat])
           .addTo(map);
@@ -501,7 +516,15 @@ export default function VoyageExperience({
       : "Cartographer";
 
   return (
-    <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
+    /* This component draws two of the three atlases. Which one is a property
+       of the BODY, not of the renderer: a surface traverse reaches MapLibre by
+       the same road an Age-of-Sail voyage does, and used to arrive wearing its
+       parchment. data-body carries the accent; see .worlds in globals.css. */
+    <div
+      className={isEarth ? undefined : "worlds"}
+      data-body={isEarth ? undefined : body}
+      style={{ position: "relative", height: "100dvh", overflow: "hidden" }}
+    >
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
 
       {/* Three classes of thing live on this map and they are told apart by
@@ -568,7 +591,8 @@ export default function VoyageExperience({
                 setRailOpen(false);
               }}
             >
-              <Icon name="anchor" size={19} />
+              {/* An anchor is a thing you drop in water. */}
+              <Icon name={isEarth ? "anchor" : "bootprint"} size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}

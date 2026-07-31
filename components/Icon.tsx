@@ -27,6 +27,7 @@
 export type IconName =
   | "globe"
   | "anchor"
+  | "bootprint"
   | "map"
   | "compass"
   | "plates"
@@ -63,6 +64,23 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
 
   /* The voyage lens. */
+  /* The bootprint: the log of a surface traverse.
+     A Worlds voyage was showing an anchor beside its diary, because it renders
+     through the Earth component and took the Earth icon with it. The most
+     recognisable object of the whole enterprise is the print the boot left.
+     Drawn once with ribbed treads, it read at 18px as a battery: parallel bars
+     inside a straight-sided capsule. What makes a print a print is the shape,
+     not the tread. Four candidates were drawn and rendered side by side at
+     19, 26 and 48px rather than judged in the abstract: the two with a round
+     toe and a round heel both read as a zero at small size. This one wins on
+     the heel — wide, flat, and clearly set apart from the sole, which is what
+     stops the pair collapsing into one glyph. Legible down to 16px. */
+  bootprint: (
+    <>
+      <path d="M8.2 12.4c-.9-2.6-.6-5.2.9-7.6.8-1.3 2-1.9 3.6-1.7 2.2.3 3.6 1.7 4.1 4 .5 2.2.2 4.3-.9 6.2-.6 1-1.5 1.5-2.7 1.5H11c-1.3 0-2.3-.7-2.8-2.4z" />
+      <path d="M9.2 18.6c0-1.3 1.2-2.1 2.9-2.1s2.9.8 2.9 2.1c0 .7-.1 1.4-.4 2-.4.9-1.2 1.4-2.5 1.4s-2.1-.5-2.5-1.4c-.3-.6-.4-1.3-.4-2z" />
+    </>
+  ),
   anchor: (
     <>
       <circle cx="12" cy="4.4" r="1.7" />
