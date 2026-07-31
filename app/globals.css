@@ -868,6 +868,10 @@ input[type="range"].scrubber::-moz-range-thumb {
   place-items: center;
   overflow: hidden;
   padding: clamp(42px, 8vh, 92px) 22px;
+  /* The ground behind the engraving, not a UI surface. It is darker than any
+     token because its whole job is to disappear under a photograph and let the
+     vignette fall off into it; a --parchment* value here would fight the image
+     rather than carry it. Literal on purpose, and now said so. */
   background: #18110c;
 }
 .auth-backdrop,
@@ -1024,12 +1028,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 .auth-primary-link {
   min-height: 46px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-2);
   background: var(--accent);
   color: var(--parchment);
   cursor: pointer;
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: var(--step-0);
   text-align: center;
   text-decoration: none;
 }
