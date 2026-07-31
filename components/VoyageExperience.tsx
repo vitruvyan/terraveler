@@ -785,8 +785,15 @@ export default function VoyageExperience({
           </div>
         )}
 
+        {/* Below the door cluster, not behind it. With no anchor the log fell to
+            DraggableWindow's top-right default — which is precisely where the
+            menu and account doors sit, so it opened underneath them. */}
         {current && panelOpen && (
-          <DraggableWindow title={panelTitle} onClose={() => setPanelOpen(false)}>
+          <DraggableWindow
+            title={panelTitle}
+            onClose={() => setPanelOpen(false)}
+            initial={{ right: 16, top: 68 }}
+          >
             {lens === "carto" ? (
               isEarth ? (
               <>

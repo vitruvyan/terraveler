@@ -227,7 +227,20 @@ export default function ContributePanel({
   }
 
   return (
-    <DraggableWindow title="Contribute" onClose={onClose} width={340} initial={{ right: 16, top: 420 }}>
+    /* Beside the ship's log, not under it. Both were anchored to the same right
+       edge, so Contribute stacked below the window it belongs to and the two
+       could not be read together — which is the whole point of opening it: you
+       are looking at a stop and proposing something for that stop. The log is
+       360 wide at right:16, so this clears it by twelve. */
+    <DraggableWindow
+      title="Contribute"
+      onClose={onClose}
+      width={340}
+      /* Beside the log while there is room for both, and back to the right
+         edge once there is not — below about 730px the pair no longer fits and
+         this would have walked off the left of the screen. */
+      initial={{ right: "min(388px, calc(100vw - 356px))", top: 68 }}
+    >
       <div>
         <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
           {voyageTitle} · stop {waypoint.seq} · {contentType === "image" ? "image" : "ship's log"}

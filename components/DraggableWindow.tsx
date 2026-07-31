@@ -19,8 +19,16 @@ export default function DraggableWindow({
   children: ReactNode;
   onClose?: () => void;
   width?: number;
-  /** Initial anchor before any drag (e.g. { left: 14, top: 64 }). Defaults to top-right. */
-  initial?: { left?: number; top?: number; right?: number; bottom?: number };
+  /** Initial anchor before any drag (e.g. { left: 14, top: 64 }). Defaults to
+   *  top-right. Strings are allowed so an anchor can clamp itself — a window
+   *  placed beside another needs to stop doing that before it leaves the
+   *  screen, and a CSS min() does that without a resize listener. */
+  initial?: {
+    left?: number | string;
+    top?: number | string;
+    right?: number | string;
+    bottom?: number | string;
+  };
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
