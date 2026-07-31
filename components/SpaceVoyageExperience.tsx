@@ -1,7 +1,8 @@
 "use client";
 
 import Icon from "@/components/Icon";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useEdgeStack } from "@/lib/useEdgeStack";
 import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
 import spaceEventsData from "@/data/space_events.json";
@@ -155,6 +156,13 @@ export default function SpaceVoyageExperience({
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  /* The same derived bottom stack the Earth map uses. This component had the
+     same defect for the same reason: its note anchored to bottom:14px, which
+     is where the transport bar also is. */
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const noteRef = useRef<HTMLDivElement | null>(null);
+
+  useEdgeStack({ bar: barRef, note: noteRef });
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "space");
@@ -302,7 +310,20 @@ export default function SpaceVoyageExperience({
           title="Open the Atlas"
         >
           <Icon name="globe" size={17} />
-          <span>{atlasCount ? `${atlasCount} voyages` : "The Atlas"}</span>
+          {/* Split so a narrow phone can drop the word and keep the number.
+              Below 400px the labelled pill and the two round doors cannot
+              share a row — measured, not assumed: 100px of room for a control
+              that wants 131. A globe beside a count still says what it is. */}
+          <span>
+            {atlasCount ? (
+              <>
+                {atlasCount}
+                <span className="map-door-word"> voyages</span>
+              </>
+            ) : (
+              "The Atlas"
+            )}
+          </span>
         </button>
       </div>
 
@@ -529,7 +550,7 @@ export default function SpaceVoyageExperience({
           />
         </div>
 
-        <div className="orbit-note">
+        <div className="orbit-note" ref={noteRef}>
           Flyby positions are computed from J2000 mean-longitude orbital elements (planet
           position on the encounter date); cruise-phase points between flybys are
           interpolated for the drawn path, not measured. Distances shown on a compressed
@@ -733,7 +754,7 @@ export default function SpaceVoyageExperience({
         )}
       </div>
 
-      <div className="transport-bar">
+      <div className="transport-bar" ref={barRef}>
         <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
           <Icon name={playing ? "pause" : "play"} size={17} />
         </button>

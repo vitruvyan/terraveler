@@ -37,6 +37,13 @@
      paper at some opacity. Both were written as a literal, which is what made
      this the layer a theme could not re-declare: on the starfield the wordmark
      wore a cream fog, and on the Moon the instruments stayed Age-of-Sail. */
+  /* Chrome on Android runs Auto Dark Theme on pages that do not say what they
+     are: it inverts DOM backgrounds and leaves canvas and images alone, which
+     on this site produced dark brown chrome floating over an untouched
+     parchment map — the exact inversion of the argument the whole design
+     makes. Declaring the scheme opts out. The site's dark register is .space,
+     which is a deliberate theme rather than an OS preference. */
+  color-scheme: light;
   --paper-rgb: 242, 230, 207;
   --lens-log: #26607f;          /*  5.55:1 */
   --lens-chart: #3c6a56;        /*  5.02:1 */
@@ -2299,7 +2306,72 @@ main.prose {
   .ed-voyage-grid {
     grid-template-columns: 1fr;
   }
-  .world-strip { top: 66px; left: 50%; transform: translateX(-50%); width: calc(100vw - 24px); }
+  /* The two rungs the bottom stack is built from. */
+  :root { --edge: 10px; --band: 8px; }
+
+  /* A phone cannot take the imprint as a column. It ran 121px down the
+     top-left corner while this strip, full-width here rather than beside it,
+     started at 66px — so the caption lost 24px of itself to the strip and the
+     Atlas door lost 9px. Two rules in two different blocks both set this top
+     and neither had been re-measured since the imprint grew.
+
+     One row instead: the mark and the door side by side, sized to the screen
+     rather than to the desktop. The caption goes, because it is the voyage
+     title and both the transport bar and the log already carry it — a phone
+     is where a thing said three times costs the most. */
+  .map-imprint {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    top: 10px;
+    left: 14px;
+    right: 104px;
+  }
+  /* Tied to the viewport rather than stepped: at 320px a fixed 1.22rem left
+     the mark 5px wider than the row could hold. 5vw meets the cap exactly at
+     390, so nothing above that width changes. */
+  .map-wordmark { font-size: clamp(0.95rem, 5vw, 1.22rem); letter-spacing: 0.15em; }
+  .map-here { display: none; }
+  .map-atlas-door {
+    margin-top: 0;
+    padding: 6px var(--space-3);
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .world-strip { top: 58px; left: 50%; transform: translateX(-50%); width: calc(100vw - 24px); }
+
+  /* The bottom edge, as one derived stack instead of four independent anchors.
+     --tv-bar-h and --tv-note-h are measured by a ResizeObserver in
+     VoyageExperience and published on the root, because the transport bar
+     wraps on a phone and its height is a function of the content, not a
+     constant anyone can write down. Each band sits on the one below it. */
+  .transport-bar { bottom: var(--edge); }
+  .maplibregl-ctrl-bottom-right,
+  .maplibregl-ctrl-bottom-left {
+    bottom: calc(var(--edge) + var(--tv-bar-h, 96px)) !important;
+  }
+  .hist-note {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    font-size: var(--step--2);
+    line-height: 1.4;
+    bottom: calc(var(--edge) + var(--tv-bar-h, 96px) + var(--tv-attr-h, 40px) + var(--band));
+  }
+  .pig-launch {
+    right: 12px;
+    bottom: calc(
+      var(--edge) + var(--tv-bar-h, 96px) + var(--tv-attr-h, 40px) + var(--band)
+      + var(--tv-note-h, 72px) + var(--band)
+    ) !important;
+  }
+}
+
+/* Narrower than this the labelled door and the two round doors cannot share a
+   row: at 360px the imprint has 244px, the mark takes 144 of it with its gap,
+   and the pill wants 131. The word goes and the count stays. */
+@media (max-width: 400px) {
+  .map-door-word { display: none; }
 }
 
 /* --- Cartouche atlas index (voyage picker) --- */
@@ -2482,6 +2554,7 @@ main.prose {
   /* Every layer of the palette has to be re-declared for a dark ground, not
      inherited: a token that clears 4.5:1 on parchment fails on a starfield.
      These are the same hues taken back up to AA against #10141f. */
+  color-scheme: dark;
   --paper-rgb: 16, 20, 31;
   --lens-log: #7fc4e6;      /* 9.58:1 */
   --lens-chart: #8ec9a8;    /* 9.69:1 */
@@ -2718,6 +2791,19 @@ main.prose {
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   padding: 5px 9px;
+}
+
+/* Placed after the rule above, not with the other mobile rules: the two have
+   equal specificity, so whichever comes last wins — and with the override
+   sitting 400 lines earlier the base quietly took it back. The note anchored
+   to bottom:14px, which is exactly where the transport bar is. */
+@media (max-width: 680px) {
+  .orbit-note {
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    bottom: calc(var(--edge) + var(--tv-bar-h, 96px) + var(--band));
+  }
 }
 
 /* Orrery lens: linear/log scale segmented control. */

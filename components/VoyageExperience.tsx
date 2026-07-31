@@ -3,6 +3,7 @@
 import Icon from "@/components/Icon";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useEdgeStack } from "@/lib/useEdgeStack";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
@@ -215,7 +216,17 @@ export default function VoyageExperience({
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  /* The bottom edge of a phone carries four things that each anchored to it
+     with a hand-picked number: the launcher had four competing `bottom`
+     declarations, one per collision someone patched. Four numbers cannot be
+     held consistent by hand, and on a phone they weren't — the note ran into
+     both the bar and the launcher, and MapLibre's attribution sat under the
+     bar entirely. The heights are measured and published instead, so the
+     stack is derived rather than guessed — see lib/useEdgeStack.ts. */
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const noteRef = useRef<HTMLDivElement | null>(null);
   const [railOpen, setRailOpen] = useState(false);
+
   const [pickerOpen, setPickerOpen] = useState(false);
 
   /* The welcome cartouche is a sibling mounted by the page, at a higher
@@ -265,6 +276,7 @@ export default function VoyageExperience({
 
 
   const containerRef = useRef<HTMLDivElement>(null);
+  useEdgeStack({ bar: barRef, note: noteRef, container: containerRef });
   const mapRef = useRef<any>(null);
   const shipMarkerRef = useRef<any>(null);
   const legsRef = useRef(legs);
@@ -573,7 +585,20 @@ export default function VoyageExperience({
           title="Open the Atlas"
         >
           <Icon name="globe" size={17} />
-          <span>{atlasCount ? `${atlasCount} voyages` : "The Atlas"}</span>
+          {/* Split so a narrow phone can drop the word and keep the number.
+              Below 400px the labelled pill and the two round doors cannot
+              share a row — measured, not assumed: 100px of room for a control
+              that wants 131. A globe beside a count still says what it is. */}
+          <span>
+            {atlasCount ? (
+              <>
+                {atlasCount}
+                <span className="map-door-word"> voyages</span>
+              </>
+            ) : (
+              "The Atlas"
+            )}
+          </span>
         </button>
       </div>
 
@@ -809,7 +834,7 @@ export default function VoyageExperience({
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
         {isEarth && (
-          <div className="hist-note">
+          <div className="hist-note" ref={noteRef}>
             World c.&nbsp;{epoch.year} — the nearest reconstruction to this voyage
             {voyageYears ? ` (${voyageYears})` : ""}; great powers coloured, key in the
             Cartographer lens. A reconstruction; precision varies.{" "}
@@ -1099,7 +1124,7 @@ export default function VoyageExperience({
         )}
       </div>
 
-      <div className="transport-bar">
+      <div className="transport-bar" ref={barRef}>
         <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
           <Icon name={playing ? "pause" : "play"} size={17} />
         </button>
