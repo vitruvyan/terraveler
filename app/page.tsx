@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import VoyageExperience from "@/components/VoyageExperience";
+import { ATLAS } from "@/lib/voyages";
 import Pigafetta from "@/components/Pigafetta";
 import WelcomeCartouche from "@/components/WelcomeCartouche";
 import { getVoyageBundle } from "@/lib/data";
@@ -24,7 +25,8 @@ export default async function Home() {
   const { navigator, voyage, waypoints } = await getVoyageBundle();
   return (
     <>
-      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]} />
+      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]}
+        atlasCount={ATLAS.length} />
       <Pigafetta />
       <WelcomeCartouche />
       <script

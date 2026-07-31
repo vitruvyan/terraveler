@@ -339,10 +339,18 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 /* --- Historical-borders honesty note --- */
+/* The basemap's honesty note sits under the welcome cartouche, which is wider
+   and opaque and was landing on it with no gap at all. The note is permanent
+   and the cartouche is dismissed once, so the cartouche is the one that
+   moves. */
 .hist-note {
   position: absolute;
   left: 16px;
-  bottom: 14px;
+  /* Above the transport bar, not beside it. At bottom:14 the note ran into the
+     bar's left end — a collision the welcome cartouche had been hiding by
+     sitting on top of the note. Three things share this corner and they stack
+     rather than overlap: bar, note, cartouche. */
+  bottom: 92px;
   z-index: 4;
   max-width: 300px;
   font-size: var(--step--3);
@@ -1148,39 +1156,100 @@ input[type="range"].scrubber::-moz-range-thumb {
   max-width: min(340px, calc(100vw - 130px));
 }
 .left-stack .lens-switch { position: static; }
-/* The wordmark on the map.
-   ---------------------------------------------------------------------------
-   It was #fff with a drop shadow, which is right over a dark hero and wrong
-   over this basemap: measured under the mark, the ocean is #d4dadc and white
-   lands at 1.41:1 — below even the large-text floor, and a shadow cannot
-   rescue white from a light ground.
+/* ============================================================================
+   THE MAP'S THREE CLASSES — imprint, doors, instruments
+   ----------------------------------------------------------------------------
+   They were one material: parchment plate, hairline, shadow. Adjacent and
+   identical, the atlas door read as the wordmark's symbol rather than as a
+   control, and nothing on the map said it was one chart of eighteen.
 
-   But the fix is not "use a dark colour": it is that the wordmark was the only
-   control on the map without a ground under it. The emblem beside it is a
-   parchment disc, the world strip is a parchment plate, so are the lens rail
-   and the transport bar. Given the same plate the mark reads at 11:1 wherever
-   the map is panned, it matches the chrome it sits among, and because it now
-   uses tokens rather than a raw hex the starfield theme gets it right for
-   free — .space redeclares both --parchment and --ink. */
-.map-wordmark {
+   Material carries the class now, and shape carries it a second time: the
+   imprint has no container, doors are round and dark, instruments stay
+   parchment rectangles. Two redundant signals, learnt in one look.
+   ========================================================================= */
+
+.map-imprint {
   position: absolute;
   top: 14px;
-  left: 64px;
+  left: 20px;
   z-index: 6;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  padding: 5px 12px 6px;
-  border: 1px solid var(--parchment-deep);
-  border-radius: var(--radius-2);
-  background: rgba(242, 230, 207, 0.95);
-  box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
-  color: var(--ink);
-  font-size: 1.15rem;
-  letter-spacing: 0.16em;
+  gap: var(--space-3);
 }
-.map-wordmark:hover { border-color: var(--brass); }
+
+/* The imprint. No plate, because it is not a control — and in --ink rather
+   than white, which measured 1.41:1 against this basemap's ocean where ink
+   measures 11.15. The halo is for the darker political fills, not the sea. */
+.map-wordmark {
+  color: var(--ink);
+  font-size: 1.5rem;
+  letter-spacing: 0.2em;
+  text-shadow:
+    0 1px 0 rgba(242, 230, 207, 0.85),
+    0 0 10px rgba(242, 230, 207, 0.9);
+}
+.map-wordmark:hover { color: var(--accent); }
+
+/* The door to the atlas. Round emblem plus its label, one control — the label
+   is what says there is more than this chart, and the emblem is what makes it
+   look pressable. */
+.map-atlas-door {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ink);
+}
+.map-door-emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  /* The door material. Nothing else on this map is dark, so a round dark thing
+     is unambiguous — and parchment on ink is 12.75:1. */
+  background: var(--ink);
+  color: var(--parchment);
+  box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
+  transition: background var(--dur-1) var(--ease);
+}
+.map-atlas-door:hover .map-door-emblem { background: var(--accent-deep); }
+.map-door-text {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(242, 230, 207, 0.9), 0 0 8px rgba(242, 230, 207, 0.9);
+}
+.map-door-here {
+  margin-top: 2px;
+  font-family: var(--font-body);
+  font-size: var(--step--2);
+  letter-spacing: normal;
+  text-transform: none;
+  font-style: italic;
+  color: var(--ink-soft);
+  /* Two lines. Voyage titles run long — "The First French Circumnavigation of
+     the Globe (1766–1769)" is three at any sane width — and a label that grows
+     down the map is a label that fights the map. */
+  max-width: 26ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.map-atlas-door:hover .map-door-text { color: var(--accent); }
 /* On the map the .wordmark class sits on the anchor, which wraps the tagline
    too — so all-small-caps and the 0.2em tracking inherited straight into it
    and the strapline came out as a 400px-wide band of spaced capitals running
@@ -1289,13 +1358,15 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   gap: 8px;
 }
+/* The other two doors — the menu and the account — take the same material as
+   the atlas door, because they do the same kind of thing. */
 .tr-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid var(--parchment-deep);
-  background: rgba(242, 230, 207, 0.94);
-  color: var(--ink);
+  border: 0;
+  background: var(--ink);
+  color: var(--parchment);
   font-size: var(--step-1);
   cursor: pointer;
   display: flex;
@@ -2540,8 +2611,16 @@ main.prose {
 /* --- Welcome cartouche: first-visit onboarding, docked over the map --- */
 .welcome-cart {
   position: fixed;
-  left: 18px;
-  bottom: 92px;               /* clears the transport bar */
+  /* Clear of the lens rail, which is vertically centred on this same edge.
+     Raising the cartouche off the note moved it straight onto the rail — the
+     left edge of this map carries three things and none of them may share a
+     pixel. */
+  left: 72px;
+  /* Clears the transport bar AND the basemap note beneath it. At 92 the
+     cartouche came down exactly on the note's top edge — no overlap, but no
+     gap either, so the two read as one broken block. The note is permanent and
+     the cartouche is dismissed once, so the cartouche is the one that moves. */
+  bottom: 196px;
   z-index: 45;
   width: min(360px, calc(100vw - 36px));
   padding: 16px 18px 15px;

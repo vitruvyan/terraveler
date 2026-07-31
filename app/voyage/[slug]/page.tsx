@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import VoyageExperience from "@/components/VoyageExperience";
+import { ATLAS } from "@/lib/voyages";
 import SpaceVoyageExperience from "@/components/SpaceVoyageExperience";
 import Pigafetta from "@/components/Pigafetta";
 import { getVoyageBundle, knownVoyages } from "@/lib/data";
@@ -51,6 +52,7 @@ export default async function VoyagePage({
           navigator={navigator}
           voyage={voyage}
           waypoints={waypoints as Waypoint[]}
+          atlasCount={ATLAS.length}
           body={voyage.body ?? "earth"}
         />
       )}

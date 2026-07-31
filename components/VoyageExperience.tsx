@@ -142,11 +142,15 @@ export default function VoyageExperience({
   voyage,
   waypoints,
   body = "earth",
+  atlasCount,
 }: {
   navigator: Navigator;
   voyage: Voyage;
   waypoints: Waypoint[];
   body?: BodyId;
+  /** How many voyages the atlas holds. A number, not the list — ATLAS stays
+   *  out of this bundle on purpose, and a count is what the imprint needs. */
+  atlasCount?: number;
 }) {
   const isEarth = body === "earth";
   // Which political reconstruction this voyage is drawn over: the nearest in
@@ -487,20 +491,40 @@ export default function VoyageExperience({
 
   return (
     <div style={{ position: "relative", height: "100dvh", overflow: "hidden" }}>
-      {/* The atlas emblem opens the voyage picker. */}
       <h1 className="sr-only">{voyage.title} — {navigator.name} — Terraveler</h1>
-      <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
-        <span>Terraveler</span>
-        <span className="map-tagline">An atlas of geo-history, written in tandem</span>
-      </a>
-      <div className="left-stack">
+
+      {/* Three classes of thing live on this map and they are told apart by
+          material, not by where they sit.
+
+          The IMPRINT says whose chart this is. It is not a control, so it has
+          no container: ink straight onto the map, which measures 11:1 against
+          the basemap where white measured 1.41.
+
+          A DOOR takes you somewhere else. Doors are round and dark — the one
+          material nothing else on the map uses — so the atlas door stops being
+          read as the wordmark's symbol, which is exactly what it was.
+
+          INSTRUMENTS change what you see of this voyage and stay parchment
+          plates: the lens rail, the transport bar, the world strip.
+
+          The strapline used to sit under the wordmark. It was decoration on
+          the one surface with no room for any: what a newcomer needs to know
+          is that this is one chart of many, and how to see the others. */}
+      <div className="map-imprint">
+        <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
+          Terraveler
+        </a>
         <button
-          className="cart-emblem"
+          className="map-atlas-door"
           onClick={() => setPickerOpen((o) => !o)}
-          title={`${voyage.title} — open the Atlas`}
-          aria-label="Open the Atlas"
+          aria-expanded={pickerOpen}
+          title="Open the Atlas"
         >
-          <Icon name="globe" size={22} />
+          <span className="map-door-emblem"><Icon name="globe" size={19} /></span>
+          <span className="map-door-text">
+            {atlasCount ? `${atlasCount} voyages` : "The Atlas"}
+            <span className="map-door-here">{voyage.title}</span>
+          </span>
         </button>
       </div>
 

@@ -171,6 +171,34 @@ exception.
   identical log entries collapse into one with a count, they do not get
   restyled.
 
+- **On the map, three classes, told apart by material.** The **imprint** says
+  whose chart this is and is not a control, so it has no container: ink
+  straight onto the map. A **door** takes you elsewhere — the atlas, the menu,
+  the account — and doors are round and dark, the one material nothing else on
+  the map uses. **Instruments** change what you see of the current voyage — the
+  lens rail, the transport bar, the world strip — and stay parchment
+  rectangles. Shape carries the class a second time, so it is learnt in one
+  look. They were all one material before, and the atlas door was being read as
+  the wordmark's symbol.
+
+- **A legible control does not need to be taught.** If it needs teaching, the
+  defect is in the control. The map already had a remembered first-visit
+  overlay and voyages still could not be found — because an overlay that
+  expires cannot fix a door nobody recognises, and after it expires the defect
+  is back. Never reach for a timed or once-only explainer in place of making
+  the thing readable.
+
+- **The chrome says what you are looking at and that there is more.** The map
+  shows one voyage of eighteen and used to carry a strapline where that fact
+  belonged. A newcomer's two questions — what is this, and what else is there —
+  need a permanent home, not an introduction.
+
+- **Nothing on the map may share a pixel.** The left edge alone carries the
+  rail, the basemap note and the welcome cartouche; the bottom carries the
+  transport bar. They stack. Check every pair at more than one viewport — two
+  of these collisions had been shipping, hidden by a third element sitting on
+  top of them.
+
 - **Reuse the shell before inventing one.** `TitlePage` (frontispiece + mounted
   plate), `SiteHeader`, `SiteFooter` already carry the editorial language. A
   new page that reinvents an opening is an error, not a feature.
