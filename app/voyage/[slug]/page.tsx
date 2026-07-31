@@ -46,6 +46,7 @@ export default async function VoyagePage({
           navigator={navigator}
           voyage={voyage}
           waypoints={waypoints as SpaceWaypoint[]}
+          atlasCount={ATLAS.length}
         />
       ) : (
         <VoyageExperience

@@ -91,10 +91,13 @@ export default function SpaceVoyageExperience({
   navigator,
   voyage,
   waypoints,
+  atlasCount,
 }: {
   navigator: Navigator;
   voyage: Voyage;
   waypoints: SpaceWaypoint[];
+  /** A number, not the list — ATLAS stays out of this bundle. */
+  atlasCount?: number;
 }) {
   const legs = useMemo(() => buildSpaceLegs(waypoints), [waypoints]);
   const minTime = legs.length ? legs[0].arrival : 0;
@@ -284,14 +287,22 @@ export default function SpaceVoyageExperience({
       <h1 className="sr-only">
         {voyage.title} — {navigator.name} — Terraveler
       </h1>
-      <div className="left-stack">
+      {/* The imprint did not exist on this theme at all: no wordmark, no
+          count, no caption — only a bare emblem. The map's three classes are
+          the map's three classes whichever body it is showing. */}
+      <div className="map-imprint">
+        <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
+          Terraveler
+        </a>
+        <span className="map-here">{voyage.title}</span>
         <button
-          className="cart-emblem"
+          className="map-atlas-door"
           onClick={() => setPickerOpen((o) => !o)}
-          title={`${voyage.title} — open the Atlas`}
-          aria-label="Open the Atlas"
+          aria-expanded={pickerOpen}
+          title="Open the Atlas"
         >
-          <Icon name="compass" size={19} />
+          <Icon name="globe" size={17} />
+          <span>{atlasCount ? `${atlasCount} voyages` : "The Atlas"}</span>
         </button>
       </div>
 
@@ -398,6 +409,16 @@ export default function SpaceVoyageExperience({
               onClick={() => setAtlasFilter("earth")}
             >
               Age of Sail
+            </button>
+            {/* Worlds was simply absent here. The Atlas panel is written twice
+                — once in each experience — and this copy lost a chip, so from
+                a space voyage there was no way to reach a surface one. */}
+            <button
+              type="button"
+              className={`atlas-chip ${atlasFilter === "surface" ? "cur" : ""}`}
+              onClick={() => setAtlasFilter("surface")}
+            >
+              Worlds
             </button>
             <button
               type="button"
