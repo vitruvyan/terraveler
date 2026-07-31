@@ -10,7 +10,8 @@ export const metadata: Metadata = { title: "Plate specimen" };
 /* Capitolo IV — le tavole.
    Immagini vere prese da public/login-backgrounds/, con i crediti e gli URL di
    Commons che stanno in CREDITS.md accanto a loro. La forma dei campi è quella
-   di MediaItem in lib/types.ts: url, caption, credit, source_url, license. */
+   di MediaItem in lib/types.ts: url, caption, credit, source_url, license,
+   date, e rights_note quando l'istituzione pone termini propri sulla scansione. */
 
 type Plate = {
   url: string;
@@ -18,27 +19,31 @@ type Plate = {
   credit: string;
   source_url: string;
   license: string;
+  date: string;
 };
 
 const PLATES: Plate[] = [
   {
     url: "/login-backgrounds/ortelius-world-map-1570.jpg",
     caption: "Typus Orbis Terrarum — the world as Ortelius engraved it, three generations after Columbus and with the Pacific still guessed at.",
-    credit: "Abraham Ortelius, 1570",
+    credit: "Abraham Ortelius",
+    date: "1570",
     source_url: "https://commons.wikimedia.org/wiki/File:OrteliusWorldMap1570.jpg",
     license: "public domain",
   },
   {
     url: "/login-backgrounds/carta-marina.png",
     caption: "Carta Marina — the northern seas, with the monsters drawn where the soundings stopped.",
-    credit: "Olaus Magnus, 1539",
+    credit: "Olaus Magnus",
+    date: "1539",
     source_url: "https://commons.wikimedia.org/wiki/File:CartaMarina.png",
     license: "public domain",
   },
   {
     url: "/login-backgrounds/fra-mauro-map.jpg",
     caption: "The Fra Mauro world map, drawn south-up, as the Arab cartographers it borrowed from drew theirs.",
-    credit: "Fra Mauro, c. 1450",
+    credit: "Fra Mauro",
+    date: "c. 1450",
     source_url: "https://commons.wikimedia.org/wiki/File:FraMauroDetailedMap.jpg",
     license: "public domain",
   },
@@ -54,6 +59,8 @@ function PlateFigure({ p, size = "wide" }: { p: Plate; size?: "wide" | "inset" }
       <figcaption>
         <p className="spec-plate-cap">{p.caption}</p>
         <div className="spec-plate-prov spec-machine">
+          <span>{p.date}</span>
+          <span className="spec-plate-sep">&middot;</span>
           <span>{p.credit}</span>
           <span className="spec-plate-sep">&middot;</span>
           <span>{p.license}</span>
@@ -88,14 +95,17 @@ export default function PlatesPage() {
         <Chapters current="/specimen/plates" />
 
         <div className="spec-note">
-          <b>Perché questo capitolo esiste.</b> Le tavole sono la parte del
-          sistema più promessa che costruita: nei dati del repo{" "}
-          <b>zero tappe su 380</b> portano un&rsquo;immagine, la lente
-          &ldquo;plates&rdquo; esiste ma quasi sempre dice{" "}
-          <i>no plates recorded</i>, e l&rsquo;API pubblica non le espone
-          affatto. Qui non invento una soluzione: fisso <b>come si presenta una
-          tavola</b> quando c&rsquo;è, così chi le implementa non deve
-          decidere daccapo.
+          <b>Perché questo capitolo esiste.</b> Fissava{" "}
+          <b>come si presenta una tavola</b> quando ancora non ce n&rsquo;erano:
+          zero tappe su 380 con un&rsquo;immagine, la lente che diceva{" "}
+          <i>no plates recorded</i>, e l&rsquo;API pubblica che non le esponeva
+          affatto. Da allora il contratto è diventato eseguibile —{" "}
+          <code>submit_draft</code> porta <code>plates[]</code>, il gate Stage-0
+          rifiuta chi non li ha tutti, <code>get_voyage</code> li restituisce —
+          e il capitolo ha smesso di essere una promessa per diventare la
+          specifica che quel gate applica. Il campo <code>date</code> è nato
+          qui, dopo: nessuno lo aveva chiesto ed è quello che ha intercettato
+          più errori.
         </div>
 
         <Ornament name="break" className="ornament-break" />
@@ -105,7 +115,7 @@ export default function PlatesPage() {
           <span className="spec-eyebrow">i &middot; il contratto</span>
           <p className="spec-prose dropcap" style={{ maxWidth: "var(--measure)" }}>
             {
-              "Every plate carries five fields, and they are the same five the Magna Carta puts on a quotation: the image itself, a caption that says what is being looked at, the credit that names who made it, the licence under which it may be shown, and a source that can be opened and checked. Four of the five are provenance. That ratio is the point — a picture is the easiest thing on a page to lift and the hardest to attribute, which is exactly why the atlas refuses to publish one that cannot account for itself."
+              "Every plate carries six fields, and five of them are provenance: the image itself, a caption saying what is being looked at, the credit naming who made it, the licence under which it may be shown, a source that can be opened and checked, and the date the image was MADE. That ratio is the point — a picture is the easiest thing on a page to lift and the hardest to attribute, which is exactly why the atlas refuses to publish one that cannot account for itself. The date was the field nobody thought to ask for, and it is the one that has caught the most: an image set beside a dated stage asserts they share that date, silently, and most plates are later than the moment they illustrate."
             }
           </p>
 
@@ -113,9 +123,11 @@ export default function PlatesPage() {
             {[
               ["url", "The image. Wikimedia Commons or another openly licensed archive — never a hotlink to a site that has not licensed it.", "machine"],
               ["caption", "What is being looked at, in the atlas's own voice. Not a title: a sentence.", "narrator"],
-              ["credit", "Who made it, and when.", "machine"],
+              ["credit", "Who made it. Not when — that is its own field, because the two answers come apart.", "machine"],
               ["license", "Under what terms it may be shown. A plate with no licence does not publish.", "machine"],
               ["source_url", "Where to check it. The description page, not the file.", "machine"],
+              ["date", "When the IMAGE was made — not when the stage happened. Hodges drew Cape Town in 1787 and the Boudeuse moored there in 1769; without this the page quietly claims otherwise. Required.", "machine"],
+              ["rights_note", "Optional. The holder's own terms, where they differ from the work's licence: a 1772 engraving is public domain and the library still asserts something about its scan of it.", "narrator"],
             ].map(([f, why, voice]) => (
               <div className="spec-contract-row" key={f}>
                 <span className="spec-machine spec-contract-field">{f}</span>
@@ -127,9 +139,12 @@ export default function PlatesPage() {
 
           <div className="spec-note">
             <b>Una sola riga in voce di narratore.</b> La didascalia è l&rsquo;atlante
-            che parla e va in serif; credito, licenza e fonte sono la macchina
-            che registra, quindi monospazio. È la stessa regola del registro di
-            bordo, applicata a un&rsquo;immagine.
+            che parla e va in serif; data, credito, licenza e fonte sono la
+            macchina che registra, quindi monospazio. È la stessa regola del
+            registro di bordo, applicata a un&rsquo;immagine. E la data sta
+            prima del credito perché è la riga che può contraddire la pagina:
+            il credito dice <i>chi</i>, mai <i>quando</i> — se un credito porta
+            l&rsquo;anno, la riga lo stampa due volte e si vede subito.
           </div>
         </section>
 

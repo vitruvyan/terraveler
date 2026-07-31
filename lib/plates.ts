@@ -20,6 +20,10 @@ export type Plate = {
   credit: string;
   license: string;
   source_url: string;
+  /** When the image was made. Separate from `credit` because the two answers
+   *  come apart: an engraving can be attributed with certainty and dated only
+   *  to a decade, and a plate is regularly later than what it depicts. */
+  date: string;
 };
 
 export const PLATES: Record<string, Plate> = {
@@ -27,7 +31,8 @@ export const PLATES: Record<string, Plate> = {
     url: "/login-backgrounds/ortelius-world-map-1570.jpg",
     caption:
       "Typus Orbis Terrarum — the world as Ortelius engraved it, with a Terra Australis nobody had seen drawn across the whole southern edge.",
-    credit: "Abraham Ortelius, 1570",
+    credit: "Abraham Ortelius",
+    date: "1570",
     license: "public domain",
     source_url: "https://commons.wikimedia.org/wiki/File:OrteliusWorldMap1570.jpg",
   },
@@ -35,7 +40,8 @@ export const PLATES: Record<string, Plate> = {
     url: "/login-backgrounds/fra-mauro-map.jpg",
     caption:
       "The Fra Mauro world map, drawn south-up in Venice a generation before the Portuguese rounded the Cape — as the Arab cartographers it borrowed from drew theirs.",
-    credit: "Fra Mauro, c. 1450",
+    credit: "Fra Mauro",
+    date: "c. 1450",
     license: "public domain",
     source_url: "https://commons.wikimedia.org/wiki/File:FraMauroDetailedMap.jpg",
   },
@@ -43,14 +49,16 @@ export const PLATES: Record<string, Plate> = {
     url: "/login-backgrounds/carta-marina.png",
     caption:
       "Carta Marina — the northern seas, with the monsters drawn exactly where the soundings stopped.",
-    credit: "Olaus Magnus, 1539",
+    credit: "Olaus Magnus",
+    date: "1539",
     license: "public domain",
     source_url: "https://commons.wikimedia.org/wiki/File:CartaMarina.png",
   },
   "/login-backgrounds/celestial-planisphere-1835.jpg": {
     url: "/login-backgrounds/celestial-planisphere-1835.jpg",
     caption: "A celestial planisphere, or map of the heavens — the sky charted the way a coast is.",
-    credit: "1835, Library of Congress",
+    credit: "Library of Congress",
+    date: "1835",
     license: "public domain",
     source_url:
       "https://commons.wikimedia.org/wiki/File:A_celestial_planisphere,_or_map_of_the_heavens_LOC_2013593157.jpg",
@@ -59,7 +67,8 @@ export const PLATES: Record<string, Plate> = {
     url: "/login-backgrounds/cellarius-planisphaerium-copernicanum.jpg",
     caption:
       "Planisphaerium Copernicanum — the Copernican system drawn as a chart, a century after Copernicus and still an argument.",
-    credit: "Andreas Cellarius, 1660",
+    credit: "Andreas Cellarius",
+    date: "1660",
     license: "public domain",
     source_url:
       "https://commons.wikimedia.org/wiki/File:Cellarius_Harmonia_Macrocosmica_-_Planisphaerium_Copernicanum.jpg",
@@ -68,7 +77,8 @@ export const PLATES: Record<string, Plate> = {
     url: "/login-backgrounds/cellarius-scenographia-copernicani.jpg",
     caption:
       "Scenographia Systematis Copernicani — the same system staged as a scene, with the planets carried on their orbits.",
-    credit: "Andreas Cellarius, 1660",
+    credit: "Andreas Cellarius",
+    date: "1660",
     license: "public domain",
     source_url:
       "https://commons.wikimedia.org/wiki/File:Cellarius_Harmonia_Macrocosmica_-_Scenographia_Systematis_Copernicani.jpg",

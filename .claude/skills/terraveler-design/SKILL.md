@@ -133,13 +133,24 @@ exception.
   and the specimen renders it at its floor rather than at 18 — showing an icon
   below the size it works at is a rigged test.
 
-- **A plate carries five fields or it does not publish.** `url`, `caption`,
-  `credit`, `license`, `source_url` — four of the five are provenance, which is
-  the same discipline the Carta puts on a quotation. The caption is the
-  narrator and is serif; credit, licence and source are the machine and are
-  mono. Mount it with a paper margin and a hairline: no rounded corner, no
-  shadow, no card. The lightbox is the one place a plate may float, and the
+- **A plate carries six fields or it does not publish.** `url`, `caption`,
+  `credit`, `license`, `source_url`, `date` — five of the six are provenance,
+  which is the same discipline the Carta puts on a quotation. The caption is
+  the narrator and is serif; credit, licence, source and date are the machine
+  and are mono. Mount it with a paper margin and a hairline: no rounded corner,
+  no shadow, no card. The lightbox is the one place a plate may float, and the
   only sanctioned use of `--elev-1`.
+
+  **`date` is when the IMAGE was made, and it is required.** It is almost never
+  the date of the stage it illustrates: Hodges drew Cape Town in 1787 and the
+  Boudeuse moored there in 1769, and the one photogenic view of Port Praslin
+  turns out to be from Duperrey's voyage fifty-five years later. A picture set
+  beside a dated stage asserts they share that date unless the page says
+  otherwise — so the page says otherwise, and the submission gate refuses a
+  plate that will not say. `rights_note` is optional and holds the holding
+  institution's own terms where they differ from the work's licence; it is
+  prose a human wrote, so it stays in the reading voice and only appears in the
+  lightbox, where a plate is actually being examined.
 
 - **Ornament is a printer's, not a decorator's.** `components/Ornament.tsx`
   holds a lozenge-and-swash break, a fleuron, a tail and a corner — the sober
@@ -207,6 +218,13 @@ are editing is already migrated; check it. As of the typography commit:
   `AuthBackdrop.tsx`, `icon.tsx`, `VoyageExperience.tsx`, `SolarSystemMap.tsx`,
   `SolarSystem3D.tsx`, `ContributePanel.tsx`. Some are OG/icon rendering where
   a token cannot reach; the rest are ordinary debt.
+- **The plates lens is migrated.** `.plates-thumb-btn` carried a 6px radius and
+  an `rgba(255,255,255,0.4)` wash — the widget treatment the plate rule above
+  exists to forbid — and the caption block used four hardcoded sizes. It is now
+  `--radius-1`, `--rule-hair`, `--parchment-raised` and `--step--2`, and the
+  `.space` override it needed went away because the theme re-declares the token
+  itself. The lightbox is not fully migrated: `.plates-lightbox-cap` still has
+  literal sizes.
 - The **Quarterdeck overview is done** and is the reference for how a surface
   looks on this system — see `components/desk/Quarterdeck.tsx`, the first
   thing here built with no literal size, radius or colour. Its **submissions

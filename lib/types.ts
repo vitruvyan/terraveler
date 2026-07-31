@@ -60,6 +60,17 @@ export interface MediaItem {
   credit: string | null;
   source_url: string | null;  // Commons description page
   license: string;
+  /** When the IMAGE was made, which is regularly not when the stage happened:
+   *  Hodges drew Cape Town in 1787 and the Boudeuse moored there in 1769. A
+   *  page that sets a picture beside a date asserts they are the same date
+   *  unless it is told otherwise, so the submission gate requires this and the
+   *  plate prints it. Optional here only because records predating the field
+   *  exist; absent means unknown, never contemporary. */
+  date?: string | null;
+  /** The holding institution's own terms, when they differ from the work's
+   *  licence — a 1772 engraving is public domain while the library asserts
+   *  conditions on its scan of it. */
+  rights_note?: string | null;
 }
 
 export interface Waypoint {

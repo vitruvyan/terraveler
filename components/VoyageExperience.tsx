@@ -847,6 +847,12 @@ export default function VoyageExperience({
                             </button>
                             <figcaption>
                               <div className="plates-caption">{m.caption}</div>
+                              {/* When the image was made, which is regularly not
+                                  when the stage happened. Printed beside the
+                                  credit because a plate set next to a dated
+                                  stage asserts they share that date unless the
+                                  page says otherwise. */}
+                              {m.date && <div className="plates-date">{m.date}</div>}
                               {m.credit && <div className="plates-credit">{m.credit}</div>}
                               <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                                 {m.source_url && (
@@ -1074,8 +1080,19 @@ export default function VoyageExperience({
               <div>
                 <strong>{lightbox.place}</strong> — {lightbox.item.caption}
               </div>
+              {lightbox.item.date && (
+                <div className="plates-lightbox-credit">Made {lightbox.item.date}</div>
+              )}
               {lightbox.item.credit && (
                 <div className="plates-lightbox-credit">{lightbox.item.credit}</div>
+              )}
+              {/* The holder's terms, where they differ from the work's licence:
+                  the engraving is public domain and the library still asserts
+                  something about its scan. Shown here rather than on the thumb
+                  because it is a paragraph, and the lightbox is where a plate
+                  is actually being examined. */}
+              {lightbox.item.rights_note && (
+                <div className="plates-lightbox-rights">{lightbox.item.rights_note}</div>
               )}
               {lightbox.item.source_url && (
                 <a href={lightbox.item.source_url} target="_blank" rel="noreferrer">

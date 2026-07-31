@@ -164,6 +164,51 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
 
+  /* The Voyager theme's four. A probe's instruments are not a ship's, but they
+     are drawn the same way: as the diagram a treatise would print. */
+
+  /* Mission log. For a probe the record did not come home in a chest — it came
+     down a dish. */
+  antenna: (
+    <>
+      <path d="M3.4 12.8a7.6 7.6 0 0 1 10.2-10.2z" />
+      <path d="M8.6 7.6 12.6 11.9" />
+      <circle cx="13.2" cy="12.5" r="1.2" />
+      <path d="M9 13.8 7.8 20.5" />
+      <path d="M5.2 20.5h6.2" />
+    </>
+  ),
+
+  /* Telemetry: a reading plotted against an axis. */
+  chart: (
+    <>
+      <path d="M4 3.6v16.8h16.4" />
+      <path d="M6.8 16.4 10.6 11 13.8 13.4 19.6 5.9" />
+      <circle cx="10.6" cy="11" r="0.95" />
+      <circle cx="13.8" cy="13.4" r="0.95" />
+    </>
+  ),
+
+  /* The orrery: orbits about a primary, tilted so the rings do not stack into
+     a target. */
+  orrery: (
+    <>
+      <circle cx="12" cy="12" r="2.4" />
+      <ellipse cx="12" cy="12" rx="9.2" ry="4" transform="rotate(-18 12 12)" />
+      <ellipse cx="12" cy="12" rx="5.9" ry="2.6" transform="rotate(22 12 12)" />
+      <circle cx="20.5" cy="9.2" r="1.1" />
+    </>
+  ),
+
+  /* The Golden Record — a phonograph disc, which is what it is. */
+  record: (
+    <>
+      <circle cx="12" cy="12" r="8.6" />
+      <circle cx="12" cy="12" r="3.3" />
+      <circle cx="12" cy="12" r="0.9" />
+    </>
+  ),
+
   /* Searching. A reading glass — the instrument you actually hold over a
      chart, rather than the abstract magnifier. */
   lens: (

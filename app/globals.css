@@ -402,26 +402,35 @@ input[type="range"].scrubber::-moz-range-thumb {
   gap: 10px;
 }
 .plates-thumb { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+/* A plate sits IN the page, not above it: a paper margin and a hairline, no
+   rounded corner and no card. This carried a 6px radius and a white overlay,
+   which is the widget treatment the plates chapter exists to forbid. */
 .plates-thumb-btn {
-  padding: 0;
-  border: 1px solid var(--parchment-deep);
-  border-radius: 6px;
+  padding: var(--space-1);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-1);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--parchment-raised);
   cursor: pointer;
   line-height: 0;
 }
 .plates-thumb-btn:hover { border-color: var(--brass); }
 .plates-thumb-btn img { display: block; width: 100%; height: 90px; object-fit: cover; max-width: 100%; }
-.plates-caption { font-size: 11px; line-height: 1.35; color: var(--ink); }
-.plates-credit { font-size: 10px; color: var(--ink-soft); font-style: italic;
+/* The caption narrates, so it is the body voice. Everything under it states a
+   fact about the object — when, by whom, from where — and is the machine's. */
+.plates-caption { font-size: var(--step--2); line-height: 1.35; color: var(--ink); }
+.plates-date, .plates-credit, .plates-source {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
+  font-size: var(--step--2);
 }
-.plates-source { font-size: 10px; color: var(--brass-text); text-decoration: none;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums lining-nums;
-}
+/* Not decoration: an undated plate reads as contemporary with its stage, and
+   most are not — Hodges drew Cape Town eighteen years after the Boudeuse left
+   it. The date is the one field that can contradict that, so it is set above
+   the credit and in the ink the eye reaches first. */
+.plates-date { color: var(--ink-soft); }
+.plates-credit { color: var(--ink-faint); font-style: italic; }
+.plates-source { color: var(--brass-text); text-decoration: none; }
 .plates-source:hover { text-decoration: underline; }
 
 .plates-lightbox {
@@ -457,7 +466,18 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums lining-nums;
 }
-.plates-lightbox-cap a { font-size: 11px; color: var(--brass-text); }
+.plates-lightbox-cap a { font-size: var(--step--2); color: var(--brass-text); }
+/* The institution's own terms on its scan. It is prose a human wrote, so it
+   stays in the reading voice rather than joining the mono record above it —
+   and it is set narrow, because a paragraph at full lightbox width beside a
+   plate competes with the plate. */
+.plates-lightbox-rights {
+  margin-top: var(--space-2);
+  max-width: 62ch;
+  font-size: var(--step--2);
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
 .plates-lightbox-close {
   position: absolute;
   top: 8px;
@@ -2505,7 +2525,8 @@ main.prose {
 .space .transport-bar { background: rgba(16, 20, 31, 0.92); box-shadow: 0 8px 26px rgba(0, 0, 0, 0.45); }
 .space .lens-rail { background: rgba(16, 20, 31, 0.92); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
 .space .desk-input,
-.space .plates-thumb-btn { background: rgba(255, 255, 255, 0.06); }
+/* The mount takes --parchment-raised, which .space re-declares for itself, so
+   the starfield no longer needs an overlay of its own here. */
 .space .voy-card,
 .space .atlas-chip { background: rgba(255, 255, 255, 0.05); }
 .space .voy-card:hover { background: rgba(255, 255, 255, 0.09); }

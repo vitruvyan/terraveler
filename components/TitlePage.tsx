@@ -35,6 +35,7 @@ export default function TitlePage({
    *  no longer a background: it is the plate. */
   background?: string;
   credit?: string;
+  date?: string;
   actions?: Action[];
   meta?: string[];
   wide?: boolean;
@@ -86,6 +87,8 @@ export default function TitlePage({
           <figcaption>
             <p className="tp-plate-cap">{plate.caption}</p>
             <div className="tp-plate-prov">
+              <span>{plate.date}</span>
+              <span className="tp-sep">&middot;</span>
               <span>{plate.credit}</span>
               <span className="tp-sep">&middot;</span>
               <span>{plate.license}</span>

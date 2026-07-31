@@ -888,6 +888,30 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           source: w.diary_excerpt
             ? { citation: w.diary_source_citation, url: w.diary_source_url }
             : undefined,
+          // Plates were the one thing a voyage could hold that this call would
+          // not admit to holding. list_gaps asked for period imagery, drafts
+          // could carry it, the site rendered it — and the tool an agent uses to
+          // read a voyage returned a stage with no images and no way to tell
+          // whether that meant none existed or none were shown. A reviewer
+          // checking a plates submission against what is already published had
+          // to take the submission's word for it.
+          //
+          // Each carries its provenance, because a plate is only as good as
+          // that: the licence and the source belong to the record, not to a
+          // footnote somewhere else.
+          plates: (w.media ?? []).length
+            ? (w.media as any[]).map((m) => ({
+                url: m.url,
+                caption: m.caption ?? null,
+                credit: m.credit ?? null,
+                license: m.license ?? null,
+                source_url: m.source_url ?? null,
+                // Frequently NOT the date of the stage — an image of a place is
+                // often drawn long after the ship left it. Absent where the
+                // record does not say, which is itself worth reading.
+                date: m.date ?? null,
+              }))
+            : undefined,
         })),
       }, null, 2);
     }
