@@ -560,18 +560,22 @@ input[type="range"].scrubber::-moz-range-thumb {
   flex-wrap: wrap;
   margin: 6px 0;
 }
+/* Secondary, now that copying is the primary action. They were the same
+   bordeaux as the primary button, which put two things at the top of the same
+   hierarchy and let the shortcuts outrank the path that always works. */
 .contrib-ai-btn {
-  flex: 1 1 84px;
+  display: inline-flex;
+  align-items: baseline;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+  color: var(--ink);
+  cursor: pointer;
   font-family: var(--font-ui);
   font-size: var(--step--1);
-  padding: 9px 8px;
-  border-radius: var(--radius-2);
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--parchment);
-  cursor: pointer;
-  text-align: center;
 }
+.contrib-ai-btn:hover { border-color: var(--brass); }
 .contrib-ai-btn:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
 .contrib-copy-row {
   display: flex;
@@ -785,7 +789,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 /* --- Pigafetta chat --- */
-.pig-launch { position: fixed; right: 18px; bottom: 116px; z-index: 20; }
+.pig-launch { position: fixed; right: 18px; bottom: 116px; /* Below open windows. At 20 the launcher sat on top of the Atlas and the
+     Contribute panels — a floating button covering the thing it is standing
+     next to, which is the one place a launcher must not be. */
+  z-index: 11; }
 /* The same pill as the atlas door. It used to be bordeaux on the grounds that
    it was an invitation rather than a way through — a distinction real enough
    to write down and invisible to anyone actually looking at the map, where it
@@ -4625,4 +4632,68 @@ main.prose {
 
 @media (max-width: 640px) {
   .sb-lines li { grid-template-columns: 1fr; gap: 0; }
+}
+
+/* ============================================================================
+   CONTRIBUTE — the handoff, in the order the paths actually work
+   ----------------------------------------------------------------------------
+   Copying works with every assistant that exists. Three named vendors were the
+   primary action, one of which could not even carry the prompt, and the best
+   path of all — an assistant already connected — was a parenthetical at the
+   bottom labelled "power users".
+   ========================================================================= */
+
+.contrib-connected {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--rule-hair);
+  border-left: 2px solid var(--brass);
+  border-radius: var(--radius-2);
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.contrib-connected strong { color: var(--ink); font-weight: 500; }
+.contrib-connected svg { margin-top: 2px; color: var(--brass-text); flex: 0 0 auto; }
+.contrib-connected a { color: var(--brass-text); }
+
+.contrib-step {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin-bottom: var(--space-2);
+}
+.contrib-copy-btn.is-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--parchment);
+}
+.contrib-copy-btn.is-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+.contrib-hint {
+  margin: var(--space-2) 0 0;
+  font-size: var(--step--1);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.contrib-or {
+  margin: var(--space-4) 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+/* Says which of them needs a paste, before you find out by clicking. */
+.contrib-ai-note {
+  margin-left: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
 }

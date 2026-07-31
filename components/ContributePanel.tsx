@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useState } from "react";
 import DraggableWindow from "@/components/DraggableWindow";
 import type { MediaItem, Waypoint } from "@/lib/types";
@@ -88,6 +89,23 @@ Then give me a short suggestion I can paste back, in this form:
  * prompt (no secrets — the MCP invite code lives in the user's own connector
  * config) and opens Claude / ChatGPT / Gemini with it pre-filled.
  */
+/* Named assistants are shortcuts, not the list of what works. Anything that
+   reads a pasted prompt works — Copilot, Perplexity, a local model, or a
+   Gemini window you already have open — which is why copying is the primary
+   action and this is the convenience layer.
+
+   `url` means the prompt travels in the link. Without it the prompt has to be
+   pasted, and the button says so rather than finding out for you. */
+type Assistant = { name: string; url?: (p: string) => string; open: string; carries: boolean };
+
+const ASSISTANTS: Assistant[] = [
+  { name: "Claude", carries: true, open: "https://claude.ai/new",
+    url: (p) => `https://claude.ai/new?q=${encodeURIComponent(p)}` },
+  { name: "ChatGPT", carries: true, open: "https://chatgpt.com/",
+    url: (p) => `https://chatgpt.com/?q=${encodeURIComponent(p)}` },
+  { name: "Gemini", carries: false, open: "https://gemini.google.com/app" },
+];
+
 export default function ContributePanel({
   voyageSlug,
   voyageTitle,
@@ -164,22 +182,22 @@ export default function ContributePanel({
     }
   }
 
-  function handToClaude() {
-    window.open(`https://claude.ai/new?q=${encodeURIComponent(prompt)}`, "_blank", "noopener,noreferrer");
-  }
-
-  function handToChatGPT() {
-    window.open(`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`, "_blank", "noopener,noreferrer");
-  }
-
-  async function handToGemini() {
+  /* Three buttons that looked alike and behaved differently: two carried the
+     prompt in the URL, the third quietly copied it to the clipboard and opened
+     an empty app. Which one you got was invisible until you had already
+     clicked. The behaviour is declared here instead, and the label says it. */
+  async function handTo(a: Assistant) {
+    if (a.url) {
+      window.open(a.url(prompt), "_blank", "noopener,noreferrer");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(prompt);
-      flash("Prompt copied — paste it into Gemini.", 4000);
+      flash(`Prompt copied — paste it into ${a.name}.`, 4000);
     } catch {
-      flash("Couldn't copy — use “Copy prompt” below, then paste into Gemini.", 4000);
+      flash(`Couldn't copy — use “Copy the prompt” above, then paste into ${a.name}.`, 5000);
     }
-    window.open("https://gemini.google.com/app", "_blank", "noopener,noreferrer");
+    window.open(a.open, "_blank", "noopener,noreferrer");
   }
 
   async function submit() {
@@ -252,35 +270,51 @@ export default function ContributePanel({
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <div
-          style={{
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--brass)",
-          }}
-        >
-          Hand to your AI
+        {/* If the reader's assistant is already connected, none of what follows
+            applies: it can put this on the desk itself. That was a parenthetical
+            at the very bottom, labelled "power users" — the best path on the
+            page, in brackets, after everything. */}
+        <div className="contrib-connected">
+          <Icon name="key" size={15} />
+          <span>
+            <strong>Connected your assistant?</strong> Ask it directly — it can put this
+            on the desk itself, sources and all. <a href="/connect">Connect one →</a>
+          </span>
         </div>
-        <div className="contrib-ai-row">
-          <button type="button" className="contrib-ai-btn" onClick={handToClaude}>
-            Claude
-          </button>
-          <button type="button" className="contrib-ai-btn" onClick={handToChatGPT}>
-            ChatGPT
-          </button>
-          <button type="button" className="contrib-ai-btn" onClick={handToGemini}>
-            Gemini
-          </button>
-        </div>
+
+        {/* The order is the inversion. Copying works with every assistant that
+            exists; the named three are a convenience for the ones that take a
+            link. It used to be the other way round, which read as "these are
+            your options" — and one of the three did not even carry the prompt. */}
+        <div className="contrib-step">Hand it to your AI</div>
+
         <div className="contrib-copy-row">
-          <button type="button" className="contrib-copy-btn" onClick={copyPrompt}>
-            Copy prompt
+          <button type="button" className="contrib-copy-btn is-primary" onClick={copyPrompt}>
+            Copy the prompt
           </button>
           {copyMsg && <span className="contrib-toast">{copyMsg}</span>}
         </div>
-        <div style={{ fontSize: 11.5, color: "var(--ink-soft)", marginTop: 6, lineHeight: 1.4 }}>
-          Opens your AI to find a public-domain source — then paste its answer below.
+        <p className="contrib-hint">
+          Paste it into any assistant — including one already open. It asks for a
+          public-domain source; bring its answer back below.
+        </p>
+
+        <div className="contrib-or">or open it in</div>
+        <div className="contrib-ai-row">
+          {ASSISTANTS.map((a) => (
+            <button
+              key={a.name}
+              type="button"
+              className="contrib-ai-btn"
+              onClick={() => handTo(a)}
+              title={a.carries
+                ? `Opens ${a.name} with the prompt already in it`
+                : `${a.name} cannot take a prompt in a link — it will be copied for you to paste`}
+            >
+              {a.name}
+              {!a.carries && <span className="contrib-ai-note">paste</span>}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -335,9 +369,8 @@ export default function ContributePanel({
       </div>
 
       <div className="contrib-note">
-        The machine drafts, a human authorises: your suggestion lands on the editor&rsquo;s desk and is
-        reviewed before it goes live. (Power users: if you&rsquo;ve connected the Terraveler MCP, your AI
-        can submit directly instead.)
+        The machine drafts, a human authorises: your suggestion lands on the editor&rsquo;s
+        desk and is read before anything goes live.
       </div>
     </DraggableWindow>
   );
