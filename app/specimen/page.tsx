@@ -5,6 +5,38 @@ import Chapters from "./Chapters";
 import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
+import SubmissionBrief from "@/components/desk/SubmissionBrief";
+
+/* Due proposte vere, come arrivano dall'MCP: una suggestione (prosa scritta
+   dall'agente) e una bozza (waypoint, tavole, licenze). Il desk sta dietro una
+   sessione, quindi è qui che si guarda cosa vedrà il Curatore — la regola che
+   la skill impone per ogni superficie protetta. */
+const SUGGESTION = {
+  meta: { ideator: "a human" },
+  voyage: "cortes-1519",
+  waypoint: 14,
+  content_type: "correction",
+  idea: "Correction to submission 29 (waypoint-enrichment, plates), waypoint 14 Otumpan. The plate's image url is mistyped and returns 404: it reads .../commons/8/8a/ where the file is at .../commons/8/89/. Everything else about the plate — caption, credit, licence, source page — checks out.",
+};
+
+const DRAFT = {
+  meta: { type: "waypoint-enrichment", target_voyage: "boudeuse-1766", carta_version: "0.6" },
+  waypoints: [
+    { seq: 11, place_historical: "Port Praslin, New Britain", latitude: -4.68, longitude: 152.85,
+      arrival_date: "1768-07-06", confidence: "certain",
+      excerpt: "We found in this harbour a fine spring of water, and wood in abundance.",
+      claims: [1, 2],
+      plates: [{ url: "https://gallica.bnf.fr/iiif/…/native.jpg", source_url: "https://gallica.bnf.fr/ark:/12148/btv1b2300455x/f14.item",
+                 caption: "The harbour where they buried their inscription.",
+                 credit: "Bibliothèque nationale de France", license: "public domain", date: "1772" }] },
+    { seq: 12, place_historical: "Isle of Choiseul", latitude: -7.05, longitude: 156.95,
+      arrival_date: "1768-07-22", confidence: "approximate", claims: [1],
+      plates: [{ url: "https://upload.wikimedia.org/…/chart.jpg", source_url: "https://commons.wikimedia.org/wiki/File:Chart.jpg",
+                 caption: "The chart drawn on the passage.", credit: "Wikimedia Commons", license: "public domain", date: "1772" }] },
+    { seq: 13, place_historical: "Louisiade Archipelago", latitude: -11.2, longitude: 153.4,
+      arrival_date: "1768-08-04", confidence: "reconstructed", claims: [] },
+  ],
+};
 
 /* Il registro B non è più una finta: sono i componenti veri del Quarterdeck,
    alimentati con le righe reali del 28-30 luglio 2026. Il desk sta dietro una
@@ -338,6 +370,21 @@ export default function SpecimenPage() {
               { label: "suspended", n: 1 },
             ]}
           />
+
+          <h3 className="dk-section-title">A proposal, before the verdict</h3>
+          <SubmissionBrief type="content-suggestion" payload={SUGGESTION} />
+          <SubmissionBrief type="waypoint-enrichment" payload={DRAFT} />
+
+          <div className="spec-note">
+            <b>Il desk mostrava una proposta come JSON grezzo</b> dietro un
+            triangolino. È un ottimo <i>registro</i> e una pessima <i>domanda</i>:
+            per decidere se pubblicare, il Curatore doveva leggere un oggetto
+            serializzato e tenerne la forma in testa. Il registro è rimasto dov&rsquo;era,
+            sotto e chiuso — un audit trail che non si può ispezionare non è un
+            audit trail — e sopra c&rsquo;è ora la risposta a <b>cosa sto approvando</b>.
+            Ogni riga è <b>ricavata</b> dal payload, mai scritta dentro: un
+            riassunto non può lusingare una proposta che i dati non reggono.
+          </div>
 
           <h3 className="dk-section-title">Ship&rsquo;s log</h3>
           <ShipsLog feed={DESK_FEED} />

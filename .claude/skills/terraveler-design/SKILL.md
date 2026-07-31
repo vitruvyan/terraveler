@@ -81,6 +81,14 @@ exception.
   render `v0.4` with a short zero that reads as the letter *o*. Already handled
   for `.prose code`; do it by hand elsewhere.
 
+- **A record is not a question.** Where someone has to decide something, show
+  what is being decided — derived from the data, never written beside it — and
+  keep the raw record below it and shut. The desk asked for verdicts on
+  submissions by printing the JSON payload: a faithful record, and a poor thing
+  to ask a verdict from. `components/desk/SubmissionBrief.tsx` is the pattern.
+  A zero is a finding and gets said out loud ("no stage carries a quotation"),
+  never left as an empty cell.
+
 - **Reasoning is prose, records are data.** In any log or verdict, the *why* a
   human wrote is serif at reading size; the *record* around it is mono. If both
   look the same, the reader cannot tell which one to read.

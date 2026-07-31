@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, ShipsLog } from "@/components/desk/Quarterdeck";
+import SubmissionBrief from "@/components/desk/SubmissionBrief";
 
 type Sub = {
   id: number;
@@ -324,9 +325,16 @@ export default function Desk() {
                 {new Date(s.created_at).toLocaleString()} · Carta v{s.carta_version}
               </div>
 
+              {/* What is being proposed. The record of it follows, below and
+                  shut: an audit trail has to be inspectable, but it is a poor
+                  thing to ask a verdict from. */}
+              <SubmissionBrief type={s.type} payload={s.payload} />
+
               <details>
-                <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--ink-soft)" }}>Payload</summary>
-                <pre style={{ maxHeight: 300, overflow: "auto", fontSize: 11.5, background: "rgba(43,33,23,0.05)", padding: 10, borderRadius: 8 }}>
+                <summary style={{ cursor: "pointer", fontSize: "var(--step--1)", color: "var(--ink-faint)" }}>
+                  The record as submitted
+                </summary>
+                <pre style={{ maxHeight: 300, overflow: "auto", fontSize: "var(--step--2)", background: "rgba(43,33,23,0.05)", padding: "var(--space-3)", borderRadius: "var(--radius-2)" }}>
                   {JSON.stringify(s.payload, null, 2)}
                 </pre>
               </details>
