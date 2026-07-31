@@ -121,6 +121,33 @@ exception.
   fastest way to break contrast without noticing — it is exactly how
   `--state-changes` shipped at 3.29:1 inside `.space` and got caught.
 
+- **A layer a theme cannot re-declare is not a layer.** If adding a theme
+  means copying a list of overrides by hand, the token is missing, not the
+  discipline. `.space` carried a block of nine re-declared instrument
+  backgrounds with a comment explaining that the shared rules baked the
+  parchment RGB in directly — so the third atlas was born broken, because
+  nobody knew to copy the list. `--paper-rgb` retired all nine. Before writing
+  a `.theme .thing { background: … }` override, ask what token is missing.
+
+- **A register belongs to its subject, not to the machinery that draws it.**
+  Terraveler had three atlases and two registers because the split ran along
+  the renderer — orrery versus MapLibre — so a Moon traverse inherited
+  Age-of-Sail parchment by accident of sharing a map component. Theme on
+  `body`, `kind`, evidence: something the reader can see. Never on which code
+  path drew it.
+
+- **One register per family, and let the subject supply its own colour.** The
+  temptation with Worlds was a theme per body — Mars red, lunar grey. That
+  over-fits: today the family is one voyage. One register carries the family,
+  a single token is keyed to the body, and the body's real colour arrives
+  through the map tiles, where it is true rather than asserted.
+
+- **Measure the ground before choosing ink for it.** Worlds was drawn first as
+  dark basalt, on the reasonable assumption that everything past Earth is
+  dark. The lunar basemap renders at **151/255** — the Moon is a pale body,
+  and the register was fighting its own map. One screenshot and one average
+  settled what taste had got backwards.
+
 - **Never a raw hex in a component.** If a colour is missing, add a token.
 
 - **Icons are drawn, never emoji.** Use `components/Icon.tsx`. An emoji is
@@ -255,7 +282,8 @@ are editing is already migrated; check it. As of the typography commit:
   reach where the design already is is not a scale.
 - `--rule-*` and `--elev-*` have **zero** usages so far — the hairlines and
   shadows in the file are still ad hoc.
-- **~290 colour literals** remain in `globals.css`. A good share are the token
+- **~270 colour literals** remain in `globals.css` — 18 paper grounds and 13
+  chrome colours went to tokens with `--paper-rgb` and `--lens-*`. A good share are the token
   declarations themselves and alpha overlays doing real work; the rest want
   tokenising. Note the `rgba(255,255,255,0.x)` lifts are **not** all the same
   thing — over the map their translucency is load-bearing and must not be
@@ -277,9 +305,13 @@ are editing is already migrated; check it. As of the typography commit:
   looks on this system — see `components/desk/Quarterdeck.tsx`, the first
   thing here built with no literal size, radius or colour. Its **submissions
   and crew tabs are not**: they are still inline styles and raw px.
-- Other surfaces still off the system: the map chrome beyond the notes already
-  moved, `/account/agents`, the contribute panel, and `/connect` (which still
-  has no opening at all).
+- Other surfaces still off the system: `/account/agents`, the contribute
+  panel, and `/connect` (which still has no opening at all).
+- **Colour set on a canvas escapes the cascade entirely.** MapLibre paints the
+  route in JS, so no theme could reach it and the Moon ran an Age-of-Sail
+  oxide line. It reads `--route` off the container now. Anything else handed
+  to a canvas or a WebGL layer — `SolarSystemMap`, `SolarSystem3D`, the empire
+  fills, the border lines — is still literal and has the same problem.
 
 - **A live view says when it is idle.** `/crew` is the watch bill: who has the
   deck now, who is below, what is on the stocks. Liveness is carried by facts
@@ -290,10 +322,14 @@ are editing is already migrated; check it. As of the typography commit:
   archive: a dashboard that looks alive while idle is lying quietly.
 - The **paper grain** is on `.tp-page` and on the specimen, and nowhere else.
   Extending it to the rest of the site is a decision nobody has taken.
-- **No emoji remain in the interface.** The only ones in the repo are the
-  specimen's "was" column and the comment in `Icon.tsx`, both of which exist to
-  record what was replaced. The map's waypoint markers are drawn by MapLibre
-  from data and are a separate question.
+- **No emoji remain in the interface** — but this line claimed that before it
+  was true. One survived the sweep: `content: "📷"` on the plate badge, in CSS
+  rather than in JSX, which is where the sweep looked. On a machine with no
+  emoji font it rendered as tofu, a literal box, on the map beside a landfall.
+  It is drawn now. **Grep CSS `content:` as well as JSX** before making this
+  claim again. The remaining ones in the repo are the specimen's "was" column
+  and the comment in `Icon.tsx`, both of which exist to record what was
+  replaced.
 - The **wordmark is settled**: engraved small caps, Cormorant 500, +0.2em, via
   the shared `.wordmark` class. Page titles are already Cormorant light in
   roman, so a roman wordmark would have stopped being a mark and become one
