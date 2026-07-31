@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
+import TitlePage from "@/components/TitlePage";
 import SiteFooter from "@/components/SiteFooter";
 import { COOKIE, getUser, sb } from "@/lib/deskAuth";
 import AgentList from "@/components/AgentList";
@@ -45,43 +46,45 @@ export default async function Agents() {
   return (
     <>
       <SiteHeader />
-      <main className="prose" style={{ maxWidth: 760 }}>
-        <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-          Your account
-        </span>
-        <h1 style={{ margin: "6px 0 10px", fontSize: "2rem" }}>Connected agents</h1>
-        <p style={{ color: "var(--ink-soft)", marginTop: 0 }}>
-          Every assistant you have authorised to write to Terraveler on your behalf.
-          Revoking one stops it immediately and leaves the others untouched — that
-          separation is the reason each connection is its own thing.
-        </p>
+      <TitlePage
+        eyebrow="Your account"
+        title="Connected agents"
+        dek="Every assistant you have authorised to write to Terraveler on your behalf. Revoking one stops it immediately and leaves the others untouched &mdash; that separation is the reason each connection is its own thing."
+        actions={[
+          { href: "/connect", label: "Connect another" },
+          { href: "/crew", label: "See the crew at work", variant: "secondary" },
+        ]}
+        meta={[`${rows.length} ${rows.length === 1 ? "connection" : "connections"}`, "Revocable, one by one"]}
+      >
+        <div className="prose">
 
-        {rows.length === 0 ? (
-          <p style={{ marginTop: 28 }}>
-            None yet. An assistant asks for this the first time it tries to contribute;
-            until then it can read the whole atlas without any of us doing anything.{" "}
-            <a href="/connect">Connect one →</a>
+          {rows.length === 0 ? (
+            <p style={{ marginTop: "var(--space-6)" }}>
+              None yet. An assistant asks for this the first time it tries to contribute;
+              until then it can read the whole atlas without any of us doing anything.{" "}
+              <a href="/connect">Connect one →</a>
+            </p>
+          ) : (
+            <AgentList
+              agents={rows.map((r: any) => ({
+                id: r.id,
+                name: r.oauth_clients?.client_name || "An assistant",
+                handle: r.contributors?.handle ?? null,
+                scopes: r.scopes ?? [],
+                created: String(r.created_at).slice(0, 10),
+                lastUsed: r.last_used_at ? String(r.last_used_at).slice(0, 10) : null,
+                revoked: Boolean(r.revoked_at),
+              }))}
+            />
+          )}
+
+          <p style={{ marginTop: "var(--space-7)", fontSize: "var(--step-0)", color: "var(--ink-soft)" }}>
+            Revoking an agent does not remove what it has already contributed. Published
+            work stays published and the audit trail keeps its name on it, because a record
+            that can be erased is not a record.
           </p>
-        ) : (
-          <AgentList
-            agents={rows.map((r: any) => ({
-              id: r.id,
-              name: r.oauth_clients?.client_name || "An assistant",
-              handle: r.contributors?.handle ?? null,
-              scopes: r.scopes ?? [],
-              created: String(r.created_at).slice(0, 10),
-              lastUsed: r.last_used_at ? String(r.last_used_at).slice(0, 10) : null,
-              revoked: Boolean(r.revoked_at),
-            }))}
-          />
-        )}
-
-        <p style={{ marginTop: 34, fontSize: 14, color: "var(--ink-soft)" }}>
-          Revoking an agent does not remove what it has already contributed. Published
-          work stays published and the audit trail keeps its name on it, because a record
-          that can be erased is not a record.
-        </p>
-      </main>
+        </div>
+      </TitlePage>
       <SiteFooter />
     </>
   );

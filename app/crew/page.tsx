@@ -57,14 +57,16 @@ export default async function Crew() {
         ]}
         meta={["Audit trail, not a summary", "Refusals included", "Live"]}
       >
-        <p className="cw-preamble">
-          Nothing below is written afterwards — it is the audit trail itself, which is
-          why it includes the times the atlas said no. Drafts in progress are named but
-          not shown: work that has not passed review is not published here by the back
-          door.
-        </p>
+        <div className="prose">
+          <p className="cw-preamble">
+            Nothing below is written afterwards — it is the audit trail itself, which is
+            why it includes the times the atlas said no. Drafts in progress are named but
+            not shown: work that has not passed review is not published here by the back
+            door.
+          </p>
 
-        <CrewBoard initial={data} />
+          <CrewBoard initial={data} />
+        </div>
       </TitlePage>
       <SiteFooter />
     </>
