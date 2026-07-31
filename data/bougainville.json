@@ -68,15 +68,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "certain",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Orilla_del_R%C3%ADo_de_la_Plata.jpg/1280px-Orilla_del_R%C3%ADo_de_la_Plata.jpg",
-          "caption": "Orilla del Río de la Plata",
-          "credit": "Roxyuru",
-          "source_url": "https://commons.wikimedia.org/wiki/File:Orilla_del_R%C3%ADo_de_la_Plata.jpg",
-          "license": "CC BY-SA 4.0"
-        }
-      ]
+      "media": null
     },
     {
       "id": 103,
@@ -165,15 +157,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "certain",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/EMB_-_Tahiti_Trauergewand_Priester.jpg/1280px-EMB_-_Tahiti_Trauergewand_Priester.jpg",
-          "caption": "EMB - Tahiti Trauergewand Priester",
-          "credit": "Wolfgang Sauber",
-          "source_url": "https://commons.wikimedia.org/wiki/File:EMB_-_Tahiti_Trauergewand_Priester.jpg",
-          "license": "CC BY-SA 4.0"
-        }
-      ]
+      "media": null
     },
     {
       "id": 107,
@@ -210,15 +194,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "approximate",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Description_exacte_des_isles_de_l%27Archipel%2C_et_de_quelques_autres_adjacentes%3B_dont_les_principales_sont_Chypre%2C_Rhodes%2C_Candie%2C_Samos%2C_Chio_..._%28IA_b30451966%29.pdf/page1-1280px-thumbnail.pdf.jpg",
-          "caption": "Description exacte des isles de l'Archipel, et de quelques autres adjacentes; dont les principales sont Chypre, Rhodes, Candie, Samos, Chio ... (IA b30451966)",
-          "credit": "Dapper, Olfert, 1639-1689",
-          "source_url": "https://commons.wikimedia.org/wiki/File:Description_exacte_des_isles_de_l%27Archipel,_et_de_quelques_autres_adjacentes;_dont_les_principales_sont_Chypre,_Rhodes,_Candie,_Samos,_Chio_..._(IA_b30451966).pdf",
-          "license": "Public domain"
-        }
-      ]
+      "media": null
     },
     {
       "id": 109,
@@ -237,15 +213,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "approximate",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/A_voyage_to_New_Holland_-_Dampier.djvu/page1-500px-A_voyage_to_New_Holland_-_Dampier.djvu.jpg",
-          "caption": "A voyage to New Holland - Dampier",
-          "credit": "William Dampier",
-          "source_url": "https://commons.wikimedia.org/wiki/File:A_voyage_to_New_Holland_-_Dampier.djvu",
-          "license": "Public domain"
-        }
-      ]
+      "media": null
     },
     {
       "id": 110,
@@ -354,15 +322,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "certain",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/A_view_from_Cape_of_Good_Hope.jpg/1280px-A_view_from_Cape_of_Good_Hope.jpg",
-          "caption": "A view from Cape of Good Hope",
-          "credit": "Satdeep Gill",
-          "source_url": "https://commons.wikimedia.org/wiki/File:A_view_from_Cape_of_Good_Hope.jpg",
-          "license": "CC BY-SA 4.0"
-        }
-      ]
+      "media": null
     },
     {
       "id": 115,
@@ -381,15 +341,7 @@
       "diary_source_url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
       "confidence": "certain",
       "media_url": null,
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/A_View_of_the_French_Raft%2C_as_seen_Afloat_at_St_Maloes%2C_in_February_1798_%28with_key%29_%28rafts_8%29_RMG_PY7432.tiff/lossy-page1-1280px-A_View_of_the_French_Raft%2C_as_seen_Afloat_at_St_Maloes%2C_in_February_1798_%28with_key%29_%28rafts_8%29_RMG_PY7432.tiff.jpg",
-          "caption": "A View of the French Raft, as seen Afloat at St Maloes, in February 1798 (with key) (rafts 8) RMG PY7432",
-          "credit": "John Fairburn",
-          "source_url": "https://commons.wikimedia.org/wiki/File:A_View_of_the_French_Raft,_as_seen_Afloat_at_St_Maloes,_in_February_1798_(with_key)_(rafts_8)_RMG_PY7432.tiff",
-          "license": "Public domain"
-        }
-      ]
+      "media": null
     }
   ]
 }

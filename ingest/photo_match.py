@@ -1,5 +1,33 @@
 """Verify the photo-association agent: assign each voyage photo to the waypoint
 it illustrates (or none). gpt-4.1, one call. Dry-run — prints, writes nothing.
+
+READ THIS BEFORE TRUSTING ITS OUTPUT — it is not a dry run of a working thing.
+
+The prompt below tells the model to assign a photo "only when the photo clearly
+depicts that place/event", and then hands it a list of TITLES. It never sends an
+image. The model is being asked for a judgement about a picture it cannot see,
+and the only evidence it has is the words in the filename — so it does the one
+thing available to it, which is match on place-names, and reports it with the
+confidence the instruction asked for.
+
+Six of the eleven associations it produced for boudeuse-1766 were wrong, and
+every one of them is a good textual match:
+
+  * "Description exacte des isles de l'Archipel ... Chypre, Rhodes, Candie,
+    Samos, Chio" -> Archipel des Grandes Cyclades. That is Dapper on the GREEK
+    Aegean, attached to Vanuatu on the word "Archipel".
+  * "A voyage to New Holland" (Dampier's TITLE PAGE) -> the shoals east of New
+    Holland. A title page depicts nothing.
+  * "A View of the French Raft, as seen Afloat at St Maloes, in February 1798"
+    -> Saint-Malo. An invasion-scare print from 29 years after the voyage ended.
+  * three modern CC BY-SA photographs, credited to living photographers, placed
+    under eighteenth-century landfalls.
+
+They sat in data/bougainville.json for months without being published, because
+the public API does not expose media[] yet. That is luck, not a safeguard.
+
+If this is run again: send the image, or do not ask the question. A caption is
+evidence about a caption.
 """
 import os
 import json
