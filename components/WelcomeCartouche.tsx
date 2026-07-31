@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useCallback, useEffect, useState } from "react";
 
 /**
@@ -152,7 +153,7 @@ export default function WelcomeCartouche() {
           checked against its source before it sails.
         </p>
         <div className="welcome-actions">
-          <button className="welcome-btn primary" onClick={dismiss}>⚓ Explore the atlas</button>
+          <button className="welcome-btn primary" onClick={dismiss}><Icon name="anchor" size={15} /> Explore the atlas</button>
           <button className="welcome-btn" onClick={() => setWizard(true)}>Invite your agent →</button>
         </div>
       </aside>
@@ -174,7 +175,7 @@ export default function WelcomeCartouche() {
         <ol className="tv-wizard-rail" aria-label="Progress">
           {ORDER.slice(0, 4).map((s, i) => (
             <li key={s} className={i < at ? "done" : i === at ? "now" : ""}>
-              <span className="tv-wizard-dot">{i < at ? "✓" : i + 1}</span>
+              <span className="tv-wizard-dot">{i < at ? <Icon name="check" size={12} /> : i + 1}</span>
               <span className="tv-wizard-rail-label">{LABEL[s]}</span>
             </li>
           ))}

@@ -418,7 +418,7 @@ export default function Desk() {
                   <tr key={c.id} style={{ borderBottom: "1px solid var(--parchment-deep)", opacity: c.status === "suspended" ? 0.55 : 1 }}>
                     <td style={{ padding: "8px" }}>
                       <strong>{c.handle}</strong>
-                      {!c.has_key && <span title="no personal key yet" style={{ marginLeft: 6, fontSize: 11, color: "var(--brass)" }}>⚠ no key</span>}
+                      {!c.has_key && <span title="no personal key yet" style={{ marginLeft: 6 }} className="dk-warn">no key</span>}
                     </td>
                     <td style={{ padding: "8px" }}>
                       <select className="desk-input" style={{ padding: "4px 6px", fontSize: 12.5 }}

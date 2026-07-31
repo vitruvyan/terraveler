@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import DraggableWindow from "@/components/DraggableWindow";
 
@@ -89,7 +90,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
                 {dedupe(m.sources).map((s, j) =>
                   s.source_url ? (
                     <a key={j} href={s.source_url} target="_blank" rel="noreferrer" className="pig-src">
-                      {s.type === "image" ? "🖼 " : ""}
+                      {s.type === "image" ? <Icon name="plates" size={13} /> : null}
                       {s.title}
                     </a>
                   ) : (
@@ -159,7 +160,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
           </div>
         )}
         <button className="pig-pill" onClick={() => setOpen(true)}>
-          ⚓ Ask Pigafetta
+          <Icon name="anchor" size={15} /> Ask Pigafetta
         </button>
       </div>
     );

@@ -1,3 +1,4 @@
+import Icon from "@/components/Icon";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
@@ -169,7 +170,7 @@ export default async function VoyageLog({
               textDecoration: "none",
             }}
           >
-            🗺 Sail this voyage on the map
+            <Icon name="map" size={16} /> Sail this voyage on the map
           </a>
         </p>
 

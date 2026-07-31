@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "@/components/Icon";
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
@@ -290,7 +291,7 @@ export default function SpaceVoyageExperience({
           title={`${voyage.title} — open the Atlas`}
           aria-label="Open the Atlas"
         >
-          🧭
+          <Icon name="compass" size={19} />
         </button>
       </div>
 
@@ -302,7 +303,7 @@ export default function SpaceVoyageExperience({
             title="Tools"
             onClick={() => setRailOpen(true)}
           >
-            {lens === "log" ? "📡" : lens === "chart" ? "📊" : lens === "plates" ? "🖼" : "🪐"}
+            <Icon name={lens === "log" ? "antenna" : lens === "chart" ? "chart" : lens === "plates" ? "plates" : "orrery"} size={19} />
           </button>
         ) : (
           <>
@@ -316,7 +317,7 @@ export default function SpaceVoyageExperience({
                 setRailOpen(false);
               }}
             >
-              📡
+              <Icon name="antenna" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "chart" ? "active" : ""}`}
@@ -328,7 +329,7 @@ export default function SpaceVoyageExperience({
                 setRailOpen(false);
               }}
             >
-              📊
+              <Icon name="chart" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "carto" ? "active" : ""}`}
@@ -340,7 +341,7 @@ export default function SpaceVoyageExperience({
                 setRailOpen(false);
               }}
             >
-              🪐
+              <Icon name="orrery" size={19} />
             </button>
             <button
               className={`lens-btn lens-btn-ico ${lens === "plates" ? "active" : ""}`}
@@ -352,10 +353,10 @@ export default function SpaceVoyageExperience({
                 setRailOpen(false);
               }}
             >
-              🖼
+              <Icon name="plates" size={19} />
             </button>
             <button className="lens-btn lens-btn-ico" disabled title="Golden Record — coming soon" aria-label="Golden Record (coming soon)">
-              💽
+              <Icon name="record" size={19} />
             </button>
             {isMobile && (
               <button
@@ -387,7 +388,7 @@ export default function SpaceVoyageExperience({
             </div>
             <div className="cart-ships">{voyage.ships}</div>
             <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-              📜 Read this voyage&rsquo;s log as text →
+              <Icon name="scroll" size={16} /> Read this voyage&rsquo;s log as text →
             </a>
           </div>
           <div className="atlas-chips">
@@ -415,7 +416,7 @@ export default function SpaceVoyageExperience({
       <div className="tr-cluster">
         <div style={{ position: "relative" }}>
           <button className="tr-btn" onClick={() => setMenuOpen((m) => !m)} aria-label="Menu" title="Menu">
-            ☰
+            <Icon name="menu" size={19} />
           </button>
           {menuOpen && (
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
@@ -444,7 +445,7 @@ export default function SpaceVoyageExperience({
             aria-label="Account"
             aria-expanded={acctOpen}
           >
-            👤
+            <Icon name="morion" size={23} />
           </button>
           <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
         </div>
@@ -713,7 +714,7 @@ export default function SpaceVoyageExperience({
 
       <div className="transport-bar">
         <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
-          {playing ? "❚❚" : "▶"}
+          <Icon name={playing ? "pause" : "play"} size={17} />
         </button>
         <div style={{ minWidth: 150 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem" }}>{dateLabel}</div>

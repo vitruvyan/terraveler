@@ -4441,3 +4441,13 @@ main.prose {
   line-height: 1.6;
   margin: 0 0 var(--space-5);
 }
+
+/* A state the desk is noting, not a pictogram. The ⚠ it replaces was the last
+   system-drawn glyph in the interface. */
+.dk-warn {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--state-wait);
+}
