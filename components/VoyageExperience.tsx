@@ -208,6 +208,17 @@ export default function VoyageExperience({
   const [isMobile, setIsMobile] = useState(false);
   const [railOpen, setRailOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  /* The welcome cartouche is a sibling mounted by the page, at a higher
+     z-index, and the two knew nothing about each other — so opening the atlas
+     put the panel underneath the very card that was pointing at it. A single
+     event is less coupling than lifting state through the page for one
+     boolean. The cartouche hides while the atlas is open and comes back when
+     it closes: it is not dismissed, because opening a panel is not the same as
+     having read the welcome. */
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("tv:atlas", { detail: pickerOpen }));
+  }, [pickerOpen]);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -514,17 +525,22 @@ export default function VoyageExperience({
         <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
           Terraveler
         </a>
+        {/* What you are looking at. A caption, not part of the door — it was
+            inside the button, which made half the control naked text on the
+            map and left the whole thing reading as a subtitle under the
+            wordmark however it was positioned. */}
+        <span className="map-here">{voyage.title}</span>
+
+        {/* The door. All of it one dark pill, so there is no half of it that
+            could be mistaken for a caption. */}
         <button
           className="map-atlas-door"
           onClick={() => setPickerOpen((o) => !o)}
           aria-expanded={pickerOpen}
           title="Open the Atlas"
         >
-          <span className="map-door-emblem"><Icon name="globe" size={19} /></span>
-          <span className="map-door-text">
-            {atlasCount ? `${atlasCount} voyages` : "The Atlas"}
-            <span className="map-door-here">{voyage.title}</span>
-          </span>
+          <Icon name="globe" size={17} />
+          <span>{atlasCount ? `${atlasCount} voyages` : "The Atlas"}</span>
         </button>
       </div>
 
@@ -621,7 +637,10 @@ export default function VoyageExperience({
           title="The Atlas"
           onClose={() => setPickerOpen(false)}
           width={350}
-          initial={{ left: 14, top: 64 }}
+          /* Below the imprint and clear of the lens rail, which starts at 10.
+             It used to open at left:14/top:64 — straight over the door that
+             opened it and over the wordmark above that. */
+          initial={{ left: 72, top: 168 }}
         >
           <div className="atlas-id">
             <span className="cart-kicker">Now sailing</span>

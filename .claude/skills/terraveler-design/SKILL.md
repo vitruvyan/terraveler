@@ -181,6 +181,12 @@ exception.
   look. They were all one material before, and the atlas door was being read as
   the wordmark's symbol.
 
+  And a control is **one material all the way through**. The atlas door was a
+  dark emblem with bare text beside it — half control, half words lying on the
+  map — and that half read as a caption under the wordmark wherever the door
+  was put. Where a control sits is rarely the defect; what it is made of
+  usually is.
+
 - **A legible control does not need to be taught.** If it needs teaching, the
   defect is in the control. The map already had a remembered first-visit
   overlay and voyages still could not be found — because an overlay that

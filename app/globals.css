@@ -775,8 +775,12 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .win-btn:hover { background: rgba(43, 33, 23, 0.1); color: var(--ink); }
 .win-body {
-  padding: 14px 18px 16px;
-  max-height: 60vh;
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  /* 60vh alone did not know where the window starts, so on a short viewport
+     the atlas panel — anchored at top:168 — still reached down onto the
+     basemap note. The second term ties the cap to the actual room left below
+     the anchor, and the panel scrolls inside instead of growing into things. */
+  max-height: min(60vh, calc(100dvh - 400px));
   overflow: auto;
 }
 
@@ -1176,7 +1180,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
 
 /* The imprint. No plate, because it is not a control — and in --ink rather
@@ -1184,7 +1188,9 @@ input[type="range"].scrubber::-moz-range-thumb {
    measures 11.15. The halo is for the darker political fills, not the sea. */
 .map-wordmark {
   color: var(--ink);
-  font-size: 1.5rem;
+  /* Fluid, because the room before the world strip is 240px at 1280 and 820 at
+     2560. Capped so it never reaches for space it does not have. */
+  font-size: clamp(1.75rem, 2.2vw, 2.3rem);
   letter-spacing: 0.2em;
   text-shadow:
     0 1px 0 rgba(242, 230, 207, 0.85),
@@ -1192,64 +1198,47 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .map-wordmark:hover { color: var(--accent); }
 
-/* The door to the atlas. Round emblem plus its label, one control — the label
-   is what says there is more than this chart, and the emblem is what makes it
-   look pressable. */
-.map-atlas-door {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  text-align: left;
-  color: var(--ink);
-}
-.map-door-emblem {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  /* The door material. Nothing else on this map is dark, so a round dark thing
-     is unambiguous — and parchment on ink is 12.75:1. */
-  background: var(--ink);
-  color: var(--parchment);
-  box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
-  transition: background var(--dur-1) var(--ease);
-}
-.map-atlas-door:hover .map-door-emblem { background: var(--accent-deep); }
-.map-door-text {
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink);
-  text-shadow: 0 1px 0 rgba(242, 230, 207, 0.9), 0 0 8px rgba(242, 230, 207, 0.9);
-}
-.map-door-here {
-  margin-top: 2px;
+/* What you are reading. Ink on the map like the imprint, because it is the
+   same kind of thing: a statement, not a control. */
+.map-here {
+  max-width: 30ch;
   font-family: var(--font-body);
-  font-size: var(--step--2);
-  letter-spacing: normal;
-  text-transform: none;
+  font-size: var(--step--1);
   font-style: italic;
+  line-height: 1.35;
   color: var(--ink-soft);
-  /* Two lines. Voyage titles run long — "The First French Circumnavigation of
-     the Globe (1766–1769)" is three at any sane width — and a label that grows
-     down the map is a label that fights the map. */
-  max-width: 26ch;
+  text-shadow: 0 1px 0 rgba(242, 230, 207, 0.9), 0 0 8px rgba(242, 230, 207, 0.9);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.map-atlas-door:hover .map-door-text { color: var(--accent); }
+
+/* The door to the atlas — all of it, not half.
+   It was a dark emblem with bare text beside it, so half the control was
+   control-material and half was words lying on the map. However it was
+   positioned, that half read as a caption under the wordmark. One pill, one
+   material, and the question of where to put it stops being the question. */
+.map-atlas-door {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--parchment);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
+  transition: background var(--dur-1) var(--ease);
+}
+.map-atlas-door:hover { background: var(--accent-deep); }
+.map-atlas-door:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 /* On the map the .wordmark class sits on the anchor, which wraps the tagline
    too — so all-small-caps and the 0.2em tracking inherited straight into it
    and the strapline came out as a 400px-wide band of spaced capitals running

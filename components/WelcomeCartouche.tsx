@@ -100,6 +100,14 @@ function Copy({ text }: { text: string }) {
 
 export default function WelcomeCartouche() {
   const [open, setOpen] = useState(false);
+  /* Stand aside while the atlas panel is open — see the note in
+     VoyageExperience. Hidden, not dismissed. */
+  const [atlasOpen, setAtlasOpen] = useState(false);
+  useEffect(() => {
+    const on = (e: Event) => setAtlasOpen(Boolean((e as CustomEvent).detail));
+    window.addEventListener("tv:atlas", on);
+    return () => window.removeEventListener("tv:atlas", on);
+  }, []);
   const [wizard, setWizard] = useState(false);
   const [status, setStatus] = useState<Status | null>(null);
   const [client, setClient] = useState("claude");
@@ -133,7 +141,7 @@ export default function WelcomeCartouche() {
     try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
   };
 
-  if (!open) return null;
+  if (!open || atlasOpen) return null;
 
   if (!wizard) {
     return (
