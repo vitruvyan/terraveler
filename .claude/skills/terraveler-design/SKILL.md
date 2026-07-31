@@ -182,8 +182,10 @@ exception.
 - **On the map, three classes, told apart by material.** The **imprint** says
   whose chart this is and is not a control, so it has no container: ink
   straight onto the map. A **door** takes you elsewhere — the atlas, the menu,
-  the account — and doors are round and dark, the one material nothing else on
-  the map uses. **Instruments** change what you see of the current voyage — the
+  the account, the assistant — and every door is the same dark material, round
+  for the icon-only ones and a pill where it carries a label. There is no
+  "this one is different because it is an invitation": that distinction was
+  real enough to write down and invisible to anyone looking at the map. **Instruments** change what you see of the current voyage — the
   lens rail, the transport bar, the world strip — and stay parchment
   rectangles. Shape carries the class a second time, so it is learnt in one
   look. They were all one material before, and the atlas door was being read as

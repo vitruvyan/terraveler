@@ -786,13 +786,29 @@ input[type="range"].scrubber::-moz-range-thumb {
 
 /* --- Pigafetta chat --- */
 .pig-launch { position: fixed; right: 18px; bottom: 116px; z-index: 20; }
+/* The same pill as the atlas door. It used to be bordeaux on the grounds that
+   it was an invitation rather than a way through — a distinction real enough
+   to write down and invisible to anyone actually looking at the map, where it
+   just read as a second kind of button. Every door is one material. */
 .pig-pill {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-ui); font-size: var(--step-0); color: var(--parchment);
-  background: var(--accent); border: none; border-radius: var(--radius-2); padding: 10px 18px;
-  cursor: pointer; box-shadow: 0 6px 20px rgba(43, 33, 23, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--parchment);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
+  transition: background var(--dur-1) var(--ease);
 }
 .pig-pill:hover { background: var(--accent-deep); }
+.pig-pill:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .pig-mini {
   position: absolute; right: 0; bottom: 52px; width: 250px;
   background: rgba(242, 230, 207, 0.98); border: 1px solid var(--parchment-deep);
