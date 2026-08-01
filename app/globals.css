@@ -918,8 +918,54 @@ input[type="range"].scrubber::-moz-range-thumb {
 .tb-reading { min-width: 150px; }
 .tb-date { font-family: var(--font-display); font-size: var(--step-1); line-height: 1.15; }
 .tb-place { font-size: var(--step--2); color: var(--ink-soft); }
-/* On a phone 150px of a 366px bar is not a minimum, it is most of the row. */
-[data-layout="phone"] .tb-reading { min-width: 0; }
+/* On a phone 150px of a 366px bar is not a minimum, it is most of the row —
+   and with a long landfall like "Off Isles Malouines (Falkland Islands), Port
+   Louis" the reading took the whole width and pushed the switch onto a row of
+   its own, which cost 40px to say nothing. It shrinks and wraps INSIDE its own
+   column instead. Not truncated: a place name with an ellipsis in it is a name
+   half said, and this atlas argues about place names for a living. */
+/* Basis ZERO, not auto, and the difference is the whole bug. Flex decides
+   where to break a line from an item’s HYPOTHETICAL size — its basis — before
+   it ever considers shrinking it. With `auto` this column declared the width
+   of the longest caption, about 260px, so play + reading + switch did not fit
+   and the switch was thrown onto a row of its own: 46px of bar to hold two
+   words that had room all along. At zero it declares nothing, never forces the
+   break, and grows into whatever the other two leave. */
+[data-layout="phone"] .tb-reading { min-width: 0; flex: 1 1 0; }
+/* The caption takes the smallest step on the scale, which this file keeps for
+   exactly this: the map’s labels and readouts genuinely live at nine and ten
+   pixels, and rounding them up grows every legend by a fifth.
+   It is measured rather than chosen. "Off Isles Malouines (Falkland Islands),
+   Port Louis" is the longest landfall in this voyage and at --step--2 it
+   wrapped to three lines in the column the switch leaves it, taking the bar to
+   148px. Giving it a row of its own fixed the peak and charged every SHORT
+   caption for it instead — 96px became 119 — which is trading a spike for a
+   tax. One step down keeps it in the column, at two lines in the worst case
+   and one in most. Nothing is truncated: a place name with an ellipsis in it
+   is a name half said, and this atlas argues about toponyms for a living. */
+[data-layout="phone"] .tb-place {
+  font-size: var(--step--3);
+  line-height: 1.35;
+  /* Capped at two lines, and I argued against this before doing it. The
+     objection stands — a place name with an ellipsis is a name half said — but
+     the alternative is worse for the same reader: measured across the voyage,
+     the bar swung between 96px and 148px, so arriving somewhere with a long
+     name shoved the whole map up by 52px. A chrome that MOVES is a worse lie
+     about the page than a name that continues elsewhere, and the whole name is
+     in the log, one tap away, where it is the heading. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+[data-layout="phone"] .tb-tracks { flex: 0 0 auto; }
+
+/* And the pixels under the rule. The bar padded 8 below a line that already
+   carries 5 of its own inside the touch target, so the paper below it read as
+   a margin nobody had asked for. */
+[data-layout="phone"] .transport-bar { padding-bottom: var(--space-1); }
+[data-layout="phone"] .voyage-track { gap: 2px; }
+[data-layout="phone"] .vt-segs { margin-bottom: 2px; }
 
 /* THE SWITCH between the two timelines, on a phone only. They encode the same
    axis — the ship's date — so they are one rail with two sets of marks rather
