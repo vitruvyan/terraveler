@@ -1,41 +1,16 @@
-import type { Metadata } from "next";
-import VoyageExperience from "@/components/VoyageExperience";
-import { ATLAS } from "@/lib/voyages";
-import Pigafetta from "@/components/Pigafetta";
-import WelcomeCartouche from "@/components/WelcomeCartouche";
-import { getVoyageBundle } from "@/lib/data";
-import { voyageJsonLd, voyageMetadata } from "@/lib/seo";
-import type { Waypoint } from "@/lib/types";
-
-// Editorial content: it changes when the desk publishes, not per request.
-// Served from Vercel's edge and regenerated in the background, which is also
-// what makes it resilient — if the backend is unreachable at revalidation
-// time the last good page keeps being served instead of erroring.
-export const revalidate = 300;
-
-export async function generateMetadata(): Promise<Metadata> {
-  const { voyage, navigator } = await getVoyageBundle();
-  const m = voyageMetadata("boudeuse-1766", voyage, navigator);
-  // The homepage keeps the site title; the voyage supplies the description.
-  return { ...m, title: "Terraveler — an atlas of geo-history" };
-}
-
-export default async function Home() {
-  // The homepage always serves the default Earth voyage (Bougainville).
-  const { navigator, voyage, waypoints } = await getVoyageBundle();
+export default function Home() {
   return (
-    <>
-      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]}
-        atlasCount={ATLAS.length} />
-      <Pigafetta />
-      <WelcomeCartouche />
-      <script
-        type="application/ld+json"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(voyageJsonLd("boudeuse-1766", voyage, navigator, waypoints.length)),
-        }}
-      />
-    </>
+    <div className="flex min-h-screen items-center justify-center font-sans">
+      <main className="flex w-full max-w-3xl flex-col items-center gap-8 px-6 py-16 text-center sm:items-start sm:text-left">
+        <div className="flex flex-col gap-4">
+          <h1 className="text-4xl font-bold tracking-tight">
+            terraveler
+          </h1>
+          <p className="max-w-md text-lg text-muted-foreground">
+            To get started, send a prompt or modify this page directly.
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }

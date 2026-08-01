@@ -1,15 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "upload.wikimedia.org" },
-      { protocol: "https", hostname: "commons.wikimedia.org" },
-    ],
+    unoptimized: true,
   },
-  outputFileTracingIncludes: {
-    "/magna-carta": ["./MAGNA_CARTA.md"],
-    "/how-it-works": ["./docs/HOW_IT_WORKS.md"],
-  },
-};
+}
 
-export default nextConfig;
+export default nextConfig
