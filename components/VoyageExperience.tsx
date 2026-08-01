@@ -110,6 +110,13 @@ function lineFeature(coords: [number, number][]) {
 // distinct synthetic calendar days purely to keep them individually
 // reachable on the scrubber — showing that synthetic date here would be
 // misleading, so the real clock time (already in date_note) is shown alone.
+// This comment described the intention and not the code for a while: the
+// separation was written as `arrival < prevTime`, which does nothing when two
+// stops carry the SAME date, and Apollo 11's six stops — five of them dated
+// 21 July 1969 — collapsed onto two instants. Nothing said so; the rail simply
+// drew one leg the width of the bar with four zero-width links stacked at its
+// end, which reads as a rail nobody has styled yet rather than as five stages
+// gone missing. The comment is now true of the code.
 function formatRange(wp: Waypoint, showDates: boolean = true): string {
   const parts: string[] = [];
   if (showDates) {
