@@ -49,7 +49,9 @@ export type IconName =
   | "check"
   | "close"
   | "play"
-  | "pause";
+  | "pause"
+  | "stage-prev"
+  | "stage-next";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   /* The atlas itself: a sphere reduced to its graticule, the way a globe is
@@ -270,6 +272,15 @@ const PATHS: Record<IconName, React.ReactNode> = {
   close: <path d="M6 6l12 12M18 6L6 18" />,
   play: <path d="M8.4 4.8 18.6 12 8.4 19.2z" />,
   pause: <path d="M9 5v14M15 5v14" />,
+  /* These two join the transport vocabulary rather than the atlas's own. The
+     thematic set is anchors and morions and compasses, but `play` and `pause`
+     are already universal marks in this file, and a stage stepper belongs
+     beside them — a chevron against a stop, which reads as "to the next
+     landfall" rather than merely "forward". They exist because fifteen ticks
+     in a 340px rail cannot each be 44px, so precise navigation had to leave
+     the rail and become a control. */
+  "stage-prev": <path d="M16.4 5.4 9.6 12l6.8 6.6M7.2 5.4v13.2" />,
+  "stage-next": <path d="M7.6 5.4 14.4 12l-6.8 6.6M16.8 5.4v13.2" />,
 };
 
 /* Everything here is stroked except the morion, which arrives as a filled

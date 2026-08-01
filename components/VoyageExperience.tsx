@@ -10,6 +10,7 @@ import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
 import MapTop from "@/components/map/MapTop";
 import MapNote from "@/components/map/MapNote";
+import TransportBar from "@/components/map/TransportBar";
 import ContributePanel from "@/components/ContributePanel";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
@@ -502,6 +503,7 @@ export default function VoyageExperience({
       0,
       Math.min(100, maxTime > minTime ? ((time - minTime) / (maxTime - minTime)) * 100 : 0)
     );
+
 
   function togglePlay() {
     setPanelOpen(true);
@@ -1045,54 +1047,38 @@ export default function VoyageExperience({
         )}
       </div>
 
-      <div className="transport-bar" ref={barRef}>
-        <button className="play-btn" onClick={togglePlay} aria-label={playing ? "Pause" : "Play"}>
-          <Icon name={playing ? "pause" : "play"} size={17} />
-        </button>
-        <div style={{ minWidth: 150 }}>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem" }}>{dateLabel}</div>
-          <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>{placeName ? `Off ${placeName}` : ""}</div>
-        </div>
-        <div className="voyage-track">
-          <div className="vt-ticks">
-            {legs.map((l) => (
-              <button
-                key={l.wp.id}
-                className="vt-tick"
-                style={{ left: `${pctOf(l.arrival)}%` }}
-                title={l.wp.place_historical ?? l.wp.place_modern ?? "landfall"}
-                aria-label={l.wp.place_historical ?? l.wp.place_modern ?? "landfall"}
-                onClick={() => {
-                  setPlaying(false);
-                  openLogRef.current(l.arrival);
-                }}
-              />
-            ))}
-          </div>
-          <input
-            type="range"
-            className="scrubber"
-            min={minTime}
-            max={maxTime}
-            step={DAY}
-            value={t}
-            onChange={(e) => {
-              setPlaying(false);
-              setT(Number(e.target.value));
-            }}
-            style={{ width: "100%", backgroundSize: `${pct}% 100%` }}
-            aria-label="Voyage timeline"
-          />
-        </div>
-        <label className="autopause-toggle">
-          <input
-            type="checkbox"
-            checked={autopause}
-            onChange={(e) => setAutopause(e.target.checked)}
-          />
-          Pause at each stop &amp; event
-        </label>
-      </div>
+      <TransportBar
+        barRef={barRef}
+        playing={playing}
+        onTogglePlay={togglePlay}
+        dateLabel={dateLabel}
+        placeLine={placeName ? `Off ${placeName}` : ""}
+        stops={legs.map((l) => ({
+          id: l.wp.id,
+          at: l.arrival,
+          label: l.wp.place_historical ?? l.wp.place_modern ?? "landfall",
+        }))}
+        t={t}
+        min={minTime}
+        max={maxTime}
+        step={DAY}
+        onScrub={(next) => {
+          setPlaying(false);
+          setT(next);
+        }}
+        onOpenStop={(at) => {
+          setPlaying(false);
+          openLogRef.current(at);
+        }}
+        autopause={autopause}
+        onAutopause={setAutopause}
+        lexicon={{
+          timeline: "Voyage timeline",
+          stop: "landfall",
+          autopause: "Pause at each stop & event",
+        }}
+        phone={isMobile}
+      />
 
       {lightbox && (
         <div className="plates-lightbox" onClick={() => setLightbox(null)}>
