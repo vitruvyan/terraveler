@@ -17,21 +17,22 @@
 
 export const DAY = 86_400_000;
 
-/* How fast a voyage plays, in one place instead of two.
+/* How long a voyage takes to play, in one place instead of two — and in
+ * SECONDS, which is the change that matters.
  *
- * It was `span / 600` every 40ms in both experience components — 24 seconds
- * for an entire circumnavigation, which is about a second and a half a leg.
- * That is a slideshow rather than a passage, and on a phone it is worse: the
- * ship now stops at every landfall, so the only thing the animation has left
- * to do is show you the crossing between two of them, and it was over before
- * you had looked up from the log you just closed.
+ * It used to be a tick count: `span / 600` every 40ms, which reads as 24
+ * seconds and is not. setInterval does not promise 40ms, it promises "no
+ * sooner than", and under a map that is rendering it drifts badly. Measured on
+ * the deployed site, the nominal 48-second version took 106. So the pace was
+ * never a pace: it was however fast the device happened to be, and a slow
+ * phone sailed a slower ocean than a fast desktop.
  *
- * Halved. The tick stays at 40ms — 25 frames a second, which is what keeps the
- * marker from stepping — and the step it takes is what got smaller, so the
- * motion is slower without being choppier.
+ * Driven by the clock now. Each tick advances by the time that actually
+ * elapsed, so this number is the real duration on any device, and it can be
+ * argued about in the units anyone would argue in.
  */
 export const PLAYBACK_TICK_MS = 40;
-export const PLAYBACK_TICKS = 1200;
+export const PLAYBACK_SECONDS = 60;
 
 /** "1768", "1768-04", or "1768-04-06" (partial ISO dates, as used in the data files). */
 export function parseHistoricalDate(s: string | null): number | null {

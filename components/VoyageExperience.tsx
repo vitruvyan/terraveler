@@ -19,7 +19,7 @@ import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION, collapseAttributionOnPhone }
 import {
   DAY,
   PLAYBACK_TICK_MS,
-  PLAYBACK_TICKS,
+  PLAYBACK_SECONDS,
   parseHistoricalDate,
   buildLegs as buildMotionLegs,
   shipStateAt as motionShipStateAt,
@@ -456,9 +456,15 @@ export default function VoyageExperience({
   useEffect(() => {
     if (!playing) return;
     const span = maxTime - minTime || 1;
+    /* The step is whatever time really passed, not whatever the timer was
+       asked for — see PLAYBACK_SECONDS. */
+    let last = performance.now();
     const id = setInterval(() => {
+      const now = performance.now();
+      const dt = now - last;
+      last = now;
       setT((prev) => {
-        const next = prev + span / PLAYBACK_TICKS;
+        const next = prev + span * (dt / (PLAYBACK_SECONDS * 1000));
         /* On a phone this is not a setting. The checkbox that turned it on
            cost a whole row of a 165px bar to ask a question you answer once,
            so the answer became the behaviour: the voyage always stops, the log
