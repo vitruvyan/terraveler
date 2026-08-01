@@ -8,7 +8,8 @@ import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
 import spaceEventsData from "@/data/space_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
-import AccountPanel from "@/components/AccountPanel";
+import MapImprint from "@/components/map/MapImprint";
+import MapDoors from "@/components/map/MapDoors";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
 import { voyageLogPath } from "@/lib/voyages";
@@ -153,9 +154,7 @@ export default function SpaceVoyageExperience({
   const [cameraMode, setCameraMode] = useState<CameraMode>("cinematic");
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
-  const [acctOpen, setAcctOpen] = useState(false);
   const isMobile = useLayoutMode() === "phone";
   /* The same derived bottom stack the Earth map uses. This component had the
      same defect for the same reason: its note anchored to bottom:14px, which
@@ -291,34 +290,12 @@ export default function SpaceVoyageExperience({
       {/* The imprint did not exist on this theme at all: no wordmark, no
           count, no caption — only a bare emblem. The map's three classes are
           the map's three classes whichever body it is showing. */}
-      <div className="map-imprint">
-        <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
-          Terraveler
-        </a>
-        <span className="map-here">{voyage.title}</span>
-        <button
-          className="map-atlas-door"
-          onClick={() => setPickerOpen((o) => !o)}
-          aria-expanded={pickerOpen}
-          title="Open the Atlas"
-        >
-          <Icon name="globe" size={17} />
-          {/* Split so a narrow phone can drop the word and keep the number.
-              Below 400px the labelled pill and the two round doors cannot
-              share a row — measured, not assumed: 100px of room for a control
-              that wants 131. A globe beside a count still says what it is. */}
-          <span>
-            {atlasCount ? (
-              <>
-                {atlasCount}
-                <span className="map-door-word"> voyages</span>
-              </>
-            ) : (
-              "The Atlas"
-            )}
-          </span>
-        </button>
-      </div>
+      <MapImprint
+        title={voyage.title}
+        atlasCount={atlasCount}
+        pickerOpen={pickerOpen}
+        onTogglePicker={() => setPickerOpen((o) => !o)}
+      />
 
       <div className="lens-rail" role="group" aria-label="View lens">
         {isMobile && !railOpen ? (
@@ -448,43 +425,7 @@ export default function SpaceVoyageExperience({
         </DraggableWindow>
       )}
 
-      <div className="tr-cluster">
-        <div style={{ position: "relative" }}>
-          <button className="tr-btn" onClick={() => setMenuOpen((m) => !m)} aria-label="Menu" title="Menu">
-            <Icon name="menu" size={19} />
-          </button>
-          {menuOpen && (
-            <div className="tr-menu" onClick={() => setMenuOpen(false)}>
-              <a href="/search">Search</a>
-              <a href="/voyages">The Atlas</a>
-              <a href="/about">About</a>
-              <a href="/contribute">Contribute</a>
-              <a href="/how-it-works">How it works</a>
-              <a href="/magna-carta">The Magna Carta</a>
-              <div className="tr-menu-foot">
-                Terraveler — a Vitruvyan EOOD company
-                <br />
-                <a href="mailto:dbaldoni@gmail.com">contact</a> ·{" "}
-                <a href="https://vitruvyan.com" target="_blank" rel="noreferrer">
-                  vitruvyan.com
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="acct-anchor">
-          <button
-            className="tr-btn"
-            onClick={() => setAcctOpen((open) => !open)}
-            title="Account"
-            aria-label="Account"
-            aria-expanded={acctOpen}
-          >
-            <Icon name="morion" size={23} />
-          </button>
-          <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
-        </div>
-      </div>
+      <MapDoors />
 
       {events.length > 0 && (
         <div

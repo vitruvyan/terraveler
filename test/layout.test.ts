@@ -67,6 +67,48 @@ function uncommented(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, " "));
 }
 
+/* The shells that PRESENT the navigation. A page may link to /contribute in
+   its prose; a shell may not spell the list, because it will go stale and did:
+   the destinations were written four times — the header, the footer and both
+   map experiences — and three of the four were behind. The maps still offered
+   /search after the reform that removed it and never gained /crew; the footer
+   never gained /crew either. Only the header was current, which is why nobody
+   saw it. */
+const SHELLS = [
+  "components/SiteHeader.tsx",
+  "components/SiteFooter.tsx",
+  "components/map/MapDoors.tsx",
+];
+
+test("no shell spells the destinations it presents", async () => {
+  const { ALL } = await import("../lib/nav");
+  const offenders: string[] = [];
+  for (const shell of SHELLS) {
+    const src = readFileSync(join(ROOT, shell), "utf8");
+    for (const d of ALL) {
+      if (src.includes(`"${d.href}"`)) offenders.push(`${shell} spells ${d.href}`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `a shell holds its own copy of the navigation:\n  ${offenders.join("\n  ")}`,
+  );
+});
+
+test("the retired door is not offered anywhere", async () => {
+  const { ALL } = await import("../lib/nav");
+  /* Search stopped being a destination in 20f321a — it is an action that opens
+     in the bar and lands in the atlas. The maps kept offering it for weeks. */
+  assert.equal(ALL.find((d) => d.href === "/search"), undefined);
+  for (const shell of SHELLS) {
+    assert.ok(
+      !readFileSync(join(ROOT, shell), "utf8").includes('"/search"'),
+      `${shell} still offers /search as a destination`,
+    );
+  }
+});
+
 /** Selectors declared inside each responsive block of the stylesheet. */
 function blocksOf(source: string) {
   const lines = uncommented(source).split("\n");

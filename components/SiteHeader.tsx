@@ -21,19 +21,10 @@ import AccountPanel from "@/components/AccountPanel";
  * and lands in the atlas, where the results live.
  */
 
-const PRIMARY = [
-  { href: "/voyages", label: "The Atlas" },
-  { href: "/contribute", label: "Contribute" },
-  { href: "/crew", label: "The crew" },
-];
-
-const PROJECT = [
-  { href: "/about", label: "About" },
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/magna-carta", label: "The Magna Carta" },
-];
-
-const ALL = [...PRIMARY, ...PROJECT];
+/* The destinations themselves live in lib/nav, because the map's compass menu
+ * offers the same doors and used to keep its own copy — which went stale
+ * through two reforms without anyone noticing. */
+import { ATLAS, PRIMARY, PROJECT, ALL } from "@/lib/nav";
 
 /** Bold, fixed site header for editorial pages. (The map page keeps its
  *  floating cartouche chrome; the account panel is shared by both.) */
@@ -66,7 +57,8 @@ export default function SiteHeader() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const term = q.trim();
-    router.push(term ? `/voyages?q=${encodeURIComponent(term)}` : "/voyages");
+    /* Searching is an action; the atlas is where it lands. */
+    router.push(term ? `${ATLAS.href}?q=${encodeURIComponent(term)}` : ATLAS.href);
     setSearching(false);
   }
 

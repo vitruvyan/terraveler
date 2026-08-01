@@ -8,7 +8,8 @@ import { useLayoutMode } from "@/lib/layout";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
-import AccountPanel from "@/components/AccountPanel";
+import MapImprint from "@/components/map/MapImprint";
+import MapDoors from "@/components/map/MapDoors";
 import ContributePanel from "@/components/ContributePanel";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
@@ -213,9 +214,7 @@ export default function VoyageExperience({
   const [showHist, setShowHist] = useState(true);
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
-  const [acctOpen, setAcctOpen] = useState(false);
   const isMobile = useLayoutMode() === "phone";
   /* The bottom edge of a phone carries four things that each anchored to it
      with a hand-picked number: the launcher had four competing `bottom`
@@ -228,18 +227,12 @@ export default function VoyageExperience({
   const noteRef = useRef<HTMLDivElement | null>(null);
   const [railOpen, setRailOpen] = useState(false);
 
-  const [pickerOpen, setPickerOpen] = useState(false);
-
   /* The welcome cartouche is a sibling mounted by the page, at a higher
      z-index, and the two knew nothing about each other — so opening the atlas
-     put the panel underneath the very card that was pointing at it. A single
-     event is less coupling than lifting state through the page for one
-     boolean. The cartouche hides while the atlas is open and comes back when
-     it closes: it is not dismissed, because opening a panel is not the same as
-     having read the welcome. */
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent("tv:atlas", { detail: pickerOpen }));
-  }, [pickerOpen]);
+     put the panel underneath the very card that was pointing at it. The
+     announcement now travels with the atlas door, in MapImprint, because only
+     this experience ever made it. */
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "earth");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -559,41 +552,12 @@ export default function VoyageExperience({
           The strapline used to sit under the wordmark. It was decoration on
           the one surface with no room for any: what a newcomer needs to know
           is that this is one chart of many, and how to see the others. */}
-      <div className="map-imprint">
-        <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
-          Terraveler
-        </a>
-        {/* What you are looking at. A caption, not part of the door — it was
-            inside the button, which made half the control naked text on the
-            map and left the whole thing reading as a subtitle under the
-            wordmark however it was positioned. */}
-        <span className="map-here">{voyage.title}</span>
-
-        {/* The door. All of it one dark pill, so there is no half of it that
-            could be mistaken for a caption. */}
-        <button
-          className="map-atlas-door"
-          onClick={() => setPickerOpen((o) => !o)}
-          aria-expanded={pickerOpen}
-          title="Open the Atlas"
-        >
-          <Icon name="globe" size={17} />
-          {/* Split so a narrow phone can drop the word and keep the number.
-              Below 400px the labelled pill and the two round doors cannot
-              share a row — measured, not assumed: 100px of room for a control
-              that wants 131. A globe beside a count still says what it is. */}
-          <span>
-            {atlasCount ? (
-              <>
-                {atlasCount}
-                <span className="map-door-word"> voyages</span>
-              </>
-            ) : (
-              "The Atlas"
-            )}
-          </span>
-        </button>
-      </div>
+      <MapImprint
+        title={voyage.title}
+        atlasCount={atlasCount}
+        pickerOpen={pickerOpen}
+        onTogglePicker={() => setPickerOpen((o) => !o)}
+      />
 
       {/* Vertical lens rail — left edge, vertically centred. On mobile it
           collapses to a single small button showing the active lens. */}
@@ -747,42 +711,7 @@ export default function VoyageExperience({
         </DraggableWindow>
       )}
 
-      {/* Top-right: account + compass menu */}
-      <div className="tr-cluster">
-        <div style={{ position: "relative" }}>
-          <button className="tr-btn" onClick={() => setMenuOpen((m) => !m)} aria-label="Menu" title="Menu">
-            <Icon name="menu" size={19} />
-          </button>
-          {menuOpen && (
-            <div className="tr-menu" onClick={() => setMenuOpen(false)}>
-              <a href="/search">Search</a>
-              <a href="/voyages">The Atlas</a>
-              <a href="/about">About</a>
-              <a href="/contribute">Contribute</a>
-              <a href="/how-it-works">How it works</a>
-              <a href="/magna-carta">The Magna Carta</a>
-              <div className="tr-menu-foot">
-                Terraveler — a Vitruvyan EOOD company
-                <br />
-                <a href="mailto:dbaldoni@gmail.com">contact</a> ·{" "}
-                <a href="https://vitruvyan.com" target="_blank" rel="noreferrer">vitruvyan.com</a>
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="acct-anchor">
-          <button
-            className="tr-btn"
-            onClick={() => setAcctOpen((open) => !open)}
-            title="Account"
-            aria-label="Account"
-            aria-expanded={acctOpen}
-          >
-            <Icon name="morion" size={23} />
-          </button>
-          <AccountPanel open={acctOpen} onClose={() => setAcctOpen(false)} />
-        </div>
-      </div>
+      <MapDoors />
 
       {/* World-events strip: dots always, words only when there is something to say. */}
       {events.length > 0 && (

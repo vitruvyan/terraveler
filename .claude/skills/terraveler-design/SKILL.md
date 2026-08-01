@@ -271,6 +271,16 @@ exception.
   margin there; it was a paragraph laid over the subject. Marginalia on a
   phone becomes an affordance that opens it, never a band that asserts it.
 
+- **A destination list is not layout, so it does not belong to the shell that
+  draws it.** The doors were spelled four times — header, footer, and both map
+  experiences — and three of the four went stale without a symptom anyone
+  could see: the maps kept offering `/search` after the reform that retired it
+  and never gained `/crew`; the footer never gained it either. Only the header
+  was current, which is exactly why it went unnoticed. `lib/nav.ts` holds them
+  now, and anything that merely LANDS somewhere (the search field) takes the
+  named destination rather than the string. `test/layout.test.ts` fails if a
+  shell spells a door again.
+
 - **Reuse the shell before inventing one.** `TitlePage` (frontispiece + mounted
   plate), `SiteHeader`, `SiteFooter` already carry the editorial language. A
   new page that reinvents an opening is an error, not a feature.
@@ -374,12 +384,15 @@ are editing is already migrated; check it. As of the typography commit:
   `.autopause-toggle`, `.win`, `.win-body` ×2. That list is frozen in
   `test/layout.test.ts` as a ratchet — it may shrink, never grow, and an entry
   repaid must be deleted from it in the same commit.
-- **The map chrome is not on the arrangement yet.** imprint / doors /
-  instruments is written down as a law and implemented as a convention, so
-  `VoyageExperience` and `SpaceVoyageExperience` each build it separately —
-  which is how the orrery's note and the space Atlas panel's chip were lost.
-  Until the three are shared primitives, that defect can recur; it is not
-  guarded against, only known.
+- **Two of the three map classes are primitives; the instruments are not.**
+  `components/map/MapImprint.tsx` and `components/map/MapDoors.tsx` are shared
+  by both experiences — they were identical JSX, and the Space copy had
+  already lost the comments explaining why each piece is shaped as it is. The
+  **instruments** are still built twice. They cannot simply be lifted: the rail
+  and the transport bar have the same structure and a different vocabulary per
+  subject (`Ship's Log` / `Mission Log`, `Off Brest` / `Near Neptune`, anchor /
+  antenna). They want a shared arrangement that the voyage supplies a lexicon
+  to — which is a design decision, not a move, and is not made yet.
 - **The instruments are four bands on a phone and should be one sheet.** The
   derived stack holds them apart correctly. Holding them apart is not the
   same as arranging them.
