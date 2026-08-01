@@ -581,10 +581,27 @@ are editing is already migrated; check it. As of the typography commit:
   and reverted within the hour: it left a naked box in the middle of the bar,
   which is a control that must be taught. The row is the honest price until
   the setting is given a home off the map.
-- **The measured chrome share** on a 390×844 phone went 36.4% → 25.4% with
-  the note collapsed, the launcher made round and the top edge made one row.
-  Measure it, do not estimate it: `.hist-note` was 12.9% of the screen and
-  nobody had noticed, because it looked like a caption.
+- **The measured chrome share** went 36.4% → 25.4% in c5ff173 with the note
+  collapsed, the launcher made round and the top edge made one row. Re-measured
+  on a real engine at 390×844 with `scripts/measure-phone.mjs`, it is **31.6%**
+  for a returning reader and **38.6%** on a first visit, where the welcome
+  cartouche is 27.3% by itself. It has grown, and the two costs are legible:
+  the **transport bar is 366×125 — 13.9% of the screen on its own**, because it
+  is still two rows; and MapLibre's attribution is sitting **expanded**, a full
+  338×44 band at 4.5%, rather than collapsed to its button.
+
+- **The timeline ticks are 2px wide.** `button.vt-tick` measures **2×8**, and
+  there are fifteen of them, each carrying a real destination — Taïti,
+  Batavia, the Cape of Good Hope. `input.scrubber` is 340×**4**. No finger can
+  hit either, and no amount of reading the stylesheet would have said so: the
+  width comes out of a flex row divided by the number of stages. This is the
+  worst touch defect on the map and it was not in this list until an engine was
+  pointed at it.
+
+- **`button.map-atlas-door` carries a `title` and no `aria-label`.** It is the
+  door to the whole atlas — "18 voyages" — and on touch it says nothing, to a
+  finger or to a screen reader. It is 65×29, also under the floor. The measuring
+  script flags `title-only` controls for this reason.
 - **The viewport unit and the safe area are repaid.** No bare `vh` remains in
   either stylesheet: 14 `dvh` where a thing must fit the screen now, 6 `svh`
   where it must not move, each classified by what the rule is for rather than
@@ -635,6 +652,26 @@ Type decisions are made with eyes, not adjectives. Build and look:
 npm run dev            # then screenshot the surface you changed
 npm run build          # never while dev is running — it wipes .next under it
 ```
+
+And the map on a phone is measured, not read:
+
+```
+node scripts/measure-phone.mjs [url] [width] [height]
+DISMISS=1 node scripts/measure-phone.mjs   # the returning reader, no cartouche
+```
+
+It enumerates every positioned element over the map with its rectangle, its
+computed z-index and **the ancestor that traps it** — the thing that made a
+z-index of 30 behave as a nought — then checks *all* pairs for collisions rather
+than the ones someone thought to name, sums the union of the bands as a share of
+the viewport, and lists every control under 44px, flagging the ones whose only
+label is a `title`. It asserts nothing: the numbers are the output, and what
+counts as too much is a judgement made by a person looking at them.
+
+Two of its findings were unreachable by reading: the timeline ticks are 2px
+wide, and the chrome share had grown back to 31.6% while the debt list still
+said 25.4%. `--safe-*` will read as `0px` here — headless Chromium has no notch,
+so the insets still cannot be verified this way.
 
 Check both a wide viewport and ~390px. Wide content (tables, logs, code) scrolls
 inside its own container; the page body never scrolls horizontally.
