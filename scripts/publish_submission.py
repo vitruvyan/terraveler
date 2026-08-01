@@ -87,6 +87,63 @@ def years_of(waypoints: list) -> tuple:
     return (ys[0], ys[-1]) if ys else (None, None)
 
 
+def fetch_provenance(submission_id: int, meta: dict) -> dict:
+    """Carta §3.5: provenance recorded forever. `ideator` and `scribe_model`
+    come from the submission's own declared meta (Carta 2: humans submit
+    intent, AI drafts — the `meta` block in app/api/mcp/route.ts). carta_version
+    is read from the audit_log's approving verdict rather than payload.meta:
+    lib/carta.ts makes the same distinction for the same reason — the audit
+    trail is the record of which rules actually governed a decision, and a
+    draft's self-declared version can be (harmlessly) older than the one it
+    was judged under. Falls back to the declared version when no approving
+    verdict is on record, which only happens under --force."""
+    out = subprocess.run(
+        ["docker", "exec", "terraveler_postgres", "psql", "-U", "terraveler",
+         "-d", "terraveler", "-tAc",
+         f"select carta_version, created_at from audit_log where submission_id={int(submission_id)} "
+         f"and action='verdict' and verdict='approve' order by created_at desc limit 1"],
+        capture_output=True, text=True)
+    line = out.stdout.strip() if out.returncode == 0 else ""
+    verdict_carta, _, approved_at = line.partition("|")
+    return {
+        "ideator": meta.get("ideator"),
+        "scribe_model": meta.get("scribe_model"),
+        "carta_version": verdict_carta or meta.get("carta_version"),
+        # §3.5 names the date alongside ideator, model and version. This is
+        # the date of the approving verdict — the moment the work became
+        # publishable — not of the publication run, which audit_log's own
+        # 'publish' row records for itself.
+        "date": approved_at or None,
+        "submission_id": submission_id,
+    }
+
+
+def record_publication(submission_id: int, slug: str, carta_version: str) -> None:
+    """Carta §3.5: the audit trail is where provenance lives forever, and
+    every other step that changes a submission's disposition writes to it —
+    desk_review.py's verdicts, the web desk's overrides and appeals.
+    Publication was the one step in the chain that left no row: a bundle
+    could appear in data/ and ATLAS with nothing in audit_log to say when it
+    shipped or that it happened at all."""
+    findings = json.dumps([["INFO", 0, f"published data/{slug}.json"]])
+    # carta_version can come from an unapproved submission's self-declared
+    # meta (the --force fallback in fetch_provenance) rather than the trusted
+    # audit_log row, so it is untrusted input and gets the same single-quote
+    # escaping a parameterised query would give it for free.
+    safe_carta = str(carta_version).replace("'", "''")
+    sql = (
+        "insert into audit_log (submission_id, actor, action, findings, carta_version) "
+        f"values ({int(submission_id)}, 'editor-in-chief', 'publish', "
+        f"$json${findings}$json$::jsonb, '{safe_carta}')"
+    )
+    out = subprocess.run(
+        ["docker", "exec", "terraveler_postgres", "psql", "-U", "terraveler",
+         "-d", "terraveler", "-c", sql],
+        capture_output=True, text=True)
+    if out.returncode != 0:
+        sys.exit(f"bundle written but the audit_log entry failed: {out.stderr.strip()[:300]}")
+
+
 def fetch_spans(submission_id: int) -> dict:
     """The spans the desk located in the sources, or nothing.
 
@@ -105,7 +162,7 @@ def fetch_spans(submission_id: int) -> dict:
     return json.loads(out.stdout.strip())
 
 
-def to_bundle(payload: dict, spans: dict) -> dict:
+def to_bundle(payload: dict, spans: dict, provenance: dict) -> dict:
     v = payload["voyage"]
     wps = payload.get("waypoints") or []
     nav_name = v.get("navigator") or "Unknown"
@@ -132,6 +189,7 @@ def to_bundle(payload: dict, spans: dict) -> dict:
     for i, w in enumerate(wps, 1):
         claims = w.get("claims") or []
         ev = (claims[0].get("evidence") if claims else None) or {}
+        span = spans.get(f"{w.get('seq')}.1") or {}
         out_wps.append({
             "id": i, "voyage_id": 1, "seq": i,
             "place_historical": w.get("place_historical"),
@@ -147,13 +205,24 @@ def to_bundle(payload: dict, spans: dict) -> dict:
             # "The Voyage began." with every gate reporting PASS. There is no
             # fallback here on purpose: a quotation with no verified span is
             # not published, and the run says so rather than approximating.
-            "diary_excerpt": (spans.get(f"{w.get('seq')}.1") or {}).get("reading_span"),
+            "diary_excerpt": span.get("reading_span"),
+            # Carta §3.4's other half: the untouched span stored beside the
+            # readable one, and what was done to get from one to the other —
+            # both additive, both optional on read (older bundles have
+            # neither), never a replacement for diary_excerpt itself.
+            "diary_excerpt_raw": span.get("raw_span"),
+            "diary_excerpt_transformations": span.get("transformations"),
             "diary_source_citation": ev.get("source_title"),
             "diary_source_url": ev.get("source_url"),
             "confidence": w.get("confidence") or "certain",
             "media_url": None,
         })
-    return {"navigator": navigator, "voyage": voyage, "waypoints": out_wps}
+    return {"navigator": navigator, "voyage": voyage, "waypoints": out_wps,
+            # Carta §3.5: who asked, what drafted it, under which constitution,
+            # traceable back to the submission that carried it all. Additive at
+            # the top level, next to voyage/waypoints rather than folded into
+            # either — it describes the bundle's origin, not the voyage itself.
+            "provenance": provenance}
 
 
 def atlas_entry(bundle: dict, blurb: str) -> str:
@@ -179,6 +248,11 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--force", action="store_true",
                     help="publish a submission that is not approved (records why in the output)")
+    ap.add_argument("--allow-missing-spans", action="store_true",
+                    help="publish a submission with quotations but no verified_spans row at "
+                         "all — legacy data from before that table existed. Refused without "
+                         "this flag; publishes with no diary_excerpt for those quotations "
+                         "when given.")
     args = ap.parse_args()
 
     row = fetch_submission(args.submission_id)
@@ -191,23 +265,50 @@ def main():
                         for c in (w.get("claims") or [])
                         if (c.get("evidence") or {}).get("quote"))
     if quoted_claims and not spans:
-        sys.exit(
-            f"submission {args.submission_id} carries {quoted_claims} quotation(s) and has no "
-            f"verified spans. Carta 3.4: what the atlas prints is the span located in the "
-            f"source, not the text the contributor typed — and there is deliberately no "
-            f"fallback to the latter.\n"
-            f"Run:  python3 scripts/desk_review.py {args.submission_id}")
+        # No verified_spans row at all — either this predates the mechanism
+        # (supabase/verified_spans.sql, added under Carta 0.5) or it never
+        # went through scripts/desk_review.py. Carta 3.4 has no fallback to
+        # the contributor's own typing, so this cannot proceed unannounced —
+        # but a genuinely legacy submission is a known, named case rather
+        # than a defect, so it is an opt-in rather than an unconditional
+        # refusal.
+        if not args.allow_missing_spans:
+            sys.exit(
+                f"submission {args.submission_id} carries {quoted_claims} quotation(s) and has no "
+                f"verified spans. Carta 3.4: what the atlas prints is the span located in the "
+                f"source, not the text the contributor typed — and there is deliberately no "
+                f"fallback to the latter.\n"
+                f"Run:  python3 scripts/desk_review.py {args.submission_id}\n"
+                f"Or, if this is legacy data from before verified_spans existed and you mean to "
+                f"publish it with no diary_excerpt for its quotations: rerun with "
+                f"--allow-missing-spans.")
+        print(f"  ⚠ no verified spans for submission {args.submission_id} — publishing "
+              f"{quoted_claims} quotation(s) with no diary_excerpt, by --allow-missing-spans.")
 
-    bundle = to_bundle(row["payload"], spans)
-    dropped = [w["seq"] for w in bundle["waypoints"]
-               if w["diary_excerpt"] is None and any(
-                   (cl.get("evidence") or {}).get("quote")
-                   for src in (row["payload"].get("waypoints") or [])
-                   if src.get("seq") == w["seq"]
-                   for cl in (src.get("claims") or []))]
-    if dropped:
-        print(f"  ⚠ {len(dropped)} stage(s) offered a quotation with no verified span and "
-              f"will publish without one: {dropped}")
+    meta = (row["payload"].get("meta")) or {}
+    provenance = fetch_provenance(args.submission_id, meta)
+    bundle = to_bundle(row["payload"], spans, provenance)
+
+    if spans:
+        # spans is non-empty, so the submission WAS verified — a quotation
+        # missing its own entry here is not the legacy case above, it is a
+        # gap in an otherwise-verified draft. Publishing it silently is
+        # exactly how "PASS — VERIFIED VERBATIM" printed a sentence the
+        # source never held (supabase/verified_spans.sql), so no flag
+        # overrides this one.
+        dropped = [w["seq"] for w in bundle["waypoints"]
+                   if w["diary_excerpt"] is None and any(
+                       (cl.get("evidence") or {}).get("quote")
+                       for src in (row["payload"].get("waypoints") or [])
+                       if src.get("seq") == w["seq"]
+                       for cl in (src.get("claims") or []))]
+        if dropped:
+            sys.exit(
+                f"submission {args.submission_id} has verified spans but is missing one for "
+                f"stage(s) {dropped}, each of which offered a quotation. Carta 3.4 promises the "
+                f"raw span beside the readable one for every quotation published — publishing "
+                f"without it would drop that promise silently.\n"
+                f"Run:  python3 scripts/desk_review.py {args.submission_id}")
     slug = bundle["voyage"]["slug"]
     stem = args.file or slug
     path = DATA / f"{stem}.json"
@@ -220,6 +321,8 @@ def main():
     print(f"  years     {bundle['voyage']['start_date']}–{bundle['voyage']['end_date']}")
     print(f"  waypoints {len(bundle['waypoints'])}, {quoted} with a verified excerpt")
     print(f"  bundle    {path.relative_to(ROOT)}")
+    print(f"  provenance ideator={provenance['ideator']!r} "
+          f"scribe_model={provenance['scribe_model']!r} carta={provenance['carta_version']!r}")
 
     atlas = ATLAS_TS.read_text(encoding="utf-8")
     already = f'slug: "{slug}"' in atlas
@@ -242,6 +345,8 @@ def main():
                      f"add the entry by hand:\n\n{atlas_entry(bundle, blurb)}")
         atlas = atlas.replace(marker, atlas_entry(bundle, blurb) + marker)
         ATLAS_TS.write_text(atlas, encoding="utf-8")
+
+    record_publication(args.submission_id, slug, provenance["carta_version"] or "unknown")
 
     print(f"\nwritten. Next, and deliberately not automatic:")
     print(f"  1. add the bundle import + LOCAL entry in lib/data.ts (the build will tell you)")

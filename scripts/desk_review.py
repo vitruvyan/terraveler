@@ -69,6 +69,12 @@ ACTOR = "curator-desk"
 EVIDENCE_BASIS = {"contemporary-journal", "contemporary-testimony",
                   "later-chronicle", "reconstructed"}
 CONFIDENCE = {"certain", "approximate", "reconstructed", "contested"}
+# Reviews a draft needs before it may advance to a verdict. Mirrors
+# REVIEWS_TO_ADVANCE in app/api/mcp/route.ts:313 — this script has no import
+# path to the Next.js source at runtime, so the number is copied rather than
+# shared, and the two must be kept in step by hand if the Carta's review
+# requirement ever changes.
+REVIEWS_TO_ADVANCE = 2
 
 
 def carta_version() -> str:
@@ -326,6 +332,27 @@ def review(sub: dict, carta: str) -> dict:
 def record(cur, res: dict, carta: str) -> None:
     status = {"approve": "approved", "changes": "changes-requested",
               "reject": "rejected"}.get(res["verdict"])
+    if status == "approved":
+        # Carta §10.4: "the editor rules with the reviewers' dossier in
+        # hand." The web desk enforces this on its own path
+        # (app/api/desk/verdict/route.ts) but this pass had none — it could
+        # compute "approve" from the mechanical checks alone and write
+        # status='approved' straight out of 'peer-review' with zero reviews
+        # recorded, which is the exact violation the web desk exists to
+        # refuse. The guard lives here, in the one function every caller of
+        # this script goes through to write a verdict, so no future caller
+        # can approve around it.
+        cur.execute("select count(*) from reviews where submission_id = %s", (res["id"],))
+        given = cur.fetchone()[0]
+        if given < REVIEWS_TO_ADVANCE:
+            res["findings"].append(["ESCALATE", 0,
+                f"desk: §10.4 blocks this approval — {given}/{REVIEWS_TO_ADVANCE} reviews "
+                f"recorded for submission #{res['id']}. The editor rules with the "
+                f"reviewers' dossier in hand, not without it; escalating instead of "
+                f"approving."])
+            res["verdict"] = "escalate"
+            res["reason"] = "mechanical checks passed but the review dossier is short"
+            status = None
     if status:
         cur.execute("update submissions set status=%s, updated_at=now() where id=%s",
                     (status, res["id"]))
