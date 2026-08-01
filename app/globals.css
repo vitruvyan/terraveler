@@ -883,9 +883,13 @@ input[type="range"].scrubber::-moz-range-thumb {
    does not have. Four is enough for a reader to tell one leg from the next,
    which is the whole job. They are the measured lens hues, so no new colour
    enters the palette to do this. */
+/* Eight on a wide screen, six on a phone — and the bar still ends up shorter
+   than it was, because the 8px tick row this replaces has gone. Six is what a
+   printed mark wants beside a 4px rule; eight is what a pointer wants to land
+   on, and the wide bar has the room the phone does not. */
 .vt-segs {
   position: relative;
-  height: 6px;
+  height: 8px;
   margin-bottom: 3px;
 }
 .vt-seg {
@@ -895,7 +899,22 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-radius: var(--radius-1);
   background: var(--parchment-deep);
   overflow: hidden;
+  /* A leg is a <span> under a finger and a <button> under a pointer, and the
+     two must draw identically — the door is a behaviour the wide screen adds,
+     not a second appearance. So the button's own furniture is taken off here
+     rather than in a second selector that would drift from this one. */
+  padding: 0;
+  border: 0;
+  font: inherit;
+  appearance: none;
 }
+button.vt-seg { cursor: pointer; }
+/* Gated, and not as a formality: a synthetic mouseenter on tap never lifts
+   off, so an ungated hover latches on the leg a thumb last touched. */
+@media (hover: hover) {
+  button.vt-seg:hover { background: var(--brass); }
+}
+button.vt-seg:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 /* A hairline of paper between the legs, so the chain reads as links rather
    than as one bar that happens to change colour. */
 .vt-seg + .vt-seg { box-shadow: -1px 0 0 var(--parchment); }
@@ -904,6 +923,11 @@ input[type="range"].scrubber::-moz-range-thumb {
 .vt-seg.tone-1 { --seg: var(--lens-carto); }
 .vt-seg.tone-2 { --seg: var(--lens-chart); }
 .vt-seg.tone-3 { --seg: var(--lens-plates); }
+/* Where the chain draws the crossing, the rule underneath stops drawing it as
+   well. The range input keeps its thumb on a wide screen — a hand still wants
+   something to grab — but it gives up the brass fill, which was saying the
+   same thing the chain says, one line lower and less well. */
+.voyage-track.chained input[type="range"].scrubber { background-image: none; }
 
 /* The stage steppers: what the ticks stopped being. They take the tap floor
    rather than a chosen size, because the floor is the whole reason they
@@ -965,7 +989,10 @@ input[type="range"].scrubber::-moz-range-thumb {
    a margin nobody had asked for. */
 [data-layout="phone"] .transport-bar { padding-bottom: var(--space-1); }
 [data-layout="phone"] .voyage-track { gap: 2px; }
-[data-layout="phone"] .vt-segs { margin-bottom: 2px; }
+/* Six rather than eight: on a phone the chain is a printed mark beside a 4px
+   rule, not a target — the legs are not doors down here, and the bar is
+   spending 18.7% of the screen already. */
+[data-layout="phone"] .vt-segs { height: 6px; margin-bottom: 2px; }
 
 /* THE SWITCH between the two timelines, on a phone only. They encode the same
    axis — the ship's date — so they are one rail with two sets of marks rather
@@ -5605,5 +5632,8 @@ main.prose {
    but it still held its 8px, so the bar grew by exactly the height of an empty
    box. Measured: 95px -> 107px, which is the whole saving the thumb gave back.
    :empty is the honest selector here; the row is kept for the world track,
-   whose marks are moments and cannot be a chain. */
-[data-layout="phone"] .vt-ticks:empty { display: none; }
+   whose marks are moments and cannot be a chain.
+   Not keyed to the arrangement any more: the chain draws on both now, and a
+   row of 2px ticks under it repeated the leg boundaries the chain had just
+   drawn — the same thing said twice, one line lower and less well. */
+.vt-ticks:empty { display: none; }

@@ -282,6 +282,8 @@ export default function VoyageExperience({
   const shipMarkerRef = useRef<any>(null);
   const legsRef = useRef(legs);
   legsRef.current = legs;
+  const tRef = useRef(t);
+  tRef.current = t;
   const setTRef = useRef(setT);
   setTRef.current = setT;
   // Open the Log window at a specific landfall (used by route dots & timeline ticks).
@@ -471,13 +473,41 @@ export default function VoyageExperience({
     shipMarkerRef.current?.setLngLat([ship.lng, ship.lat]);
     /* The camera travels with her, but ONLY while she is under way. Paused,
        the map belongs to the reader — dragging it somewhere and being hauled
-       back is the behaviour of a thing that will not let you look. */
-    if (isMobile && playing) mapRef.current?.setCenter([ship.lng, ship.lat]);
-    /* playing and isMobile are read here, so they are declared here. It
-       happened to work without them — t changes on every tick, so the closure
-       was never stale for long — which is the kind of thing that works until
-       the tick stops. */
-  }, [t, ready, playing, isMobile]);
+       back is the behaviour of a thing that will not let you look.
+       On a wide screen too, now. The phone got this because it cannot hold a
+       whole ocean; a desktop was given the whole ocean and, having it, showed
+       a two-pixel marker inching across an empty one. Following is not a
+       small-screen compromise — it is what makes the passage legible.
+       Held off while the closing ease is running: setCenter is a jump, and a
+       jump every 40ms during an animated approach cancels the approach. */
+    if (playing && !map.isEasing?.()) map.setCenter([ship.lng, ship.lat]);
+    /* `playing` is read here, so it is declared here. It happened to work
+       without it — t changes on every tick, so the closure was never stale for
+       long — which is the kind of thing that works until the tick stops.
+       `isMobile` has left the list with the branch that read it: following is
+       no longer a property of the arrangement. */
+  }, [t, ready, playing]);
+
+  /* THE APPROACH, on a wide screen. Pressing play closes the distance once,
+     over the better part of a second, and then the camera simply travels.
+     Deliberately FARTHER OUT than the phone's (3.2 on Earth, 2.4 elsewhere):
+     a wide screen holds several times the ground at the same zoom, and this
+     view has to keep the coast the ship is leaving and the water ahead of her
+     in the same frame — that relation IS the passage. Closer, it becomes a
+     marker on a texture.
+     Never zooms OUT: if the reader has gone in to look at something, the ship
+     comes to them. And nothing is undone on pause, because the map belongs to
+     the reader the moment she stops. */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !playing || isMobile) return;
+    const ship = shipStateAt(tRef.current, legsRef.current);
+    map.easeTo({
+      center: [ship.lng, ship.lat],
+      zoom: Math.max(map.getZoom(), isEarth ? 2.4 : 2),
+      duration: 900,
+    });
+  }, [playing, ready, isMobile, isEarth]);
 
   // Playback loop — the pace lives in lib/voyage-motion.
   useEffect(() => {
