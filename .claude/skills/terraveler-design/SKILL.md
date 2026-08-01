@@ -319,6 +319,79 @@ exception.
   what a passe-partout exists to prevent. Size the mount to the image, not the
   image to the mount.
 
+## The port — a native app inherits the TypeScript and none of the cascade
+
+The target is **React Native (Expo)**, and it is written down here so a decision
+can be judged against it before it is made rather than audited after. This is not
+a plan to leave the web: the site is the product and the stylesheet is going
+nowhere. It is a statement about *where a decision may live* now that a second
+renderer is coming which cannot read half of this file.
+
+React Native has no cascade, no custom properties, no descendant selectors, no
+media queries and no hover. What is expressed in TypeScript survives the port;
+what is expressed in the stylesheet is rewritten by hand. Measured rather than
+estimated: **113 token declarations** across `:root`, `.space` and `.worlds`,
+**1328** `var()` uses, **28** `@media` blocks, and every `[data-layout="phone"]`
+rule in the file.
+
+That puts this section in direct tension with the arrangement rule above, and the
+tension is real rather than an oversight. "`useLayoutMode()` for a different
+tree, the attribute for everything that only looks different" is correct for one
+renderer and it deliberately maximises what lives in the cascade — which is
+exactly what a port cannot inherit. The rule is not repealed. It is bounded:
+
+**A value or a name a second renderer needs is authored in TypeScript and emitted
+to CSS. Everything else stays where the arrangement rule puts it.**
+
+So the token layer inverts. `:root` stops being the SSOT and becomes generated
+output; a `lib/tokens.ts` holds the values and both renderers read it. Nothing
+changes about how CSS is written — `var(--ink)` is still what you type — and
+`/specimen/palette` gains rather than loses, because it can measure the source
+against the computed result and say when the two have parted. 113 declarations in
+three scopes is a day of work, and the layer will never again be this small.
+
+**What already ports**, and was right for its own reasons: `lib/layout.ts`
+(`matchMedia` becomes `useWindowDimensions`), `lib/useEdgeStack.ts` (a derived
+stack is `onLayout`, and the four hand-set numbers it replaced would not have
+survived the move), `lib/nav.ts`, and **a panel is a page** — which is not a
+concession to small screens but the native screen model arrived early.
+`DraggableWindow` withholding its inline positioning on a phone rather than being
+overridden is the same shape: on native it simply does not exist.
+
+**What must change beyond the tokens:**
+
+- **Hover does not exist on a phone and will not exist in the app.** 80 `:hover`
+  rules with no `(hover: hover)` around them, 63 raw `title=` in TSX — Close,
+  Menu, Collapse, The Atlas, the whole icon-only rail — and
+  `-webkit-tap-highlight-color` unset. This is already below as a web defect. It
+  is also the one piece of the port that is owed whatever happens, which makes it
+  where to start.
+
+- **The register is cascade-only.** `.space` on `body` reaches its subjects
+  through descendant selectors, which have no equivalent. A register must be a
+  React context *as well as* a class — the class for the stylesheet, the context
+  for anything that will be read by both renderers. The layout mode already has
+  its hook and is the pattern.
+
+- **Colour handed to a canvas escapes the cascade** is not a MapLibre quirk. It
+  is the port in miniature: `--route` had to be read off the container and passed
+  in explicitly, and that explicit pass is what the native map will need for
+  every colour it draws. The canvas entries below are therefore porting work done
+  early, not a separate chore.
+
+- **The instruments want a shared arrangement with a per-subject lexicon**, which
+  is already the named debt. Two hand-built copies are two ports; one arrangement
+  taking a lexicon is one. The same holds for "four bands should be one sheet": a
+  sheet is the native idiom, so repaying that debt and doing the port are the
+  same work rather than two.
+
+And one risk that follows from the subsetting trap below. The typographic
+argument here rests on OpenType features asked for in CSS — `lnum`, `onum`,
+`smcp`, `tnum`. Native text rendering honours these far less reliably than a
+browser does, and the Quarterdeck has already rendered `O I I` once when a
+feature was merely absent. Assume nothing about the figures in the app until they
+have been looked at on a device.
+
 ## Before you add a surface
 
 1. Read `:root` in `app/globals.css` for the tokens that exist now.
@@ -417,14 +490,16 @@ are editing is already migrated; check it. As of the typography commit:
 - **The instruments are four bands on a phone and should be one sheet.** The
   derived stack holds them apart correctly. Holding them apart is not the
   same as arranging them.
-- **Touch is mostly unaddressed.** No `@media (hover: hover)` anywhere, so
-  every `:hover` fires on tap and sticks; 36 `title=` tooltips are invisible
-  on touch, including the whole icon-only lens rail. There is still no
-  tap-size token: `.tr-btn` is 40px, `.lens-btn-ico` ~30px, `.atlas-chip`
-  ~19px. `-webkit-tap-highlight-color` is unset, so Android paints a system
-  blue over the paper. *Repaid so far:* the play button no longer shrinks to
-  36 on a phone, the Pigafetta door is 48, the note chip is 44, and the drag
-  handle that never dragged is gone with the sheet it was drawn on.
+- **Touch is mostly unaddressed** — and since the port section above, it is the
+  first thing owed rather than one item among many, because hover is not a
+  degraded experience on native but an absent one. No `@media (hover: hover)`
+  anywhere, so all **80** `:hover` rules fire on tap and stick; **63** raw
+  `title=` in TSX are invisible on touch, including the whole icon-only lens
+  rail. There is still no tap-size token: `.tr-btn` is 40px, `.lens-btn-ico`
+  ~30px, `.atlas-chip` ~19px. `-webkit-tap-highlight-color` is unset, so Android
+  paints a system blue over the paper. *Repaid so far:* the play button no longer
+  shrinks to 36 on a phone, the Pigafetta door is 48, the note chip is 44, and
+  the drag handle that never dragged is gone with the sheet it was drawn on.
 - **The transport bar is still two rows on a phone**, because the autopause
   checkbox is a setting with nowhere else to live. Hiding its label was tried
   and reverted within the hour: it left a naked box in the middle of the bar,
@@ -434,9 +509,17 @@ are editing is already migrated; check it. As of the typography commit:
   the note collapsed, the launcher made round and the top edge made one row.
   Measure it, do not estimate it: `.hist-note` was 12.9% of the screen and
   nobody had noticed, because it looked like a caption.
-- **`vh` where `dvh` is meant**: 15 against 3. The file already knows the
-  difference (`.win-body`, the Pigafetta dock); it was not propagated, so a
-  lightbox and the chat run under the browser's own bar.
+- **`vh` where `dvh` is meant**: **17 against 3** (2 `dvh`, 1 `svh`/`lvh`) —
+  re-counted, and it had drifted from the 15 this line used to claim. The file
+  already knows the difference (`.win-body`, the Pigafetta dock); it was not
+  propagated, so a lightbox and the chat run under the browser's own bar. In the
+  app the same defect arrives as the safe area, where it is not recoverable by
+  scrolling.
+- **The token layer is still authored in CSS**, which the port section above
+  makes a defect rather than a choice: 113 declarations in `:root`, `.space` and
+  `.worlds`, plus one declared locally in `.wp-dot.has-media::before`, which is a
+  token living outside any register and by this file's own logic is either not a
+  token or a missing one. Nothing is generated yet and there is no `lib/tokens.ts`.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done
