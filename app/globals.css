@@ -324,6 +324,22 @@ input[type="range"].scrubber {
   background-repeat: no-repeat;
   cursor: pointer;
 }
+/* Measured at 340×4: a rule a finger cannot land on. The RULE stays 4px,
+   because the design wants a printed line and not a slider — so the height
+   grows into padding and the drawn track is put back with background-clip,
+   which leaves the ink identical and the target 44 tall. The alternative,
+   a thicker line, would have answered touch by giving up the drawing. */
+@media (pointer: coarse) {
+  input[type="range"].scrubber {
+    height: var(--tap-min);
+    padding: calc((var(--tap-min) - 4px) / 2) 0;
+    background-color: transparent;
+    background-image:
+      linear-gradient(var(--brass), var(--brass)),
+      linear-gradient(var(--parchment-deep), var(--parchment-deep));
+    background-clip: content-box, content-box;
+  }
+}
 input[type="range"].scrubber::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 18px;
@@ -840,6 +856,46 @@ input[type="range"].scrubber::-moz-range-thumb {
   opacity: 0.55;
   cursor: pointer;
 }
+/* On a phone these are rendered as spans rather than buttons, so there is
+   nothing to point at — see the comment in VoyageExperience. The cursor is
+   dropped with the promise. */
+[data-layout="phone"] .vt-tick { cursor: default; }
+
+/* The stage steppers: what the ticks stopped being. They take the tap floor
+   rather than a chosen size, because the floor is the whole reason they
+   exist. */
+/* The reading: what the bar actually says. It was four inline styles with
+   literal sizes, written twice — minWidth 150, 1.1rem, 12px — which is how it
+   escaped both the scale and this file. 1.1rem fell between --step-0 and
+   --step-1, and rounding UP settles two things at once: it lands on the scale,
+   and it clears the ~20px floor under which Cormorant goes spindly, so the
+   display face stops breaking the first golden rule by being used at 17.6px.
+   The place line is the machine naming a position, so it is mono and faint. */
+.tb-reading { min-width: 150px; }
+.tb-date { font-family: var(--font-display); font-size: var(--step-1); line-height: 1.15; }
+.tb-place { font-size: var(--step--2); color: var(--ink-soft); }
+/* On a phone 150px of a 366px bar is not a minimum, it is most of the row. */
+[data-layout="phone"] .tb-reading { min-width: 0; }
+
+.vt-steps { display: flex; gap: var(--space-1); flex: 0 0 auto; }
+.vt-step {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .vt-step:hover { color: var(--ink); border-color: var(--brass); }
+}
+.vt-step:active { color: var(--accent); }
+.vt-step:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 @media (hover: hover) {
   .vt-tick:hover {
     opacity: 1;
