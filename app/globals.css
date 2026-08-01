@@ -877,6 +877,68 @@ input[type="range"].scrubber::-moz-range-thumb {
 /* On a phone 150px of a 366px bar is not a minimum, it is most of the row. */
 [data-layout="phone"] .tb-reading { min-width: 0; }
 
+/* THE SWITCH between the two timelines, on a phone only. They encode the same
+   axis — the ship's date — so they are one rail with two sets of marks rather
+   than two rails at opposite ends of a small screen. Words on the tabs, not a
+   bare toggle: an unlabelled switch is a control that has to be taught. */
+.tb-tracks {
+  display: flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+.tb-track-tab {
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  padding: var(--space-2) var(--space-3);
+  min-height: var(--tap-min);
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tb-track-tab.on { background: var(--parchment-deep); color: var(--ink); }
+.tb-track-tab:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+
+/* The world's marks keep their category colour on the shared rail, which is
+   what tells you the switch actually changed something. */
+.vt-tick.cat-politics    { background: var(--lens-carto); opacity: 0.75; }
+.vt-tick.cat-conflict    { background: var(--accent); opacity: 0.75; }
+.vt-tick.cat-science     { background: var(--lens-chart); opacity: 0.75; }
+.vt-tick.cat-exploration { background: var(--lens-log); opacity: 0.75; }
+.vt-tick.cat-culture     { background: var(--lens-plates); opacity: 0.75; }
+
+/* THE LOG'S OWN CONTROLS — what the bar gave up. A page you are already
+   reading is the right place to move between the things it describes. */
+.log-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule-hair);
+}
+.log-sail {
+  flex: 1;
+  min-height: var(--tap-min);
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-2);
+  background: var(--accent);
+  color: var(--parchment);
+  cursor: pointer;
+}
+.log-sail:active { background: var(--accent-deep); border-color: var(--accent-deep); }
+@media (hover: hover) {
+  .log-sail:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
+.log-sail:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
 .vt-steps { display: flex; gap: var(--space-1); flex: 0 0 auto; }
 .vt-step {
   width: var(--tap-min);

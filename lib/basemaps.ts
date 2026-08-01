@@ -86,3 +86,24 @@ export const TILE_ATTRIBUTION: Record<BodyId, string> = {
   mercury: "Map tiles © OpenPlanetary · data NASA/USGS/JPL",
   titan: "Map tiles © OpenPlanetary · data NASA/USGS/JPL",
 };
+
+/* Collapse MapLibre's attribution to its own (i) button on a phone.
+ *
+ * Measured at 412×883: it renders EXPANDED as a full 338×44 band — 4.1% of the
+ * screen, permanently, to say what its button says on request. This is a
+ * collapse and not a removal: OpenStreetMap and CARTO are still credited, and
+ * the compact form is the library's own sanctioned one, so nothing about the
+ * licence changes.
+ *
+ * It reads the layout attribute rather than a width, because the boundary is
+ * spelled once in lib/layout.ts and `test/layout.test.ts` fails a viewport
+ * width written by hand anywhere else. Called from both experiences, because
+ * a fix that lands in one map and not the other is how the Space copy has
+ * twice gone quietly stale.
+ */
+export function collapseAttributionOnPhone(container: HTMLElement | null): void {
+  if (!container) return;
+  if (document.documentElement.getAttribute("data-layout") !== "phone") return;
+  const attrib = container.querySelector("details.maplibregl-ctrl-attrib");
+  if (attrib instanceof HTMLDetailsElement) attrib.open = false;
+}

@@ -3,39 +3,67 @@
 import Icon from "@/components/Icon";
 import type { RefObject } from "react";
 
-/* The transport bar, once, with a lexicon.
+/* The transport bar, once, with a lexicon — and on a phone, with almost
+ * nothing left on it.
  *
- * It was built twice — here in an Age-of-Sail vocabulary and again in a
- * telemetry one — and the debt list has been asking for this since 10916eb
- * closed the same wound on the imprint. The two copies were identical in
- * arrangement and differed only in what things are CALLED: a landfall or a
- * flyby, Off Brest or Near Neptune, the ship's timeline or the mission's. That
- * is a lexicon, not a design, so the design is here and the words arrive as a
- * prop.
+ * It was built twice, in an Age-of-Sail vocabulary and a telemetry one,
+ * identical in arrangement and different only in what things are CALLED: a
+ * landfall or a flyby, Off Brest or Near Neptune. That is a lexicon, not a
+ * design, so the design is here and the words arrive as props. The Space copy
+ * has twice drifted by being edited alone, and both times the loss was
+ * invisible — a chip that never appeared, a menu that stayed stale.
  *
- * It matters more than tidiness. The Space copy has twice now drifted from
- * this one by being edited alone, and both times the loss was invisible: a
- * chip that never appeared, a menu that stayed stale. A phone makes it worse
- * again, because every fix below has to land in both places on the same day or
- * one atlas keeps a control no thumb can hit.
+ * WHAT A PHONE GETS, AND WHY IT IS SO LITTLE. Measured at 412×883 on the
+ * owner's own handset, this bar was 165px — 17.6% of the screen — on a page
+ * that gave the voyage itself about a tenth. Three things were on it that are
+ * not transport:
+ *
+ *   the autopause checkbox   a SETTING, and a whole row to say a thing you
+ *                            decide once. It becomes the behaviour instead: on
+ *                            a phone the voyage always stops at a landfall and
+ *                            opens the log, and the log carries the button
+ *                            that sails on. A control in context beats a
+ *                            preference in the abstract — and it is why the
+ *                            row can GO rather than be hidden, which was tried
+ *                            once and left a naked checkbox nobody could read.
+ *   the stage steppers       they belong beside the thing they step through,
+ *                            which is the log, not the map.
+ *   the world strip          a second timeline, at the far end of the screen,
+ *                            encoding the SAME axis. On a phone it arrives
+ *                            here as a second track behind a switch.
+ *
+ * What is left is a caption, a switch and a rail — plus the play button, which
+ * stays because it is the only way to begin: at first paint no log is open, so
+ * a bar without it is a voyage that cannot be started.
  */
 
-export type Stop = {
+export type Mark = {
   /** Whatever the subject keys its waypoints by — a React key, not an id we
       own, so it takes both rather than making two call sites cast. */
   id: string | number;
-  /** When the ship or the probe got there. */
+  /** Where it sits on the shared time axis. */
   at: number;
-  /** What this voyage calls the place. */
   label: string;
+  /** The category class the world's marks carry; a voyage's stops have none. */
+  className?: string;
+};
+
+export type Track = {
+  key: string;
+  /** What the switch calls it. Two words at most: it is a tab, not a sentence. */
+  tab: string;
+  /** The line under the date while this track shows — the caption of whatever
+      the rail is currently about. */
+  caption: string;
+  marks: Mark[];
+  /** Where a mark leads on a wide screen, where 2px is a reachable target. */
+  onMark?: (at: number) => void;
 };
 
 export type TransportLexicon = {
   /** The scrubber's accessible name — "Voyage timeline", "Mission timeline". */
   timeline: string;
-  /** What a stop is called here — "landfall", "flyby". */
-  stop: string;
-  /** The autopause label, which names the same thing a third time. */
+  /** The autopause label. Wide only; a phone does not ask. */
   autopause: string;
 };
 
@@ -44,14 +72,14 @@ export default function TransportBar({
   playing,
   onTogglePlay,
   dateLabel,
-  placeLine,
-  stops,
+  tracks,
+  activeTrack,
+  onTrack,
   t,
   min,
   max,
   step,
   onScrub,
-  onOpenStop,
   autopause,
   onAutopause,
   lexicon,
@@ -61,103 +89,87 @@ export default function TransportBar({
   playing: boolean;
   onTogglePlay: () => void;
   dateLabel: string;
-  placeLine: string;
-  stops: Stop[];
+  /** The first is the subject's own timeline; the rest are context, and only
+      reach this bar on a phone — on a wide screen they have room of their own
+      elsewhere and are drawn there. */
+  tracks: Track[];
+  activeTrack: string;
+  onTrack: (key: string) => void;
   t: number;
   min: number;
   max: number;
   step: number;
   onScrub: (t: number) => void;
-  onOpenStop: (at: number) => void;
   autopause: boolean;
   onAutopause: (on: boolean) => void;
   lexicon: TransportLexicon;
   phone: boolean;
 }) {
   const span = max > min ? max - min : 1;
-  const pctOf = (time: number) =>
-    Math.max(0, Math.min(100, ((time - min) / span) * 100));
+  const pctOf = (time: number) => Math.max(0, Math.min(100, ((time - min) / span) * 100));
   const pct = pctOf(t);
 
-  /* Step to the next stop in either direction — what the 2px ticks were
-     pretending to offer. A step of tolerance, because `t` lands on a stop
-     exactly when a stepper put it there and a hair off it when the scrubber
-     did, and without the margin a second press from a scrubbed position finds
-     the stop it is already sitting on. Clamped rather than wrapping: a voyage
-     has a first stop and a last one, and arriving back at the start by
-     pressing "next" past the end would be a lie about the map. */
-  const stepStop = (dir: 1 | -1) => {
-    const at = stops.map((s) => s.at);
-    const next =
-      dir === 1 ? at.find((x) => x > t + step) : [...at].reverse().find((x) => x < t - step);
-    onScrub(next ?? (dir === 1 ? max : min));
-  };
+  const shown = tracks.find((x) => x.key === activeTrack) ?? tracks[0];
+  /* A switch with one choice is not a switch. */
+  const switchable = phone && tracks.length > 1;
 
   return (
     <div className="transport-bar" ref={barRef}>
-      <button
-        className="play-btn"
-        onClick={onTogglePlay}
-        aria-label={playing ? "Pause" : "Play"}
-      >
+      <button className="play-btn" onClick={onTogglePlay} aria-label={playing ? "Pause" : "Play"}>
         <Icon name={playing ? "pause" : "play"} size={17} />
       </button>
 
-      {/* What the ticks stopped being. Only on a phone: a mouse can hit 2px,
-          and a second pair of buttons on a wide screen would be chrome bought
-          for nothing. */}
-      {phone && (
-        <div className="vt-steps">
-          <button
-            className="vt-step"
-            onClick={() => stepStop(-1)}
-            aria-label={`Previous ${lexicon.stop}`}
-          >
-            <Icon name="stage-prev" size={18} />
-          </button>
-          <button
-            className="vt-step"
-            onClick={() => stepStop(1)}
-            aria-label={`Next ${lexicon.stop}`}
-          >
-            <Icon name="stage-next" size={18} />
-          </button>
+      <div className="tb-reading">
+        <div className="tb-date">{dateLabel}</div>
+        <div className="tb-place">{shown?.caption}</div>
+      </div>
+
+      {switchable && (
+        /* Two tabs with words on them, not a bare toggle. An unlabelled switch
+           is a control that has to be taught, which is the defect this repo's
+           law names by name. */
+        <div className="tb-tracks" role="tablist" aria-label="Which timeline">
+          {tracks.map((tr) => (
+            <button
+              key={tr.key}
+              role="tab"
+              aria-selected={tr.key === shown?.key}
+              className={`tb-track-tab${tr.key === shown?.key ? " on" : ""}`}
+              onClick={() => onTrack(tr.key)}
+            >
+              {tr.tab}
+            </button>
+          ))}
         </div>
       )}
 
-      <div className="tb-reading">
-        <div className="tb-date">{dateLabel}</div>
-        <div className="tb-place">{placeLine}</div>
-      </div>
-
       <div className="voyage-track">
-        {/* A TICK IS A MARK, NOT A DOOR — on a phone.
+        {/* A MARK IS NOT A DOOR — on a phone.
 
-            Measured on a real engine: each is 2×8 and there are fifteen across
-            a 340px rail. That is not a control anyone can hit, and no tap-size
-            floor fixes it, because fifteen 44px targets do not fit in 340px at
-            any size. So on a phone they stop claiming to be controls —
-            printed marks, out of the tab order and out of the accessibility
-            tree — and the precise navigation they were pretending to offer
-            moves to the steppers above, which is how a voyage is read anyway:
-            stop by stop, rather than by hitting two pixels for Batavia. */}
+            Measured: each of these is 2×8 and there are fifteen across a 340px
+            rail. No tap floor fixes that, because fifteen 44px targets do not
+            fit in 340px at any size. So on a phone they are printed marks, out
+            of the tab order and out of the accessibility tree, and stepping
+            between them moved into the log — where you are already reading the
+            thing they point at. A mouse can hit 2px, so a wide screen keeps
+            them as buttons. */}
         <div className="vt-ticks">
-          {stops.map((s) =>
-            phone ? (
+          {(shown?.marks ?? []).map((m) =>
+            phone || !shown?.onMark ? (
               <span
-                key={s.id}
-                className="vt-tick"
-                style={{ left: `${pctOf(s.at)}%` }}
+                key={m.id}
+                className={`vt-tick${m.className ? ` ${m.className}` : ""}`}
+                style={{ left: `${pctOf(m.at)}%` }}
                 aria-hidden="true"
               />
             ) : (
               <button
-                key={s.id}
-                className="vt-tick"
-                style={{ left: `${pctOf(s.at)}%` }}
-                title={s.label}
-                aria-label={s.label}
-                onClick={() => onOpenStop(s.at)}
+                key={m.id}
+                className={`vt-tick${m.className ? ` ${m.className}` : ""}`}
+                style={{ left: `${pctOf(m.at)}%` }}
+                title={m.label}
+                aria-label={m.label}
+                onClick={() => shown.onMark!(m.at)}
               />
             ),
           )}
@@ -175,14 +187,19 @@ export default function TransportBar({
         />
       </div>
 
-      <label className="autopause-toggle">
-        <input
-          type="checkbox"
-          checked={autopause}
-          onChange={(e) => onAutopause(e.target.checked)}
-        />
-        {lexicon.autopause}
-      </label>
+      {/* The setting exists only where there is room to explain it. On a phone
+          the behaviour is the default and the log's own button is the control,
+          so there is nothing here to hide and nothing to teach. */}
+      {!phone && (
+        <label className="autopause-toggle">
+          <input
+            type="checkbox"
+            checked={autopause}
+            onChange={(e) => onAutopause(e.target.checked)}
+          />
+          {lexicon.autopause}
+        </label>
+      )}
     </div>
   );
 }

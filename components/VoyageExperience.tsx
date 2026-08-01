@@ -15,7 +15,7 @@ import ContributePanel from "@/components/ContributePanel";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
-import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION } from "@/lib/basemaps";
+import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION, collapseAttributionOnPhone } from "@/lib/basemaps";
 import {
   DAY,
   parseHistoricalDate,
@@ -216,6 +216,11 @@ export default function VoyageExperience({
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
+  /* Which timeline the phone's one rail is showing. Wide screens never see the
+     switch, because the world has its own strip up there. */
+  const [track, setTrack] = useState("voyage");
+  /* Where playback put itself down, on a phone. Null while sailing. */
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
   const isMobile = useLayoutMode() === "phone";
   /* The bottom edge of a phone carries four things that each anchored to it
      with a hand-picked number: the launcher had four competing `bottom`
@@ -278,6 +283,15 @@ export default function VoyageExperience({
     setPanelOpen(true);
   };
 
+  /* The other half of the autopause-becomes-behaviour trade: having stopped,
+     the phone SHOWS you why it stopped. Without this the voyage would simply
+     halt on a map with no explanation, which is worse than the checkbox was. */
+  useEffect(() => {
+    if (pausedAt === null || !isMobile) return;
+    setLens("log");
+    setPanelOpen(true);
+  }, [pausedAt, isMobile]);
+
   // Initialise the map once.
   useEffect(() => {
     let cancelled = false;
@@ -311,6 +325,10 @@ export default function VoyageExperience({
 
       map.on("load", () => {
         if (!map) return;
+        /* MapLibre builds its own attribution, so it is reachable only after
+           the map says it is ready — the same reason useEdgeStack has to
+           measure that element rather than be told its height. */
+        collapseAttributionOnPhone(containerRef.current);
         const full = L.map((l) => [l.lng, l.lat] as [number, number]);
 
         if (body === "earth") {
@@ -439,13 +457,28 @@ export default function VoyageExperience({
     const id = setInterval(() => {
       setT((prev) => {
         const next = prev + span / 600;
-        if (autopause) {
+        /* On a phone this is not a setting. The checkbox that turned it on
+           cost a whole row of a 165px bar to ask a question you answer once,
+           so the answer became the behaviour: the voyage always stops, the log
+           opens, and the log carries the button that sails on. That is a
+           control in context instead of a preference in the abstract — and it
+           is what let the row go rather than be hidden, which was tried once
+           and left a naked checkbox nobody could read.
+
+           The price, taken deliberately: a phone can no longer watch a voyage
+           play through unattended. On a screen where the reading is the log
+           and the map is a thumbnail, that is the cheaper half. */
+        if (autopause || isMobile) {
           // Stop at the next milestone on EITHER timeline — landfall or world event.
           const nextLeg = legs.find((l) => l.arrival > prev + 1)?.arrival ?? Infinity;
           const nextEv = events.find((e) => e.time > prev + 1)?.time ?? Infinity;
           const stop = Math.min(nextLeg, nextEv);
           if (Number.isFinite(stop) && next >= stop) {
             setPlaying(false);
+            /* Recorded rather than acted on here: opening the log from inside
+               a state updater would nest one setState in another, and the
+               updater is re-run under StrictMode. The effect below does it. */
+            if (isMobile) setPausedAt(stop);
             return stop;
           }
         }
@@ -503,6 +536,23 @@ export default function VoyageExperience({
       0,
       Math.min(100, maxTime > minTime ? ((time - minTime) / (maxTime - minTime)) * 100 : 0)
     );
+
+  /* Step to the next landfall. It lives here rather than on the bar because
+     the buttons live on the LOG — you are already reading the place they move
+     between, which is the argument for moving them off the map at all.
+
+     A day of tolerance: `t` sits exactly on an arrival when a stepper put it
+     there and a hair off when the scrubber did, and without the margin a
+     second press from a scrubbed position finds the stop it is on. Clamped
+     rather than wrapping — a voyage has a first landfall and a last. */
+  const stepStop = (dir: 1 | -1) => {
+    setPlaying(false);
+    setPausedAt(null);
+    const at = legs.map((l) => l.arrival);
+    const next =
+      dir === 1 ? at.find((x) => x > t + DAY) : [...at].reverse().find((x) => x < t - DAY);
+    openLogRef.current(next ?? (dir === 1 ? maxTime : minTime));
+  };
 
 
   function togglePlay() {
@@ -714,8 +764,13 @@ export default function VoyageExperience({
       )}
 
 
-      {/* World-events strip: dots always, words only when there is something to say. */}
-      {events.length > 0 && (
+      {/* World-events strip: dots always, words only when there is something to
+          say — and on a wide screen only. On a phone this was a 45px band at
+          the top of the map encoding the same time axis as the bar at the
+          bottom, which is two timelines at opposite ends of a small screen. It
+          moves into the bar's switch there. It also opens on hover, which does
+          not exist under a finger, so down there it had nothing to say anyway. */}
+      {events.length > 0 && !isMobile && (
       <div
         className="world-strip"
         onMouseEnter={() => setStripHover(true)}
@@ -1032,6 +1087,42 @@ export default function VoyageExperience({
             )}
               </>
             )}
+
+            {/* WHAT THE BAR GAVE UP. On a phone the log is a page, not a
+                window, so it is where you already are when the voyage stops —
+                which makes it the right place for the controls that move
+                between stops, and the only honest home for the one that sails
+                on. Sailing on closes the log: the point of continuing is to
+                watch the ship move, and it cannot be watched from behind a
+                full-bleed sheet. */}
+            {isMobile && lens === "log" && (
+              <div className="log-actions">
+                <button
+                  className="vt-step"
+                  onClick={() => stepStop(-1)}
+                  aria-label="Previous landfall"
+                >
+                  <Icon name="stage-prev" size={18} />
+                </button>
+                <button
+                  className="log-sail"
+                  onClick={() => {
+                    setPausedAt(null);
+                    setPanelOpen(false);
+                    setPlaying(true);
+                  }}
+                >
+                  Sail on
+                </button>
+                <button
+                  className="vt-step"
+                  onClick={() => stepStop(1)}
+                  aria-label="Next landfall"
+                >
+                  <Icon name="stage-next" size={18} />
+                </button>
+              </div>
+            )}
           </DraggableWindow>
         )}
 
@@ -1052,12 +1143,44 @@ export default function VoyageExperience({
         playing={playing}
         onTogglePlay={togglePlay}
         dateLabel={dateLabel}
-        placeLine={placeName ? `Off ${placeName}` : ""}
-        stops={legs.map((l) => ({
-          id: l.wp.id,
-          at: l.arrival,
-          label: l.wp.place_historical ?? l.wp.place_modern ?? "landfall",
-        }))}
+        /* Two tracks on one axis. The world's events reach this bar only on a
+           phone — on a wide screen the strip above still has room of its own,
+           and moving it down there would buy nothing. */
+        tracks={[
+          {
+            key: "voyage",
+            tab: "Voyage",
+            caption: placeName ? `Off ${placeName}` : "",
+            marks: legs.map((l) => ({
+              id: l.wp.id,
+              at: l.arrival,
+              label: l.wp.place_historical ?? l.wp.place_modern ?? "landfall",
+            })),
+            onMark: (at) => {
+              setPlaying(false);
+              openLogRef.current(at);
+            },
+          },
+          ...(isMobile
+            ? [
+                {
+                  key: "world",
+                  tab: "World",
+                  /* The caption is the caption OF THE TRACK, so switching the
+                     rail switches what the date is telling you about. */
+                  caption: worldNow ? worldNow.title : "",
+                  marks: events.map((ev) => ({
+                    id: ev.title,
+                    at: ev.time,
+                    label: ev.title,
+                    className: `cat-${ev.category}`,
+                  })),
+                },
+              ]
+            : []),
+        ]}
+        activeTrack={track}
+        onTrack={setTrack}
         t={t}
         min={minTime}
         max={maxTime}
@@ -1066,15 +1189,10 @@ export default function VoyageExperience({
           setPlaying(false);
           setT(next);
         }}
-        onOpenStop={(at) => {
-          setPlaying(false);
-          openLogRef.current(at);
-        }}
         autopause={autopause}
         onAutopause={setAutopause}
         lexicon={{
           timeline: "Voyage timeline",
-          stop: "landfall",
           autopause: "Pause at each stop & event",
         }}
         phone={isMobile}

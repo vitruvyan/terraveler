@@ -156,6 +156,9 @@ export default function SpaceVoyageExperience({
   const [autopause, setAutopause] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
+  /* Which timeline the phone rail shows — see VoyageExperience for why. */
+  const [track, setTrack] = useState("voyage");
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
   const isMobile = useLayoutMode() === "phone";
   /* The same derived bottom stack the Earth map uses. This component had the
      same defect for the same reason: its note anchored to bottom:14px, which
@@ -179,12 +182,31 @@ export default function SpaceVoyageExperience({
     return () => window.removeEventListener("keydown", onKey);
   }, [lightbox]);
 
+  /* Step between flybys — lives here because the buttons live on the log. */
+  function stepStop(dir: 1 | -1) {
+    setPlaying(false);
+    setPausedAt(null);
+    const at = milestoneLegs.map((l) => l.arrival);
+    const next =
+      dir === 1 ? at.find((x) => x > t + DAY) : [...at].reverse().find((x) => x < t - DAY);
+    openLog(next ?? (dir === 1 ? maxTime : minTime));
+  }
+
   // Open the Mission Log at a specific flyby (used by waypoint dots & ticks).
   function openLog(arrival: number) {
     setT(arrival);
     setLens("log");
     setPanelOpen(true);
   }
+
+  /* Having stopped, the phone shows WHY it stopped. Without this the mission
+     halts on a starfield with no explanation, which is worse than the checkbox
+     it replaces. */
+  useEffect(() => {
+    if (pausedAt === null || !isMobile) return;
+    setLens("log");
+    setPanelOpen(true);
+  }, [pausedAt, isMobile]);
 
   // Playback loop (~24s for the full voyage) — identical formula to the
   // Earth experience; autopause stops at milestones only (real flybys + the
@@ -195,12 +217,17 @@ export default function SpaceVoyageExperience({
     const id = setInterval(() => {
       setT((prev) => {
         const next = prev + span / 600;
-        if (autopause) {
+        /* Not a setting on a phone — see VoyageExperience for the argument.
+           The log carries the button that sails on. */
+        if (autopause || isMobile) {
           const nextLeg = milestoneLegs.find((l) => l.arrival > prev + 1)?.arrival ?? Infinity;
           const nextEv = events.find((e) => e.time > prev + 1)?.time ?? Infinity;
           const stop = Math.min(nextLeg, nextEv);
           if (Number.isFinite(stop) && next >= stop) {
             setPlaying(false);
+            /* Recorded, not acted on: opening the log from inside a state
+               updater nests one setState in another. The effect does it. */
+            if (isMobile) setPausedAt(stop);
             return stop;
           }
         }
@@ -427,7 +454,9 @@ export default function SpaceVoyageExperience({
       )}
 
 
-      {events.length > 0 && (
+      {/* Wide only: on a phone this band encodes the same axis as the bar at
+          the other end of the screen, and moves into the bar’s switch. */}
+      {events.length > 0 && !isMobile && (
         <div
           className="world-strip"
           onMouseEnter={() => setStripHover(true)}
@@ -684,6 +713,31 @@ export default function SpaceVoyageExperience({
                 )}
               </>
             )}
+
+            {/* The controls the bar gave up. On a phone the log is a page, so
+                it is where you already are when the mission stops — which
+                makes it the home for stepping between flybys and the only
+                honest place for the one that carries on. */}
+            {isMobile && lens === "log" && (
+              <div className="log-actions">
+                <button className="vt-step" onClick={() => stepStop(-1)} aria-label="Previous flyby">
+                  <Icon name="stage-prev" size={18} />
+                </button>
+                <button
+                  className="log-sail"
+                  onClick={() => {
+                    setPausedAt(null);
+                    setPanelOpen(false);
+                    setPlaying(true);
+                  }}
+                >
+                  Carry on
+                </button>
+                <button className="vt-step" onClick={() => stepStop(1)} aria-label="Next flyby">
+                  <Icon name="stage-next" size={18} />
+                </button>
+              </div>
+            )}
           </DraggableWindow>
         )}
       </div>
@@ -693,8 +747,35 @@ export default function SpaceVoyageExperience({
         playing={playing}
         onTogglePlay={togglePlay}
         dateLabel={dateLabel}
-        placeLine={bodyName ? `Near ${bodyName}` : ""}
-        stops={milestoneLegs.map((l) => ({ id: l.wp.id, at: l.arrival, label: l.wp.body }))}
+        tracks={[
+          {
+            key: "voyage",
+            tab: "Mission",
+            caption: bodyName ? `Near ${bodyName}` : "",
+            marks: milestoneLegs.map((l) => ({ id: l.wp.id, at: l.arrival, label: l.wp.body })),
+            onMark: (at) => {
+              setPlaying(false);
+              openLog(at);
+            },
+          },
+          ...(isMobile
+            ? [
+                {
+                  key: "world",
+                  tab: "World",
+                  caption: worldNow ? worldNow.title : "",
+                  marks: events.map((ev) => ({
+                    id: ev.title,
+                    at: ev.time,
+                    label: ev.title,
+                    className: `cat-${ev.category}`,
+                  })),
+                },
+              ]
+            : []),
+        ]}
+        activeTrack={track}
+        onTrack={setTrack}
         t={t}
         min={minTime}
         max={maxTime}
@@ -703,15 +784,10 @@ export default function SpaceVoyageExperience({
           setPlaying(false);
           setT(next);
         }}
-        onOpenStop={(at) => {
-          setPlaying(false);
-          openLog(at);
-        }}
         autopause={autopause}
         onAutopause={setAutopause}
         lexicon={{
           timeline: "Mission timeline",
-          stop: "flyby",
           autopause: "Pause at each flyby & event",
         }}
         phone={isMobile}

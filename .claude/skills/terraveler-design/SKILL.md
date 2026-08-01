@@ -581,22 +581,40 @@ are editing is already migrated; check it. As of the typography commit:
   and reverted within the hour: it left a naked box in the middle of the bar,
   which is a control that must be taught. The row is the honest price until
   the setting is given a home off the map.
-- **The measured chrome share** went 36.4% → 25.4% in c5ff173 with the note
-  collapsed, the launcher made round and the top edge made one row. Re-measured
-  on a real engine at 390×844 with `scripts/measure-phone.mjs`, it is **31.6%**
-  for a returning reader and **38.6%** on a first visit, where the welcome
-  cartouche is 27.3% by itself. It has grown, and the two costs are legible:
-  the **transport bar is 366×125 — 13.9% of the screen on its own**, because it
-  is still two rows; and MapLibre's attribution is sitting **expanded**, a full
-  338×44 band at 4.5%, rather than collapsed to its button.
+- **The chrome share, measured on the owner's own handset (412×883): 34.1% →
+  22.3%.** Overlapping pairs 5 → 0, controls under 44px 20 → 5, and three of
+  the five left are MapLibre's own or the wordmark. What moved:
 
-- **The timeline ticks are 2px wide.** `button.vt-tick` measures **2×8**, and
-  there are fifteen of them, each carrying a real destination — Taïti,
-  Batavia, the Cape of Good Hope. `input.scrubber` is 340×**4**. No finger can
-  hit either, and no amount of reading the stylesheet would have said so: the
-  width comes out of a flex row divided by the number of stages. This is the
-  worst touch defect on the map and it was not in this list until an engine was
-  pointed at it.
+  - the **world strip** leaves the top of a phone entirely. It was a 45px band
+    encoding the same time axis as the bar at the other end of the screen —
+    two timelines at opposite edges of a small screen — and it arrives in the
+    bar as a second track behind a two-tab switch. It also opened on `hover`,
+    which does not exist under a finger, so down there it said nothing anyway.
+  - the **autopause checkbox** is gone from the phone, and not by being hidden:
+    it became the behaviour. The voyage always stops at a landfall, the log
+    opens, and the log carries the button that sails on. A control in context
+    instead of a preference in the abstract. **The price, taken knowingly: a
+    phone can no longer watch a voyage play through unattended.**
+  - the **stage steppers** live on the log, beside the thing they step between.
+  - MapLibre's attribution collapses to its own `(i)`: **338×44 → 56×44**.
+    Collapsed, not removed — OSM and CARTO are still credited and the compact
+    form is the library's own.
+
+  The bar is **131px**, down from 165. It is not two rows: `.voyage-track` is
+  forced to `flex: 1 1 100%`, so the rail always takes one of its own.
+
+- ~~The timeline ticks are 2px wide.~~ **Repaid.** They measured 2×8, fifteen
+  across a 340px rail, and no tap floor fixes that — fifteen 44px targets do
+  not fit in 340px at any size. On a phone they are printed marks now,
+  `aria-hidden` and out of the tab order, and stepping moved to the log. The
+  scrubber keeps its 4px rule and gained a 44px target by growing into padding
+  and putting the drawn track back with `background-clip`; the alternative, a
+  thicker line, answers touch by giving up the drawing.
+
+- **The transport bar is built once.** `components/map/TransportBar.tsx`, with
+  a lexicon — this is the instrument debt below, repaid for this one instrument.
+  The orrery has no MapLibre, so the attribution collapse has no second home to
+  drift from; everything else lands in both atlases from one file.
 
 - **`button.map-atlas-door` carries a `title` and no `aria-label`.** It is the
   door to the whole atlas — "18 voyages" — and on touch it says nothing, to a
