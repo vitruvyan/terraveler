@@ -732,9 +732,7 @@ export default function SpaceVoyageExperience({
                   }}
                 >
                   Carry on
-                </button>
-                <button className="vt-step" onClick={() => stepStop(1)} aria-label="Next flyby">
-                  <Icon name="stage-next" size={18} />
+                  <Icon name="stage-next" size={16} />
                 </button>
               </div>
             )}

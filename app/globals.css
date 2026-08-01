@@ -338,6 +338,14 @@ input[type="range"].scrubber {
       linear-gradient(var(--brass), var(--brass)),
       linear-gradient(var(--parchment-deep), var(--parchment-deep));
     background-clip: content-box, content-box;
+    /* A target may be 44 tall without COSTING 44. The first version of this
+       let the padding into the layout, and the bar grew a band of empty
+       parchment under the rule that read as a mistake — it was drawn on a
+       screenshot and crossed out, which is the only way anyone was going to
+       see it, since an invisible box is exactly what it was. The negative
+       margin gives the height back to the layout and keeps it for the finger;
+       what it overlaps is the tick row above, which is transparent. */
+    margin: calc((14px - var(--tap-min)) / 2) 0;
   }
 }
 input[type="range"].scrubber::-webkit-slider-thumb {
@@ -923,6 +931,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 .log-sail {
   flex: 1;
   min-height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   font-family: var(--font-ui);
   font-size: var(--step--1);
   letter-spacing: 0.08em;

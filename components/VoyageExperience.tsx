@@ -1104,6 +1104,13 @@ export default function VoyageExperience({
                 >
                   <Icon name="stage-prev" size={18} />
                 </button>
+                {/* One forward button, not two. There was also a "next
+                    landfall" stepper here that JUMPED — same destination,
+                    arrived at instantly. On a map whose whole subject is the
+                    passage between two places, a cut is the wrong verb: this
+                    one closes the log, sails, and opens the log again when it
+                    gets there. Going back stays a jump, because nobody watches
+                    a ship un-sail. */}
                 <button
                   className="log-sail"
                   onClick={() => {
@@ -1113,13 +1120,7 @@ export default function VoyageExperience({
                   }}
                 >
                   Sail on
-                </button>
-                <button
-                  className="vt-step"
-                  onClick={() => stepStop(1)}
-                  aria-label="Next landfall"
-                >
-                  <Icon name="stage-next" size={18} />
+                  <Icon name="stage-next" size={16} />
                 </button>
               </div>
             )}

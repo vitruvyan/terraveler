@@ -600,8 +600,21 @@ are editing is already migrated; check it. As of the typography commit:
     Collapsed, not removed — OSM and CARTO are still credited and the compact
     form is the library's own.
 
-  The bar is **131px**, down from 165. It is not two rows: `.voyage-track` is
-  forced to `flex: 1 1 100%`, so the rail always takes one of its own.
+  The bar is **97px**, down from 165.
+
+- **A target may be 44 tall without COSTING 44.** The first version of the
+  scrubber's touch target let its padding into the layout, and the bar grew a
+  band of empty parchment under the rule. Nobody could see it — an invisible
+  box is exactly what it was — until it was drawn on and crossed out on a
+  screenshot. A negative block margin gives the height back to the layout and
+  keeps it for the finger; what it overlaps is the transparent tick row above.
+  That one change is 131px → 97px, and 22.3% → **18.7%**.
+
+- **`.pig-mini` is hover-only, so on a phone it does not exist.** The launcher's
+  minibox opens on `onMouseEnter` and carries a control of its own — "Dock to
+  the side" — which no finger can reach. Same family as the world strip's
+  hover: a surface that only a mouse can summon is a surface a phone does not
+  have. Not fixed.
 
 - ~~The timeline ticks are 2px wide.~~ **Repaid.** They measured 2×8, fifteen
   across a 340px rail, and no tap floor fixes that — fifteen 44px targets do
@@ -690,6 +703,14 @@ Two of its findings were unreachable by reading: the timeline ticks are 2px
 wide, and the chrome share had grown back to 31.6% while the debt list still
 said 25.4%. `--safe-*` will read as `0px` here — headless Chromium has no notch,
 so the insets still cannot be verified this way.
+
+**It parks the pointer at 1,1 before measuring, and that is not a detail.** A
+synthetic mouse never lifts off the glass: wherever the last click leaves it,
+it goes on hovering. This tool once reported a 7.6% band that existed only
+because the pointer had come to rest on the Pigafetta launcher after dismissing
+the cartouche — a shorter bar had moved the launcher underneath it. It was
+inventing chrome and blaming the change that moved things. Anything measured
+before that fix, on a page with hover surfaces, is suspect.
 
 Check both a wide viewport and ~390px. Wide content (tables, logs, code) scrolls
 inside its own container; the page body never scrolls horizontally.

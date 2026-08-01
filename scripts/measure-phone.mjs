@@ -40,6 +40,15 @@ if (process.env.DISMISS) {
   await page.waitForTimeout(1200);
 }
 
+/* Park the synthetic pointer in a corner before measuring. It does not lift
+   off the glass the way a finger does, so wherever the last click left it, it
+   goes on hovering — and this measurement once reported a 7.6% band that only
+   existed because the mouse had come to rest on the Pigafetta launcher after
+   dismissing the cartouche. A shorter bar had moved the launcher under it. The
+   tool was inventing chrome and blaming the change that moved things. */
+await page.mouse.move(1, 1);
+await page.waitForTimeout(400);
+
 const report = await page.evaluate(({ W, H }) => {
   const OVER_MAP = ["absolute", "fixed", "sticky"];
 
