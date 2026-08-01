@@ -490,16 +490,49 @@ are editing is already migrated; check it. As of the typography commit:
 - **The instruments are four bands on a phone and should be one sheet.** The
   derived stack holds them apart correctly. Holding them apart is not the
   same as arranging them.
-- **Touch is mostly unaddressed** — and since the port section above, it is the
-  first thing owed rather than one item among many, because hover is not a
-  degraded experience on native but an absent one. No `@media (hover: hover)`
-  anywhere, so all **80** `:hover` rules fire on tap and stick; **63** raw
-  `title=` in TSX are invisible on touch, including the whole icon-only lens
-  rail. There is still no tap-size token: `.tr-btn` is 40px, `.lens-btn-ico`
-  ~30px, `.atlas-chip` ~19px. `-webkit-tap-highlight-color` is unset, so Android
-  paints a system blue over the paper. *Repaid so far:* the play button no longer
-  shrinks to 36 on a phone, the Pigafetta door is 48, the note chip is 44, and
-  the drag handle that never dragged is gone with the sheet it was drawn on.
+- **Touch: hover and the press are repaid, the sizes are not.** All **78** hover
+  rules across both stylesheets now sit inside `@media (hover: hover)`, so none
+  of them fires on tap and sticks; `test/layout.test.ts` fails the build if one
+  is added outside the gate. Every one of them was visual feedback rather than
+  revealed content, which is why the gate loses nothing.
+
+  The press highlight is **recoloured, not removed** — `--tap-flash`, which each
+  register re-declares and a guard enforces. Removing it is the obvious move and
+  it is wrong: this file has exactly one `:active` rule in 5000 lines (a grab
+  cursor), so transparent would leave a tap unacknowledged, and the generic
+  replacement everyone reaches for — dipping opacity — is forbidden by the
+  z-index rule above, since an opacity below 1 opens a stacking scale.
+
+  `--tap-min: 44px` is declared, and it **records** a floor the file had already
+  chosen three times by hand rather than importing a platform's number. It is
+  applied so far only to `.tr-btn` (40 → 44), keyed to `(pointer: coarse)`
+  rather than to the arrangement, because a touchscreen laptop is `wide` and
+  still has no pointer. Safe to add without re-measuring only because the bottom
+  edge is a derived stack that measures the bar rather than being told its
+  height.
+
+  **Still owed:** `.lens-btn-ico` (~30px) and `.atlas-chip` (~19px). Neither is a
+  size fix. The rail is a vertical column centred on the map, so 30 → 44 grows
+  it by 14px per lens in the middle of the subject; a chip row where every chip
+  is 44 tall stops being a chip row. Both are the lesson this file already
+  learnt one storey down — past a certain point the defect stops being a number
+  and becomes an arrangement — and both want measuring on a real engine first.
+  Also owed: the **63 `title=`** tooltips, invisible on touch and absent on
+  native, including the whole icon-only rail; and the fact that there is no
+  `:active` treatment anywhere, so the platform highlight is now the only press
+  feedback the site has.
+
+  *Repaid earlier:* the play button no longer shrinks to 36 on a phone, the
+  Pigafetta door is 48, the note chip is 44, and the drag handle that never
+  dragged is gone with the sheet it was drawn on.
+
+- **Three top-level selectors are declared more than once and silently overwrite
+  themselves**: `.tr-btn` twice (the first block's `background` and `color` are
+  dead — the second sets both) and `.lens-rail` three times. This is the
+  split-across-media-blocks disease without the media blocks, and the ratchet in
+  `test/layout.test.ts` does not see it because nothing here is responsive.
+  Found while sizing the transport bar; not fixed, because untangling which
+  declaration is load-bearing wants the surface in front of you.
 - **The transport bar is still two rows on a phone**, because the autopause
   checkbox is a setting with nowhere else to live. Hiding its label was tried
   and reverted within the hour: it left a naked box in the middle of the bar,

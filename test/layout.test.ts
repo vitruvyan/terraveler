@@ -109,6 +109,73 @@ test("the retired door is not offered anywhere", async () => {
   }
 });
 
+/* Every hover rule must sit inside @media (hover: hover).
+ *
+ * On a touch screen a :hover fires on tap and then STICKS until something else
+ * is tapped, so a control keeps its pressed appearance while the finger is long
+ * gone. All 78 rules here are visual feedback rather than revealed content, so
+ * nothing is lost by withholding them — but nothing was withholding them.
+ *
+ * This one is a capability query rather than an attribute on <html>, and the
+ * distinction is worth stating because the arrangement rule went the other way.
+ * A viewport media query FORCES the compact rule to be written far from the one
+ * it replaces, and its boundary is a number TypeScript also needs; neither is
+ * true here. There is nothing to share, nothing in TypeScript reads it, and the
+ * wrapper leaves the rule exactly where it was. It also cannot drift, which a
+ * hand-written 680 could.
+ */
+const STYLESHEETS = ["app/globals.css", "app/specimen/specimen.css"];
+
+test("no hover rule fires where there is no pointer", () => {
+  const naked: string[] = [];
+
+  for (const sheet of STYLESHEETS) {
+    const lines = uncommented(readFileSync(join(ROOT, sheet), "utf8")).split("\n");
+    /* One entry per open brace, true where that brace was the hover gate, so a
+       rule nested any distance inside it still counts as covered. */
+    const open: boolean[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const gate = /@media \(hover: hover\)/.test(line);
+      if (line.includes(":hover") && !open.some(Boolean)) {
+        naked.push(`${sheet}:${i + 1}: ${line.trim()}`);
+      }
+      for (let n = (line.match(/\{/g) ?? []).length; n > 0; n--) open.push(gate && n === 1);
+      for (let n = (line.match(/\}/g) ?? []).length; n > 0; n--) open.pop();
+    }
+  }
+
+  assert.deepEqual(
+    naked,
+    [],
+    `a :hover rule is not inside @media (hover: hover), so it will stick on ` +
+      `tap:\n  ${naked.join("\n  ")}`,
+  );
+});
+
+/* The press highlight is recoloured rather than removed, so it is a token, and
+   a token every register must re-declare — ink at a tenth is invisible on a
+   starfield. This is the rule that `--state-changes` broke by shipping at
+   3.29:1 inside .space, one layer down. */
+test("every register that re-declares the ink re-declares the press flash", () => {
+  const css = readFileSync(join(ROOT, "app/globals.css"), "utf8");
+  const missing: string[] = [];
+
+  for (const m of uncommented(css).matchAll(/^(\.[a-z-]+|:root)\s*\{([\s\S]*?)^\}/gm)) {
+    const [, selector, body] = m;
+    if (!/--ink\s*:/.test(body)) continue;
+    if (!/--tap-flash\s*:/.test(body)) missing.push(selector);
+  }
+
+  assert.deepEqual(
+    missing,
+    [],
+    `these registers set their own ink and inherit someone else's press ` +
+      `flash: ${missing.join(", ")}`,
+  );
+});
+
 /** Selectors declared inside each responsive block of the stylesheet. */
 function blocksOf(source: string) {
   const lines = uncommented(source).split("\n");

@@ -899,7 +899,9 @@
   color: var(--ink-soft);
   transition: color var(--dur-1) var(--ease);
 }
-.spec-vp-load:hover { color: var(--accent); }
+@media (hover: hover) {
+  .spec-vp-load:hover { color: var(--accent); }
+}
 .spec-vp-load:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
 
 .spec-vp-note {
@@ -920,7 +922,9 @@
   text-transform: uppercase;
   cursor: pointer;
 }
-.spec-vp-again:hover { color: var(--ink); border-color: var(--brass); }
+@media (hover: hover) {
+  .spec-vp-again:hover { color: var(--ink); border-color: var(--brass); }
+}
 .spec-vp-empty {
   color: var(--ink-faint);
   border: 1px dashed var(--rule-hair);
@@ -1025,7 +1029,9 @@
   color: var(--ink-faint);
   border-bottom-color: transparent;
 }
-.spec-chapter-out:hover { color: var(--ink); border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .spec-chapter-out:hover { color: var(--ink); border-bottom-color: var(--brass); }
+}
 
 /* Uno dei pochi elementi che galleggia davvero sopra la pagina, che è l'uso
    sanzionato di --elev-1. Compare solo quando c'è un posto dove tornare. */
@@ -1055,7 +1061,9 @@
     color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 .spec-totop.is-shown { opacity: 1; transform: none; pointer-events: auto; }
-.spec-totop:hover { color: var(--ink); border-color: var(--brass); }
+@media (hover: hover) {
+  .spec-totop:hover { color: var(--ink); border-color: var(--brass); }
+}
 .spec-totop:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {

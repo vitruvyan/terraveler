@@ -172,6 +172,27 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --dur-1: 120ms;
   --dur-2: 260ms;
+
+  /* ---- TOUCH -------------------------------------------------------------
+     --tap-min records a floor this file had already chosen by hand three
+     separate times — the Pigafetta door at 48, the note chip at 44, the play
+     button that stopped shrinking to 36 — rather than importing a platform's
+     number. 44 is the smallest of the three, so it is the one that was
+     actually agreed to; a control may raise its floor, as the morion raises
+     its own, and may not quietly ship below this one.
+
+     --tap-flash RECOLOURS the press highlight instead of removing it, and the
+     distinction is not cosmetic. Setting `-webkit-tap-highlight-color` to
+     transparent is the obvious move and it is wrong here: the site has exactly
+     one `:active` rule in 5000 lines (a grab cursor), so a transparent
+     highlight leaves a tap with no acknowledgement at all. And the generic
+     replacement — dipping opacity, which is what native does — is forbidden by
+     the z-index law further down this file: an opacity below 1 starts a new
+     stacking scale, which is the defect that hid the map's panels under their
+     own chrome for months. A highlight the platform draws costs no stacking
+     context and no per-control sweep. */
+  --tap-min: 44px;
+  --tap-flash: rgba(43, 33, 23, 0.1);
 }
 
 * { box-sizing: border-box; }
@@ -185,6 +206,10 @@ html, body {
   color: var(--ink);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  /* Android paints its own system blue over a tapped control, which lands on
+     parchment as the one colour on the page nobody chose. It inherits, so the
+     registers below re-declare it for their own ground. */
+  -webkit-tap-highlight-color: var(--tap-flash);
 }
 
 /* Cormorant is a Garamond cut for large sizes: it wants a light weight and
@@ -226,7 +251,9 @@ a { color: var(--ink); text-decoration-color: var(--brass); }
   box-shadow: 0 0 0 2px rgba(var(--paper-rgb), 0.85);
   transition: transform 0.15s ease;
 }
-.wp-dot:hover { transform: scale(1.45); }
+@media (hover: hover) {
+  .wp-dot:hover { transform: scale(1.45); }
+}
 .wp-dot.conf-approximate { background: #c9a24a; }
 .wp-dot.conf-reconstructed { background: transparent; border-style: dashed; }
 
@@ -327,7 +354,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   align-items: center;
   justify-content: center;
 }
-.play-btn:hover { background: var(--brass); color: var(--parchment); }
+@media (hover: hover) {
+  .play-btn:hover { background: var(--brass); color: var(--parchment); }
+}
 
 /* --- Lens switcher --- */
 .lens-switch {
@@ -477,7 +506,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
   line-height: 0;
 }
-.plates-thumb-btn:hover { border-color: var(--brass); }
+@media (hover: hover) {
+  .plates-thumb-btn:hover { border-color: var(--brass); }
+}
 .plates-thumb-btn img { display: block; width: 100%; height: 90px; object-fit: cover; max-width: 100%; }
 /* The caption narrates, so it is the body voice. Everything under it states a
    fact about the object — when, by whom, from where — and is the machine's. */
@@ -494,7 +525,9 @@ input[type="range"].scrubber::-moz-range-thumb {
 .plates-date { color: var(--ink-soft); }
 .plates-credit { color: var(--ink-faint); font-style: italic; }
 .plates-source { color: var(--brass-text); text-decoration: none; }
-.plates-source:hover { text-decoration: underline; }
+@media (hover: hover) {
+  .plates-source:hover { text-decoration: underline; }
+}
 
 .plates-lightbox {
   position: fixed;
@@ -555,7 +588,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1;
   cursor: pointer;
 }
-.plates-lightbox-close:hover { background: rgba(43, 33, 23, 0.2); }
+@media (hover: hover) {
+  .plates-lightbox-close:hover { background: rgba(43, 33, 23, 0.2); }
+}
 .hist-toggle input { cursor: pointer; }
 
 /* --- Contribute flow: quill affordances + the contextual panel --- */
@@ -572,7 +607,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   white-space: nowrap;
   flex: 0 0 auto;
 }
-.contrib-btn:hover { background: var(--accent); color: var(--parchment); }
+@media (hover: hover) {
+  .contrib-btn:hover { background: var(--accent); color: var(--parchment); }
+}
 .contrib-plates-head {
   display: flex;
   align-items: baseline;
@@ -589,7 +626,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
   line-height: 1;
 }
-.plates-contrib-mini:hover { color: var(--ink); }
+@media (hover: hover) {
+  .plates-contrib-mini:hover { color: var(--ink); }
+}
 .contrib-gaps {
   margin: 4px 0 0;
   padding-left: 18px;
@@ -625,8 +664,12 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-family: var(--font-ui);
   font-size: var(--step--1);
 }
-.contrib-ai-btn:hover { border-color: var(--brass); }
-.contrib-ai-btn:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+@media (hover: hover) {
+  .contrib-ai-btn:hover { border-color: var(--brass); }
+}
+@media (hover: hover) {
+  .contrib-ai-btn:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
 .contrib-copy-row {
   display: flex;
   align-items: center;
@@ -644,7 +687,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink-soft);
   cursor: pointer;
 }
-.contrib-copy-btn:hover { border-color: var(--brass); color: var(--ink); }
+@media (hover: hover) {
+  .contrib-copy-btn:hover { border-color: var(--brass); color: var(--ink); }
+}
 .contrib-toast { font-size: var(--step--2); color: var(--brass-text); font-style: italic; }
 .contrib-note {
   margin-top: 12px;
@@ -722,7 +767,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
   transition: transform 0.12s ease;
 }
-.wt-dot:hover { transform: scale(1.45); }
+@media (hover: hover) {
+  .wt-dot:hover { transform: scale(1.45); }
+}
 .wt-dot.active { box-shadow: 0 0 0 3px rgba(70, 96, 138, 0.3); }
 .wt-dot.cat-conflict { background: #a3402c; }
 .wt-dot.cat-politics { background: #b0873a; }
@@ -777,9 +824,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   opacity: 0.55;
   cursor: pointer;
 }
-.vt-tick:hover {
-  opacity: 1;
-  height: 11px;
+@media (hover: hover) {
+  .vt-tick:hover {
+    opacity: 1;
+    height: 11px;
+  }
 }
 
 /* --- Draggable window (reusable panel chrome) --- */
@@ -827,7 +876,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   align-items: center;
   justify-content: center;
 }
-.win-btn:hover { background: rgba(43, 33, 23, 0.1); color: var(--ink); }
+@media (hover: hover) {
+  .win-btn:hover { background: rgba(43, 33, 23, 0.1); color: var(--ink); }
+}
 .win-body {
   padding: var(--space-4) var(--space-5) var(--space-5);
   /* 60vh alone did not know where the window starts, so on a short viewport
@@ -958,7 +1009,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   gap: 0;
 }
 [data-layout="phone"] .pig-pill-word { display: none; }
-.pig-pill:hover { background: var(--accent-deep); }
+@media (hover: hover) {
+  .pig-pill:hover { background: var(--accent-deep); }
+}
 .pig-pill:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .pig-mini {
   position: absolute; right: 0; bottom: 52px; width: 250px;
@@ -985,7 +1038,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   border: 1px solid var(--parchment-deep); background: transparent; color: var(--ink-soft);
   font-size: var(--step--2); border-radius: var(--radius-2); padding: 3px 8px; cursor: pointer;
 }
-.pig-dock-btn:hover { background: rgba(43, 33, 23, 0.08); color: var(--ink); }
+@media (hover: hover) {
+  .pig-dock-btn:hover { background: rgba(43, 33, 23, 0.08); color: var(--ink); }
+}
 
 .pig-chat { display: flex; flex-direction: column; height: 52vh; }
 .pig-dock .pig-chat { height: auto; flex: 1; padding: 12px 14px 14px; }
@@ -1005,7 +1060,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: var(--step--2); color: var(--ink-soft); background: rgba(43, 33, 23, 0.06);
   border: 1px solid var(--parchment-deep); border-radius: var(--radius-2); padding: 2px 7px; text-decoration: none;
 }
-.pig-src:hover { background: rgba(43, 33, 23, 0.12); }
+@media (hover: hover) {
+  .pig-src:hover { background: rgba(43, 33, 23, 0.12); }
+}
 .pig-input { display: flex; gap: 8px; margin-top: 10px; }
 .pig-input input {
   flex: 1; font-family: var(--font-body); font-size: var(--step--1); padding: 9px 12px;
@@ -1055,7 +1112,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink);
   cursor: pointer;
 }
-.desk-btn:hover { filter: brightness(0.96); }
+@media (hover: hover) {
+  .desk-btn:hover { filter: brightness(0.96); }
+}
 .desk-btn:disabled { opacity: 0.5; cursor: default; }
 .desk-btn-primary { background: var(--accent); border-color: var(--accent); color: var(--parchment); }
 .desk-btn-approve { background: #4f8a5b; border-color: #4f8a5b; color: #fff; }
@@ -1171,7 +1230,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-weight: 600;
   text-decoration: none;
 }
-.auth-google-button:hover { background: #f8f8f8; }
+@media (hover: hover) {
+  .auth-google-button:hover { background: #f8f8f8; }
+}
 .auth-google-mark,
 .acct-google-cta .auth-google-mark {
   width: 20px;
@@ -1238,8 +1299,10 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-align: center;
   text-decoration: none;
 }
-.auth-submit:hover,
-.auth-primary-link:hover { filter: brightness(0.95); }
+@media (hover: hover) {
+  .auth-submit:hover,
+  .auth-primary-link:hover { filter: brightness(0.95); }
+}
 .auth-submit:disabled { cursor: wait; opacity: 0.7; }
 .desk-login-error {
   color: #a3402c;
@@ -1378,7 +1441,9 @@ input[type="range"].scrubber::-moz-range-thumb {
     0 1px 0 rgba(var(--paper-rgb), 0.85),
     0 0 10px rgba(var(--paper-rgb), 0.9);
 }
-.map-wordmark:hover { color: var(--accent); }
+@media (hover: hover) {
+  .map-wordmark:hover { color: var(--accent); }
+}
 
 /* What you are reading. Ink on the map like the imprint, because it is the
    same kind of thing: a statement, not a control. */
@@ -1419,7 +1484,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
   transition: background var(--dur-1) var(--ease);
 }
-.map-atlas-door:hover { background: var(--accent-deep); }
+@media (hover: hover) {
+  .map-atlas-door:hover { background: var(--accent-deep); }
+}
 .map-atlas-door:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 /* On the map the .wordmark class sits on the anchor, which wraps the tagline
    too — so all-small-caps and the 0.2em tracking inherited straight into it
@@ -1478,7 +1545,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   align-items: center;
   justify-content: center;
 }
-.cart-emblem:hover { background: var(--parchment-deep); }
+@media (hover: hover) {
+  .cart-emblem:hover { background: var(--parchment-deep); }
+}
 
 /* Parchment keeps the map controls legible without muting their coloured
    native icons. The rail gets contrast from its outline and shadow instead
@@ -1498,13 +1567,17 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-color: var(--parchment-deep);
 }
 .lens-rail .lens-btn { color: var(--ink-soft); }
-.cart-emblem:hover,
-.tr-btn:hover { background: var(--parchment-deep); }
+@media (hover: hover) {
+  .cart-emblem:hover,
+  .tr-btn:hover { background: var(--parchment-deep); }
+}
 /* rgba(127, 38, 55, …) was --accent written out by hand, which is why the
    Moon's instruments kept an Age-of-Sail wine tint. Mixed from the token now,
    so it follows whichever accent the theme resolved to. */
-.lens-rail .lens-btn:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+@media (hover: hover) {
+  .lens-rail .lens-btn:hover {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
 }
 .lens-rail .lens-btn.active {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
@@ -1551,7 +1624,19 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   box-shadow: 0 5px 18px rgba(43, 33, 23, 0.2);
 }
-.tr-btn:hover { background: var(--parchment-deep); }
+/* The floor applies where a finger is, which is not the same question as which
+   arrangement is in force: a touchscreen laptop is `wide` and still has no
+   pointer to speak of. Keyed to the pointer for that reason, and beside the
+   rule it raises rather than in a block elsewhere. The four pixels are safe to
+   add without re-measuring because the bottom edge is a derived stack —
+   lib/useEdgeStack.ts measures this bar rather than being told its height,
+   which is the whole reason it exists. */
+@media (pointer: coarse) {
+  .tr-btn { width: var(--tap-min); height: var(--tap-min); }
+}
+@media (hover: hover) {
+  .tr-btn:hover { background: var(--parchment-deep); }
+}
 .tr-menu {
   position: absolute;
   top: 48px;
@@ -1573,7 +1658,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: var(--step-0);
   font-family: var(--font-ui);
 }
-.tr-menu > a:hover { background: rgba(43, 33, 23, 0.08); }
+@media (hover: hover) {
+  .tr-menu > a:hover { background: rgba(43, 33, 23, 0.08); }
+}
 .tr-menu-foot {
   margin-top: 6px;
   padding: 8px 10px 4px;
@@ -1753,7 +1840,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-bottom: 2px solid transparent;
   padding-bottom: 2px;
 }
-.sh-nav a:hover { color: var(--ink); border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .sh-nav a:hover { color: var(--ink); border-bottom-color: var(--brass); }
+}
 .sh-actions {
   display: flex;
   align-items: center;
@@ -1789,7 +1878,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--brass-text);
 }
 .sf-col a { color: var(--ink); text-decoration: none; }
-.sf-col a:hover { color: var(--ink); text-decoration: underline; }
+@media (hover: hover) {
+  .sf-col a:hover { color: var(--ink); text-decoration: underline; }
+}
 .sf-wordmark {
   color: var(--accent);
   font-size: 1.26rem;
@@ -1898,9 +1989,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   box-shadow: 0 4px 12px rgba(43, 33, 23, 0.08);
 }
-.acct-google-cta:hover {
-  background: #fff;
-  border-color: rgba(90, 74, 52, 0.34);
+@media (hover: hover) {
+  .acct-google-cta:hover {
+    background: #fff;
+    border-color: rgba(90, 74, 52, 0.34);
+  }
 }
 .acct-desk-link {
   align-self: center;
@@ -1909,9 +2002,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   border-bottom: 1px solid rgba(70, 96, 138, 0.25);
 }
-.acct-desk-link:hover {
-  color: var(--ink);
-  border-bottom-color: var(--brass);
+@media (hover: hover) {
+  .acct-desk-link:hover {
+    color: var(--ink);
+    border-bottom-color: var(--brass);
+  }
 }
 .acct-ghost-cta {
   display: block;
@@ -1925,8 +2020,10 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: var(--step--1);
   cursor: pointer;
 }
-.acct-ghost-cta:hover {
-  background: rgba(255, 255, 255, 0.64);
+@media (hover: hover) {
+  .acct-ghost-cta:hover {
+    background: rgba(255, 255, 255, 0.64);
+  }
 }
 /* First use of the raised step of the substrate ladder. The rgba(255,255,255)
    lifts elsewhere in this file are NOT all the same thing: over the map their
@@ -2037,7 +2134,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   background: rgba(var(--paper-rgb), 0.08);
   color: var(--parchment);
 }
-.ed-action:hover { filter: brightness(1.06); }
+@media (hover: hover) {
+  .ed-action:hover { filter: brightness(1.06); }
+}
 .ed-meta {
   display: flex;
   gap: 7px;
@@ -2099,9 +2198,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   border-bottom: 1px solid rgba(70, 96, 138, 0.28);
 }
-.ed-link-row a:hover {
-  color: var(--ink);
-  border-bottom-color: var(--brass);
+@media (hover: hover) {
+  .ed-link-row a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--brass);
+  }
 }
 .ed-muted {
   color: var(--ink-soft);
@@ -2178,9 +2279,11 @@ input[type="range"].scrubber::-moz-range-thumb {
     rgba(242, 230, 207, 0.72);
   box-shadow: 0 10px 24px rgba(43, 33, 23, 0.07);
 }
-.ed-voyage-card:hover {
-  border-color: rgba(169, 119, 47, 0.7);
-  box-shadow: 0 14px 30px rgba(43, 33, 23, 0.11);
+@media (hover: hover) {
+  .ed-voyage-card:hover {
+    border-color: rgba(169, 119, 47, 0.7);
+    box-shadow: 0 14px 30px rgba(43, 33, 23, 0.11);
+  }
 }
 .ed-voyage-main {
   flex: 1;
@@ -2227,9 +2330,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-decoration: none;
   border-bottom: 1px solid rgba(70, 96, 138, 0.28);
 }
-.ed-voyage-footer a:hover {
-  color: var(--ink);
-  border-bottom-color: var(--brass);
+@media (hover: hover) {
+  .ed-voyage-footer a:hover {
+    color: var(--ink);
+    border-bottom-color: var(--brass);
+  }
 }
 .ed-search-panel {
   min-height: 38vh;
@@ -2392,7 +2497,9 @@ main.prose {
     font-family: var(--font-ui);
     font-size: var(--step-0);
   }
-  .sh-mobile-menu a:hover { background: rgba(43, 33, 23, 0.08); }
+  @media (hover: hover) {
+    .sh-mobile-menu a:hover { background: rgba(43, 33, 23, 0.08); }
+  }
   .ed-hero {
     min-height: 390px;
     align-items: end;
@@ -2542,7 +2649,9 @@ main.prose {
   text-decoration: none;
   border-bottom: 1px solid transparent;
 }
-.cart-atlas a:hover { color: var(--ink); border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .cart-atlas a:hover { color: var(--ink); border-bottom-color: var(--brass); }
+}
 .cart-atlas a.cur { color: var(--ink); font-weight: 700; }
 
 /* ============ Vertical lens rail + voyage picker + mobile ad-hoc ============ */
@@ -2579,7 +2688,9 @@ main.prose {
   text-decoration: none;
   color: var(--ink);
 }
-.voy-card:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.6); }
+@media (hover: hover) {
+  .voy-card:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.6); }
+}
 .voy-card.cur { border-color: var(--brass); box-shadow: inset 3px 0 0 var(--brass); }
 .voy-card strong { font-family: var(--font-ui); font-size: var(--step-0); }
 .voy-meta { font-size: var(--step--2); color: var(--ink-soft); }
@@ -2652,7 +2763,9 @@ main.prose {
   cursor: pointer;
   text-align: left;
 }
-.pig-sugg:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
+@media (hover: hover) {
+  .pig-sugg:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
+}
 
 /* ============ SPACE theme: Voyager 2 — dark starfield, sans-serif ============
    Every structural class (.win, .lens-rail, .transport-bar, .world-strip,
@@ -2677,6 +2790,9 @@ main.prose {
      These are the same hues taken back up to AA against #10141f. */
   color-scheme: dark;
   --paper-rgb: 16, 20, 31;
+  /* Ink at a tenth is invisible on a starfield; the flash has to be the light
+     that this ground is missing, not the dark it already is. */
+  --tap-flash: rgba(232, 236, 245, 0.12);
   --lens-log: #7fc4e6;      /* 9.58:1 */
   --lens-chart: #8ec9a8;    /* 9.69:1 */
   --lens-carto: #dcae63;    /* 9.00:1 */
@@ -2747,6 +2863,7 @@ main.prose {
   --ink: #22211e;              /* basalt · 11.41:1 */
   --ink-soft: #55524b;         /*  5.52:1 */
   --ink-faint: #5e5a53;        /*  4.86:1 */
+  --tap-flash: rgba(34, 33, 30, 0.1);   /* this register's own basalt */
   --brass: #6f5620;
   --brass-text: #6f5620;       /*  4.91:1 */
   --brass-on-dark: #c9a24a;
@@ -2889,7 +3006,9 @@ main.prose {
 }
 .orrery-wp.conf-approximate .orrery-wp-dot { fill: #c9a24a; }
 .orrery-wp.conf-reconstructed .orrery-wp-dot { fill: transparent; stroke-dasharray: 2 2; }
-.orrery-wp:hover .orrery-wp-dot { r: 9; }
+@media (hover: hover) {
+  .orrery-wp:hover .orrery-wp-dot { r: 9; }
+}
 .orrery-wp.active .orrery-wp-dot { stroke: var(--route); stroke-width: 2; }
 .probe-marker path {
   fill: var(--route);
@@ -2963,7 +3082,9 @@ main.prose {
    light here rather than away from it. */
 .space .win { box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45); }
 .space .win-bar { border-bottom-color: rgba(0, 0, 0, 0.3); }
-.space .win-btn:hover { background: rgba(255, 255, 255, 0.1); }
+@media (hover: hover) {
+  .space .win-btn:hover { background: rgba(255, 255, 255, 0.1); }
+}
 .space .cart-emblem,
 .space .map-wordmark,
 .space .tr-btn,
@@ -2971,13 +3092,17 @@ main.prose {
 .space .tr-menu,
 .space .world-strip,
 .space .transport-bar { box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
-.space .tr-menu > a:hover { background: rgba(255, 255, 255, 0.08); }
+@media (hover: hover) {
+  .space .tr-menu > a:hover { background: rgba(255, 255, 255, 0.08); }
+}
 .space .desk-input,
 /* The mount takes --parchment-raised, which .space re-declares for itself, so
    the starfield no longer needs an overlay of its own here. */
 .space .voy-card,
 .space .atlas-chip { background: rgba(255, 255, 255, 0.05); }
-.space .voy-card:hover { background: rgba(255, 255, 255, 0.09); }
+@media (hover: hover) {
+  .space .voy-card:hover { background: rgba(255, 255, 255, 0.09); }
+}
 .space .atlas-chip.cur { background: rgba(216, 178, 92, 0.16); }
 
 /* --- Welcome cartouche: first-visit onboarding, docked over the map --- */
@@ -3021,7 +3146,9 @@ main.prose {
   cursor: pointer;
   padding: 4px;
 }
-.welcome-x:hover { color: var(--ink); }
+@media (hover: hover) {
+  .welcome-x:hover { color: var(--ink); }
+}
 .welcome-kicker {
   font-family: var(--font-ui);
   font-size: var(--step--2);
@@ -3071,15 +3198,21 @@ main.prose {
   text-decoration: none;
   display: inline-block;
 }
-.welcome-btn:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
+@media (hover: hover) {
+  .welcome-btn:hover { border-color: var(--brass); background: rgba(255, 255, 255, 0.7); }
+}
 .welcome-btn.primary {
   background: var(--accent);
   border-color: var(--accent-deep);
   color: var(--parchment);
 }
-.welcome-btn.primary:hover { background: var(--accent-deep); }
+@media (hover: hover) {
+  .welcome-btn.primary:hover { background: var(--accent-deep); }
+}
 .welcome-btn.ghost { border-color: transparent; background: none; color: var(--ink-soft); }
-.welcome-btn.ghost:hover { color: var(--ink); }
+@media (hover: hover) {
+  .welcome-btn.ghost:hover { color: var(--ink); }
+}
 
 @media (max-width: 680px) {
   /* Bottom sheet: may briefly sit over the transport bar, never over the map. */
@@ -3107,7 +3240,9 @@ main.prose {
   border-bottom: 1px solid var(--parchment-deep);
   padding-bottom: 1px;
 }
-.log-full-link:hover { color: var(--ink); border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .log-full-link:hover { color: var(--ink); border-bottom-color: var(--brass); }
+}
 .space .log-full-link { color: #d8b25c; }
 
 /* --- Atlas search: autocomplete + the "not yet in the atlas" funnel --- */
@@ -3138,7 +3273,9 @@ main.prose {
   font-size: var(--step--1);
   line-height: 1.35;
 }
-.atlas-search-hit:hover { background: rgba(255, 255, 255, 0.55); }
+@media (hover: hover) {
+  .atlas-search-hit:hover { background: rgba(255, 255, 255, 0.55); }
+}
 .atlas-search-hit strong { display: block; font-weight: 600; }
 .atlas-search-ico { flex: 0 0 auto; font-size: var(--step--2); opacity: 0.8; }
 .atlas-search-sub { display: block; font-size: var(--step--2); color: var(--ink-soft); }
@@ -3153,7 +3290,9 @@ main.prose {
 .atlas-search-missing p { font-size: var(--step--1); line-height: 1.5; margin: 0 0 10px; }
 .atlas-search-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .atlas-search-actions .welcome-btn { font-size: var(--step--2); padding: 7px 11px; }
-.space .atlas-search-hit:hover { background: rgba(255, 255, 255, 0.08); }
+@media (hover: hover) {
+  .space .atlas-search-hit:hover { background: rgba(255, 255, 255, 0.08); }
+}
 .space .atlas-search-missing { background: rgba(255, 255, 255, 0.05); }
 
 /* Link out of the panel's bounded list to the full atlas page. */
@@ -3167,7 +3306,9 @@ main.prose {
   text-decoration: none;
   border-bottom: 1px solid var(--parchment-deep);
 }
-.atlas-search-browseall:hover { color: var(--ink); border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .atlas-search-browseall:hover { color: var(--ink); border-bottom-color: var(--brass); }
+}
 .space .atlas-search-browseall { color: #d8b25c; }
 
 /* =====================================================================
@@ -3214,7 +3355,9 @@ main.prose {
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
-.tv-ask:hover { border-color: var(--accent); background: transparent; }
+@media (hover: hover) {
+  .tv-ask:hover { border-color: var(--accent); background: transparent; }
+}
 .tv-ask[aria-expanded="true"] { border-color: var(--accent); background: transparent; font-style: italic; }
 
 .tv-note {
@@ -3257,7 +3400,9 @@ main.prose {
   padding: 4px 9px;
   cursor: pointer;
 }
-.tv-mini:hover { border-color: var(--accent); color: var(--accent); }
+@media (hover: hover) {
+  .tv-mini:hover { border-color: var(--accent); color: var(--accent); }
+}
 .tv-mini[disabled] { opacity: 0.55; cursor: default; }
 
 /* ------------------------------------------------ selection affordance */
@@ -3283,7 +3428,9 @@ main.prose {
   cursor: pointer;
   white-space: nowrap;
 }
-.tv-selbar button:hover { background: var(--accent); }
+@media (hover: hover) {
+  .tv-selbar button:hover { background: var(--accent); }
+}
 
 /* ------------------------------------------------------------ notebook */
 .tv-book {
@@ -3339,7 +3486,9 @@ main.prose {
   text-transform: uppercase; color: var(--ink-soft); cursor: pointer;
   text-decoration: underline; text-decoration-color: var(--parchment-deep);
 }
-.tv-book-drop:hover { color: var(--accent-deep); }
+@media (hover: hover) {
+  .tv-book-drop:hover { color: var(--accent-deep); }
+}
 .tv-book-actions { display: flex; gap: 8px; align-items: center; margin-top: 13px; }
 .tv-book-export {
   flex: 1;
@@ -3349,7 +3498,9 @@ main.prose {
   border: 1px solid var(--accent-deep); border-radius: var(--radius-2);
   padding: 10px; cursor: pointer;
 }
-.tv-book-export:hover { background: var(--accent-deep); color: var(--parchment); }
+@media (hover: hover) {
+  .tv-book-export:hover { background: var(--accent-deep); color: var(--parchment); }
+}
 .tv-book-fine { font-size: var(--step--2); color: var(--ink-soft); margin: 9px 0 0; line-height: 1.5; }
 
 /* --------------------------------------------------- the dossier, printed */
@@ -3399,8 +3550,10 @@ main.prose {
   border-bottom: 1px dotted transparent;
   transition: border-color 0.18s ease, background 0.18s ease;
 }
-.tv-stage-col blockquote[data-tv-source]:hover {
-  border-bottom-color: var(--brass);
+@media (hover: hover) {
+  .tv-stage-col blockquote[data-tv-source]:hover {
+    border-bottom-color: var(--brass);
+  }
 }
 .tv-stage-col blockquote[data-tv-source]::selection,
 .tv-stage-col blockquote[data-tv-source] *::selection {
@@ -3435,7 +3588,9 @@ main.prose {
   cursor: pointer;
   padding: 0 2px;
 }
-.tv-hint button:hover { color: var(--ink); }
+@media (hover: hover) {
+  .tv-hint button:hover { color: var(--ink); }
+}
 
 /* =====================================================================
    /connect — where someone lands after pasting the MCP URL in a browser.
@@ -3485,7 +3640,9 @@ main.prose {
   padding: 8px 14px;
   cursor: pointer;
 }
-.tv-copy:hover { background: var(--accent-deep); }
+@media (hover: hover) {
+  .tv-copy:hover { background: var(--accent-deep); }
+}
 
 .tv-tabs {
   display: flex;
@@ -3505,12 +3662,16 @@ main.prose {
   color: var(--ink-soft);
   cursor: pointer;
 }
-.tv-tab:hover { color: var(--ink); border-color: var(--parchment-deep); }
-.tv-tab-on,
-.tv-tab-on:hover {
-  color: var(--parchment);
-  background: var(--accent);
-  border-color: var(--accent);
+@media (hover: hover) {
+  .tv-tab:hover { color: var(--ink); border-color: var(--parchment-deep); }
+}
+@media (hover: hover) {
+  .tv-tab-on,
+  .tv-tab-on:hover {
+    color: var(--parchment);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
 }
 
 .tv-steps { margin: 18px 0 0; padding-left: 22px; }
@@ -3775,7 +3936,9 @@ main.prose {
   cursor: pointer;
   transition: filter 0.15s ease;
 }
-.tv-wizard .tv-step-code .tv-copy:hover { filter: brightness(1.08) }
+@media (hover: hover) {
+  .tv-wizard .tv-step-code .tv-copy:hover { filter: brightness(1.08) }
+}
 
 /* The two Claude variants: one segmented control, not two loose pills. */
 .tv-wizard .tv-tabs {
@@ -3798,7 +3961,9 @@ main.prose {
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
 }
-.tv-wizard .tv-tab:hover { color: var(--ink) }
+@media (hover: hover) {
+  .tv-wizard .tv-tab:hover { color: var(--ink) }
+}
 .tv-wizard .tv-tab-on {
   background: linear-gradient(180deg, var(--accent), var(--accent-deep));
   color: #fdf6e8;
@@ -4098,7 +4263,9 @@ main.prose {
   color: var(--ink-faint);
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
-.dk-tab:hover { color: var(--ink); }
+@media (hover: hover) {
+  .dk-tab:hover { color: var(--ink); }
+}
 .dk-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brass); }
 
 /* --- what the desk is being asked to do --------------------------------- */
@@ -4260,7 +4427,9 @@ main.prose {
   border-bottom: 1px solid transparent;
   transition: border-color var(--dur-1) var(--ease);
 }
-.dk-tab-link:hover { border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .dk-tab-link:hover { border-bottom-color: var(--brass); }
+}
 
 @media (max-width: 760px) {
   .dk-tabs { flex-wrap: wrap; }
@@ -4347,9 +4516,13 @@ main.prose {
   text-decoration: none;
   transition: background var(--dur-1) var(--ease);
 }
-.acct-menu-item:hover { background: var(--parchment-deep); }
+@media (hover: hover) {
+  .acct-menu-item:hover { background: var(--parchment-deep); }
+}
 .acct-menu-item svg { margin-top: 2px; color: var(--ink-soft); }
-.acct-menu-item:hover svg { color: var(--brass-text); }
+@media (hover: hover) {
+  .acct-menu-item:hover svg { color: var(--brass-text); }
+}
 .acct-menu-label {
   display: flex;
   flex-direction: column;
@@ -4388,7 +4561,9 @@ main.prose {
   text-decoration: none;
   border-bottom: 1px solid transparent;
 }
-.dk-standing-links a:hover { border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .dk-standing-links a:hover { border-bottom-color: var(--brass); }
+}
 
 /* ============================================================================
    THE NAVBAR — hierarchy, where you are, and search as an action
@@ -4413,7 +4588,9 @@ main.prose {
   font-size: var(--step-0);
   color: var(--ink);
 }
-.sh-nav-btn:hover { border-bottom-color: var(--brass); }
+@media (hover: hover) {
+  .sh-nav-btn:hover { border-bottom-color: var(--brass); }
+}
 
 /* The three project pages, folded behind one word. Same mechanics as the
    account panel — a disclosure, not a hover menu: a menu that opens because
@@ -4441,7 +4618,9 @@ main.prose {
   color: var(--ink);
   text-decoration: none;
 }
-.sh-submenu a:hover { background: var(--parchment-deep); }
+@media (hover: hover) {
+  .sh-submenu a:hover { background: var(--parchment-deep); }
+}
 .sh-submenu a[aria-current="page"] { color: var(--brass-text); }
 
 /* Search opens in the bar and takes the nav's place, because the two are
@@ -4479,7 +4658,9 @@ main.prose {
   cursor: pointer;
   color: var(--ink-faint);
 }
-.sh-search-close:hover { color: var(--ink); }
+@media (hover: hover) {
+  .sh-search-close:hover { color: var(--ink); }
+}
 
 .sh-mobile-menu a[aria-current="page"] { color: var(--brass-text); }
 
@@ -4609,13 +4790,17 @@ main.prose {
   font-size: var(--step-0);
   text-decoration: none;
 }
-.tp-action:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+@media (hover: hover) {
+  .tp-action:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
 .tp-action.is-secondary {
   background: none;
   color: var(--ink);
   border-color: var(--parchment-deep);
 }
-.tp-action.is-secondary:hover { border-color: var(--brass); background: none; }
+@media (hover: hover) {
+  .tp-action.is-secondary:hover { border-color: var(--brass); background: none; }
+}
 .tp-meta {
   display: flex;
   gap: var(--space-2) var(--space-4);
@@ -5033,7 +5218,9 @@ main.prose {
   border-color: var(--accent);
   color: var(--parchment);
 }
-.contrib-copy-btn.is-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+@media (hover: hover) {
+  .contrib-copy-btn.is-primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+}
 .contrib-hint {
   margin: var(--space-2) 0 0;
   font-size: var(--step--1);
