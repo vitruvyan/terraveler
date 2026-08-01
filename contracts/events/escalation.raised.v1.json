@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:escalation.raised:v1",
+  "title": "escalation.raised v1",
+  "stream": "editorial",
+  "owner": "audit_log trigger on action 'review', actor 'curator-desk'",
+  "type": "object",
+  "invariants": "The Curator's 'I cannot decide this alone'. Routed to the Herald; the destination is the Editor-in-chief.",
+  "required": [
+    "submission_id",
+    "findings"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}

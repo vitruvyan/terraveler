@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:reviews.advanced:v1",
+  "title": "reviews.advanced v1",
+  "stream": "editorial",
+  "owner": "audit_log trigger on action 'peer-review-complete'",
+  "type": "object",
+  "invariants": "The event that wakes the Curator: the dossier exists.",
+  "required": [
+    "submission_id"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}

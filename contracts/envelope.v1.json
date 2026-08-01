@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:envelope:v1",
+  "title": "Event envelope v1",
+  "description": "The shape every event on the mycelium carries. Payload shape is the per-type contract in events/.",
+  "type": "object",
+  "required": [
+    "event_id",
+    "ts",
+    "stream",
+    "type",
+    "version",
+    "actor",
+    "carta_version",
+    "payload"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "stream": {
+      "enum": [
+        "editorial",
+        "crew",
+        "ops"
+      ]
+    },
+    "type": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^v[0-9]+$"
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "causation_id": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "audit_log.id whose insert produced this event; null only for ops events with no ledger row"
+    },
+    "carta_version": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

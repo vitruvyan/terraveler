@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:backup.failed:v1",
+  "title": "backup.failed v1",
+  "stream": "ops",
+  "owner": "backup job (future; no emitter yet)",
+  "type": "object",
+  "invariants": "Always reaches the Herald; a failed backup is never only a log line.",
+  "required": [
+    "target",
+    "error"
+  ],
+  "properties": {
+    "target": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:dlq.entry:v1",
+  "title": "dlq.entry v1",
+  "stream": "ops",
+  "owner": "the dispatcher (future; no emitter yet)",
+  "type": "object",
+  "invariants": "An event no officer could handle after retries. Its consumer is the Herald; its destination is the editor — by definition, an escalation.",
+  "required": [
+    "stream",
+    "event_id",
+    "error"
+  ],
+  "properties": {
+    "stream": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "error": {
+      "type": "string"
+    },
+    "attempts": {
+      "type": "integer"
+    }
+  }
+}

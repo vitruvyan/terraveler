@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:service.unhealthy:v1",
+  "title": "service.unhealthy v1",
+  "stream": "ops",
+  "owner": "VPS health check (future; no emitter yet)",
+  "type": "object",
+  "invariants": "One event per transition healthy→unhealthy, not per failed probe.",
+  "required": [
+    "service",
+    "detail"
+  ],
+  "properties": {
+    "service": {
+      "type": "string"
+    },
+    "detail": {
+      "type": "string"
+    }
+  }
+}

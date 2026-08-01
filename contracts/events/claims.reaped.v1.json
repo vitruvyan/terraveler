@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:claims.reaped:v1",
+  "title": "claims.reaped v1",
+  "stream": "ops",
+  "owner": "claim reaper (future; no emitter yet)",
+  "type": "object",
+  "required": [
+    "count"
+  ],
+  "properties": {
+    "count": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

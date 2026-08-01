@@ -75,7 +75,7 @@ UA = "terraveler-extract/0.1 (contact: dbaldoni@gmail.com)"
 # three places disagreed about which constitution was in force and every draft
 # this pipeline produced would have been refused at the gate. test/carta.test.ts
 # now fails the build if the three ever separate again.
-CARTA_VERSION = "0.6"
+CARTA_VERSION = "0.7"
 
 # What kind of record a voyage survives through. Mirrors lib/evidence.ts and
 # the check constraint in supabase/evidence_basis.sql — keep the three in step.

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:standing.changed:v1",
+  "title": "standing.changed v1",
+  "stream": "crew",
+  "owner": "the Purser (future; no emitter yet)",
+  "type": "object",
+  "invariants": "Deterministic recomputation from the audit trail; carries the numbers, never a judgment.",
+  "required": [
+    "handle",
+    "approvals",
+    "rejections",
+    "reviews_given"
+  ],
+  "properties": {
+    "handle": {
+      "type": "string"
+    },
+    "approvals": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rejections": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "reviews_given": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}

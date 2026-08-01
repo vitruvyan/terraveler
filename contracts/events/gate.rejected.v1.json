@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:gate.rejected:v1",
+  "title": "gate.rejected v1",
+  "stream": "editorial",
+  "owner": "audit_log trigger on curator-gate verdict 'reject'",
+  "type": "object",
+  "invariants": "A door that did not open, not an editorial verdict: never counts toward standing (standing_correction.sql).",
+  "required": [
+    "submission_id",
+    "verdict",
+    "findings"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "const": "reject"
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}

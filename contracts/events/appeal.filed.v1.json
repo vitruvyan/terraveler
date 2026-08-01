@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:appeal.filed:v1",
+  "title": "appeal.filed v1",
+  "stream": "editorial",
+  "owner": "audit_log trigger on action 'appeal'",
+  "type": "object",
+  "invariants": "No officer rules on appeals (Carta §5): this event's only consumer is the Herald, its only destination the editor.",
+  "required": [
+    "submission_id"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}

@@ -1,9 +1,9 @@
 # The Ship's Officers
 
-**Design proposal — commissions, autonomy grades, and the event mycelium**
-*Status: proposal for discussion. Nothing here is in force until the
-Editor-in-chief amends the Magna Carta (§9). A draft amendment is included
-at the end.*
+**Commissions, autonomy grades, and the event mycelium**
+*Status: **in force.** The Editor-in-chief ratified the amendment on
+2026-08-01; it is Magna Carta v0.7 §11, and this document is the register
+of commissions it names. §9 below preserves the draft as ratified.*
 
 ---
 

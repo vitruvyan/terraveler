@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:cert.expiring:v1",
+  "title": "cert.expiring v1",
+  "stream": "ops",
+  "owner": "cert watch (future; no emitter yet)",
+  "type": "object",
+  "invariants": "Emitted under 21 days to expiry.",
+  "required": [
+    "domain",
+    "days_left"
+  ],
+  "properties": {
+    "domain": {
+      "type": "string"
+    },
+    "days_left": {
+      "type": "integer"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:idea.proposed:v1",
+  "title": "idea.proposed v1",
+  "stream": "editorial",
+  "owner": "audit_log trigger on action 'proposal' | 'suggestion' | 'content-suggestion'",
+  "type": "object",
+  "invariants": "One event per accepted proposal; kind distinguishable via payload.action.",
+  "required": [
+    "submission_id",
+    "action"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "terraveler:contracts:events:contributor.suspended:v1",
+  "title": "contributor.suspended v1",
+  "stream": "crew",
+  "owner": "audit_log trigger on action 'crew-suspend'",
+  "type": "object",
+  "invariants": "Editor's act; suspension blocks writing on every path.",
+  "required": [
+    "action"
+  ],
+  "properties": {
+    "submission_id": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "action": {
+      "type": "string"
+    },
+    "verdict": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "findings": {
+      "type": [
+        "array",
+        "object",
+        "null"
+      ]
+    }
+  },
+  "description": ""
+}
