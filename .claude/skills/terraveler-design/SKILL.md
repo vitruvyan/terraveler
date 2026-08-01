@@ -319,78 +319,99 @@ exception.
   what a passe-partout exists to prevent. Size the mount to the image, not the
   image to the mount.
 
-## The port — a native app inherits the TypeScript and none of the cascade
+## The second renderer is already here, and it is the canvas
 
-The target is **React Native (Expo)**, and it is written down here so a decision
-can be judged against it before it is made rather than audited after. This is not
-a plan to leave the web: the site is the product and the stylesheet is going
-nowhere. It is a statement about *where a decision may live* now that a second
-renderer is coming which cannot read half of this file.
+**There is no plan to rewrite this site in React Native, and a previous version
+of this section said there was.** That was written from a target named in
+passing, and it was the wrong target for two reasons that are worth keeping.
 
-React Native has no cascade, no custom properties, no descendant selectors, no
-media queries and no hover. What is expressed in TypeScript survives the port;
-what is expressed in the stylesheet is rewritten by hand. Measured rather than
-estimated: **113 token declarations** across `:root`, `.space` and `.worlds`,
-**1328** `var()` uses, **28** `@media` blocks, and every `[data-layout="phone"]`
-rule in the file.
+The first is in this repo's own history. `10916eb` records the imprint being
+written twice — two files, *one language, one codebase* — and drifting apart in
+silence for weeks: a retired destination still offered, the Space copy stripped
+of the comments explaining its own shapes. Two copies in one language diverge.
+Two copies in two languages, maintained by one person, diverge faster and deeper.
 
-That puts this section in direct tension with the arrangement rule above, and the
-tension is real rather than an oversight. "`useLayoutMode()` for a different
-tree, the attribute for everything that only looks different" is correct for one
-renderer and it deliberately maximises what lives in the cascade — which is
-exactly what a port cannot inherit. The rule is not repealed. It is bounded:
+The second is that the product **is** the typography: three self-hosted cuts,
+OpenType features subset by hand, contrast measured rather than claimed,
+hairlines at 1px. Native text rendering honours exactly those features least
+reliably — the Quarterdeck has already printed `O I I` because one was merely
+absent. Rewriting in RN pays the highest available price to damage the one thing
+that distinguishes the site.
 
-**A value or a name a second renderer needs is authored in TypeScript and emitted
-to CSS. Everything else stays where the arrangement rule puts it.**
+**The route is the web, in three steps.** A mobile site as robust as the desktop
+one; then installable (manifest, offline, safe area) so it has an icon and a full
+screen; then a native shell only where a store requires it — cheap on Android,
+and on iOS only with something genuinely native to offer, because Apple rejects
+thin wrappers.
+
+So why does this section survive at all? Because **the second renderer already
+exists and it is not a phone — it is the canvas.** MapLibre paints the route in
+JS and Three.js paints the orrery in WebGL, and neither can read the cascade.
+That is not a hypothetical: it is the defect in the debt list below, the one that
+made the Moon run an Age-of-Sail oxide line, and the workaround was to read
+`--route` off a container at runtime. Every other canvas colour in the repo is
+still a literal for the same reason.
+
+Which gives the rule its real justification, owed today rather than banked
+against a rewrite that may never happen:
+
+**A value something other than the stylesheet needs is authored in TypeScript and
+emitted to CSS. Everything else stays where the arrangement rule puts it.**
 
 So the token layer inverts. `:root` stops being the SSOT and becomes generated
-output; a `lib/tokens.ts` holds the values and both renderers read it. Nothing
-changes about how CSS is written — `var(--ink)` is still what you type — and
-`/specimen/palette` gains rather than loses, because it can measure the source
-against the computed result and say when the two have parted. 113 declarations in
-three scopes is a day of work, and the layer will never again be this small.
+output; a `lib/tokens.ts` holds the values and everything reads it — the
+stylesheet, the map, the orrery, and anything later. Nothing changes about how
+CSS is written: `var(--ink)` is still what you type. `/specimen/palette` gains,
+because it can measure the declared source against the computed result and say
+when the two have parted. Measured: **113 declarations** across `:root`, `.space`
+and `.worlds`, against **1328** `var()` uses — a day of work, and the layer will
+never again be this small.
 
-**What already ports**, and was right for its own reasons: `lib/layout.ts`
-(`matchMedia` becomes `useWindowDimensions`), `lib/useEdgeStack.ts` (a derived
-stack is `onLayout`, and the four hand-set numbers it replaced would not have
-survived the move), `lib/nav.ts`, and **a panel is a page** — which is not a
-concession to small screens but the native screen model arrived early.
-`DraggableWindow` withholding its inline positioning on a phone rather than being
-overridden is the same shape: on native it simply does not exist.
+This is in tension with the arrangement rule above, and the tension is stated
+rather than smoothed over: "the attribute for everything that only looks
+different" deliberately fills the cascade, and the cascade is what a canvas
+cannot read. The rule is not repealed. It is bounded by the sentence in bold.
 
-**What must change beyond the tokens:**
+**What was already right, and stays right.** `lib/layout.ts` and
+`lib/useEdgeStack.ts` put the boundary and the edges in TypeScript because four
+hand-set numbers could not be held consistent — and that decision now also means
+a second reader can have them. `lib/nav.ts` is the same shape. And **a panel is a
+page** was not a concession to small screens: it is what the surface wanted once
+it was measured.
 
-- **Hover does not exist on a phone and will not exist in the app.** 80 `:hover`
-  rules with no `(hover: hover)` around them, 63 raw `title=` in TSX — Close,
-  Menu, Collapse, The Atlas, the whole icon-only rail — and
-  `-webkit-tap-highlight-color` unset. This is already below as a web defect. It
-  is also the one piece of the port that is owed whatever happens, which makes it
-  where to start.
+**What is owed, in the order it is owed:**
+
+- **The viewport unit, and the ground under it.** `vh` is the browser's promise
+  about a bar that moves; `dvh` is the truth. This is the first item because it
+  is what makes the site robust on a real phone *today* — a lightbox and the chat
+  currently run under the browser's own bar — and because an installable app
+  makes the same defect permanent as the safe area, where no scroll recovers it.
+
+- **Hover does not exist under a finger.** Repaid: all 78 rules are gated and a
+  guard holds the line. What remains is the **63 `title=`** tooltips — Close,
+  Menu, Collapse, The Atlas, the whole icon-only rail — which say nothing to a
+  thumb and never will.
+
+- **The token layer inverts**, for the canvas reason above.
 
 - **The register is cascade-only.** `.space` on `body` reaches its subjects
-  through descendant selectors, which have no equivalent. A register must be a
-  React context *as well as* a class — the class for the stylesheet, the context
-  for anything that will be read by both renderers. The layout mode already has
-  its hook and is the pattern.
-
-- **Colour handed to a canvas escapes the cascade** is not a MapLibre quirk. It
-  is the port in miniature: `--route` had to be read off the container and passed
-  in explicitly, and that explicit pass is what the native map will need for
-  every colour it draws. The canvas entries below are therefore porting work done
-  early, not a separate chore.
+  through descendant selectors. Anything that is not the stylesheet — the map,
+  the orrery — cannot follow that, which is why they hardcode. A register wants
+  to be a React context *as well as* a class: the class for the stylesheet, the
+  context for everything else. The layout mode already has its hook and is the
+  pattern to copy.
 
 - **The instruments want a shared arrangement with a per-subject lexicon**, which
-  is already the named debt. Two hand-built copies are two ports; one arrangement
-  taking a lexicon is one. The same holds for "four bands should be one sheet": a
-  sheet is the native idiom, so repaying that debt and doing the port are the
-  same work rather than two.
+  is already the named debt. Two hand-built copies are two things to fix every
+  time; one arrangement taking a lexicon is one. The same holds for "four bands
+  should be one sheet".
 
-And one risk that follows from the subsetting trap below. The typographic
-argument here rests on OpenType features asked for in CSS — `lnum`, `onum`,
-`smcp`, `tnum`. Native text rendering honours these far less reliably than a
-browser does, and the Quarterdeck has already rendered `O I I` once when a
-feature was merely absent. Assume nothing about the figures in the app until they
-have been looked at on a device.
+And one thing to stop assuming, which follows from the subsetting trap below: the
+typographic argument rests on OpenType features asked for in CSS — `lnum`,
+`onum`, `smcp`, `tnum` — and they fail *silently* when absent. This is why the
+route above stays in a browser for as long as it can. Assume nothing about the
+figures anywhere the renderer changes until they have been looked at on a
+device.
 
 ## Before you add a surface
 
@@ -548,11 +569,13 @@ are editing is already migrated; check it. As of the typography commit:
   propagated, so a lightbox and the chat run under the browser's own bar. In the
   app the same defect arrives as the safe area, where it is not recoverable by
   scrolling.
-- **The token layer is still authored in CSS**, which the port section above
-  makes a defect rather than a choice: 113 declarations in `:root`, `.space` and
-  `.worlds`, plus one declared locally in `.wp-dot.has-media::before`, which is a
-  token living outside any register and by this file's own logic is either not a
-  token or a missing one. Nothing is generated yet and there is no `lib/tokens.ts`.
+- **The token layer is still authored in CSS**, which the canvas makes a defect
+  rather than a choice: MapLibre and Three.js cannot read a custom property, so
+  every colour they draw is either a literal or a runtime read off a container.
+  113 declarations in `:root`, `.space` and `.worlds`, plus one declared locally
+  in `.wp-dot.has-media::before` — a token living outside any register, which by
+  this file's own logic is either not a token or a missing one. Nothing is
+  generated and there is no `lib/tokens.ts`.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done
