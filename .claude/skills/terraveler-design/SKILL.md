@@ -610,11 +610,35 @@ are editing is already migrated; check it. As of the typography commit:
   keeps it for the finger; what it overlaps is the transparent tick row above.
   That one change is 131px → 97px, and 22.3% → **18.7%**.
 
-- **`.pig-mini` is hover-only, so on a phone it does not exist.** The launcher's
-  minibox opens on `onMouseEnter` and carries a control of its own — "Dock to
-  the side" — which no finger can reach. Same family as the world strip's
-  hover: a surface that only a mouse can summon is a surface a phone does not
-  have. Not fixed.
+- **Gating `:hover` in the stylesheet does NOT reach `onMouseEnter` in React,
+  and this file said it did.** `.pig-mini` was written off here as "hover-only,
+  so a phone never sees it". A photograph of the live site showed it wide open
+  on an Android phone, over the map, with its own unreachable "Dock to the
+  side" control inside. Android fires a synthetic `mouseenter` on tap and no
+  `mouseleave` afterwards, so a JS hover handler does not degrade on touch —
+  it *latches*. The CSS gate is real and does nothing for these. Repaid for the
+  launcher, which no longer renders the box on a phone. **Anywhere else this
+  repo opens something from `onMouseEnter`, the same bug is live**; the world
+  strip's `setStripHover` is the other one, now moot on a phone only because
+  the strip itself moved.
+
+- **Two things standing on one rung get a token for it, not a copied calc.**
+  The assistant's door and the lens rail sat at different heights on opposite
+  edges — an accident that read as one, and was called ugly by the person
+  looking at it, which is the test that decides this. They share
+  `--rung-above-note` now and their bottoms land on the same line. Their
+  SHAPES stay different on purpose: a door is dark and round, an instrument is
+  a parchment rectangle, and that is how the classes are told apart in one
+  look. Matching them would spend a distinction to buy a symmetry.
+
+- **The timeline switch is one mark, not two tabs.** Two labelled tabs spent
+  the width of both words permanently on a choice made rarely — the argument
+  that collapsed the attribution to its `(i)`. The law's objection to a bare
+  toggle is answered rather than ignored: the caption beside it always names
+  what the rail is showing, so the words never left the bar, they stopped being
+  printed twice. Pressed deepens the paper rather than going dark, because dark
+  is the doors' material and an instrument that changed class when you used it
+  would be lying about what it is.
 
 - ~~The timeline ticks are 2px wide.~~ **Repaid.** They measured 2×8, fifteen
   across a 340px rail, and no tap floor fixes that — fifteen 44px targets do

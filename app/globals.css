@@ -889,26 +889,29 @@ input[type="range"].scrubber::-moz-range-thumb {
    axis — the ship's date — so they are one rail with two sets of marks rather
    than two rails at opposite ends of a small screen. Words on the tabs, not a
    bare toggle: an unlabelled switch is a control that has to be taught. */
-.tb-tracks {
-  display: flex;
+.tb-track-btn {
   flex: 0 0 auto;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 1px solid var(--rule-hair);
-  border-radius: var(--radius-2);
-  overflow: hidden;
-}
-.tb-track-tab {
-  font-family: var(--font-ui);
-  font-size: var(--step--2);
-  padding: var(--space-2) var(--space-3);
-  min-height: var(--tap-min);
-  border: 0;
-  background: none;
+  border-radius: var(--radius-pill);
+  background: var(--parchment-raised);
   color: var(--ink-soft);
   cursor: pointer;
-  white-space: nowrap;
 }
-.tb-track-tab.on { background: var(--parchment-deep); color: var(--ink); }
-.tb-track-tab:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
+/* Pressed is a state of an instrument, so it deepens the paper rather than
+   going dark: dark is the doors' material, and a control that changed class
+   when you used it would be lying about what it is. */
+.tb-track-btn.on {
+  background: var(--parchment-deep);
+  border-color: var(--brass);
+  color: var(--brass-text);
+}
+.tb-track-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 /* The world's marks keep their category colour on the shared rail, which is
    what tells you the switch actually changed something. */
@@ -1906,7 +1909,11 @@ input[type="range"].scrubber::-moz-range-thumb {
 @media (max-width: 680px) {
   .world-strip { width: calc(100vw - 176px); top: 12px; left: 64px; transform: none; }
   .transport-bar { flex-wrap: wrap; gap: 8px 12px; bottom: 10px; }
-  .pig-launch { bottom: 150px !important; }
+  /* `.pig-launch { bottom: 150px !important }` is repaid and gone. It was one
+     of four competing `bottom` declarations, and the only reason the derived
+     stack's own rule needed `!important` was to beat this one. Both lose the
+     bang: the stack rung is the single anchor now, and the ratchet in
+     test/layout.test.ts drops from four blocks to three. */
 }
 @media (min-width: 681px) {
   .pig-launch { bottom: 88px; }
@@ -2773,13 +2780,19 @@ main.prose {
     line-height: 1.4;
     bottom: calc(var(--edge) + var(--tv-bar-h, 96px) + var(--tv-attr-h, 40px) + var(--band));
   }
-  .pig-launch {
-    right: 12px;
-    bottom: calc(
+  /* The rung above the note. It gets a NAME because two things stand on it
+     now — the assistant's door on the right and the lens rail on the left —
+     and a level written out twice is the disease this stack was built to end.
+     They were at different heights on opposite edges, which read as accident
+     rather than arrangement, and it was called ugly by the person looking at
+     it, which is the only test that matters for this. */
+  :root {
+    --rung-above-note: calc(
       var(--edge) + var(--tv-bar-h, 96px) + var(--tv-attr-h, 40px) + var(--band)
       + var(--tv-note-h, 72px) + var(--band)
-    ) !important;
+    );
   }
+  .pig-launch { right: 12px; bottom: var(--rung-above-note); }
 }
 
 /* Narrower than this the labelled door and the two round doors cannot share a
@@ -2834,6 +2847,23 @@ main.prose {
   border-radius: var(--radius-2);
   padding: 4px;
   box-shadow: 0 6px 18px rgba(43, 33, 23, 0.3);
+}
+/* On a phone it stands on the same rung as the assistant's door, one at each
+   edge, instead of floating at mid-height while the door sat lower on the
+   other side — which read as accident rather than arrangement, and was called
+   ugly by the person looking at it, which is the only test that decides this.
+   The rung has a name (--rung-above-note, published with the derived stack)
+   because two things stand on it now, and a level written out twice is the
+   disease that stack exists to end.
+
+   Their SHAPES are deliberately not brought into line. A door is dark and
+   round; an instrument is a parchment rectangle; that difference is how the
+   two classes are told apart in one look. Matching them would spend a
+   distinction to buy a symmetry. They share the rung, not the material. */
+[data-layout="phone"] .lens-rail {
+  top: auto;
+  transform: none;
+  bottom: var(--rung-above-note);
 }
 .lens-rail .lens-btn-ico { font-size: var(--step-1); padding: 8px 8px; }
 .rail-div { height: 1px; background: var(--parchment-deep); margin: 3px 5px; }

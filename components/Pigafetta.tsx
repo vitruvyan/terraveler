@@ -3,6 +3,7 @@
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import DraggableWindow from "@/components/DraggableWindow";
+import { useLayoutMode } from "@/lib/layout";
 
 type Source = {
   title: string;
@@ -43,6 +44,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
   const [open, setOpen] = useState(false);
   const [docked, setDocked] = useState(false);
   const [hover, setHover] = useState(false);
+  const isMobile = useLayoutMode() === "phone";
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([GREETING]);
@@ -145,7 +147,15 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
       >
-        {hover && (
+        {/* Desktop only, and not because a phone has no hover — because it
+            HAS one, of the worst kind. Android fires a synthetic mouseenter on
+            tap and never a mouseleave, so this box opened on the first touch
+            of the launcher and then stayed, a desktop teaser stuck over the
+            map. Gating the stylesheet’s :hover rules did nothing for it: this
+            is a JS handler, and the gate does not reach into React. On a phone
+            the launcher opens the assistant full-bleed, which is the whole of
+            what this box was there to promise. */}
+        {hover && !isMobile && (
           <div className="pig-mini">
             <div className="pig-mini-title">Antonio Pigafetta</div>
             <div className="pig-mini-sub">Ask the voyage&rsquo;s sources — he answers citing them.</div>

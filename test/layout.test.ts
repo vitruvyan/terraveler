@@ -280,7 +280,10 @@ function blocksOf(source: string) {
    file. The migration to [data-layout] empties this; nothing may be added. */
 const KNOWN_SPLIT: Record<string, number> = {
   ".autopause-toggle": 2,
-  ".pig-launch": 4,
+  /* Down from four. `bottom: 150px !important` in the 680 block is gone: it
+     was the only reason the derived stack's own rule needed a bang of its own,
+     and both lost it together when the launcher was put on a named rung. */
+  ".pig-launch": 3,
   ".transport-bar": 3,
   ".world-strip": 3,
   /* .win and .win-body are repaid: a panel is a page on a phone, declared

@@ -125,22 +125,31 @@ export default function TransportBar({
       </div>
 
       {switchable && (
-        /* Two tabs with words on them, not a bare toggle. An unlabelled switch
-           is a control that has to be taught, which is the defect this repo's
-           law names by name. */
-        <div className="tb-tracks" role="tablist" aria-label="Which timeline">
-          {tracks.map((tr) => (
-            <button
-              key={tr.key}
-              role="tab"
-              aria-selected={tr.key === shown?.key}
-              className={`tb-track-tab${tr.key === shown?.key ? " on" : ""}`}
-              onClick={() => onTrack(tr.key)}
-            >
-              {tr.tab}
-            </button>
-          ))}
-        </div>
+        /* One mark, not a strip of tabs. Two labelled tabs cost the width of
+           both words permanently to show a choice you make rarely — the same
+           argument that collapsed MapLibre's attribution to its (i).
+
+           The law's objection to a bare toggle is that an unlabelled control
+           has to be taught, and it is answered rather than ignored: the
+           caption line beside this button ALWAYS names what the rail is
+           showing, so the words never left the bar, they only stopped being
+           printed twice. The hourglass is "meanwhile" — what else was
+           happening while the ship was here — and it is the one icon in the
+           set about simultaneity rather than about a place. */
+        <button
+          className={`tb-track-btn${shown?.key !== tracks[0].key ? " on" : ""}`}
+          aria-pressed={shown?.key !== tracks[0].key}
+          aria-label={
+            shown?.key === tracks[0].key
+              ? `Show ${tracks[1].tab.toLowerCase()} on the timeline`
+              : `Back to the ${tracks[0].tab.toLowerCase()} timeline`
+          }
+          onClick={() =>
+            onTrack(shown?.key === tracks[0].key ? tracks[1].key : tracks[0].key)
+          }
+        >
+          <Icon name="hourglass" size={18} />
+        </button>
       )}
 
       <div className="voyage-track">
