@@ -176,8 +176,10 @@ Herald says it must be.
 
 ## 5. The mycelium — event fabric
 
-The officers act because events wake them. The fabric follows the
-Vitruvyan Conclave discipline, applied at Terraveler's scale:
+The officers act because events wake them. The transport is Terraveler's
+own `terraveler_redis` container on `terraveler_net` — not shared with any
+other system: this site's causality travels on this site's bus. The fabric
+follows the Vitruvyan Conclave discipline, applied at Terraveler's scale:
 
 - **The bus transports; it never interprets.** Authority lives in
   Postgres: `audit_log` is canonical, streams are distribution. Where they
@@ -288,7 +290,56 @@ A trace of an officer's run is stored like an ingestion trace today
 Curator rule this way" has the same answer-shape as "why did this document
 enter the corpus": read the trace.
 
-## 7. Prerequisites (the brakes before the engine)
+## 7. The contracts that govern it
+
+A framework holds together when contracts govern it, not conventions. The
+mycelium and the graphs above are given force by a small contract layer —
+Terraveler's version of the Vitruvyan contract-governed kernel, at
+Terraveler's scale.
+
+**Where contracts live.** In git, like every rule that matters here:
+`contracts/events/<name>.v1.json` — one JSON Schema per event type — plus
+`contracts/envelope.v1.json` for the envelope itself. The commissions in
+§4 are the offices' contracts; this section covers the wire.
+
+**What a contract declares.** For each event type:
+
+- `name` and `version` — `verdict.issued`, `v1`;
+- `owner` — the *only* code path allowed to emit it (only
+  `record_verdict` emits `verdict.issued`; only the editor's desk route
+  emits `contributor.suspended`);
+- `schema` — the payload's shape, typed;
+- `invariants` — what must hold beyond shape (`verdict.issued{approved}`
+  requires a review dossier reference; `submission.published` requires a
+  provenance block);
+- `consumes` / `produces` — each officer's graph declares which event
+  types wake it and which it may emit, and the declaration must match its
+  commission in §4 exactly.
+
+**Where contracts are enforced — exactly two boundaries:**
+
+1. **At the outbox write** (producer side). The event is validated —
+   schema, invariants, and owner against the emitting actor — inside the
+   same transaction as the state change. An invalid event rolls the whole
+   transaction back: the state change and its announcement are one thing
+   or nothing. An officer emitting an event outside its `produces` list
+   is refused here, structurally.
+2. **At the dispatcher** (consumer side). Before seeding a GraphState,
+   the dispatcher validates the envelope and payload against the version
+   it declares. Invalid or unknown-versioned events go to the DLQ — never
+   into a half-informed run.
+
+**Versioning.** Additive change bumps the minor and old consumers keep
+working; breaking change is a new version file, and consumers declare
+which versions they accept. An event carries its version in the envelope;
+nothing infers it.
+
+**Enforcement mode.** Vitruvyan's kernel defaults to `warn`; Terraveler
+starts at `strict` and stays there. A site this size has no legacy volume
+to soften enforcement for, and the Carta's whole method is that a rule
+either stops the action or it is not a rule.
+
+## 8. Prerequisites (the brakes before the engine)
 
 Standing watches over a system with inconsistent guards would automate the
 violations faster. Before any officer moves from A0:
@@ -306,7 +357,7 @@ violations faster. Before any officer moves from A0:
    carta_version, raw spans) into the bundle — the Publisher must not
    automate the loss.
 
-## 8. Draft amendment (for the Editor's consideration)
+## 9. Draft amendment (for the Editor's consideration)
 
 > **§11. The Ship's Officers.** The ranks of §7 measure earned trust and
 > never confer authority to rule. Authority to rule, publish, promote or

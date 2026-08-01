@@ -7,6 +7,7 @@ networks:
 volumes:
   terraveler_pgdata:
   terraveler_hf_cache:
+  terraveler_redisdata:
 
 services:
   terraveler_postgres:
@@ -26,6 +27,29 @@ services:
       - terraveler_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U terraveler -d terraveler"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # The mycelium's transport (docs/SHIPS_OFFICERS.md §5). Terraveler runs its
+  # own Redis rather than sharing Vitruvyan's: the streams carry this site's
+  # editorial causality, and they live inside terraveler_net like everything
+  # else that matters here. No host port at all — only the relay and the
+  # officers' dispatcher reach it, over the internal network. AOF persistence
+  # because a stream that forgets events breaks replay; noeviction because a
+  # bus that drops events under memory pressure is a bus quietly deciding
+  # which history to keep, and deciding is not its job.
+  terraveler_redis:
+    image: redis:7-alpine
+    container_name: terraveler_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - terraveler_redisdata:/data
+    networks:
+      - terraveler_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
