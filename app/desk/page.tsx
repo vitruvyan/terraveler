@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
+import { hasEscalateFinding } from "@/lib/deskEscalation";
 
 type Sub = {
   id: number;
@@ -39,6 +40,8 @@ type Overview = {
     gaps: Record<string, number>;
     contributors: Record<string, number>;
     reviews_total: number;
+    appealed: number;
+    escalations: number;
   };
   feed: { submission_id: number | null; actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
   demand?: Demand[];
@@ -55,7 +58,30 @@ const STATUS_COLOR: Record<string, string> = {
   rejected: "var(--state-no)",
   "curator-rejected": "var(--state-no)",
   "changes-requested": "var(--state-changes)",
+  // Carta §5: appealable to the Editor-in-chief alone, and nobody else's to
+  // rule on (Ship's Officers §4.1). Alarm, not one of the six ordinary
+  // states — it is a claim on the editor's attention, not a stage a
+  // submission is passing through.
+  appealed: "var(--state-alarm)",
 };
+
+/** A submission is showing an unanswered escalation when its own latest
+ *  audit_log row (audit is ascending by id — see /api/desk/submissions)
+ *  carries an ESCALATE finding. A later verdict replaces that row, so once
+ *  the desk rules the badge goes with it. */
+function isEscalated(s: Sub): boolean {
+  return s.audit.length > 0 && hasEscalateFinding(s.audit[s.audit.length - 1].findings);
+}
+
+/** The grounds a contributor filed with `appeal` (app/api/mcp/route.ts),
+ *  recorded as audit_log findings [["APPEAL", 0, grounds]]. Read here so the
+ *  editor rules with them beside the draft rather than inside the collapsed
+ *  audit trail. */
+function appealGrounds(s: Sub): string | null {
+  const row = [...s.audit].reverse().find((a) => a.action === "appeal");
+  const f = Array.isArray(row?.findings) ? row!.findings[0] : null;
+  return Array.isArray(f) ? String(f[2] ?? "") : null;
+}
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 type Tab = "overview" | "submissions" | "crew";
@@ -201,7 +227,9 @@ export default function Desk() {
     );
   }
 
-  const openCount = (overview?.counts.submissions["human-review"] ?? 0) + (overview?.counts.submissions["peer-review"] ?? 0);
+  const openCount = (overview?.counts.submissions["human-review"] ?? 0)
+    + (overview?.counts.submissions["peer-review"] ?? 0)
+    + (overview?.counts.submissions["appealed"] ?? 0);
 
   return (
     <>
@@ -241,11 +269,17 @@ export default function Desk() {
 
       {tab === "overview" && overview && (
         <>
-          {/* Three numbers that ask something of you, and a ledger for what is
+          {/* Numbers that ask something of you, and a ledger for what is
               already settled. Approved 18 and Awaiting 0 were the same size
-              before, which told the reader nothing about where to look. */}
+              before, which told the reader nothing about where to look.
+              Appealed and escalated lead the row and carry the alarm colour
+              (Ship's Officers §8, brake 2): the automated desk could not
+              settle these, and until this panel existed neither reached the
+              editor at all. */}
           <DeskStanding
             demands={[
+              { label: "appealed", n: overview.counts.appealed ?? 0, alarm: true },
+              { label: "escalated", n: overview.counts.escalations ?? 0, alarm: true },
               { label: "awaiting desk", n: overview.counts.submissions["human-review"] ?? 0 },
               { label: "in peer review", n: overview.counts.submissions["peer-review"] ?? 0 },
               { label: "claimed gaps, unfinished", n: overview.counts.gaps["claimed"] ?? 0 },
@@ -316,6 +350,15 @@ export default function Desk() {
                   {s.contributor && (
                     <span className="conf-badge">{s.contributor.handle} · {s.contributor.rank}</span>
                   )}
+                  {isEscalated(s) && (
+                    <span
+                      className="conf-badge"
+                      title="the Curator's mechanical pass could not settle this — it needs a reader"
+                      style={{ borderColor: "var(--state-alarm)", color: "var(--state-alarm)" }}
+                    >
+                      escalated
+                    </span>
+                  )}
                   <span className="conf-badge" style={{ borderColor: STATUS_COLOR[s.status], color: STATUS_COLOR[s.status] }}>
                     {s.status}
                   </span>
@@ -324,6 +367,22 @@ export default function Desk() {
               <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "4px 0 8px" }}>
                 {new Date(s.created_at).toLocaleString()} · Carta v{s.carta_version}
               </div>
+
+              {/* An appeal contests a verdict already given (Carta §5), so the
+                  grounds belong beside the draft the same way the brief does
+                  — not inside the collapsed audit trail below, where ruling
+                  on it would mean reading past everything else first. */}
+              {s.status === "appealed" && (
+                <section className="sb sb-appeal">
+                  <p className="sb-lede">
+                    <span className="sb-verb">Appeal</span> — grounds for contesting the prior
+                    verdict, for the editor to weigh before ruling again.
+                  </p>
+                  <p className="sb-idea">
+                    {appealGrounds(s) ?? "No grounds found in the audit trail — see the record below."}
+                  </p>
+                </section>
+              )}
 
               {/* What is being proposed. The record of it follows, below and
                   shut: an audit trail has to be inspectable, but it is a poor
@@ -390,7 +449,11 @@ export default function Desk() {
                 </details>
               )}
 
-              {["submitted", "peer-review", "human-review", "changes-requested"].includes(s.status) && (
+              {/* 'appealed' belongs here too: ruling on an appeal is the
+                  editor's job precisely (Carta §5; Ship's Officers §4.1
+                  forbids the Curator this one thing), and the desk must not
+                  be a dead end for it. */}
+              {["submitted", "peer-review", "human-review", "changes-requested", "appealed"].includes(s.status) && (
                 <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                   <input
                     value={note[s.id] ?? ""}

@@ -357,6 +357,8 @@ export default function SpecimenPage() {
 
           <DeskStanding
             demands={[
+              { label: "appealed", n: 1, alarm: true },
+              { label: "escalated", n: 2, alarm: true },
               { label: "awaiting desk", n: 0 },
               { label: "in peer review", n: 1 },
               { label: "claimed gaps, unfinished", n: 1 },

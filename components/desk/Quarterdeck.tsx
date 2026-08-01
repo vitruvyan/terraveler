@@ -161,7 +161,11 @@ export function ShipsLog({ feed }: { feed: LogEntry[] }) {
    being asked to do; a ledger entry is what the desk has already done. Nine
    identical tiles said those were the same thing. */
 
-export type Demand = { label: string; n: number };
+/* alarm marks the two scarce-attention signals (appeals, escalations —
+   Ship's Officers §8): a claim on the editor's own judgment, not a workload
+   count. Only louder when it is actually carrying something; at zero it is
+   as idle as any other tile. */
+export type Demand = { label: string; n: number; alarm?: boolean };
 export type LedgerEntry = { label: string; n: number; suffix?: string };
 
 export function DeskStanding({ demands, ledger }: { demands: Demand[]; ledger: LedgerEntry[] }) {
@@ -169,7 +173,7 @@ export function DeskStanding({ demands, ledger }: { demands: Demand[]; ledger: L
     <>
       <div className="dk-demands">
         {demands.map((d) => (
-          <div className={`dk-demand ${d.n > 0 ? "is-live" : "is-idle"}`} key={d.label}>
+          <div className={`dk-demand ${d.alarm && d.n > 0 ? "is-alarm" : d.n > 0 ? "is-live" : "is-idle"}`} key={d.label}>
             <span className="dk-demand-n">{d.n}</span>
             <span className="dk-demand-l">{d.label}</span>
           </div>

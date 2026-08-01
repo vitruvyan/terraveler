@@ -51,6 +51,7 @@ const STATE: Row[] = [
   { token: "--state-changes", role: "Changes requested — the draft comes back.", ground: "light" },
   { token: "--state-no", role: "Rejected, suspended, refuted.", ground: "light" },
   { token: "--state-idle", role: "Nothing is being asked of you.", ground: "light" },
+  { token: "--state-alarm", role: "Not a stage a submission passes through: an appeal, or a Curator finding at ESCALATE — a claim on the editor's own judgment.", ground: "light" },
 ];
 
 const DOMAIN: Row[] = [
@@ -69,6 +70,7 @@ const DARK_ROWS: Row[] = [
   { token: "--state-ok", role: "Approved.", ground: "light" },
   { token: "--state-changes", role: "Changes requested.", ground: "light" },
   { token: "--state-no", role: "Rejected.", ground: "light" },
+  { token: "--state-alarm", role: "Appealed, or carrying an ESCALATE finding.", ground: "light" },
 ];
 
 const STATUSES = [
@@ -78,6 +80,7 @@ const STATUSES = [
   ["approved", "--state-ok"],
   ["changes-requested", "--state-changes"],
   ["rejected", "--state-no"],
+  ["appealed", "--state-alarm"],
 ] as const;
 
 /* --- WCAG 2.1 relative luminance + contrast, on resolved rgb() strings --- */

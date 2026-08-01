@@ -57,6 +57,18 @@ export async function POST(req: Request) {
       findings.push(["OVERRIDE", 0,
         `approved from '${from}' with no peer review recorded. Reason: ` +
         `${String(override).slice(0, 500)}`]);
+    // Carta §5: an appeal reaches the Editor-in-chief alone (Ship's Officers
+    // §4.1 forbids the Curator this one thing). Nothing before this recorded
+    // that a verdict on an 'appealed' submission *was* the answer to that
+    // appeal rather than an ordinary first ruling — so the trail could not
+    // show the appeal was ever answered, only that a verdict happened to
+    // land after one was filed.
+    if (from === "appealed") {
+      const priorAppeals = await sb("GET",
+        `audit_log?submission_id=eq.${id}&action=eq.appeal&select=created_at&order=id.desc&limit=1`);
+      const filedOn = priorAppeals[0]?.created_at ? String(priorAppeals[0].created_at).slice(0, 10) : "unknown date";
+      findings.push(["APPEAL-RULING", 0, `answers the appeal filed ${filedOn}`]);
+    }
     await sb("POST", "audit_log", {
       submission_id: Number(submission_id),
       actor: "editor-in-chief",

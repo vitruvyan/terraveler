@@ -96,6 +96,12 @@
   --state-desk: #347171;        /*  4.54:1 — with the Curator, human review */
   --state-changes: #855694;     /*  4.52:1 — changes requested */
   --state-idle: var(--ink-faint);    /* nothing is being asked of you */
+  /* The one alarm colour, not a state a submission passes through but a claim
+     on the editor's attention: an appeal (Carta §5, appealable to the
+     Editor-in-chief alone) or a Curator finding at level ESCALATE
+     (scripts/desk_review.py) — the two things automation could not settle
+     and a human must. Deliberately louder than the six states above it. */
+  --state-alarm: #a3184f;       /*  6.07:1 */
 
   /* -- DOMAIN: meanings that belong to the atlas, not to the UI. ---------
      Map content only — a stroke and a fill, never a foreground on parchment. */
@@ -3145,6 +3151,7 @@ main.prose {
   --state-desk: #3f8989;    /* 4.51:1 */
   --state-changes: #9b6daa; /* 4.52:1 */
   --state-idle: var(--ink-faint);
+  --state-alarm: #e2618a;   /* 5.53:1 */
   /* .space::before is an absolutely positioned starfield that assumes this
      class establishes the containing block. It did not: the one component
      using it set position:relative inline, so the assumption held by luck.
@@ -3213,6 +3220,7 @@ main.prose {
   --state-desk: #1f6060;       /*  5.13:1 */
   --state-changes: #6e447c;    /*  5.35:1 */
   --state-idle: var(--ink-faint);
+  --state-alarm: #7f1240;      /*  7.21:1 */
   --paper-rgb: 219, 217, 211;
   --lens-log: #255a79;         /*  5.28:1 */
   --lens-chart: #365d4b;       /*  5.27:1 */
@@ -4625,6 +4633,16 @@ main.prose {
 }
 .dk-demand.is-idle .dk-demand-n { color: var(--state-idle); }
 .dk-demand.is-live .dk-demand-n { color: var(--accent); }
+/* Appeals and escalations: the two scarce-attention signals (Ship's Officers
+   §8, brake 2) — nothing else on this panel gets a border, because nothing
+   else is a claim on the editor's attention rather than a workload count. */
+.dk-demand.is-alarm {
+  border: 1px solid var(--state-alarm);
+  border-radius: var(--radius-2);
+  padding: var(--space-2) var(--space-4);
+  margin: calc(-1 * var(--space-2)) 0;
+}
+.dk-demand.is-alarm .dk-demand-n { color: var(--state-alarm); }
 .dk-demand-l {
   display: block;
   margin-top: var(--space-3);
@@ -5448,6 +5466,12 @@ main.prose {
 }
 .sb-lede { margin: 0; font-size: var(--step-1); line-height: 1.5; }
 .sb-verb { font-family: var(--font-display); font-weight: 500; }
+
+/* The appeal's own grounds, beside the draft rather than buried in the audit
+   trail — the reasoning a human wrote stays prose (see .dk-reason) even
+   though the rule around it belongs to the machine. */
+.sb-appeal { border-left-color: var(--state-alarm); }
+.sb-appeal .sb-verb { color: var(--state-alarm); }
 
 /* The agent's own sentence, which is the one piece of a suggestion that is
    already prose. It stays prose. */
