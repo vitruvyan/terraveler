@@ -17,6 +17,8 @@ import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
 import {
   DAY,
+  PLAYBACK_TICK_MS,
+  PLAYBACK_TICKS,
   parseHistoricalDate,
   buildLegs,
   shipStateAt,
@@ -208,7 +210,7 @@ export default function SpaceVoyageExperience({
     setPanelOpen(true);
   }, [pausedAt, isMobile]);
 
-  // Playback loop (~24s for the full voyage) — identical formula to the
+  // Playback loop — the pace lives in lib/voyage-motion — identical formula to the
   // Earth experience; autopause stops at milestones only (real flybys + the
   // heliopause), not at the invisible cruise-phase filler points.
   useEffect(() => {
@@ -216,7 +218,7 @@ export default function SpaceVoyageExperience({
     const span = maxTime - minTime || 1;
     const id = setInterval(() => {
       setT((prev) => {
-        const next = prev + span / 600;
+        const next = prev + span / PLAYBACK_TICKS;
         /* Not a setting on a phone — see VoyageExperience for the argument.
            The log carries the button that sails on. */
         if (autopause || isMobile) {
@@ -237,7 +239,7 @@ export default function SpaceVoyageExperience({
         }
         return next;
       });
-    }, 40);
+    }, PLAYBACK_TICK_MS);
     return () => clearInterval(id);
   }, [playing, minTime, maxTime, autopause, milestoneLegs, events]);
 

@@ -17,6 +17,22 @@
 
 export const DAY = 86_400_000;
 
+/* How fast a voyage plays, in one place instead of two.
+ *
+ * It was `span / 600` every 40ms in both experience components — 24 seconds
+ * for an entire circumnavigation, which is about a second and a half a leg.
+ * That is a slideshow rather than a passage, and on a phone it is worse: the
+ * ship now stops at every landfall, so the only thing the animation has left
+ * to do is show you the crossing between two of them, and it was over before
+ * you had looked up from the log you just closed.
+ *
+ * Halved. The tick stays at 40ms — 25 frames a second, which is what keeps the
+ * marker from stepping — and the step it takes is what got smaller, so the
+ * motion is slower without being choppier.
+ */
+export const PLAYBACK_TICK_MS = 40;
+export const PLAYBACK_TICKS = 1200;
+
 /** "1768", "1768-04", or "1768-04-06" (partial ISO dates, as used in the data files). */
 export function parseHistoricalDate(s: string | null): number | null {
   if (!s) return null;

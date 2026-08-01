@@ -18,6 +18,8 @@ import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-m
 import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION, collapseAttributionOnPhone } from "@/lib/basemaps";
 import {
   DAY,
+  PLAYBACK_TICK_MS,
+  PLAYBACK_TICKS,
   parseHistoricalDate,
   buildLegs as buildMotionLegs,
   shipStateAt as motionShipStateAt,
@@ -450,13 +452,13 @@ export default function VoyageExperience({
     shipMarkerRef.current?.setLngLat([ship.lng, ship.lat]);
   }, [t, ready]);
 
-  // Playback loop (~24s for the full voyage).
+  // Playback loop — the pace lives in lib/voyage-motion.
   useEffect(() => {
     if (!playing) return;
     const span = maxTime - minTime || 1;
     const id = setInterval(() => {
       setT((prev) => {
-        const next = prev + span / 600;
+        const next = prev + span / PLAYBACK_TICKS;
         /* On a phone this is not a setting. The checkbox that turned it on
            cost a whole row of a 165px bar to ask a question you answer once,
            so the answer became the behaviour: the voyage always stops, the log
@@ -488,7 +490,7 @@ export default function VoyageExperience({
         }
         return next;
       });
-    }, 40);
+    }, PLAYBACK_TICK_MS);
     return () => clearInterval(id);
   }, [playing, minTime, maxTime, autopause, legs, events]);
 
