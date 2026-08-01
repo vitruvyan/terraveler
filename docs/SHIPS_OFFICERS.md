@@ -231,7 +231,64 @@ Vitruvyan Conclave discipline, applied at Terraveler's scale:
 | `claims.reaped` | stale gap claims released | — |
 | `dlq.entry` | a consumer exhausted retries | **Herald** (as escalation) |
 
-## 6. Prerequisites (the brakes before the engine)
+## 6. Officers as AXIS graphs
+
+The officers do not need a second orchestrator. AXIS already is one, and it
+is built exactly right for this: a Node is a pure `GraphState → GraphState`
+function with one explicit responsibility, state is immutable, every run
+serializes to a trace, and the Runner already accepts a `bus` observer that
+nothing currently uses (`ingest/axis/runner.py`). The division of labour
+follows the Vitruvyan split between orchestration and distribution:
+
+- **The mycelium moves information *between* runs.** It is transport:
+  durable, causal, semantically blind.
+- **AXIS moves information *within* a run.** It is orchestration: an
+  officer acting is an AXIS graph executing, and the GraphState trace is
+  the record of *how* the officer reached what it did.
+
+The two meet in one thin component, the **dispatcher**: a consumer loop
+(one consumer group per officer) that reads its stream, maps each event to
+the officer's graph, seeds a `GraphState` from the envelope
+(`trace_id` carried through, `causation_id` = the waking event), runs it,
+acks on success, retries on failure, and dead-letters to `dlq.entry` when
+retries are exhausted. The dispatcher contains no business logic — it is
+the only new moving part, and it is deliberately boring.
+
+Each commission in §4 becomes one graph of small nodes, reusing the code
+that exists today rather than replacing it:
+
+| Officer | Graph (nodes in order) |
+|---|---|
+| Curator | `load_dossier` → `guard_dossier` (§10.4: no dossier, no run) → `mechanical_pass` (the existing verbatim/whitelist/chronology checks) → `judgment` (rule or escalate) → `record_verdict` (audit_log + outbox, one transaction) |
+| Publisher | `load_approved` → `guard_verdict` → `assemble_bundle` (provenance included) → `write_bundle` → `update_atlas` → `commit_push` → `record_published` |
+| Purser | `load_audit_trail` → `compute_standing` → `apply_rank_table` → `record_changes` (deterministic end to end; no LLM node) |
+| Herald | `collect_context` → `compose_message` → `deliver` → `record_delivery` |
+
+Three rules keep the kernel clean:
+
+1. **The Runner stays linear.** AXIS executes a fixed sequence; it has no
+   branches, and it should not grow any. Branching is *data in the state*:
+   the `judgment` node writes a Decision (or a Rejection, or an
+   `escalate` Fact), and `record_verdict` reads it and acts accordingly.
+   The trace then shows the decision as content, not as control flow —
+   which is how this project prefers its decisions anyway.
+2. **Guards are nodes.** A constitutional constraint (§10.4) is a node
+   that raises under `Policy.STRICT`, so a run that would violate the
+   Carta stops, traces the refusal, and dead-letters to the editor. The
+   guard exists once, in the graph — web desk and standing watch alike
+   invoke the same graph, which closes the two-paths problem structurally.
+3. **Nodes emit through the outbox, never to Redis directly.** A node's
+   only side-effect channel is the database transaction in its `record_*`
+   step; the relay does the publishing. The Runner's `bus` hook is wired
+   to observability (PRE/POST node telemetry), not to the mycelium —
+   observation and distribution stay distinct.
+
+A trace of an officer's run is stored like an ingestion trace today
+(`traces/<trace_id>.json`, referenced from `audit_log`), so "why did the
+Curator rule this way" has the same answer-shape as "why did this document
+enter the corpus": read the trace.
+
+## 7. Prerequisites (the brakes before the engine)
 
 Standing watches over a system with inconsistent guards would automate the
 violations faster. Before any officer moves from A0:
@@ -249,7 +306,7 @@ violations faster. Before any officer moves from A0:
    carta_version, raw spans) into the bundle — the Publisher must not
    automate the loss.
 
-## 7. Draft amendment (for the Editor's consideration)
+## 8. Draft amendment (for the Editor's consideration)
 
 > **§11. The Ship's Officers.** The ranks of §7 measure earned trust and
 > never confer authority to rule. Authority to rule, publish, promote or
