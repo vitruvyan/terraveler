@@ -49,6 +49,14 @@
       ],
       "description": "audit_log.id whose insert produced this event; null only for ops events with no ledger row"
     },
+    "trace_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "the AXIS run an officer produced this event from; null for ledger-derived events, which have no run behind them"
+    },
     "carta_version": {
       "type": "string"
     },

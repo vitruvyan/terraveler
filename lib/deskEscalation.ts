@@ -4,11 +4,14 @@
  *  one signal designed to deserve human attention, and until this existed
  *  they were shown nowhere. */
 
-/** A submission still awaiting a verdict — not yet approved, rejected, or
- *  answered on appeal. Matches the statuses the desk itself will show verdict
- *  buttons for (app/desk/page.tsx), plus 'appealed' is intentionally excluded
- *  here: an appeal is its own alarm, counted separately. */
-export const PENDING_STATUSES = ["submitted", "peer-review", "human-review", "changes-requested"];
+/** A submission whose next move belongs to the DESK — which is what the
+ *  escalation count claims the editor's attention for. 'appealed' is
+ *  intentionally excluded (an appeal is its own alarm, counted separately),
+ *  and so is 'changes-requested': a draft can carry both a FAIL and an
+ *  ESCALATE finding in the same pass, land in changes-requested, and then
+ *  the next move is the contributor's — counting it would ring the alarm
+ *  for work that is not waiting on the editor at all. */
+export const PENDING_STATUSES = ["submitted", "peer-review", "human-review"];
 
 /** True if a Findings array (scripts/desk_review.py: Findings.rows, each row
  *  [level, 0, "where: what"]) carries an ESCALATE-level entry. The Curator

@@ -31,11 +31,22 @@ create trigger audit_log_no_truncate
   before truncate on audit_log
   for each statement execute function audit_log_is_append_only();
 
+-- ENABLE ALWAYS: session_replication_role = replica (pg_restore
+-- --disable-triggers, replication, migration tools) skips ordinary
+-- triggers, and the everyday scripts connect as the superuser this
+-- container was born with — one session GUC must not be the difference
+-- between append-only and not.
+alter table audit_log enable always trigger audit_log_append_only;
+alter table audit_log enable always trigger audit_log_no_truncate;
+
 -- Belt beside the braces: the service role loses the privileges it never
--- should have held here. (The triggers above also bind roles that own the
--- table; superuser is the residual risk, and superuser is the editor.)
-revoke update, delete, truncate on audit_log from terraveler_service;
+-- should have held here. Both roles are guarded — this file must run to
+-- the end on a database that has either, not abort between the triggers
+-- and the revokes.
 do $$ begin
+  if exists (select 1 from pg_roles where rolname = 'terraveler_service') then
+    revoke update, delete, truncate on audit_log from terraveler_service;
+  end if;
   if exists (select 1 from pg_roles where rolname = 'service_role') then
     revoke update, delete, truncate on audit_log from service_role;
   end if;

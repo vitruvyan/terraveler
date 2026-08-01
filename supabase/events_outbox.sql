@@ -26,6 +26,9 @@ create table if not exists events (
   version       text not null default 'v1',
   actor         text not null,
   causation_id  bigint,             -- audit_log.id whose insert produced this
+  trace_id      uuid,               -- an officer's AXIS run, once officers
+                                    -- stand watch; null for ledger-derived
+                                    -- events, which have no run behind them
   carta_version text not null,
   payload       jsonb not null,
   published_at  timestamptz         -- stamped by the relay, nothing else
@@ -34,8 +37,16 @@ create table if not exists events (
 create index if not exists events_unpublished on events (id)
   where published_at is null;
 
+alter table events enable row level security;  -- service-role only, like the ledger
+
 -- The relay reads, and may stamp published_at — that column only. Events
--- are otherwise as immutable as the ledger they mirror.
+-- are otherwise as immutable as the ledger they mirror — and that must be
+-- revoked into truth, not just stated: governance_peer_review.sql's default
+-- privileges hand the service role UPDATE and DELETE on every new table in
+-- public, this one included. That default is the same root cause
+-- audit_append_only.sql diagnoses; until it is retired, every table with a
+-- promise to keep revokes it explicitly.
+revoke update, delete, truncate on events from terraveler_service;
 grant select, insert on events to terraveler_service;
 grant update (published_at) on events to terraveler_service;
 
@@ -54,10 +65,16 @@ begin
   elsif new.action in ('suggestion', 'content-suggestion') then
     t := 'idea.proposed';
   elsif new.action = 'verdict' and new.actor = 'curator-gate' then
-    t := case when new.verdict = 'reject'
-              then 'gate.rejected' else 'draft.submitted' end;
+    -- Exactly the gate's two words (app/api/mcp/route.ts): anything else
+    -- from this actor is a vocabulary change and stays silent until mapped.
+    if new.verdict = 'reject' then t := 'gate.rejected';
+    elsif new.verdict = 'pass-gate' then t := 'draft.submitted';
+    else return new;
+    end if;
   elsif new.action = 'verdict'
-        and new.actor in ('editor-in-chief', 'curator-desk') then
+        and new.actor in ('editor-in-chief', 'curator-desk', 'curator-v0') then
+    -- curator-v0 is the retired CLI (scripts/curator.py); if it ever rules
+    -- again, its verdict changed state and must announce like any other.
     t := 'verdict.issued';
   elsif new.action = 'review' and new.actor = 'curator-desk' then
     t := 'escalation.raised';    -- the desk's "I cannot decide this alone"
@@ -95,3 +112,9 @@ drop trigger if exists audit_log_emits_events on audit_log;
 create trigger audit_log_emits_events
   after insert on audit_log
   for each row execute function emit_event_from_audit();
+
+-- ENABLE ALWAYS: session_replication_role = replica (pg_restore
+-- --disable-triggers, replication, some migration tools) silently skips
+-- ordinary triggers — which would restore ledger rows that announced
+-- nothing, breaking "no state change without its event" with no error.
+alter table audit_log enable always trigger audit_log_emits_events;

@@ -21,14 +21,18 @@ select c.id, c.handle, c.rank,
   -- §11 — under commission).
   (select count(*) from submissions s join audit_log a on a.submission_id = s.id
     where s.contributor_id = c.id
-      and a.actor in ('editor-in-chief','curator-desk')
+      and a.actor in ('editor-in-chief','curator-desk','curator-v0')
       and a.verdict = 'approve')                                        as approvals,
   -- A rejection is editorial, not mechanical: the Stage-0 gate refusing a
   -- malformed draft is a door that did not open, not a verdict against
   -- the work. Its refusals stay in the audit trail; they do not score.
+  -- curator-v0 belongs on both sides of this ledger or neither: its
+  -- rejections were the editorial rejections of the v0.1–v0.4 era, and a
+  -- view that honoured that actor for credit while disowning it for debit
+  -- would quietly launder recorded history.
   (select count(*) from submissions s join audit_log a on a.submission_id = s.id
     where s.contributor_id = c.id
-      and a.actor in ('editor-in-chief','curator-desk')
+      and a.actor in ('editor-in-chief','curator-desk','curator-v0')
       and a.verdict = 'reject')                                         as rejections,
   -- "Passed the curator" now means what the live pipeline means by it:
   -- the draft advanced to the human desk. That is recorded as

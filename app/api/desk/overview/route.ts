@@ -34,8 +34,12 @@ export async function GET(req: Request) {
         .catch(() => []),
       // Newest first, so the first row seen per submission_id below is that
       // submission's LATEST audit_log entry — a status carries forward until
-      // something rules again, and so must the escalation flag derived from it.
-      sb("GET", "audit_log?order=id.desc&limit=1000&select=submission_id,findings"),
+      // something rules again, and so must the escalation flag derived from
+      // it. Rows with no submission (registrations, crew actions, oauth) are
+      // filtered server-side: they'd spend the 1000-row window on nothing,
+      // and a pending escalation that ages out of the window would read as
+      // resolved — silence from the one tile whose job is to be loud.
+      sb("GET", "audit_log?submission_id=not.is.null&order=id.desc&limit=1000&select=submission_id,findings"),
     ]);
     const tally = (rows: any[]) =>
       rows.reduce((acc: Record<string, number>, r: any) => {

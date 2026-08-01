@@ -39,11 +39,18 @@ services:
   # because a stream that forgets events breaks replay; noeviction because a
   # bus that drops events under memory pressure is a bus quietly deciding
   # which history to keep, and deciding is not its job.
+  # Before the relay goes live this container also needs an ACL (requirepass
+  # at minimum): terraveler_net carries services that run third-party model
+  # code, and the governance streams are not theirs to read or write.
   terraveler_redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine    # pinned, like pgvector:pg16 and postgrest above
     container_name: terraveler_redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    # noeviction is inert without a maxmemory: with one, hitting the ceiling
+    # fails writes loudly instead of OOMing the VPS quietly. 256mb is years
+    # of editorial events; the relay's ack policy will trim before it matters.
+    command: ["redis-server", "--appendonly", "yes",
+              "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
     volumes:
       - terraveler_redisdata:/data
     networks:

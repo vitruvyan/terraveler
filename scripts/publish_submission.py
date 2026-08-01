@@ -105,9 +105,17 @@ def fetch_provenance(submission_id: int, meta: dict) -> dict:
         capture_output=True, text=True)
     line = out.stdout.strip() if out.returncode == 0 else ""
     verdict_carta, _, approved_at = line.partition("|")
+    # Contributor-supplied free text headed for a public bundle: the gate only
+    # checks these exist (lib/gate.ts). Control characters go, length is
+    # capped — attribution needs a name, not a payload.
+    def clean(v):
+        if v is None:
+            return None
+        return re.sub(r"[\x00-\x1f\x7f]", " ", str(v))[:200].strip() or None
+
     return {
-        "ideator": meta.get("ideator"),
-        "scribe_model": meta.get("scribe_model"),
+        "ideator": clean(meta.get("ideator")),
+        "scribe_model": clean(meta.get("scribe_model")),
         "carta_version": verdict_carta or meta.get("carta_version"),
         # §3.5 names the date alongside ideator, model and version. This is
         # the date of the approving verdict — the moment the work became
@@ -118,13 +126,20 @@ def fetch_provenance(submission_id: int, meta: dict) -> dict:
     }
 
 
-def record_publication(submission_id: int, slug: str, carta_version: str) -> None:
+def record_publication(submission_id: int, slug: str, carta_version: str,
+                       approved: bool) -> None:
     """Carta §3.5: the audit trail is where provenance lives forever, and
     every other step that changes a submission's disposition writes to it —
     desk_review.py's verdicts, the web desk's overrides and appeals.
     Publication was the one step in the chain that left no row: a bundle
     could appear in data/ and ATLAS with nothing in audit_log to say when it
     shipped or that it happened at all."""
+    # A --force publication of an unapproved submission is a human's escape
+    # hatch, and it stays one: 'publish-forced' is deliberately unmapped in
+    # the outbox trigger, so no submission.published event — whose contract
+    # asserts an approved verdict, and whose consumer is the Publisher —
+    # announces a state that does not hold. The ledger still records it.
+    action = "publish" if approved else "publish-forced"
     findings = json.dumps([["INFO", 0, f"published data/{slug}.json"]])
     # carta_version can come from an unapproved submission's self-declared
     # meta (the --force fallback in fetch_provenance) rather than the trusted
@@ -133,7 +148,7 @@ def record_publication(submission_id: int, slug: str, carta_version: str) -> Non
     safe_carta = str(carta_version).replace("'", "''")
     sql = (
         "insert into audit_log (submission_id, actor, action, findings, carta_version) "
-        f"values ({int(submission_id)}, 'editor-in-chief', 'publish', "
+        f"values ({int(submission_id)}, 'editor-in-chief', '{action}', "
         f"$json${findings}$json$::jsonb, '{safe_carta}')"
     )
     out = subprocess.run(
@@ -310,6 +325,18 @@ def main():
                 f"without it would drop that promise silently.\n"
                 f"Run:  python3 scripts/desk_review.py {args.submission_id}")
     slug = bundle["voyage"]["slug"]
+    # The slug is contributor-controlled (lib/gate.ts validates meta, claims
+    # and licences — it never looks at voyage.slug) and from here it reaches a
+    # filesystem path, a psql statement and generated TypeScript. A slug that
+    # is not already its own slugification is refused, not repaired: repairing
+    # would publish under a name nobody submitted, and the whole class of
+    # traversal/quoting escapes lives exactly in the characters slugify()
+    # would have removed.
+    if not slug or slug != slugify(slug):
+        sys.exit(f"submission {args.submission_id} declares voyage.slug {slug!r}, which is not "
+                 f"a clean slug (expected {slugify(slug or 'unknown')!r}). A slug names a file "
+                 f"in data/, an entry in lib/voyages.ts and an audit row — it gets no "
+                 f"characters beyond [a-z0-9-].")
     stem = args.file or slug
     path = DATA / f"{stem}.json"
     quoted = sum(1 for w in bundle["waypoints"] if w["diary_excerpt"])
@@ -346,7 +373,8 @@ def main():
         atlas = atlas.replace(marker, atlas_entry(bundle, blurb) + marker)
         ATLAS_TS.write_text(atlas, encoding="utf-8")
 
-    record_publication(args.submission_id, slug, provenance["carta_version"] or "unknown")
+    record_publication(args.submission_id, slug, provenance["carta_version"] or "unknown",
+                       approved=row["status"] == "approved")
 
     print(f"\nwritten. Next, and deliberately not automatic:")
     print(f"  1. add the bundle import + LOCAL entry in lib/data.ts (the build will tell you)")

@@ -342,16 +342,26 @@ def record(cur, res: dict, carta: str) -> None:
         # refuse. The guard lives here, in the one function every caller of
         # this script goes through to write a verdict, so no future caller
         # can approve around it.
-        cur.execute("select count(*) from reviews where submission_id = %s", (res["id"],))
-        given = cur.fetchone()[0]
-        if given < REVIEWS_TO_ADVANCE:
+        # And the dossier is read, not counted. Two Scribes both refuting a
+        # claim against its sources is precisely the case §10.4 exists for —
+        # the quotation can be verbatim in the source while the source's words
+        # belong to an editor and not the traveller, which no mechanical check
+        # here can see. A cardinality check would have approved over their
+        # objection; a refutation is a reader's finding, and weighing one is
+        # a reader's job.
+        cur.execute("select verdict from reviews where submission_id = %s", (res["id"],))
+        dossier = [r[0] for r in cur.fetchall()]
+        refutes = dossier.count("refute")
+        if len(dossier) < REVIEWS_TO_ADVANCE or refutes:
             res["findings"].append(["ESCALATE", 0,
-                f"desk: §10.4 blocks this approval — {given}/{REVIEWS_TO_ADVANCE} reviews "
-                f"recorded for submission #{res['id']}. The editor rules with the "
-                f"reviewers' dossier in hand, not without it; escalating instead of "
-                f"approving."])
+                f"desk: §10.4 blocks this approval — {len(dossier)}/{REVIEWS_TO_ADVANCE} reviews "
+                f"recorded for submission #{res['id']}, {refutes} refuting. The editor "
+                f"rules with the reviewers' dossier in hand, not without it; escalating "
+                f"instead of approving."])
             res["verdict"] = "escalate"
-            res["reason"] = "mechanical checks passed but the review dossier is short"
+            res["reason"] = ("mechanical checks passed but a reviewer refutes"
+                             if refutes else
+                             "mechanical checks passed but the review dossier is short")
             status = None
     if status:
         cur.execute("update submissions set status=%s, updated_at=now() where id=%s",
