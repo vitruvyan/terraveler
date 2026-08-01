@@ -838,6 +838,184 @@
 }
 
 /* ============================================================================
+   CAPITOLO V — IL TELEFONO
+   Cornici di viewport vero e la misura che ne esce. Nessun colore nuovo e
+   nessuna ombra: una cornice è un ritaglio di carta con un filetto intorno,
+   come una tavola nel capitolo iv.
+   ========================================================================= */
+
+/* Le cornici stanno su una riga e, se non ci stanno, la riga scorre. Non si
+   restringono: una cornice larga 1280 che diventa 900 non è più la cosa che
+   dichiara di essere. */
+.spec-vp-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-6);
+  margin-top: var(--space-6);
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+}
+
+.spec-vp-fig { margin: 0; flex: 0 0 auto; }
+.spec-vp-fig figcaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--rule-hair);
+  margin-bottom: var(--space-3);
+}
+.spec-vp-dim { color: var(--ink-faint); white-space: nowrap; }
+.spec-vp-dim b { color: var(--brass-text); font-weight: 500; }
+
+/* Il ritaglio. `overflow: hidden` è ciò che tiene la cornice alla misura
+   ottica mentre dentro il documento resta grande quanto dichiara. */
+.spec-vp {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-1);
+  background: var(--parchment-deep);
+}
+.spec-vp iframe {
+  display: block;
+  border: 0;
+  transform-origin: top left;
+}
+
+/* Ogni cornice è un'istanza MapLibre intera: nasce al click. */
+.spec-vp-load {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  transition: color var(--dur-1) var(--ease);
+}
+.spec-vp-load:hover { color: var(--accent); }
+.spec-vp-load:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
+
+.spec-vp-note {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  line-height: 1.6;
+  color: var(--ink-faint);
+  margin: var(--space-3) 0 0;
+}
+.spec-vp-again {
+  margin-top: var(--space-3);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  background: none;
+  color: var(--ink-soft);
+  padding: var(--space-2) var(--space-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.spec-vp-again:hover { color: var(--ink); border-color: var(--brass); }
+.spec-vp-empty {
+  color: var(--ink-faint);
+  border: 1px dashed var(--rule-hair);
+  padding: var(--space-5);
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+/* Il budget: un numero grande, ciò che misura, e se sta dentro il tetto.
+   Non si chiama verdetto perché quel nome è già del capitolo ii, dove porta
+   un badge AA — e due regole con lo stesso nome si sovrascrivono in silenzio. */
+.spec-budget {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-5);
+  align-items: baseline;
+  margin-top: var(--space-6);
+  padding: var(--space-5) 0;
+  border-top: 2px solid var(--rule-firm);
+  border-bottom: 1px solid var(--rule-hair);
+}
+.spec-budget-n {
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: var(--step-5);
+  font-weight: 300;
+  line-height: 0.9;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--ink);
+}
+.spec-budget-of { font-size: var(--step-0); color: var(--ink-soft); line-height: 1.45; }
+.spec-budget-of .spec-machine { color: var(--ink-faint); }
+.spec-budget-mark {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.spec-budget-mark.is-ok { color: var(--state-ok); }
+.spec-budget-mark.is-no { color: var(--state-no); }
+
+/* Le bande, una riga ciascuna. La barra è un filetto pieno, non un grafico:
+   piena al 25% dello schermo, che è dove sta il tetto. */
+.spec-bands { margin-top: var(--space-5); }
+.spec-band {
+  display: grid;
+  grid-template-columns: 14rem 1fr 3.5rem 7rem 8rem;
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+.spec-band-sel { color: var(--ink-faint); }
+.spec-band.is-full .spec-band-sel { color: var(--ink); }
+.spec-band-bar {
+  display: block;
+  height: 3px;
+  background: var(--parchment-deep);
+  border-radius: var(--radius-1);
+}
+.spec-band-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ink-faint);
+  border-radius: var(--radius-1);
+}
+.spec-band.is-full .spec-band-bar > span { background: var(--brass); }
+.spec-band-n { text-align: right; color: var(--ink); }
+.spec-band-w { color: var(--ink-faint); }
+.spec-band-kind {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: right;
+  color: var(--ink-faint);
+}
+.spec-band.is-full .spec-band-kind { color: var(--brass-text); }
+
+/* L'inventario riusa la tavola del contratto e le mette solo un'intestazione. */
+.spec-inv-head {
+  display: block;
+  margin: var(--space-7) 0 var(--space-2);
+  color: var(--brass-text);
+}
+.spec-inv-row .spec-contract-field { color: var(--ink-soft); }
+
+@media (max-width: 900px) {
+  .spec-band { grid-template-columns: 1fr auto; row-gap: var(--space-1); }
+  .spec-band-bar, .spec-band-w { display: none; }
+  .spec-budget { grid-template-columns: auto 1fr; }
+  .spec-budget-mark { grid-column: 2; text-align: left; }
+}
+
+/* ============================================================================
    USCITE — il ritorno al desk e il ritorno in cima
    ========================================================================= */
 

@@ -6,6 +6,7 @@ const CHAPTERS = [
   { href: "/specimen/palette", n: "ii", label: "colour" },
   { href: "/specimen/mark", n: "iii", label: "mark" },
   { href: "/specimen/plates", n: "iv", label: "plates" },
+  { href: "/specimen/phone", n: "v", label: "phone" },
 ];
 
 export default function Chapters({ current }: { current: string }) {
