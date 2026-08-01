@@ -51,7 +51,8 @@ export type IconName =
   | "play"
   | "pause"
   | "stage-prev"
-  | "stage-next";
+  | "stage-next"
+  | "mariner";
 
 const PATHS: Record<IconName, React.ReactNode> = {
   /* The atlas itself: a sphere reduced to its graticule, the way a globe is
@@ -279,6 +280,25 @@ const PATHS: Record<IconName, React.ReactNode> = {
      landfall" rather than merely "forward". They exist because fifteen ticks
      in a 340px rail cannot each be 44px, so precise navigation had to leave
      the rail and become a control. */
+  /* The chronicler. Pigafetta wore the anchor of the log lens, so the
+     assistant’s door and the toolbar beside it showed the SAME mark — two
+     different things saying one word, on a map whose whole chrome argument is
+     that shape and mark carry class.
+
+     A person, then, because what is behind that door is someone who answers.
+     A bust rather than a figure: at 18px a whole body is four strokes of
+     porridge. The flat bonnet is what dates him — a sixteenth-century
+     seaman’s cap reads as period at small size where a doublet or a ruff
+     does not, both of which were drawn and both of which turned to mush. */
+  mariner: (
+    <>
+      <path d="M8.6 8.6c0-2 1.5-3.4 3.4-3.4s3.4 1.4 3.4 3.4" />
+      <path d="M7.4 8.6h9.2" />
+      <circle cx="12" cy="11.6" r="2.9" />
+      <path d="M5.4 20.6c0-2.9 2.9-4.7 6.6-4.7s6.6 1.8 6.6 4.7" />
+    </>
+  ),
+
   "stage-prev": <path d="M16.4 5.4 9.6 12l6.8 6.6M7.2 5.4v13.2" />,
   "stage-next": <path d="M7.6 5.4 14.4 12l-6.8 6.6M16.8 5.4v13.2" />,
 };

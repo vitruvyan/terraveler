@@ -631,6 +631,47 @@ are editing is already migrated; check it. As of the typography commit:
   a parchment rectangle, and that is how the classes are told apart in one
   look. Matching them would spend a distinction to buy a symmetry.
 
+- **Two doors were wearing the same mark.** Pigafetta's launcher and the log
+  lens both drew the anchor, so the assistant's door and the toolbar beside it
+  said one word for two things — on a map whose whole chrome argument is that
+  shape and mark carry class. The assistant has a person now (`mariner`),
+  because what is behind that door is someone who answers. A bust, not a
+  figure: at 18px a whole body is four strokes of porridge, and the flat bonnet
+  is what dates him — a doublet and a ruff were both drawn and both turned to
+  mush.
+
+- **The basemap chip is a mark, not a tablet.** 131×44 of parchment reading
+  "World c. 1783" is now 44×44 and round, standing on MapLibre's own line at
+  the other end of the row. It carries the YEAR rather than a picture: no icon
+  in this set means "which reconstruction", the two that come closest are lens
+  buttons on the same screen, and a drawing of a map would say "a map", which
+  the reader can see. The year is the whole fact and the shortest way to state
+  it, so the rule it was defended with still holds — the one thing worth
+  saying unasked is still said. The reasoning stays one tap away.
+
+- **Aligned means centres, not bottoms.** The rail and the assistant's door
+  shared a baseline while differing by 5px in height, which is exactly what
+  "slightly misaligned" looks like. The collapsed rail takes the door's 48
+  exactly now (38 + 4px padding + 1px border each side) and the two sit at the
+  same point. Invisible in a measurement; visible to whoever is looking.
+
+- **The map menu was the only popover nobody had taught to close.** Its twin,
+  the account panel, dismisses on a tap outside, closes on Escape and points at
+  the button it came from. The menu did none of the three: it closed only on a
+  tap *inside itself*, so on a phone it sat over the map until you happened to
+  hit it. A reader who taps the map to dismiss something and watches it stay
+  has learnt the wrong thing about the whole surface. Same dismisser, same
+  Escape, same 12px square turned 45°, kept beside its twin in this file rather
+  than by anyone remembering.
+
+- **The rail is a chain of legs and the thumb is gone.** Each leg fills as the
+  ship crosses it, so the boundary between filled and unfilled IS the position
+  and an 18px dot marking it a second time went. Four tones cycled, not one per
+  leg: a voyage's legs differ in ORDER, not in kind, and fifteen colours would
+  assert a taxonomy the voyage does not have. When the chain draws the rail the
+  tick row is `:empty` and collapses — leaving it in place cost 12px, the whole
+  saving the thumb had just given back.
+
 - **The timeline switch is one mark, not two tabs.** Two labelled tabs spent
   the width of both words permanently on a choice made rarely — the argument
   that collapsed the attribution to its `(i)`. The law's objection to a bare

@@ -338,6 +338,11 @@ input[type="range"].scrubber {
       linear-gradient(var(--brass), var(--brass)),
       linear-gradient(var(--parchment-deep), var(--parchment-deep));
     background-clip: content-box, content-box;
+    /* The chain above is the drawing now, so this input is only the hand-hold:
+       no track of its own, and no thumb. The dot was 18px marking the position
+       the fill already marks, which is a thing said twice on the screen that
+       can least afford it. */
+    background-image: none;
     /* A target may be 44 tall without COSTING 44. The first version of this
        let the padding into the layout, and the bar grew a band of empty
        parchment under the rule that read as a mistake — it was drawn on a
@@ -869,6 +874,37 @@ input[type="range"].scrubber::-moz-range-thumb {
    dropped with the promise. */
 [data-layout="phone"] .vt-tick { cursor: default; }
 
+/* THE CHAIN OF LEGS. Each is the passage between two stops, and it fills as the
+   ship crosses it, so the boundary between filled and unfilled is the position
+   — which is what made the thumb redundant rather than merely hidden.
+
+   Four tones, cycled, not fifteen distinct ones: the legs of a voyage differ in
+   ORDER, not in kind, and a colour per leg would assert a taxonomy the voyage
+   does not have. Four is enough for a reader to tell one leg from the next,
+   which is the whole job. They are the measured lens hues, so no new colour
+   enters the palette to do this. */
+.vt-segs {
+  position: relative;
+  height: 6px;
+  margin-bottom: 3px;
+}
+.vt-seg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: var(--radius-1);
+  background: var(--parchment-deep);
+  overflow: hidden;
+}
+/* A hairline of paper between the legs, so the chain reads as links rather
+   than as one bar that happens to change colour. */
+.vt-seg + .vt-seg { box-shadow: -1px 0 0 var(--parchment); }
+.vt-seg-fill { display: block; height: 100%; background: var(--seg); }
+.vt-seg.tone-0 { --seg: var(--lens-log); }
+.vt-seg.tone-1 { --seg: var(--lens-carto); }
+.vt-seg.tone-2 { --seg: var(--lens-chart); }
+.vt-seg.tone-3 { --seg: var(--lens-plates); }
+
 /* The stage steppers: what the ticks stopped being. They take the tap floor
    rather than a chosen size, because the floor is the whole reason they
    exist. */
@@ -1108,10 +1144,20 @@ input[type="range"].scrubber::-moz-range-thumb {
   color: var(--ink-soft);
   background: rgba(var(--paper-rgb), 0.94);
   border: 1px solid var(--parchment-deep);
-  border-radius: var(--radius-2);
-  /* 44px of finger, from padding rather than an empty box. */
-  padding: var(--space-3) var(--space-4);
-  min-height: 44px;
+  /* Round, at the size of MapLibre's own (i) and on its line. This is the one
+     place a parchment instrument takes a circle, and the reason is that it has
+     stopped being a tablet with a sentence on it and become a MARK — the same
+     class of thing as the (i) it now stands beside. It still says which world
+     you are looking at, because the year is the whole fact and the shortest
+     way to state it; a drawing would have said "a map", which the reader can
+     already see. */
+  border-radius: var(--radius-pill);
+  width: var(--tap-min);
+  height: var(--tap-min);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 [data-layout="phone"] .map-note-shut {
@@ -1803,14 +1849,37 @@ input[type="range"].scrubber::-moz-range-thumb {
   position: absolute;
   top: 48px;
   right: 0;
+  /* Above its own dismisser, which is fixed at 58 — otherwise the sheet that
+     catches the tap outside would also catch the taps inside. */
+  z-index: 60;
   min-width: 230px;
-  background: rgba(var(--paper-rgb), 0.98);
+  /* Opaque, for the reason the account panel is: a popover you read has to be
+     paper all the way down, and at 0.98 the map's own colour was coming
+     through the words. */
+  background: var(--parchment);
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
-  box-shadow: 0 8px 24px rgba(43, 33, 23, 0.25);
+  box-shadow: var(--elev-1);
   padding: 8px;
   display: flex;
   flex-direction: column;
+}
+/* The vertex. Its twin panel had one and this did not, so the menu read as a
+   sheet that had landed near the button rather than as something the button
+   opened — the same geometry, the same 12px square turned 45°, kept in step
+   with .acct-panel::after by sitting beside it in this file rather than by
+   anyone remembering. */
+.tr-menu::after {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 17px;
+  width: 12px;
+  height: 12px;
+  border-top: 1px solid var(--parchment-deep);
+  border-left: 1px solid var(--parchment-deep);
+  background: var(--parchment);
+  transform: rotate(45deg);
 }
 .tr-menu > a {
   padding: 8px 10px;
@@ -2780,6 +2849,16 @@ main.prose {
     line-height: 1.4;
     bottom: calc(var(--edge) + var(--tv-bar-h, 96px) + var(--tv-attr-h, 40px) + var(--band));
   }
+  /* Collapsed, it stands on the attribution's own line instead of a rung of
+     its own — two marks of the same size at the two ends of one row, which is
+     what was asked for and is also one rung fewer in the stack. Opened it goes
+     back to being a paragraph and takes the height it needs. */
+  .hist-note.map-note-chip {
+    left: 12px;
+    right: auto;
+    width: auto;
+    bottom: calc(var(--edge) + var(--tv-bar-h, 96px));
+  }
   /* The rung above the note. It gets a NAME because two things stand on it
      now — the assistant's door on the right and the lens rail on the left —
      and a level written out twice is the disease this stack was built to end.
@@ -2864,6 +2943,22 @@ main.prose {
   top: auto;
   transform: none;
   bottom: var(--rung-above-note);
+}
+/* Collapsed, it takes the door's exact 48 so the two align on their CENTRES
+   and not merely on their bottoms. Sharing a baseline while differing by 5px
+   in height is what "slightly misaligned" looks like, and it is the kind of
+   thing only an eye catches. */
+[data-layout="phone"] .lens-rail .rail-toggle {
+  /* 38 + 4px of rail padding either side + 1px of border either side = 48,
+     which is the door’s diameter exactly. At 40 the rail came out 50 and the
+     two centres sat a pixel apart — invisible in a measurement, visible to
+     whoever is looking at it. */
+  width: 38px;
+  height: 38px;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .lens-rail .lens-btn-ico { font-size: var(--step-1); padding: 8px 8px; }
 .rail-div { height: 1px; background: var(--parchment-deep); margin: 3px 5px; }
@@ -5439,3 +5534,27 @@ main.prose {
   text-transform: uppercase;
   color: var(--ink-faint);
 }
+
+/* The thumb goes where the chain of legs draws the position instead — phones
+   only, since a mouse still wants something to grab on a wide screen. Both
+   vendor pseudo-elements, because they do not share a selector list: a browser
+   drops the whole rule when it meets a prefix it does not know. */
+[data-layout="phone"] input[type="range"].scrubber::-webkit-slider-thumb {
+  width: 0;
+  height: 0;
+  border: 0;
+  background: none;
+}
+[data-layout="phone"] input[type="range"].scrubber::-moz-range-thumb {
+  width: 0;
+  height: 0;
+  border: 0;
+  background: none;
+}
+
+/* When the chain of legs is drawing the rail, the tick row has nothing in it —
+   but it still held its 8px, so the bar grew by exactly the height of an empty
+   box. Measured: 95px -> 107px, which is the whole saving the thumb gave back.
+   :empty is the honest selector here; the row is kept for the world track,
+   whose marks are moments and cannot be a chain. */
+[data-layout="phone"] .vt-ticks:empty { display: none; }

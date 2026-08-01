@@ -58,6 +58,10 @@ export type Track = {
   marks: Mark[];
   /** Where a mark leads on a wide screen, where 2px is a reachable target. */
   onMark?: (at: number) => void;
+  /** True where consecutive marks bound a LEG — the passage from one stop to
+      the next — so the rail can be drawn as a chain that fills. False for the
+      world's events, which are moments rather than the ends of anything. */
+  segmented?: boolean;
 };
 
 export type TransportLexicon = {
@@ -162,8 +166,40 @@ export default function TransportBar({
             between them moved into the log — where you are already reading the
             thing they point at. A mouse can hit 2px, so a wide screen keeps
             them as buttons. */}
+        {/* THE RAIL AS A CHAIN OF LEGS, on a phone.
+
+            The thumb is gone, and it is not hidden — it is redundant. Once each
+            leg fills as the ship crosses it, the boundary between filled and
+            unfilled IS the position, so a dot marking the same thing a second
+            time was 18px of chrome saying what the bar already said.
+
+            The legs cycle through four tones rather than carrying fifteen
+            distinct ones. Fifteen colours would assert fifteen KINDS, and a
+            voyage's legs do not differ in kind — they differ in order. Four
+            repeating tones give a reader adjacent legs they can tell apart,
+            which is the whole job, without the rail claiming a taxonomy the
+            voyage does not have. */}
+        {phone && shown?.segmented && shown.marks.length > 1 && (
+          <div className="vt-segs" aria-hidden="true">
+            {shown.marks.slice(0, -1).map((m, i) => {
+              const from = pctOf(m.at);
+              const to = pctOf(shown.marks[i + 1].at);
+              const span = to - from || 0.001;
+              const done = Math.max(0, Math.min(100, ((pct - from) / span) * 100));
+              return (
+                <span
+                  key={m.id}
+                  className={`vt-seg tone-${i % 4}`}
+                  style={{ left: `${from}%`, width: `${to - from}%` }}
+                >
+                  <span className="vt-seg-fill" style={{ width: `${done}%` }} />
+                </span>
+              );
+            })}
+          </div>
+        )}
         <div className="vt-ticks">
-          {(shown?.marks ?? []).map((m) =>
+          {(phone && shown?.segmented ? [] : shown?.marks ?? []).map((m) =>
             phone || !shown?.onMark ? (
               <span
                 key={m.id}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import AccountPanel from "@/components/AccountPanel";
 import { ALL } from "@/lib/nav";
@@ -23,6 +23,22 @@ export default function MapDoors() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
 
+  /* Two doors, one cluster, and only one of them had been taught how to be a
+     popover. The account panel dismisses on a tap outside, closes on Escape
+     and points at the button it came from; the menu did none of the three. It
+     closed only on a tap INSIDE itself, which on a phone meant it sat over the
+     map until you happened to hit it — and a reader who taps the map to get
+     rid of something and watches it stay has learnt the wrong thing about the
+     whole surface. The pattern is not reinvented here, it is the same one. */
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   return (
     <div className="tr-cluster">
       <div style={{ position: "relative" }}>
@@ -36,7 +52,15 @@ export default function MapDoors() {
           <Icon name="menu" size={19} />
         </button>
         {menuOpen && (
-          <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+          <>
+            <button
+              type="button"
+              className="acct-dismiss"
+              onClick={() => setMenuOpen(false)}
+              aria-label="Close menu"
+              tabIndex={-1}
+            />
+            <div className="tr-menu" onClick={() => setMenuOpen(false)}>
             {ALL.map((d) => (
               <a key={d.href} href={d.href}>
                 {d.label}
@@ -50,7 +74,8 @@ export default function MapDoors() {
                 vitruvyan.com
               </a>
             </div>
-          </div>
+            </div>
+          </>
         )}
       </div>
       <div className="acct-anchor">

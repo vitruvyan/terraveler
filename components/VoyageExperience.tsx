@@ -812,7 +812,12 @@ export default function VoyageExperience({
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
         {isEarth && (
-          <MapNote className="hist-note" ref={noteRef} label={`World c. ${epoch.year}`}>
+          <MapNote
+            className="hist-note"
+            ref={noteRef}
+            label={`World c. ${epoch.year}`}
+            short={String(epoch.year)}
+          >
             World c.&nbsp;{epoch.year} — the nearest reconstruction to this voyage
             {voyageYears ? ` (${voyageYears})` : ""}; great powers coloured, key in the
             Cartographer lens. A reconstruction; precision varies.{" "}
@@ -1157,6 +1162,7 @@ export default function VoyageExperience({
               at: l.arrival,
               label: l.wp.place_historical ?? l.wp.place_modern ?? "landfall",
             })),
+            segmented: true,
             onMark: (at) => {
               setPlaying(false);
               openLogRef.current(at);

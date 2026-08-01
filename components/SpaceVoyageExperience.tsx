@@ -751,6 +751,7 @@ export default function SpaceVoyageExperience({
             tab: "Mission",
             caption: bodyName ? `Near ${bodyName}` : "",
             marks: milestoneLegs.map((l) => ({ id: l.wp.id, at: l.arrival, label: l.wp.body })),
+            segmented: true,
             onMark: (at) => {
               setPlaying(false);
               openLog(at);

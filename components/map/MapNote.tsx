@@ -21,16 +21,27 @@ import { useLayoutMode } from "@/lib/layout";
  */
 const MapNote = forwardRef<
   HTMLDivElement,
-  { className: string; label: string; children: ReactNode }
->(function MapNote({ className, label, children }, ref) {
+  { className: string; label: string; short?: string; children: ReactNode }
+>(function MapNote({ className, label, short, children }, ref) {
   const phone = useLayoutMode() === "phone";
   const [open, setOpen] = useState(false);
 
   if (phone && !open) {
+    /* THE CHIP BECOMES A MARK. It was a 131×44 parchment tablet reading "World
+       c. 1783", asked to shrink to the size of MapLibre's (i) and stand on its
+       line — and it does, but it carries the YEAR rather than a picture.
+
+       No icon in this set means "which reconstruction", and the two that come
+       closest, the folded sheet and the temple, are both lens buttons on this
+       same screen. More to the point, a drawing of a map would say "a map",
+       which the reader can already see. The one fact worth stating unasked is
+       WHICH world, and the shortest possible way to state it is the number
+       itself. So the mark keeps saying it, in the machine's voice, at a
+       quarter of the width. The reasoning stays one tap away. */
     return (
       <div className={`${className} map-note-chip`} ref={ref}>
-        <button onClick={() => setOpen(true)} aria-expanded={false}>
-          {label}
+        <button onClick={() => setOpen(true)} aria-expanded={false} aria-label={label}>
+          {short ?? label}
         </button>
       </div>
     );
