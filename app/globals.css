@@ -925,29 +925,32 @@ input[type="range"].scrubber::-moz-range-thumb {
    axis — the ship's date — so they are one rail with two sets of marks rather
    than two rails at opposite ends of a small screen. Words on the tabs, not a
    bare toggle: an unlabelled switch is a control that has to be taught. */
-.tb-track-btn {
-  flex: 0 0 auto;
-  width: var(--tap-min);
-  height: var(--tap-min);
+/* Two tabs with words on them. It was one icon for a while and the person
+   using it could not tell what it did, which is the whole of the law’s case
+   against an unlabelled switch. */
+.tb-tracks {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+  flex: 0 0 auto;
   border: 1px solid var(--rule-hair);
-  border-radius: var(--radius-pill);
-  background: var(--parchment-raised);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+.tb-track-tab {
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  padding: var(--space-2) var(--space-3);
+  min-height: var(--tap-min);
+  border: 0;
+  background: none;
   color: var(--ink-soft);
   cursor: pointer;
+  white-space: nowrap;
 }
 /* Pressed is a state of an instrument, so it deepens the paper rather than
    going dark: dark is the doors' material, and a control that changed class
    when you used it would be lying about what it is. */
-.tb-track-btn.on {
-  background: var(--parchment-deep);
-  border-color: var(--brass);
-  color: var(--brass-text);
-}
-.tb-track-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.tb-track-tab.on { background: var(--parchment-deep); color: var(--ink); }
+.tb-track-tab:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
 
 /* The world's marks keep their category colour on the shared rail, which is
    what tells you the switch actually changed something. */

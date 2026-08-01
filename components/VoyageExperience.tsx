@@ -4,7 +4,7 @@ import Icon from "@/components/Icon";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEdgeStack } from "@/lib/useEdgeStack";
-import { useLayoutMode } from "@/lib/layout";
+import { useLayoutMode, isPhoneNow } from "@/lib/layout";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
@@ -427,7 +427,19 @@ export default function VoyageExperience({
            ground. Off Earth the opening view stays far enough out that the
            maria are legible and the body identifies itself; the scrubber and
            the waypoints are how you go down to the surface. */
-        map.fitBounds(bounds, { padding: 70, duration: 0, ...(isEarth ? {} : { maxZoom: 3 }) });
+        /* A PHONE CANNOT HOLD THE WHOLE WORLD, so it stops pretending to.
+           Framed to the whole voyage on a 412px screen, a circumnavigation is
+           a thumbnail arc in one corner and the rest is empty ocean — the map
+           was drawing the extent of the journey rather than the journey. Here
+           it opens on the ship at a zoom where a coast is legible, and follows
+           her while she sails (see the effect that moves the marker). Wide
+           screens keep the whole-voyage frame: there the extent IS readable,
+           and it is the better first sentence. */
+        if (isPhoneNow()) {
+          map.jumpTo({ center: [L[0].lng, L[0].lat], zoom: isEarth ? 3.2 : 2.4 });
+        } else {
+          map.fitBounds(bounds, { padding: 70, duration: 0, ...(isEarth ? {} : { maxZoom: 3 }) });
+        }
 
         setReady(true);
       });
@@ -450,7 +462,15 @@ export default function VoyageExperience({
     if (src) src.setData(lineFeature(traveledLine(t, L)));
     const ship = shipStateAt(t, L);
     shipMarkerRef.current?.setLngLat([ship.lng, ship.lat]);
-  }, [t, ready]);
+    /* The camera travels with her, but ONLY while she is under way. Paused,
+       the map belongs to the reader — dragging it somewhere and being hauled
+       back is the behaviour of a thing that will not let you look. */
+    if (isMobile && playing) mapRef.current?.setCenter([ship.lng, ship.lat]);
+    /* playing and isMobile are read here, so they are declared here. It
+       happened to work without them — t changes on every tick, so the closure
+       was never stale for long — which is the kind of thing that works until
+       the tick stops. */
+  }, [t, ready, playing, isMobile]);
 
   // Playback loop — the pace lives in lib/voyage-motion.
   useEffect(() => {
@@ -477,9 +497,22 @@ export default function VoyageExperience({
            play through unattended. On a screen where the reading is the log
            and the map is a thumbnail, that is the cheaper half. */
         if (autopause || isMobile) {
-          // Stop at the next milestone on EITHER timeline — landfall or world event.
           const nextLeg = legs.find((l) => l.arrival > prev + 1)?.arrival ?? Infinity;
-          const nextEv = events.find((e) => e.time > prev + 1)?.time ?? Infinity;
+          /* ON A PHONE, ONLY A LANDFALL STOPS THE SHIP.
+             The wide arrangement halts at the next milestone on EITHER
+             timeline, which is right there because both are on screen and the
+             checkbox says so. Here it was wrong and it showed: the ship stopped
+             at the Fall of Ayutthaya and opened the SHIP'S LOG, which has
+             nothing to say about Ayutthaya. Every stop looked identical and
+             none of them explained itself.
+             A world event is something that happened elsewhere while the ship
+             sailed; it is not a place the ship arrived at, so it cannot be a
+             stop on a journey whose whole grammar is arrive-read-sail on. It
+             stays on the rail and in the caption, where it is context rather
+             than an interruption. */
+          const nextEv = isMobile
+            ? Infinity
+            : events.find((e) => e.time > prev + 1)?.time ?? Infinity;
           const stop = Math.min(nextLeg, nextEv);
           if (Number.isFinite(stop) && next >= stop) {
             setPlaying(false);

@@ -80,3 +80,15 @@ const onServer = (): LayoutMode => "wide";
 export function useLayoutMode(): LayoutMode {
   return useSyncExternalStore(subscribe, read, onServer);
 }
+
+/**
+ * The arrangement in force, read straight from the DOM, for code that runs
+ * outside React's render — a map's `load` handler, an effect that talks to
+ * MapLibre. `useLayoutMode` is the hook for anything that renders; this is for
+ * the imperative half, and it reads the attribute rather than the width so the
+ * boundary is still spelled exactly once in this file.
+ */
+export function isPhoneNow(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.documentElement.getAttribute("data-layout") === "phone";
+}

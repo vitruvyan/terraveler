@@ -129,31 +129,28 @@ export default function TransportBar({
       </div>
 
       {switchable && (
-        /* One mark, not a strip of tabs. Two labelled tabs cost the width of
-           both words permanently to show a choice you make rarely — the same
-           argument that collapsed MapLibre's attribution to its (i).
-
-           The law's objection to a bare toggle is that an unlabelled control
-           has to be taught, and it is answered rather than ignored: the
-           caption line beside this button ALWAYS names what the rail is
-           showing, so the words never left the bar, they only stopped being
-           printed twice. The hourglass is "meanwhile" — what else was
-           happening while the ship was here — and it is the one icon in the
-           set about simultaneity rather than about a place. */
-        <button
-          className={`tb-track-btn${shown?.key !== tracks[0].key ? " on" : ""}`}
-          aria-pressed={shown?.key !== tracks[0].key}
-          aria-label={
-            shown?.key === tracks[0].key
-              ? `Show ${tracks[1].tab.toLowerCase()} on the timeline`
-              : `Back to the ${tracks[0].tab.toLowerCase()} timeline`
-          }
-          onClick={() =>
-            onTrack(shown?.key === tracks[0].key ? tracks[1].key : tracks[0].key)
-          }
-        >
-          <Icon name="hourglass" size={18} />
-        </button>
+        /* THE WORDS COME BACK. This was one hourglass for a while, on the
+           argument that the caption beside it already named the active track
+           so the label was printed twice. The argument was wrong in the only
+           way that counts: the person using it said "ora è una clessidra ma
+           non capisco". A control that has to be taught is the defect this
+           repo's law names by name, and an unlabelled toggle was exactly one —
+           I had reasoned my way past the rule instead of applying it.
+           Two tabs, and they cost 2px of bar height. That was the whole
+           saving. */
+        <div className="tb-tracks" role="tablist" aria-label="Which timeline">
+          {tracks.map((tr) => (
+            <button
+              key={tr.key}
+              role="tab"
+              aria-selected={tr.key === shown?.key}
+              className={`tb-track-tab${tr.key === shown?.key ? " on" : ""}`}
+              onClick={() => onTrack(tr.key)}
+            >
+              {tr.tab}
+            </button>
+          ))}
+        </div>
       )}
 
       <div className="voyage-track">
