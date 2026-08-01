@@ -1,3 +1,24 @@
+/* ==== THE ARRANGEMENT ======================================================
+   There are two arrangements of this site, and which one is in force is an
+   ATTRIBUTE on <html>, not a media query:
+
+       .pig-launch                        { bottom: 88px }
+       [data-layout="phone"] .pig-launch  { … }
+
+   Write the compact rule BESIDE the rule it replaces. A media query forces it
+   to be written somewhere else in the file, and that is not a stylistic
+   matter: .pig-launch has four `bottom` declarations across four responsive
+   blocks, the furthest 1300 lines apart, and which one wins is decided by
+   source order alone. That is the same failure as the four hand-set numbers on
+   the map's bottom edge — a thing no discipline can hold consistent by hand.
+
+   lib/layout.ts owns the one boundary and publishes the attribute before first
+   paint. Do not spell a viewport width here or in TypeScript; test/layout.test.ts
+   fails the build if the count of split selectors grows.
+
+   The twenty-seven @media blocks below are the debt this replaces. They are
+   being migrated; add nothing to them. ======================================= */
+
 :root {
   /* ==== COLOUR =============================================================
      Four layers, and the layer a colour belongs to decides what it may do.

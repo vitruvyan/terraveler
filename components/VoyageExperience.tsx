@@ -4,6 +4,7 @@ import Icon from "@/components/Icon";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEdgeStack } from "@/lib/useEdgeStack";
+import { useLayoutMode } from "@/lib/layout";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
@@ -215,7 +216,7 @@ export default function VoyageExperience({
   const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useLayoutMode() === "phone";
   /* The bottom edge of a phone carries four things that each anchored to it
      with a hand-picked number: the launcher had four competing `bottom`
      declarations, one per collision someone patched. Four numbers cannot be
@@ -254,14 +255,6 @@ export default function VoyageExperience({
       .then((r) => r.json())
       .then((d) => setSignedIn(!!d?.signed_in))
       .catch(() => setSignedIn(false));
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 680px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
   }, []);
 
   // Esc closes the plate lightbox.

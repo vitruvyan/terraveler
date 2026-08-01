@@ -242,6 +242,35 @@ exception.
   of these collisions had been shipping, hidden by a third element sitting on
   top of them.
 
+- **The arrangement is an attribute, not a media query.** There are two
+  arrangements — `wide` and `phone` — and the one in force is published on
+  `<html>` as `data-layout` by `lib/layout.ts` before first paint. Write the
+  compact rule **beside** the rule it replaces:
+  `[data-layout="phone"] .pig-launch { … }`. A media query forces the compact
+  rule to live somewhere else in a 4900-line file, and that is not a matter of
+  taste: `.pig-launch` has four `bottom` declarations across four responsive
+  blocks, the furthest 1300 lines apart, and which wins is decided by source
+  order alone. It is the four hand-set numbers again, one storey up. The
+  boundary is spelled once, in `lib/layout.ts`; `useLayoutMode()` is for
+  components that render a different **tree**, the attribute is for everything
+  that only looks different. `test/layout.test.ts` fails the build if a
+  viewport width is written by hand in TypeScript, or if the count of split
+  selectors grows.
+
+- **On a phone the chrome must not outweigh the subject.** With the derived
+  stack in place and not one overlapping pair, the map page still spent **46%
+  of a phone screen on chrome** and gave the voyage about 4% — five
+  independent bands, each individually justified. Nothing was colliding and
+  the page was still wrong, which is the whole lesson: past a certain width
+  the defect stops being a number and becomes an arrangement. Measure the
+  bands as a proportion of the viewport, not against each other.
+
+- **A phone has no margin, so marginalia needs somewhere else to be.** The
+  fifth voice is the hand annotating the edge — and at 390px there is no edge
+  to annotate. The basemap note, six lines of mono, was not a note in the
+  margin there; it was a paragraph laid over the subject. Marginalia on a
+  phone becomes an affordance that opens it, never a band that asserts it.
+
 - **Reuse the shell before inventing one.** `TitlePage` (frontispiece + mounted
   plate), `SiteHeader`, `SiteFooter` already carry the editorial language. A
   new page that reinvents an opening is an error, not a feature.
@@ -335,6 +364,36 @@ are editing is already migrated; check it. As of the typography commit:
   roman, so a roman wordmark would have stopped being a mark and become one
   more heading; and the wide tracking this file always asked of it is wrong in
   roman and obligatory in small caps.
+
+- **The arrangement layer is installed; the stylesheet has not moved onto it.**
+  `lib/layout.ts` owns the boundary and TypeScript no longer spells it — the
+  two `matchMedia("(max-width: 680px)")` are gone. The CSS still has **27
+  `@media` blocks across ten different breakpoints** (400, 560, 640, 680, 720,
+  760, 820, 900, 1080, 1439), and six selectors are declared in more than one
+  of them: `.pig-launch` ×4, `.transport-bar` ×3, `.world-strip` ×3,
+  `.autopause-toggle`, `.win`, `.win-body` ×2. That list is frozen in
+  `test/layout.test.ts` as a ratchet — it may shrink, never grow, and an entry
+  repaid must be deleted from it in the same commit.
+- **The map chrome is not on the arrangement yet.** imprint / doors /
+  instruments is written down as a law and implemented as a convention, so
+  `VoyageExperience` and `SpaceVoyageExperience` each build it separately —
+  which is how the orrery's note and the space Atlas panel's chip were lost.
+  Until the three are shared primitives, that defect can recur; it is not
+  guarded against, only known.
+- **The instruments are four bands on a phone and should be one sheet.** The
+  derived stack holds them apart correctly. Holding them apart is not the
+  same as arranging them.
+- **Touch is unaddressed.** No `@media (hover: hover)` anywhere, so every
+  `:hover` fires on tap and sticks; 36 `title=` tooltips are invisible on
+  touch, including the whole icon-only lens rail. There is no tap-size token:
+  `.tr-btn` is 40px, `.lens-btn-ico` ~30px, `.atlas-chip` ~19px, and
+  `.play-btn` is 44px on a desktop and **shrinks to 36px on a phone**, which
+  is backwards. `-webkit-tap-highlight-color` is unset, so Android paints a
+  system blue over the paper. The bottom sheet draws a drag handle and does
+  not drag, and has no `overscroll-behavior`.
+- **`vh` where `dvh` is meant**: 15 against 3. The file already knows the
+  difference (`.win-body`, the Pigafetta dock); it was not propagated, so a
+  lightbox and the chat run under the browser's own bar.
 
 When you retire a piece of this debt, **update this list in the same commit**.
 A stale debt list is worse than none: it tells the next agent the sweep is done

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { LAYOUT_SCRIPT } from "@/lib/layout";
 import "./globals.css";
 
 /* The three voices of the atlas. All OFL, self-hosted, subset to latin — the
@@ -75,8 +76,20 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${cartouche.variable} ${text.variable} ${machine.variable}`}
+      /* The layout script writes data-layout onto this element before React
+         sees it — see lib/layout.ts for why the mode is an attribute and not a
+         media query. React does not render that attribute, so it is not a
+         mismatch; this says so out loud. */
+      suppressHydrationWarning
     >
       <body>
+        {/* First thing in the body, so it runs before anything paintable has
+            been parsed: the stylesheet keys off this attribute, so the page
+            must never be laid out without it. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: LAYOUT_SCRIPT }}
+        />
         {children}
         <script
           type="application/ld+json"

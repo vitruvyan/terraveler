@@ -3,6 +3,7 @@
 import Icon from "@/components/Icon";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useEdgeStack } from "@/lib/useEdgeStack";
+import { useLayoutMode } from "@/lib/layout";
 import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
 import spaceEventsData from "@/data/space_events.json";
@@ -155,7 +156,7 @@ export default function SpaceVoyageExperience({
   const [menuOpen, setMenuOpen] = useState(false);
   const [stripHover, setStripHover] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useLayoutMode() === "phone";
   /* The same derived bottom stack the Earth map uses. This component had the
      same defect for the same reason: its note anchored to bottom:14px, which
      is where the transport bar also is. */
@@ -167,14 +168,6 @@ export default function SpaceVoyageExperience({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [atlasFilter, setAtlasFilter] = useState<VoyageKind>(voyage.kind ?? "space");
   const [lightbox, setLightbox] = useState<{ item: MediaItem; place: string } | null>(null);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 680px)");
-    const apply = () => setIsMobile(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   // Esc closes the imagery lightbox.
   useEffect(() => {
