@@ -8,8 +8,8 @@ import dynamic from "next/dynamic";
 import type { MediaItem, Navigator, Voyage, VoyageKind, SpaceWaypoint } from "@/lib/types";
 import spaceEventsData from "@/data/space_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
-import MapImprint from "@/components/map/MapImprint";
-import MapDoors from "@/components/map/MapDoors";
+import MapTop from "@/components/map/MapTop";
+import MapNote from "@/components/map/MapNote";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
 import { voyageLogPath } from "@/lib/voyages";
@@ -290,7 +290,7 @@ export default function SpaceVoyageExperience({
       {/* The imprint did not exist on this theme at all: no wordmark, no
           count, no caption — only a bare emblem. The map's three classes are
           the map's three classes whichever body it is showing. */}
-      <MapImprint
+      <MapTop
         title={voyage.title}
         atlasCount={atlasCount}
         pickerOpen={pickerOpen}
@@ -425,7 +425,6 @@ export default function SpaceVoyageExperience({
         </DraggableWindow>
       )}
 
-      <MapDoors />
 
       {events.length > 0 && (
         <div
@@ -465,7 +464,7 @@ export default function SpaceVoyageExperience({
         </div>
       )}
 
-      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+      <div style={{ position: "absolute", inset: 0 }}>
         <div style={{ position: "absolute", inset: 0 }}>
           <SolarSystem3D
             fullPath={fullPath}
@@ -484,12 +483,12 @@ export default function SpaceVoyageExperience({
           />
         </div>
 
-        <div className="orbit-note" ref={noteRef}>
+        <MapNote className="orbit-note" ref={noteRef} label="How these positions were got">
           Flyby positions are computed from J2000 mean-longitude orbital elements (planet
           position on the encounter date); cruise-phase points between flybys are
           interpolated for the drawn path, not measured. Distances shown on a compressed
           scale — open the Orrery lens to switch to linear.
-        </div>
+        </MapNote>
 
         {current && panelOpen && (
           <DraggableWindow title={panelTitle} onClose={() => setPanelOpen(false)}>

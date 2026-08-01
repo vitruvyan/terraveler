@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as RPointerEvent, ReactNode } from "react";
+import { useLayoutMode } from "@/lib/layout";
 
 /**
  * A floating, draggable window with a title bar (minimize + close).
@@ -75,12 +76,20 @@ export default function DraggableWindow({
     }
   }
 
-  const style: CSSProperties = pos
-    ? { left: pos.left, top: pos.top, width }
-    : { ...(initial ?? { right: 16, top: 16 }), width };
+  /* On a phone the window is a page, and a page is not placed: it fills the
+     screen. The positioning is withheld rather than overridden, because an
+     inline style beats the stylesheet and the old rule needed six !important
+     to fight the very component that wrote them. Withholding is why
+     useLayoutMode exists — a different tree, not a different look. */
+  const phone = useLayoutMode() === "phone";
+  const style: CSSProperties = phone
+    ? {}
+    : pos
+      ? { position: "absolute", left: pos.left, top: pos.top, width }
+      : { position: "absolute", ...(initial ?? { right: 16, top: 16 }), width };
 
   return (
-    <div ref={ref} className="win" style={{ position: "absolute", ...style }}>
+    <div ref={ref} className="win" style={style}>
       <div
         className="win-bar"
         onPointerDown={onPointerDown}
@@ -90,7 +99,7 @@ export default function DraggableWindow({
         <span className="win-title">{title}</span>
         <span className="win-ctrls">
           <button
-            className="win-btn"
+            className="win-btn win-min"
             onClick={() => setMinimized((m) => !m)}
             aria-label={minimized ? "Expand" : "Minimize"}
             title={minimized ? "Expand" : "Minimize"}

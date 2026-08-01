@@ -159,8 +159,12 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
             </label>
           </div>
         )}
-        <button className="pig-pill" onClick={() => setOpen(true)}>
-          <Icon name="anchor" size={15} /> Ask Pigafetta
+        {/* A door, so: a pill where it carries its label, round where it does
+            not. On a phone it does not — a 183px pill lay across the middle of
+            the route, which is the one thing the map exists to show. */}
+        <button className="pig-pill" onClick={() => setOpen(true)} aria-label="Ask Pigafetta">
+          <Icon name="anchor" size={15} />
+          <span className="pig-pill-word">Ask Pigafetta</span>
         </button>
       </div>
     );

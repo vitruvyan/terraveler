@@ -257,6 +257,27 @@ exception.
   viewport width is written by hand in TypeScript, or if the count of split
   selectors grows.
 
+- **A z-index only orders you against your siblings.** The map's panels sat
+  under the lens rail, the launcher and the transport bar for months while
+  carrying `z-index: 30` against their 6, 7 and 11 — because they live inside
+  a `<div style="position:absolute; z-index:0">` that wraps the map, and the
+  chrome are siblings of that wrapper. Thirty inside a nought is a nought. It
+  is unfalsifiable by reading either rule on its own, which is why an earlier
+  fix moved MapLibre's attribution out of the bar's way instead: the symptom
+  was reachable and the cause was not. **Before tuning a z-index, walk the
+  ancestors** — anything with a `z-index`, a `transform`, a `filter`, an
+  `opacity` below 1 or `isolation` starts a new scale and traps everything
+  below it. A wrapper that only exists to group does not need a z-index.
+
+- **On a phone a panel is a page, not a window.** As a half-height sheet the
+  Ship's Log was the worst surface on the site: the rail on its title, the
+  launcher and the bar across its text, the basemap note legible through it,
+  the reading running off the bottom with nothing to say it continued. Every
+  one of those follows from being a small translucent thing among other small
+  things. Full bleed, opaque, its own scroll, `overscroll-behavior: contain`.
+  While you are reading the log you are not looking at the map, and pretending
+  otherwise is what cost the text its legibility.
+
 - **On a phone the chrome must not outweigh the subject.** With the derived
   stack in place and not one overlapping pair, the map page still spent **46%
   of a phone screen on chrome** and gave the voyage about 4% — five
@@ -396,14 +417,23 @@ are editing is already migrated; check it. As of the typography commit:
 - **The instruments are four bands on a phone and should be one sheet.** The
   derived stack holds them apart correctly. Holding them apart is not the
   same as arranging them.
-- **Touch is unaddressed.** No `@media (hover: hover)` anywhere, so every
-  `:hover` fires on tap and sticks; 36 `title=` tooltips are invisible on
-  touch, including the whole icon-only lens rail. There is no tap-size token:
-  `.tr-btn` is 40px, `.lens-btn-ico` ~30px, `.atlas-chip` ~19px, and
-  `.play-btn` is 44px on a desktop and **shrinks to 36px on a phone**, which
-  is backwards. `-webkit-tap-highlight-color` is unset, so Android paints a
-  system blue over the paper. The bottom sheet draws a drag handle and does
-  not drag, and has no `overscroll-behavior`.
+- **Touch is mostly unaddressed.** No `@media (hover: hover)` anywhere, so
+  every `:hover` fires on tap and sticks; 36 `title=` tooltips are invisible
+  on touch, including the whole icon-only lens rail. There is still no
+  tap-size token: `.tr-btn` is 40px, `.lens-btn-ico` ~30px, `.atlas-chip`
+  ~19px. `-webkit-tap-highlight-color` is unset, so Android paints a system
+  blue over the paper. *Repaid so far:* the play button no longer shrinks to
+  36 on a phone, the Pigafetta door is 48, the note chip is 44, and the drag
+  handle that never dragged is gone with the sheet it was drawn on.
+- **The transport bar is still two rows on a phone**, because the autopause
+  checkbox is a setting with nowhere else to live. Hiding its label was tried
+  and reverted within the hour: it left a naked box in the middle of the bar,
+  which is a control that must be taught. The row is the honest price until
+  the setting is given a home off the map.
+- **The measured chrome share** on a 390×844 phone went 36.4% → 25.4% with
+  the note collapsed, the launcher made round and the top edge made one row.
+  Measure it, do not estimate it: `.hist-note` was 12.9% of the screen and
+  nobody had noticed, because it looked like a caption.
 - **`vh` where `dvh` is meant**: 15 against 3. The file already knows the
   difference (`.win-body`, the Pigafetta dock); it was not propagated, so a
   lightbox and the chat run under the browser's own bar.

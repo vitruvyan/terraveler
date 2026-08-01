@@ -154,12 +154,13 @@ function blocksOf(source: string) {
    arrangement is decided by which of two distant blocks comes last in the
    file. The migration to [data-layout] empties this; nothing may be added. */
 const KNOWN_SPLIT: Record<string, number> = {
-  ".autopause-toggle": 2, //  903, 2445
-  ".pig-launch": 4, //        903, 1512, 1517, 2209
-  ".transport-bar": 3, //     1512, 2209, 2445
-  ".win": 2, //               903, 2445
-  ".win-body": 2, //          903, 2445
-  ".world-strip": 3, //       1512, 1532, 2209
+  ".autopause-toggle": 2,
+  ".pig-launch": 4,
+  ".transport-bar": 3,
+  ".world-strip": 3,
+  /* .win and .win-body are repaid: a panel is a page on a phone, declared
+     once under [data-layout] beside the base rule instead of twice in two
+     media blocks 1500 lines apart. */
 };
 
 test("no selector is newly split across responsive blocks", () => {

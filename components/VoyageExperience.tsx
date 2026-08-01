@@ -8,8 +8,8 @@ import { useLayoutMode } from "@/lib/layout";
 import type { BodyId, MediaItem, Navigator, Voyage, VoyageKind, Waypoint } from "@/lib/types";
 import worldEventsData from "@/data/world_events.json";
 import DraggableWindow from "@/components/DraggableWindow";
-import MapImprint from "@/components/map/MapImprint";
-import MapDoors from "@/components/map/MapDoors";
+import MapTop from "@/components/map/MapTop";
+import MapNote from "@/components/map/MapNote";
 import ContributePanel from "@/components/ContributePanel";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasSearch from "@/components/AtlasSearch";
@@ -552,7 +552,7 @@ export default function VoyageExperience({
           The strapline used to sit under the wordmark. It was decoration on
           the one surface with no room for any: what a newcomer needs to know
           is that this is one chart of many, and how to see the others. */}
-      <MapImprint
+      <MapTop
         title={voyage.title}
         atlasCount={atlasCount}
         pickerOpen={pickerOpen}
@@ -711,7 +711,6 @@ export default function VoyageExperience({
         </DraggableWindow>
       )}
 
-      <MapDoors />
 
       {/* World-events strip: dots always, words only when there is something to say. */}
       {events.length > 0 && (
@@ -752,18 +751,18 @@ export default function VoyageExperience({
       </div>
       )}
 
-      <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>
+      <div style={{ position: "absolute", inset: 0 }}>
         <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
         {isEarth && (
-          <div className="hist-note" ref={noteRef}>
+          <MapNote className="hist-note" ref={noteRef} label={`World c. ${epoch.year}`}>
             World c.&nbsp;{epoch.year} — the nearest reconstruction to this voyage
             {voyageYears ? ` (${voyageYears})` : ""}; great powers coloured, key in the
             Cartographer lens. A reconstruction; precision varies.{" "}
             <a href="https://github.com/aourednik/historical-basemaps" target="_blank" rel="noreferrer">
               Borders: aourednik, CC&nbsp;BY-SA&nbsp;4.0
             </a>
-          </div>
+          </MapNote>
         )}
 
         {/* Below the door cluster, not behind it. With no anchor the log fell to

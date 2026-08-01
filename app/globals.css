@@ -838,6 +838,90 @@ input[type="range"].scrubber::-moz-range-thumb {
   overflow: auto;
 }
 
+/* On a phone a panel is not a window, it is a PAGE.
+ *
+ * As a half-height sheet it was the worst surface on the site: the rail sat on
+ * its title, the launcher and the transport bar lay across its text, the
+ * basemap note read through it, and the reading ran off the bottom edge with
+ * nothing to say it continued. Every one of those is a consequence of being a
+ * small translucent thing among other small things — so it stops being one.
+ *
+ * Full bleed, opaque, its own scroll, and nothing of the map showing: while
+ * you are reading the log you are not looking at the map, and pretending
+ * otherwise is what cost the text its legibility. */
+[data-layout="phone"] .win {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  /* Opaque. At 0.96 the note underneath was still legible through the page,
+     which on a body of running text is not a texture, it is a second text. */
+  background: var(--parchment);
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+}
+[data-layout="phone"] .win-bar {
+  cursor: default;
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  /* Nothing to drag to, so nothing that looks draggable: the grab handle was
+     drawn and never worked. */
+  touch-action: auto;
+}
+[data-layout="phone"] .win-body {
+  flex: 1 1 auto;
+  max-height: none;
+  /* The scroll stops here rather than chaining on to the map behind. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-8);
+}
+/* A page is closed, not minimised — there is nothing to minimise it into. */
+[data-layout="phone"] .win-btn.win-min { display: none; }
+
+/* The note, collapsed to the one fact it is worth stating unasked. Parchment,
+   rectangular: it reports on what you are seeing, so it is an instrument. */
+[data-layout="phone"] .map-note-chip {
+  /* right:auto, or the band is still the full width of the screen and the
+     stack below it pays for a paragraph that is no longer there. */
+  right: auto;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  padding: 0;
+  background: none;
+  border: none;
+}
+[data-layout="phone"] .map-note-chip button {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: var(--step--2);
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  background: rgba(var(--paper-rgb), 0.94);
+  border: 1px solid var(--parchment-deep);
+  border-radius: var(--radius-2);
+  /* 44px of finger, from padding rather than an empty box. */
+  padding: var(--space-3) var(--space-4);
+  min-height: 44px;
+  cursor: pointer;
+}
+[data-layout="phone"] .map-note-shut {
+  float: right;
+  margin: -2px -2px 0 var(--space-3);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-size: var(--step-1);
+  line-height: 1;
+  cursor: pointer;
+}
+
 /* --- Pigafetta chat --- */
 .pig-launch { position: fixed; right: 18px; bottom: 116px; /* Below open windows. At 20 the launcher sat on top of the Atlas and the
      Contribute panels — a floating button covering the thing it is standing
@@ -864,6 +948,16 @@ input[type="range"].scrubber::-moz-range-thumb {
   box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
   transition: background var(--dur-1) var(--ease);
 }
+/* Round on a phone, and 48px so a finger has something to hit — the round
+   doors above are 40 and that is already under the floor. */
+[data-layout="phone"] .pig-pill {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+[data-layout="phone"] .pig-pill-word { display: none; }
 .pig-pill:hover { background: var(--accent-deep); }
 .pig-pill:focus-visible { outline: 2px solid var(--brass); outline-offset: 3px; }
 .pig-mini {
@@ -934,9 +1028,6 @@ input[type="range"].scrubber::-moz-range-thumb {
   .control-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px 12px !important; }
   .autopause-toggle { order: 4; }
   .voyage-track { flex: 1 1 100% !important; order: 5; }
-
-  .win { width: 90vw !important; max-width: 94vw !important; }
-  .win-body { max-height: 46vh; }
 
   .pig-launch { right: 12px; bottom: 116px; }
   .pig-pill { font-size: var(--step--1); padding: 8px 14px; }
@@ -1245,15 +1336,33 @@ input[type="range"].scrubber::-moz-range-thumb {
    parchment rectangles. Two redundant signals, learnt in one look.
    ========================================================================= */
 
-.map-imprint {
+/* One row across the top: the imprint at one end, the doors at the other.
+   Both used to be positioned separately with their own `top`, which is why the
+   atlas pill sat 9px above the round doors — see components/map/MapTop.tsx. */
+.map-top {
   position: absolute;
   top: 14px;
   left: 20px;
-  z-index: 6;
+  right: 14px;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  /* The gap between the two ends is map, and the map still pans there. */
+  pointer-events: none;
+}
+.map-top > * { pointer-events: auto; }
+/* On a phone the imprint is a row too, so the two ends share a centre line
+   instead of both being pinned to a top. */
+[data-layout="phone"] .map-top { top: 10px; left: 14px; right: 12px; align-items: center; }
+
+.map-imprint {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
+  min-width: 0;
 }
 
 /* The imprint. No plate, because it is not a control — and in --ink rather
@@ -1421,12 +1530,9 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 .tr-cluster {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 8;
   display: flex;
   gap: 8px;
+  flex: 0 0 auto;
 }
 /* The other two doors — the menu and the account — take the same material as
    the atlas door, because they do the same kind of thing. */
@@ -1512,7 +1618,28 @@ input[type="range"].scrubber::-moz-range-thumb {
   border: 1px solid var(--parchment-deep);
   border-radius: var(--radius-2);
   box-shadow: 0 8px 26px rgba(43, 33, 23, 0.24);
+  /* Phone: two rows instead of three. The autopause checkbox is a SETTING, not
+     a transport control — it cost a whole row of an 80px band to say a thing
+     you decide once. It moves onto the first row as a bare box beside the
+     play button, keeping its accessible name, and the label goes.
+     See [data-layout="phone"] rules below. */
 }
+[data-layout="phone"] .transport-bar {
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-2) var(--space-3);
+}
+/* The label STAYS. Hiding it left a naked checkbox in the middle of the bar
+   that said nothing about itself — a control that has to be taught, which is
+   the defect the law names, and I had just written it in. The row it costs is
+   the honest price until the setting is given a home off the map. */
+[data-layout="phone"] .autopause-toggle input {
+  /* The box itself is the target; a 44px row for it cost the band 52px. */
+  width: 22px;
+  height: 22px;
+}
+/* A finger, not a mouse: the play control was 44 on a desktop and shrank to 36
+   here, which is backwards. */
+[data-layout="phone"] .transport-bar .play-btn { width: 44px; height: 44px; }
 
 /* --- Site footer (editorial pages) --- */
 .site-footer {
@@ -2344,9 +2471,6 @@ main.prose {
     flex-direction: row;
     align-items: center;
     gap: var(--space-3);
-    top: 10px;
-    left: 14px;
-    right: 104px;
   }
   /* Tied to the viewport rather than stepped: at 320px a fixed 1.22rem left
      the mark 5px wider than the row could hold. 5vw meets the cap exactly at
@@ -2464,32 +2588,8 @@ main.prose {
 
 /* --- Mobile ad-hoc: bottom-sheet windows, compact transport, small rail --- */
 @media (max-width: 680px) {
-  .win {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    top: auto !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: var(--radius-2) 16px 0 0;
-    border-bottom: none;
-    z-index: 30;
-  }
-  .win-bar { position: relative; padding-top: 12px; cursor: default; }
-  .win-bar::before {
-    content: "";
-    position: absolute;
-    top: 4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 44px;
-    height: 4px;
-    border-radius: var(--radius-1);
-    background: rgba(43, 33, 23, 0.25);
-  }
-  .win-body { max-height: 48dvh; padding-bottom: 22px; }
-
+  /* The bottom sheet and its drawn-but-inert drag handle are gone: a panel is
+     a page here now, declared beside the base rule under [data-layout]. */
   .lens-rail { left: 8px; padding: 4px; border-radius: var(--radius-2); }
   .lens-rail .lens-btn-ico { font-size: var(--step-1); padding: 7px 8px; }
 
