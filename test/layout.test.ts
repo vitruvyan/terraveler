@@ -176,6 +176,64 @@ test("every register that re-declares the ink re-declares the press flash", () =
   );
 });
 
+/* `vh` is the browser's promise about a bar that moves; the phone units are the
+ * truth, and which one is right is a decision rather than a default:
+ *
+ *   dvh — must fit the screen AS IT IS NOW. Overlays, dropdowns, scroll panes.
+ *   svh — must NOT move when the bar does. Section floors, padding, and images
+ *         in the flow, where re-sizing mid-scroll is jitter the reader sees.
+ *
+ * The one that survived longest was `.win-body`, which had 60vh inside a min()
+ * against 100dvh — so a retracting bar grew one term and left the other, and
+ * which of the two was the real cap could change halfway through a scroll.
+ */
+test("no bare vh survives, where a phone unit was meant", () => {
+  const bare: string[] = [];
+
+  for (const sheet of STYLESHEETS) {
+    const lines = uncommented(readFileSync(join(ROOT, sheet), "utf8")).split("\n");
+    lines.forEach((line, i) => {
+      /* Only a value: `60vh`. Not `60dvh`, and not the word inside prose,
+         which is why the comments are blanked first — the rule this guard
+         exists for is explained in a comment that quotes the old value. */
+      for (const m of line.matchAll(/(?<![a-z])[0-9.]+vh\b/g)) {
+        bare.push(`${sheet}:${i + 1}: ${m[0]} — ${line.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(
+    bare,
+    [],
+    `a bare vh is left; choose dvh (must fit now) or svh (must not ` +
+      `move):\n  ${bare.join("\n  ")}`,
+  );
+});
+
+/* The insets are worth nothing without the viewport that turns them on, and
+   worse than nothing the other way round: `cover` alone runs the map's chrome
+   under the notch and the home indicator. They travel together or not at all. */
+test("the safe area is asked for and answered", () => {
+  const layout = readFileSync(join(ROOT, "app/layout.tsx"), "utf8");
+  const css = uncommented(readFileSync(join(ROOT, "app/globals.css"), "utf8"));
+
+  const cover = /viewportFit:\s*["']cover["']/.test(layout);
+  const uses = /var\(--safe-[trbl]\)/.test(css);
+
+  assert.equal(
+    cover,
+    uses,
+    cover
+      ? "viewportFit is cover but nothing reads --safe-*: the chrome is now " +
+        "under the notch."
+      : "something reads --safe-* but the viewport never asks for the whole " +
+        "screen, so env() resolves to zero and the insets do nothing.",
+  );
+  /* And the tokens themselves have to come from env(), not from a number
+     somebody measured on their own handset. */
+  assert.match(css, /--safe-b:\s*env\(safe-area-inset-bottom/);
+});
+
 /** Selectors declared inside each responsive block of the stylesheet. */
 function blocksOf(source: string) {
   const lines = uncommented(source).split("\n");

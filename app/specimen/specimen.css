@@ -67,7 +67,10 @@
   --voice-machine: var(--ink-soft);
 
   position: relative;
-  min-height: 100vh;
+  /* svh, not dvh: this is a page floor rather than an overlay, and a floor
+     that grows when the browser bar retracts moves the whole document under
+     the reader's thumb. */
+  min-height: 100svh;
   background: var(--parchment);
   color: var(--ink);
   font-family: var(--font-text), Georgia, serif;

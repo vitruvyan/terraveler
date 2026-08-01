@@ -257,6 +257,29 @@ exception.
   viewport width is written by hand in TypeScript, or if the count of split
   selectors grows.
 
+- **`vh` is a promise about a bar that moves; choose the unit, do not default
+  to one.** `dvh` for anything that must fit the screen *as it is now* —
+  overlays, dropdowns, scroll panes — because a retracting bar should give them
+  room rather than leave them clipped. `svh` for anything that must **not** move
+  when the bar does: section floors, padding, images in the flow, where
+  re-sizing mid-scroll is a reflow the reader feels as jitter. Reaching for
+  `dvh` everywhere is the common mistake and it makes documents twitch. The one
+  that survived longest here was `.win-body`, which held `60vh` inside a `min()`
+  against `100dvh` — so a retracting bar grew one term and left the other, and
+  which of the two was the real cap could change halfway through a scroll.
+  `test/layout.test.ts` fails on a bare `vh`.
+
+- **The safe area is unreachable until the document asks for the whole screen,
+  and harmful the moment it does.** `env(safe-area-inset-*)` resolves to **zero**
+  under the default viewport, so those four values could have been written into
+  this stylesheet at any point in the last year and changed nothing. Turning
+  them on is `viewportFit: "cover"` in `app/layout.tsx` — and `cover` without
+  insets is strictly worse than neither, because it runs the map's chrome under
+  the notch and the home indicator. They ship together; a guard enforces it. The
+  bottom one is folded into `--edge`, which the entire derived stack rides on,
+  so the home indicator is answered in one place rather than six that would then
+  have to be kept in agreement.
+
 - **A z-index only orders you against your siblings.** The map's panels sat
   under the lens rail, the launcher and the transport bar for months while
   carrying `z-index: 30` against their 6, 7 and 11 — because they live inside
@@ -381,11 +404,10 @@ it was measured.
 
 **What is owed, in the order it is owed:**
 
-- **The viewport unit, and the ground under it.** `vh` is the browser's promise
-  about a bar that moves; `dvh` is the truth. This is the first item because it
-  is what makes the site robust on a real phone *today* — a lightbox and the chat
-  currently run under the browser's own bar — and because an installable app
-  makes the same defect permanent as the safe area, where no scroll recovers it.
+- ~~The viewport unit, and the ground under it.~~ **Repaid** — see the debt list.
+  It was first because it is what makes the site robust on a real phone today,
+  and because an installable app would have made the same defect permanent as
+  the safe area, where no scroll recovers it.
 
 - **Hover does not exist under a finger.** Repaid: all 78 rules are gated and a
   guard holds the line. What remains is the **63 `title=`** tooltips — Close,
@@ -563,12 +585,19 @@ are editing is already migrated; check it. As of the typography commit:
   the note collapsed, the launcher made round and the top edge made one row.
   Measure it, do not estimate it: `.hist-note` was 12.9% of the screen and
   nobody had noticed, because it looked like a caption.
-- **`vh` where `dvh` is meant**: **17 against 3** (2 `dvh`, 1 `svh`/`lvh`) —
-  re-counted, and it had drifted from the 15 this line used to claim. The file
-  already knows the difference (`.win-body`, the Pigafetta dock); it was not
-  propagated, so a lightbox and the chat run under the browser's own bar. In the
-  app the same defect arrives as the safe area, where it is not recoverable by
-  scrolling.
+- **The viewport unit and the safe area are repaid.** No bare `vh` remains in
+  either stylesheet: 14 `dvh` where a thing must fit the screen now, 6 `svh`
+  where it must not move, each classified by what the rule is for rather than
+  converted wholesale. `viewportFit: "cover"` is declared — there was no
+  `viewport` export at all, so `env()` had been resolving to zero — and the four
+  `--safe-*` tokens are read by `--edge` (and through it the whole bottom
+  stack), `.map-top` and the lens rail. Two guards: no bare `vh`, and cover and
+  the insets may not ship without each other.
+
+  **Not verified on a device.** There is no headless browser on the build
+  machine, so nothing here was measured at 390×844 the way c5ff173 was, and a
+  notch cannot be simulated by reading CSS. The insets are believed correct and
+  have not been seen.
 - **The token layer is still authored in CSS**, which the canvas makes a defect
   rather than a choice: MapLibre and Three.js cannot read a custom property, so
   every colour they draw is either a literal or a runtime read off a container.

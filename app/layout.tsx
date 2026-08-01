@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { LAYOUT_SCRIPT } from "@/lib/layout";
 import "./globals.css";
@@ -39,6 +39,25 @@ const machine = localFont({
 const SITE_URL = "https://www.terraveler.com";
 const SITE_DESCRIPTION =
   "A curated atlas of geo-history: the great voyages of exploration, told on maps from the navigators' own journals, every claim sourced. Written by AI under human command.";
+
+/* There was no viewport declared at all, so Next served its default and
+   `env(safe-area-inset-*)` resolved to zero everywhere — the safe area was not
+   ignored, it was unreachable. `cover` is what asks for the whole screen and
+   therefore what turns the four --safe-* tokens on; it ships in the same
+   commit as their first use, because cover without insets runs the map's
+   chrome under the notch and the home indicator and is worse than neither.
+
+   themeColor is the parchment because the page now reaches the browser's own
+   bars, so their colour has stopped being the browser's business and become
+   the paper's. The dark register is a chosen theme rather than an OS
+   preference — the same argument that made `color-scheme` a declaration — so
+   there is no prefers-color-scheme pair here. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#f2e6cf",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
