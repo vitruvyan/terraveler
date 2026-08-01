@@ -24,8 +24,13 @@ from app.chat_graph import run_chat
 
 EMBED_URL = os.getenv("EMBED_URL", "http://terraveler_embedding:8010")
 TOKEN = os.getenv("RAG_TOKEN", "")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
+# The chronicler writes through Anthropic. He wrote through OpenAI until that
+# account's credit ran out, which took every voyage WITH sources offline while
+# the two that have none kept answering — the failure was invisible from the
+# outside because the graph declined those two politely and 500'd the rest.
+# The key was already being passed to this container and never read.
+ANTHROPIC_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-opus-5")
 PG = dict(
     host=os.getenv("PGHOST", "terraveler_postgres"),
     port=int(os.getenv("PGPORT", "5432")),
@@ -36,7 +41,8 @@ PG = dict(
 DEFAULT_VOYAGE = "boudeuse-1766"
 
 CHAT_CTX = SimpleNamespace(
-    embed_url=EMBED_URL, pg=PG, openai_key=OPENAI_KEY, openai_model=OPENAI_MODEL, k=8)
+    embed_url=EMBED_URL, pg=PG,
+    anthropic_key=ANTHROPIC_KEY, anthropic_model=ANTHROPIC_MODEL, k=8)
 
 app = FastAPI(title="Terraveler RAG + Chat API", version="2.0.0")
 
@@ -65,6 +71,12 @@ def _ensure_trace_table():
                   created_at  timestamptz default now()
                 );
             """)
+            # Added after the fact, so it is an ALTER rather than part of the
+            # CREATE above — the table exists in production and this file has
+            # to be safe to re-run. Null means the chronicler wrote, or
+            # declined on the evidence; a value names the exception class that
+            # stopped him. Two silences, one column apart.
+            cur.execute("alter table chat_traces add column if not exists failure text;")
         conn.close()
     except Exception as e:
         print(f"⚠ chat_traces ensure failed: {e}")
@@ -98,7 +110,12 @@ def health():
         pg = True
     except Exception:
         pg = False
-    return {"status": "healthy" if pg else "degraded", "pg": pg, "openai": bool(OPENAI_KEY)}
+    # `writer` rather than the provider's name: this line is a health probe, and
+    # naming the vendor in it is how the old one kept saying `openai: true` with
+    # an exhausted account behind it. It reports that a key is configured, which
+    # is all a key can tell you — whether it still buys anything is what the
+    # `failure` column on chat_traces is for.
+    return {"status": "healthy" if pg else "degraded", "pg": pg, "writer": bool(ANTHROPIC_KEY)}
 
 
 @app.post("/rag/search")
@@ -129,8 +146,8 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
     _require(authorization)
     if not req.question or not req.question.strip():
         raise HTTPException(status_code=400, detail="empty question")
-    if not OPENAI_KEY:
-        raise HTTPException(status_code=503, detail="OPENAI_API_KEY not configured on the backend")
+    if not ANTHROPIC_KEY:
+        raise HTTPException(status_code=503, detail="ANTHROPIC_API_KEY not configured on the backend")
     voyage = req.voyage or DEFAULT_VOYAGE
 
     answer, sources, trace, meta = run_chat(CHAT_CTX, req.question, voyage)
@@ -142,10 +159,11 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
             cur.execute("""
                 insert into chat_traces
                   (trace_id, voyage_slug, question, answerable, top_similarity,
-                   n_sources, answer, trace)
-                values (%s,%s,%s,%s,%s,%s,%s,%s)
+                   n_sources, answer, trace, failure)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """, (meta["trace_id"], voyage, req.question, meta["answerable"],
-                  meta["top_similarity"], meta["n_sources"], answer, json.dumps(trace)))
+                  meta["top_similarity"], meta["n_sources"], answer,
+                  json.dumps(trace), meta.get("failure")))
         conn.close()
     except Exception as e:
         print(f"⚠ could not persist chat trace: {e}")

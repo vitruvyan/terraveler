@@ -18,6 +18,7 @@ import json
 import urllib.request
 from datetime import datetime, timezone
 
+import anthropic
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -26,12 +27,34 @@ from axis.state import Fact, Decision, Rejection
 
 RELEVANCE_THRESHOLD = 0.35  # cosine similarity below which we decline to answer
 
+# Two clauses here are not stylistic and were both written after watching the
+# answer land in the actual bubble.
+#
+#   THE LANGUAGE. "Reply in the user's language" read as a hint about who was
+#   being served, and the model took its cue from the sources instead: an
+#   English question about Cook's Endeavour came back in Spanish, fluently and
+#   entirely wrongly. This corpus is multilingual by construction — Bernal
+#   Díaz is Spanish, Pigafetta is Italian, Cook is English — so "the user's
+#   language" has to name the QUESTION as the thing it is read from, or the
+#   passages win.
+#
+#   THE MARKDOWN. components/Pigafetta.tsx renders the answer as text in a
+#   div; there is no markdown parser behind it and adding one is not the fix.
+#   Un-instructed, the model returns headings and **bold**, and the reader gets
+#   literal asterisks in a chat bubble on a site whose argument is typography.
+#   The prose voice is also the right one here: this is a chronicler speaking,
+#   not a report with sections.
 SYSTEM_PROMPT = (
     "You are Antonio Pigafetta, chronicler of great voyages. Answer the user's "
     "question ONLY from the numbered sources below, which come from the ship's "
     "journals and reference works for the voyage in question. Cite the sources "
     "you use inline as [n]. If the answer is not in the sources, say plainly that "
-    "the sources do not tell. Reply in the user's language. Be concise, accurate and vivid."
+    "the sources do not tell. "
+    "Answer in the language the QUESTION is written in, whatever language the "
+    "sources happen to be in. "
+    "Write plain prose only: no Markdown, no headings, no asterisks, no bullet "
+    "lists, no bold. Short paragraphs. "
+    "Be concise, accurate and vivid — a few sentences unless more is truly asked for."
 )
 
 
@@ -49,6 +72,9 @@ class Bag:
         self.top_sim = 0.0
         self.answerable = False
         self.answer = ""
+        # None while nothing has gone wrong. Set to an exception class name
+        # when the writing model could not be reached — see generate_node.
+        self.failure = None
 
 
 def _embed(embed_url, text):
@@ -60,19 +86,49 @@ def _embed(embed_url, text):
         return json.load(r)["embedding"]
 
 
-def _openai(api_key, model, question, docs):
+def _compose(api_key, model, question, docs):
+    """Write the answer from the retrieved passages.
+
+    The chronicler wrote through OpenAI until the credit ran out, and the way
+    it failed is the reason this function is shaped as it is: `urllib` raised
+    an HTTPError, the exception left the graph, and FastAPI turned it into a
+    bare 500 — no trace persisted, no decision recorded, a pipeline whose whole
+    claim is auditability going silent at exactly the moment there was
+    something to audit. The provider moved to Anthropic (the key was already in
+    the compose file and unused); the honesty is in generate_node below.
+
+    Sources are numbered here and cited as [n] by the prompt, so a reader can
+    walk any sentence back to the passage it came from. Effort stays low and
+    thinking stays adaptive: this is composition from passages already in hand,
+    not reasoning, and a chat window is waiting.
+
+    THE LANGUAGE RULE IS REPEATED HERE, LAST, AND THAT IS THE POINT. Stated
+    only in the system prompt it lost twice to the passages: an English
+    question about Cook came back in Spanish, and "Who was Jeanne Barret?" came
+    back in French, because the sources that answer her are French and they are
+    the nearest thing to the answer. Eight retrieved passages are a great deal
+    of text in one language sitting between the instruction and the writing.
+    Putting it after the question makes it the last thing read, which is what
+    it took — the wording did not change, its position did.
+    """
     context = "\n\n".join(f"[{i+1}] ({d['title']})\n{d['content']}"
                           for i, d in enumerate(docs))
-    body = {"model": model, "temperature": 0.3, "messages": [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"Sources:\n{context}\n\nQuestion: {question}"},
-    ]}
-    req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
-        data=json.dumps(body).encode(),
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {api_key}"})
-    with urllib.request.urlopen(req, timeout=90) as r:
-        return json.load(r)["choices"][0]["message"]["content"]
+    prompt = (
+        f"Sources:\n{context}\n\nQuestion: {question}\n\n"
+        "Answer the question above in the SAME LANGUAGE THE QUESTION IS WRITTEN "
+        "IN. The sources may be in other languages; that does not change which "
+        "language you answer in. Plain prose, no Markdown."
+    )
+    client = anthropic.Anthropic(api_key=api_key)
+    msg = client.messages.create(
+        model=model,
+        max_tokens=4000,
+        system=SYSTEM_PROMPT,
+        output_config={"effort": "low"},
+        messages=[{"role": "user", "content": prompt}],
+        timeout=90.0,
+    )
+    return "".join(b.text for b in msg.content if b.type == "text").strip()
 
 
 # ---------------------------------------------------------------- nodes
@@ -119,15 +175,51 @@ def evaluate_node(ctx, bag):
 
 
 def generate_node(ctx, bag):
+    """The last node, and the one that has to distinguish two silences.
+
+    A voyage whose sources do not cover the question, and a chronicler who
+    cannot write today, are not the same absence — and for a year this graph
+    only knew how to declare the first. The second arrived as a stack trace:
+    the LLM call raised, the exception escaped run_chat, and main.py never
+    reached the line that persists the trace, so the one failure with an
+    external cause left no record at all. The reader was told "the chronicler
+    is unavailable", which is true and says nothing, and an operator looking at
+    chat_traces saw no row and concluded nothing had happened.
+
+    Both are declared now, in the atlas's own grammar: a Rejection carrying the
+    motive, a trace that is written either way, and a sentence to the reader
+    that says WHICH silence this is. The sources travel with it — they were
+    retrieved successfully and are the same passages the answer would have
+    quoted, so a reader who came for the record still gets the record. This is
+    the Carta's rule about a burnt archive, applied to our own machinery: an
+    absence is stated, never disguised as an answer or as an empty page.
+    """
     def node(state):
-        if bag.answerable:
-            bag.answer = _openai(ctx.openai_key, ctx.openai_model, bag.question, bag.docs)
+        if not bag.answerable:
+            bag.answer = ("The sources at hand do not tell of this. Ask me something "
+                          "closer to the voyage's journals, and I will answer from them.")
+            return state.with_decision(Decision(
+                "Declined: answered 'sources do not tell' (no LLM call)", _now()))
+        try:
+            bag.answer = _compose(ctx.anthropic_key, ctx.anthropic_model,
+                                  bag.question, bag.docs)
             return state.with_fact(Fact("answered", 1, "generate", _now())) \
                         .with_decision(Decision("Generated grounded answer from sources", _now()))
-        bag.answer = ("The sources at hand do not tell of this. Ask me something "
-                      "closer to the voyage's journals, and I will answer from them.")
-        return state.with_decision(Decision(
-            "Declined: answered 'sources do not tell' (no LLM call)", _now()))
+        except Exception as e:
+            # The class, not the text: a message can carry a key or a URL, and
+            # this string is persisted to chat_traces and shown to a reader.
+            bag.failure = type(e).__name__
+            bag.answer = (
+                f"The passages are before me — {len(bag.docs)} of them, from this "
+                "voyage's own sources — but I cannot compose from them at this "
+                "moment: the hand that writes my answers is not responding. "
+                "Nothing is missing from the record. The sources are listed "
+                "below; they are the ones I would have quoted."
+            )
+            print(f"⚠ generate failed ({bag.failure}): {e}")
+            return state.with_rejection(Rejection(
+                "compose an answer from sufficient sources",
+                f"the writing model was unreachable ({bag.failure})", _now()))
     node.__name__ = "generate"
     return node
 
@@ -146,6 +238,12 @@ def run_chat(ctx, question, voyage):
         "title": d["title"], "source_url": d["source_url"], "type": d["type"],
         "media_url": d["media_url"], "credit": d["credit"],
     } for d in bag.docs]
+    # `answerable` is the EVIDENCE verdict and keeps its meaning: the sources
+    # were sufficient. `failure` is separate and says whether the writing model
+    # could be reached. A row with answerable=true and a failure set is the
+    # shape an operator wants to be able to count — it is our outage, not a
+    # gap in the atlas, and collapsing the two would hide exactly that.
     meta = {"trace_id": trace_id, "answerable": bag.answerable,
-            "top_similarity": bag.top_sim, "n_sources": len(bag.docs)}
+            "top_similarity": bag.top_sim, "n_sources": len(bag.docs),
+            "failure": bag.failure}
     return bag.answer, sources, final.to_dict(), meta

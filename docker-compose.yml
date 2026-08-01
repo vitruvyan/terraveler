@@ -89,9 +89,12 @@ services:
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       RAG_TOKEN: ${RAG_TOKEN}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # The chronicler writes through Anthropic. OPENAI_* is gone rather than
+      # kept as a fallback: a second provider nobody exercises is a path that
+      # rots, and this one had already rotted in place — the key was passed in
+      # for weeks and read by nothing, while the account it named ran dry.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5}
       PGHOST: terraveler_postgres
       PGPORT: 5432
       PGDATABASE: terraveler

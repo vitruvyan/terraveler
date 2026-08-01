@@ -21,10 +21,23 @@ const GREETING: Msg = {
     "voyage — I answer only from the ship's journals and sources, and cite them.",
 };
 
-const SUGGESTIONS = [
+/* Three questions to start with. They were Bougainville's, and they were shown
+   on every voyage — which was invisible while the chronicler only ever appeared
+   on Bougainville's own map. He sails with all of them now, and "Who was Jeanne
+   Barret?" offered on the Sea of Tranquility is a prompt that teaches the
+   reader the assistant is not listening. Anything not the home voyage gets
+   openers phrased about THIS voyage's record, which is the one thing every
+   voyage in the atlas has. */
+const HOME_SUGGESTIONS = [
   "Why was Tahiti called New Cythera?",
   "What happened in the Strait of Magellan?",
   "Who was Jeanne Barret?",
+];
+
+const SUGGESTIONS = [
+  "What happened at the first landfall?",
+  "Who kept the record of this voyage?",
+  "What went worst on the way?",
 ];
 
 function dedupe(sources: Source[]): Source[] {
@@ -49,6 +62,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
   const [busy, setBusy] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([GREETING]);
   const endRef = useRef<HTMLDivElement>(null);
+  const suggestions = !voyage || voyage === "boudeuse-1766" ? HOME_SUGGESTIONS : SUGGESTIONS;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,7 +119,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
         ))}
         {msgs.length === 1 && !busy && (
           <div className="pig-suggs">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button key={s} className="pig-sugg" onClick={() => send(s)}>
                 {s}
               </button>

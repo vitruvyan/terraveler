@@ -57,10 +57,19 @@ export default async function VoyagePage({
           body={voyage.body ?? "earth"}
         />
       )}
-      {/* Pigafetta answers where a RAG corpus exists (Bougainville, Cook). */}
-      {(slug === "boudeuse-1766" || slug === "cook-1768" || slug === "cortes-1519") && (
-        <Pigafetta voyage={slug} />
-      )}
+      {/* The chronicler sails with every voyage, including the ones that leave
+          the Earth. He was gated to three slugs — the three that had a corpus
+          the day the gate was written — and the list was never revisited: by
+          now twenty-one voyages have one and sixteen of them were hiding him.
+          A hand-kept whitelist of which pages get a feature is a list that goes
+          stale silently, which is exactly how it went stale.
+          Off Earth he has no corpus at all yet, and that is not a reason to
+          hide him: asked, he says the sources do not tell — which is the answer
+          this atlas gives everywhere it has nothing, and the reader learns
+          something true about the record rather than meeting a blank corner.
+          See MAGNA_CARTA: an absence is declared, not concealed. */}
+      <Pigafetta voyage={slug} />
+
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
