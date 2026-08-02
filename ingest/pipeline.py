@@ -1,12 +1,18 @@
 """The Terraveler ingestion pipeline as Axis Nodes.
 
-Four pure-ish nodes run through the Axis Runner:
+Nodes run through the Axis Runner:
 
-    load_sources → chunk → embed → upsert
+    load_sources → codex (restore·bind) → chunk → embed → upsert
 
 GraphState carries the AUDIT (counts, decisions, rejections) — the immutable
 trace the human inspects. Bulk data (chunks, vectors) flows through a side
 `Corpus` object, because GraphState is a ledger, not a data bus.
+
+codex_restore_node and codex_bind_node (codex.py) are the Codex Hunters
+pattern from vitruvyan-core: structural repair + a scored quality gate +
+audited dedupe, then binding editions of the same text to one WORK. They sit
+between the harvest (load_sources / discovery's fetch, which already play
+the canonical Tracker's role) and chunk.
 
 Embedding is delegated to terraveler_embedding (nomic, 768-d) over the internal
 Docker network; storage is pgvector. No tokens, no Qdrant.
@@ -25,6 +31,7 @@ import fetch as F
 import oculus
 import curate
 import whitelist as W
+from codex import codex_restore_node, codex_bind_node
 from sources import VOYAGE_SOURCES, IMAGES_PER_QUERY
 
 BATCH = 32
@@ -37,7 +44,12 @@ def _now():
 class Corpus:
     """Side-channel for bulk data (not part of the audit trace)."""
     def __init__(self):
-        self.raw_texts = []   # (title, url, body, license)
+        # The 5th slot is an explicit work override until codex_bind_node
+        # runs (None unless a curated source.py entry names its "work" —
+        # see codex.py), and the resolved work_id afterwards. Producers
+        # (load_sources_node, discovery's fetch_node) write the override or
+        # None; codex_bind_node is the only writer of the resolved work_id.
+        self.raw_texts = []   # (title, url, body, license, work_id_or_override)
         self.docs = []        # final embeddable docs (dicts)
         self.candidates = []  # discovery: oculus candidates
         self.kept = []        # discovery: curator-approved candidates
@@ -106,13 +118,18 @@ def load_sources_node(ctx, corpus):
                 state = state.with_decision(Decision(
                     f"licence gate passed: {s.get('title', s['url'])[:60]} — "
                     f"{lic} → stored as '{label}'", _now()))
-                corpus.raw_texts.append((s["title"], s.get("source_url", s["url"]), body, label))
+                # An optional "work" key names the Codex Hunters bind explicitly
+                # (codex.py: codex_bind_node) — for the cases its title heuristic
+                # cannot reach, chiefly cross-language editions that share no text
+                # to compare, only a subject.
+                corpus.raw_texts.append(
+                    (s["title"], s.get("source_url", s["url"]), body, label, s.get("work")))
                 n_txt += 1
             elif s["kind"] == "wikipedia":
                 for t in s["titles"]:
                     body = F.fetch_wikipedia(s["lang"], t)
                     url = f"https://{s['lang']}.wikipedia.org/wiki/" + t.replace(" ", "_")
-                    corpus.raw_texts.append((f"Wikipedia — {t}", url, body, s["license"]))
+                    corpus.raw_texts.append((f"Wikipedia — {t}", url, body, s["license"], None))
                     n_txt += 1
         n_img = 0
         for q in cfg.get("image_queries", []):
@@ -130,7 +147,8 @@ def load_sources_node(ctx, corpus):
                 corpus.docs.append({
                     "voyage_slug": ctx.voyage, "type": "image", "title": im["title"],
                     "content": content, "source_url": im["page"], "license": im["license"],
-                    "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None})
+                    "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None,
+                    "work_id": None})
                 n_img += 1
         state = state.with_fact(Fact("text_sources", n_txt, "load_sources", _now()))
         state = state.with_fact(Fact("image_docs", n_img, "load_sources", _now()))
@@ -144,13 +162,14 @@ def load_sources_node(ctx, corpus):
 def chunk_node(ctx, corpus):
     def node(state):
         n = 0
-        for title, url, body, lic in corpus.raw_texts:
+        for title, url, body, lic, work_id in corpus.raw_texts:
             cs = F.chunk(body)
             for i, c in enumerate(cs):
                 corpus.docs.append({
                     "voyage_slug": ctx.voyage, "type": "text", "title": title,
                     "content": c, "source_url": url, "license": lic,
-                    "credit": None, "media_url": None, "chunk_index": i})
+                    "credit": None, "media_url": None, "chunk_index": i,
+                    "work_id": work_id})
                 n += 1
         if ctx.limit:
             corpus.docs = corpus.docs[:ctx.limit]
@@ -244,12 +263,12 @@ def upsert_node(ctx, corpus):
                 execute_values(cur, """
                     INSERT INTO rag_docs
                       (voyage_slug, type, title, content, source_url, license,
-                       credit, media_url, chunk_index, embedding)
+                       credit, media_url, chunk_index, embedding, work_id)
                     VALUES %s
                 """, [(
                     d["voyage_slug"], d["type"], d["title"], d["content"],
                     d["source_url"], d["license"], d["credit"], d["media_url"],
-                    d["chunk_index"], d["embedding"],
+                    d["chunk_index"], d["embedding"], d.get("work_id"),
                 ) for d in rows])
             conn.commit()
         finally:
@@ -265,6 +284,8 @@ def upsert_node(ctx, corpus):
 def build_nodes(ctx, corpus):
     return [
         load_sources_node(ctx, corpus),
+        codex_restore_node(ctx, corpus),
+        codex_bind_node(ctx, corpus),
         chunk_node(ctx, corpus),
         embed_node(ctx, corpus),
         upsert_node(ctx, corpus),
@@ -316,7 +337,7 @@ def fetch_node(ctx, corpus):
                     body = F.fetch_gutenberg(c["url"])
                 else:
                     body = F.fetch_wikipedia(c["lang"], c["title"])
-                corpus.raw_texts.append((c["title"], c["source_url"], body, c["license"]))
+                corpus.raw_texts.append((c["title"], c["source_url"], body, c["license"], None))
                 n += 1
             except Exception as e:
                 state = state.with_rejection(Rejection(
@@ -335,7 +356,8 @@ def fetch_node(ctx, corpus):
                 corpus.docs.append({
                     "voyage_slug": ctx.voyage, "type": "image", "title": im["title"],
                     "content": content, "source_url": im["page"], "license": im["license"],
-                    "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None})
+                    "credit": im["credit"] or None, "media_url": im["img"], "chunk_index": None,
+                    "work_id": None})
                 n_img += 1
         state = state.with_fact(Fact("fetched_texts", n, "fetch", _now()))
         state = state.with_fact(Fact("image_docs", n_img, "fetch", _now()))
@@ -349,6 +371,8 @@ def build_discovery_nodes(ctx, corpus):
         discover_node(ctx, corpus),
         curate_node(ctx, corpus),
         fetch_node(ctx, corpus),
+        codex_restore_node(ctx, corpus),
+        codex_bind_node(ctx, corpus),
         chunk_node(ctx, corpus),
         embed_node(ctx, corpus),
         upsert_node(ctx, corpus),

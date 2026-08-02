@@ -11,7 +11,12 @@ VOYAGE_SOURCES = {
              "title": "Bougainville — A Voyage Round the World (trans. Forster, 1772)",
              "url": "https://www.gutenberg.org/cache/epub/73429/pg73429.txt",
              "source_url": "https://www.gutenberg.org/ebooks/73429",
-             "license": "Public domain"},
+             "license": "Public domain",
+             # Codex Hunters bind (codex.py): the English translation and the
+             # French original share no text to compare, only a subject — the
+             # title heuristic can't reach across languages, so the work is
+             # named explicitly rather than left to an accident of phrasing.
+             "work": "voyage-autour-du-monde"},
             {"kind": "gutenberg",
              "title": "Diderot — Supplément au Voyage de Bougainville",
              "url": "https://www.gutenberg.org/cache/epub/6501/pg6501.txt",
@@ -21,7 +26,8 @@ VOYAGE_SOURCES = {
              "title": "Bougainville — Voyage autour du monde (French, 1771)",
              "url": "https://www.gutenberg.org/cache/epub/28485/pg28485.txt",
              "source_url": "https://www.gutenberg.org/ebooks/28485",
-             "license": "Public domain"},
+             "license": "Public domain",
+             "work": "voyage-autour-du-monde"},
             {"kind": "wikipedia", "lang": "en", "license": "CC BY-SA 4.0",
              "titles": ["Louis Antoine de Bougainville", "Tahiti", "Ahutoru",
                         "Jeanne Barret", "Philibert Commerson", "Noble savage",

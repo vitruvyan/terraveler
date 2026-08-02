@@ -16,6 +16,7 @@ create table if not exists rag_docs (
   media_url   text,               -- images: the actual image URL
   chunk_index int,
   embedding   vector(768),
+  work_id     text,               -- Codex Hunters: editions bound to one work (null for images)
   created_at  timestamptz default now()
 );
 

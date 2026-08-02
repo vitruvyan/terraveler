@@ -17,16 +17,17 @@ sourced knowledge. A Vitruvyan EOOD project.
   - `terraveler_postgres` — pgvector (768-d)
   - `terraveler_embedding` — nomic text+vision, self-hosted, **zero-token**
   - `terraveler_rag` — `/chat` (the **AXIS-orchestrated** Pigafetta pipeline) + `/rag/search`
-  - `terraveler_ingest` — **AXIS** batch: `discover → curate → fetch → chunk → embed → upsert`
+  - `terraveler_ingest` — **AXIS** batch: `discover → curate → fetch → codex (restore·bind) → chunk → embed → upsert`
 
 ## The content pipeline (product agents)
 Orchestrated by **AXIS** (immutable GraphState trace = the audit):
 1. **Oculus** — harvests candidate sources over a strict **whitelist**
    (Gutenberg, Wikipedia/Wikisource, Commons — PD/CC only). Never spiders the open web.
 2. **Curator** (gpt-4.1, scored 0-3 rubric) — drops off-topic noise; every drop is auditable.
-3. **Embed** — self-hosted nomic → pgvector.
-4. **Pigafetta** (gpt-4.1) — answers ONLY from retrieved sources and cites them; guarded by the AXIS `evaluate` gate.
-5. **Human (Desk)** — authorizes publication, can retract. The Magna Carta's final authority.
+3. **Codex** (deterministic, no LLM) — harvests nothing, judges nothing: restores structurally, scores structural validity, dedupes and binds editions to works; every drop auditable in the trace.
+4. **Embed** — self-hosted nomic → pgvector.
+5. **Pigafetta** (gpt-4.1) — answers ONLY from retrieved sources and cites them; guarded by the AXIS `evaluate` gate.
+6. **Human (Desk)** — authorizes publication, can retract. The Magna Carta's final authority.
 
 ## Principles (non-negotiable)
 1. **Sources are sacred.** PD/CC whitelist only; no fabricated quotes; copyrighted sites are linked, never ingested.
