@@ -8,7 +8,12 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# The kernel, as a versioned wheel — the officers are AXIS graphs in the
+# making (Ship's Officers §6), and this container could not import the
+# kernel at all until it arrived as a package.
+COPY wheels/ /tmp/wheels/
+RUN pip install --no-cache-dir -r requirements.txt /tmp/wheels/vitruvyan_axis-*.whl \
+ && rm -rf /tmp/wheels
 COPY *.py .
 
 # The watch holds a database credential and spawns a verifier over

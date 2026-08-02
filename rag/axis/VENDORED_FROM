@@ -1,4 +1,0 @@
-vendored from github.com/vitruvyan/axis
-ref: de11c8611edff53088634499e24beac148b24bec
-commit: de11c8611edff53088634499e24beac148b24bec
-by: scripts/vendor_axis.sh — do not edit the copies; re-vendor instead
