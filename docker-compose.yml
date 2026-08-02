@@ -49,8 +49,16 @@ services:
     # noeviction is inert without a maxmemory: with one, hitting the ceiling
     # fails writes loudly instead of OOMing the VPS quietly. 256mb is years
     # of editorial events; the relay's ack policy will trim before it matters.
+    # requirepass is the ACL this comment always promised: terraveler_net
+    # carries containers that run third-party model code, one of them
+    # internet-reachable — without auth, anything on the network could XADD
+    # a forged reviews.advanced and steer the Curator, or FLUSHALL the
+    # projection. Only this service and the officers receive the password.
     command: ["redis-server", "--appendonly", "yes",
-              "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+              "--maxmemory", "256mb", "--maxmemory-policy", "noeviction",
+              "--requirepass", "${REDIS_PASSWORD}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD}   # healthcheck's redis-cli reads this
     volumes:
       - terraveler_redisdata:/data
     networks:
@@ -132,6 +140,62 @@ services:
       - "6003:8000"             # PUBLIC — Vercel calls this (bearer-token gated)
     networks:
       - terraveler_net
+
+  # The officers' watch (docs/SHIPS_OFFICERS.md §6): one container holding
+  # the relay (outbox -> wire) and one consumer group per standing-watch
+  # officer, the Curator first. The canonical pattern is one service per
+  # order (vitruvyan-core, SERVICE_PATTERN.md); at this scale the orders
+  # share a hull and keep their own consumer groups — extraction stays
+  # possible, the VPS stays light. The repo is mounted read-only: the
+  # Curator runs scripts/desk_review.py from it and writes only to the
+  # database, under its own name.
+  terraveler_officers:
+    build:
+      context: ./officers
+    image: terraveler-officers
+    container_name: terraveler_officers
+    restart: unless-stopped
+    depends_on:
+      terraveler_postgres:
+        condition: service_healthy
+      terraveler_redis:
+        condition: service_healthy
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@terraveler_redis:6379
+      PGHOST: terraveler_postgres
+      PGPORT: "5432"
+      PGDATABASE: terraveler
+      PGUSER: terraveler
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      REPO: /repo
+      OFFICERS_MOORED: ${OFFICERS_MOORED:-0}
+    volumes:
+      # Narrow on purpose: the Curator needs the scripts, their ingest
+      # imports and the Carta — not the .env holding every key this
+      # deployment owns. What is not mounted cannot leak.
+      - ./scripts:/repo/scripts:ro
+      - ./ingest:/repo/ingest:ro
+      - ./MAGNA_CARTA.md:/repo/MAGNA_CARTA.md:ro
+    ports:
+      - "127.0.0.1:6005:8080"   # /health, localhost only
+    networks:
+      - terraveler_net
+    mem_limit: 768m
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      # Strict: degraded (503) is unhealthy — a watch that never beat or a
+      # relay that stopped shipping must be visible from `docker ps`.
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5).status == 200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   # Governance API: the same PostgREST dialect Supabase speaks, so the desk,
   # /contribute and the MCP server move over by changing a base URL rather

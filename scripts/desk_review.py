@@ -75,6 +75,10 @@ CONFIDENCE = {"certain", "approximate", "reconstructed", "contested"}
 # shared, and the two must be kept in step by hand if the Carta's review
 # requirement ever changes.
 REVIEWS_TO_ADVANCE = 2
+# Cap on a single source fetch. Verification runs unattended under the
+# officers' watch; a djvu scan is tens of MB, a book is a few — anything
+# beyond this is not a source we can locate a span in at this scale.
+MAX_FETCH_BYTES = 30 * 1024 * 1024
 
 
 def carta_version() -> str:
@@ -113,7 +117,24 @@ def fetch(url: str) -> str:
         return _cache[url]
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=120) as r:
-        body = r.read().decode("utf-8", "replace")
+        # The whitelist was checked against the URL we asked for; urlopen
+        # follows redirects, so the guarantee must be re-established against
+        # the URL that answered. A whitelisted host that open-redirects
+        # off-list would otherwise bind PD/CC provenance to a body some
+        # other server chose. And the read is capped: this runs unattended
+        # now, and an unbounded r.read() on a shared VPS is an OOM with a
+        # contributor's name on the trigger.
+        final = r.geturl()
+        if final != url:
+            ok, why = verify_source(final)
+            if not ok:
+                raise UnverifiableSource(
+                    f"redirected off-whitelist: {url} -> {final} ({why})")
+        raw = r.read(MAX_FETCH_BYTES + 1)
+        if len(raw) > MAX_FETCH_BYTES:
+            raise UnverifiableSource(
+                f"source larger than {MAX_FETCH_BYTES >> 20}MB: {url}")
+        body = raw.decode("utf-8", "replace")
         ctype = r.headers.get("Content-Type", "")
     _cache[url] = source_text(body, ctype)
     return _cache[url]
@@ -364,18 +385,37 @@ def record(cur, res: dict, carta: str) -> None:
                              "mechanical checks passed but the review dossier is short")
             status = None
     if status:
-        cur.execute("update submissions set status=%s, updated_at=now() where id=%s",
-                    (status, res["id"]))
-    # Written on every pass, verdict or not. The publisher reads this and
-    # nothing else: a span located in the source, with the offset, the length
-    # and the hash of the exact bytes it was found in. Without it the atlas
-    # published `evidence.quote` — the contributor's own typing — for every
-    # submission that arrived through MCP rather than through the pipeline.
-    cur.execute("insert into verified_spans (submission_id, spans, carta_version) "
-                "values (%s,%s,%s) on conflict (submission_id) do update "
-                "set spans = excluded.spans, carta_version = excluded.carta_version, "
-                "verified_at = now()",
-                (res["id"], psycopg2.extras.Json(res["verified_spans"]), carta))
+        # The world may have moved during this pass: verification fetches
+        # sources for minutes, and in that window the editor may have ruled
+        # or the contributor may have appealed — and ruling on an appeal is
+        # the one thing the Curator's commission forbids (Carta §5, Ship's
+        # Officers §4.1). So the transition is conditional on the submission
+        # still being in a state this desk may rule from, and a lost race
+        # records nothing: the ledger must not hold a Curator verdict that
+        # never took effect.
+        cur.execute(
+            "update submissions set status=%s, updated_at=now() "
+            " where id=%s and status in ('submitted','peer-review','human-review')",
+            (status, res["id"]))
+        if cur.rowcount == 0:
+            res["verdict"] = "superseded"
+            res["reason"] = ("the submission changed hands during verification "
+                             "(editor's verdict, or an appeal) — nothing recorded")
+            return
+    # Written when the pass located anything, verdict or not. The publisher
+    # reads this and nothing else: a span located in the source, with the
+    # offset, the length and the hash of the exact bytes it was found in.
+    # Without it the atlas published `evidence.quote` — the contributor's own
+    # typing — for every submission that arrived through MCP rather than
+    # through the pipeline. An EMPTY pass, though, writes nothing: a run
+    # where every source was unreachable must not overwrite spans a previous
+    # run located — evidence is replaced by evidence, never by absence.
+    if res["verified_spans"]:
+        cur.execute("insert into verified_spans (submission_id, spans, carta_version) "
+                    "values (%s,%s,%s) on conflict (submission_id) do update "
+                    "set spans = excluded.spans, carta_version = excluded.carta_version, "
+                    "verified_at = now()",
+                    (res["id"], psycopg2.extras.Json(res["verified_spans"]), carta))
     # The actor is the Curator, never the editor. A verdict recorded under a
     # human's name that a human did not give is the defect this replaces.
     cur.execute(
@@ -397,8 +437,13 @@ def main() -> int:
     conn = connect()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
     if args.ids:
+        # The same status gate as the queue pass: an explicit id is a way to
+        # pick a submission out of the queue, not a way to re-rule one that
+        # has left it (approved, rejected, appealed — the editor's ground).
         cur.execute("select id,type,target_voyage,status,payload from submissions "
-                    "where id = any(%s) order by id", (args.ids,))
+                    "where id = any(%s) "
+                    "  and status in ('peer-review','human-review','submitted') "
+                    "order by id", (args.ids,))
     else:
         cur.execute("select id,type,target_voyage,status,payload from submissions "
                     "where status in ('peer-review','human-review','submitted') order by id")

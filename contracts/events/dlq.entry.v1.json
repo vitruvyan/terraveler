@@ -3,9 +3,9 @@
   "$id": "terraveler:contracts:events:dlq.entry:v1",
   "title": "dlq.entry v1",
   "stream": "ops",
-  "owner": "the dispatcher (future; no emitter yet)",
+  "owner": "audit_log trigger on action 'dead-letter' (the fact is recorded by the dispatcher; the ledger announces it)",
   "type": "object",
-  "invariants": "An event no officer could handle after retries. Its consumer is the Herald; its destination is the editor — by definition, an escalation. Field names follow the canonical Conclave DLQEntry (vitruvyan-core, transport/dlq.py) so a reader fluent in one bus reads the other; idempotency_key is sha256(stream:event_id:group) truncated, deterministic.",
+  "invariants": "An event no officer could handle after retries. Its consumer is the Herald; its destination is the editor — by definition, an escalation. Field names follow the canonical Conclave DLQEntry (vitruvyan-core, transport/dlq.py) so a reader fluent in one bus reads the other; idempotency_key is sha256(channel:ENVELOPE event_id:group) truncated — the envelope id, not the Redis entry id, so a relay re-ship of the same logical event yields the same key.",
   "required": [
     "original_stream",
     "original_event_id",

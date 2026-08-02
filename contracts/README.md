@@ -19,3 +19,9 @@ Rules of the directory:
   builds the payload from the canonical row inside the same transaction)
   and the dispatcher, which validates before seeding any officer's run
   and dead-letters what fails. Nothing between the boundaries interprets.
+- **Wire encoding**: Redis stream entries carry only strings, so on the
+  wire every envelope field is stringified (`causation_id: "1234"`) and
+  `payload` is the JSON-encoded object. The schemas in this directory
+  describe the LOGICAL types; the dispatcher decodes the wire form back
+  into them before validating. The outbox row in Postgres is the typed
+  form of record.
