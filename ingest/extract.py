@@ -54,7 +54,7 @@ from datetime import datetime, timezone
 import psycopg2
 import psycopg2.extras
 
-from axis import GraphState, Runner, Policy
+from axis import GraphState, Runner, Policy, NodeFailed
 from axis.state import Fact, Decision, Rejection
 
 import fetch as F
@@ -1550,7 +1550,14 @@ def main():
     runner = Runner(nodes, policy=policy)
 
     print(f"▶ Axis extract  voyage={args.voyage}  policy={args.policy}", file=sys.stderr)
-    final = runner.run(state)
+    # NodeFailed carries the accumulated trace of a failed run — persist it
+    # like any other, then exit non-zero after. Evidence before exit code.
+    try:
+        final = runner.run(state)
+        failure = None
+    except NodeFailed as e:
+        final = e.state
+        failure = e
     finished = datetime.now(timezone.utc)
 
     facts = {f.key: f.value for f in final.facts}
@@ -1591,6 +1598,11 @@ def main():
     print(json.dumps(summary, indent=2))
     print("─" * 60)
     print(f"✔ trace: {trace_path}", file=sys.stderr)
+
+    if failure:
+        print(f"✘ {args.voyage}: run FAILED — {failure}. Trace persisted: {trace_path}",
+              file=sys.stderr)
+        sys.exit(1)
 
     # A batch script reads the exit code, not the trace. A run that produced no
     # itinerary is a failure even though every node "completed".

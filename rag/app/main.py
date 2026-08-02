@@ -20,6 +20,7 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+from axis import NodeFailed
 from app.chat_graph import run_chat
 
 EMBED_URL = os.getenv("EMBED_URL", "http://terraveler_embedding:8010")
@@ -133,7 +134,28 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
         raise HTTPException(status_code=503, detail="OPENAI_API_KEY not configured on the backend")
     voyage = req.voyage or DEFAULT_VOYAGE
 
-    answer, sources, trace, meta = run_chat(CHAT_CTX, req.question, voyage)
+    # The chat graph runs STRICT: a failing node used to burn its own trace
+    # and this endpoint 500'd with no audit row — the runs that most needed
+    # a record left none. NodeFailed now carries the accumulated state;
+    # persist it, then fail the request honestly.
+    try:
+        answer, sources, trace, meta = run_chat(CHAT_CTX, req.question, voyage)
+    except NodeFailed as e:
+        try:
+            conn = psycopg2.connect(**PG)
+            with conn, conn.cursor() as cur:
+                cur.execute("""
+                    insert into chat_traces
+                      (trace_id, voyage_slug, question, answerable, top_similarity,
+                       n_sources, answer, trace)
+                    values (%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (e.state.trace_id, voyage, req.question, None, None,
+                      None, None, json.dumps(e.state.to_dict())))
+            conn.close()
+        except Exception as pe:
+            print(f"⚠ could not persist failed chat trace: {pe}")
+        raise HTTPException(status_code=500,
+                            detail="chat failed — the trace was recorded")
 
     # persist the Axis trace (answer-level governance / audit)
     try:

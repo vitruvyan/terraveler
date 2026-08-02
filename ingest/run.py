@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 import psycopg2
 
-from axis import GraphState, Runner, Policy
+from axis import GraphState, Runner, Policy, NodeFailed
 from pipeline import Corpus, build_nodes, build_discovery_nodes
 
 
@@ -73,7 +73,17 @@ def main():
     mode = f"discover subject={args.subject!r} curator={args.curator_model}" if args.discover else "curated-sources"
     print(f"▶ Axis ingest  voyage={args.voyage}  mode=[{mode}]  policy={args.policy}"
           f"{'  limit=' + str(args.limit) if args.limit else ''}{'  WIPE' if args.wipe else ''}")
-    final = runner.run(state)
+    # The kernel hands back the trace of a failed run (NodeFailed carries
+    # the accumulated state, ERROR event included) instead of burning it
+    # with the raise. Persist the evidence first, die loudly after — the
+    # runs that fail are exactly the ones the audit exists for. Before this,
+    # a STRICT failure left no trace file and no ingestion_runs row at all.
+    try:
+        final = runner.run(state)
+        failure = None
+    except NodeFailed as e:
+        final = e.state
+        failure = e
     finished = datetime.now(timezone.utc)
 
     facts = {f.key: f.value for f in final.facts}
@@ -114,6 +124,9 @@ def main():
     print("─" * 60)
     print(json.dumps(summary, indent=2))
     print("─" * 60)
+    if failure:
+        print(f"✘ run FAILED — {failure}. Trace persisted: /app/traces/{trace_id}.json")
+        raise SystemExit(1)
     print(f"✔ trace: /app/traces/{trace_id}.json")
 
 
