@@ -29,6 +29,8 @@ create table if not exists events (
   trace_id      uuid,               -- an officer's AXIS run, once officers
                                     -- stand watch; null for ledger-derived
                                     -- events, which have no run behind them
+  correlation_id text,              -- groups one causal chain (canonical
+                                    -- Conclave field); null starts a chain
   carta_version text not null,
   payload       jsonb not null,
   published_at  timestamptz         -- stamped by the relay, nothing else

@@ -5,24 +5,34 @@
   "stream": "ops",
   "owner": "the dispatcher (future; no emitter yet)",
   "type": "object",
-  "invariants": "An event no officer could handle after retries. Its consumer is the Herald; its destination is the editor — by definition, an escalation.",
+  "invariants": "An event no officer could handle after retries. Its consumer is the Herald; its destination is the editor — by definition, an escalation. Field names follow the canonical Conclave DLQEntry (vitruvyan-core, transport/dlq.py) so a reader fluent in one bus reads the other; idempotency_key is sha256(stream:event_id:group) truncated, deterministic.",
   "required": [
-    "stream",
-    "event_id",
-    "error"
+    "original_stream",
+    "original_event_id",
+    "consumer_group",
+    "failure_reason"
   ],
   "properties": {
-    "stream": {
+    "original_stream": {
       "type": "string"
     },
-    "event_id": {
+    "original_event_id": {
       "type": "string"
     },
-    "error": {
+    "consumer_group": {
       "type": "string"
     },
-    "attempts": {
+    "failure_reason": {
+      "type": "string"
+    },
+    "retry_count": {
       "type": "integer"
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
     }
   }
 }

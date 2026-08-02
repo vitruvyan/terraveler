@@ -200,6 +200,27 @@ follows the Vitruvyan Conclave discipline, applied at Terraveler's scale:
   reconciliation). The mycelium handles what is *causal*; timers handle
   what is *temporal*.
 
+**Wire conventions — aligned to the canonical Conclave** (vitruvyan-core,
+`synaptic_conclave/`): channels on the wire are named
+`terraveler:{stream}:{intent}`, derived by the relay from the outbox row's
+(stream, type) — e.g. `terraveler:editorial:verdict.issued`. Consumer
+groups are `group:{officer}`; delivery is at-least-once (XREADGROUP + ACK,
+PEL drained on restart, handlers idempotent by event_id); consumers create
+their stream if missing (`mkstream` — consumer autonomy); streams trim at
+MAXLEN ~100k approximate. The DLQ is one stream, `terraveler:dlq`, whose
+entry shape follows the canonical DLQEntry (`contracts/events/dlq.entry`),
+idempotency key deterministic. The envelope carries `correlation_id`
+(chain), `causation_id` (parent) and `trace_id` (root), as the canonical
+CognitiveEvent does.
+
+One deliberate divergence, documented rather than smoothed over: the
+canonical producer is a direct XADD, fire-and-store; Terraveler produces
+through the **outbox, inside the state change's own transaction** (§7).
+That is stronger, and it is not a stylistic preference — here the ledger
+is the authority and the bus is a projection of it, so an announcement
+must not be able to exist without its fact or vice versa. From the
+consumer's side of the wire the two are indistinguishable.
+
 ### 5.1 Stream `terraveler:editorial`
 
 | Event | Emitted when | Woken consumers |

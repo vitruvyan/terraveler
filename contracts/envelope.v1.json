@@ -57,6 +57,13 @@
       "format": "uuid",
       "description": "the AXIS run an officer produced this event from; null for ledger-derived events, which have no run behind them"
     },
+    "correlation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "groups the events of one causal chain (canonical Conclave field); null when the event starts a chain of its own"
+    },
     "carta_version": {
       "type": "string"
     },
