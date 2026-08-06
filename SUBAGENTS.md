@@ -8,7 +8,7 @@ work, pick the agent below (each is a real definition in `.claude/agents/`).
 |---|---|---|
 | `terraveler-scout` | **haiku** | Fast, cheap recon: find files/symbols, read logs, grep, "where is X", VPS/container status. Read-only. |
 | `terraveler-implementer` | **sonnet** | The default builder: standard coding, edits, wiring, docker/compose, deploys, running ingestion. |
-| `terraveler-architect` | **opus** | Hard reasoning: schema/architecture decisions, new AXIS pipeline design, tricky trade-offs, gnarly cross-service debugging. |
+| `terraveler-architect` | **opus** | Hard reasoning: schema/architecture decisions, new Motus pipeline design, tricky trade-offs, gnarly cross-service debugging. |
 | `terraveler-reviewer` | **opus** | Adversarial check before shipping: correctness, security, source-integrity/whitelist compliance, live-site safety. |
 
 ## Routing rules
@@ -21,6 +21,6 @@ work, pick the agent below (each is a real definition in `.claude/agents/`).
 ## Not here
 The **product** agents — Oculus (harvest), Curator (gpt-4.1), Pigafetta (gpt-4.1),
 and future Extractor/Orthodoxy — are not development subagents. They run inside
-AXIS on the VPS and follow their own model policy (see AGENTS.md): gpt-4o-mini for
+Motus on the VPS and follow their own model policy (see AGENTS.md): gpt-4o-mini for
 high-volume classification, gpt-4.1 for once-per-item judgment, a reasoning model
 reserved for the high-risk voyage-map extraction.

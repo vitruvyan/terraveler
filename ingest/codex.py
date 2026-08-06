@@ -30,7 +30,10 @@ import unicodedata
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-from axis.state import Fact, Decision, Rejection
+# LegacyDecision is the Axis-era shape (description, timestamp); Motus's
+# native Decision is keyed and routable, and the two never map onto each
+# other (ADR-001, MF-17). The alias keeps this file's own vocabulary.
+from vitruvyan_motus.compat import Fact, LegacyDecision as Decision, Rejection
 
 
 def _now():

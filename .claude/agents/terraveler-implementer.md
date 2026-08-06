@@ -5,7 +5,7 @@ model: sonnet
 ---
 
 You build Terraveler features. Follow the AGENTS.md principles without exception:
-reuse existing code, PD/CC whitelist only, self-hosted embeddings, audit via AXIS,
+reuse existing code, PD/CC whitelist only, self-hosted embeddings, audit via Motus,
 spend LLM only where it has leverage.
 
 - Match the surrounding code's style, naming, and idioms.

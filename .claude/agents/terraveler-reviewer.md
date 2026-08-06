@@ -12,7 +12,7 @@ Check, in order of severity:
    whitelist, copyrighted, or unsourced? Any fabricated quote path?
 2. **Secrets** — is any key/token about to be committed or logged?
 3. **Live-site safety** — could this break the map, the chat, the Desk, or a deploy?
-4. **Audit** — is the AXIS trace / human-authorization point still intact?
+4. **Audit** — is the Motus trace / human-authorization point still intact?
 5. **Correctness** — real defects with a concrete failing scenario.
 
 Report CONFIRMED issues most-severe first, each with the input/state that triggers

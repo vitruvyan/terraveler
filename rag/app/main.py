@@ -20,7 +20,7 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from axis import NodeFailed
+from vitruvyan_motus.compat import NodeFailed
 from app.chat_graph import run_chat
 
 EMBED_URL = os.getenv("EMBED_URL", "http://terraveler_embedding:8010")

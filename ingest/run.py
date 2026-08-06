@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 import psycopg2
 
-from axis import GraphState, Runner, Policy, NodeFailed
+from vitruvyan_motus.compat import GraphState, Runner, Policy, NodeFailed
 from pipeline import Corpus, build_nodes, build_discovery_nodes
 
 

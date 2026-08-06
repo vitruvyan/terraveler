@@ -21,8 +21,13 @@ from datetime import datetime, timezone
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from axis import GraphState, Runner, Policy
-from axis.state import Fact, Decision, Rejection
+# LegacyDecision is the Axis-era shape (description, timestamp); Motus's
+# native Decision is keyed and routable, and the two never map onto each
+# other (ADR-001, MF-17). The alias keeps this file's own vocabulary.
+from vitruvyan_motus.compat import (
+    GraphState, Runner, Policy,
+    Fact, LegacyDecision as Decision, Rejection,
+)
 
 RELEVANCE_THRESHOLD = 0.35  # cosine similarity below which we decline to answer
 

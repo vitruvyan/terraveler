@@ -192,7 +192,7 @@ Built by [Vitruvyan](https://github.com/vitruvyan). Contributions go through
 | `lib/evidence.ts` | the four evidence tiers, and the copy each one licenses the UI to use |
 | `lib/marginalia.ts` | the annotation layer's questions, assembled from verified fields |
 | `lib/gazetteer.ts` | place identity across voyages |
-| `ingest/` | the AXIS-orchestrated ingestion pipeline |
+| `ingest/` | the Motus-orchestrated ingestion pipeline |
 | `supabase/*.sql` | schema and migrations, applied in the order each header documents |
 | `docs/LIBRARY_QUEUE.md` | verified source dossier for candidate voyages |
 | `test/`, `ingest/test_*.py` | `npm test`, and `python3 -m unittest` from `ingest/` |

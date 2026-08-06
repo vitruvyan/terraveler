@@ -7,7 +7,7 @@ against the real title shapes ingestion actually produces (see sources.py:
 """
 import unittest
 
-from axis.state import GraphState
+from vitruvyan_motus.compat import GraphState
 import codex as C
 from pipeline import Corpus
 

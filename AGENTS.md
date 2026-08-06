@@ -16,24 +16,31 @@ sourced knowledge. A Vitruvyan EOOD project.
   isolated on `terraveler_net`; no open-web, no third-party embedding tokens:
   - `terraveler_postgres` — pgvector (768-d)
   - `terraveler_embedding` — nomic text+vision, self-hosted, **zero-token**
-  - `terraveler_rag` — `/chat` (the **AXIS-orchestrated** Pigafetta pipeline) + `/rag/search`
-  - `terraveler_ingest` — **AXIS** batch: `discover → curate → fetch → codex (restore·bind) → chunk → embed → upsert`
+  - `terraveler_rag` — `/chat` (the **Motus-orchestrated** Pigafetta pipeline) + `/rag/search`
+  - `terraveler_ingest` — **Motus** batch: `discover → curate → fetch → codex (restore·bind) → chunk → embed → upsert`
 
 ## The content pipeline (product agents)
-Orchestrated by **AXIS** (immutable GraphState trace = the audit):
+Orchestrated by **Motus** (immutable GraphState trace = the audit).
+
+*Where the kernel stands:* the pipelines run on `vitruvyan_motus.compat`, the
+audited Axis 0.4 surface — same behaviour, same legacy trace shape, and by
+its own docstring no Motus-native execution semantics. So the kernel is
+current and the evidence is not yet: native traces, replay, durable sinks and
+explanation arrive when a pipeline migrates off compat, one at a time. Say
+"Motus trace" only of a pipeline that has.
 1. **Oculus** — harvests candidate sources over a strict **whitelist**
    (Gutenberg, Wikipedia/Wikisource, Commons — PD/CC only). Never spiders the open web.
 2. **Curator** (gpt-4.1, scored 0-3 rubric) — drops off-topic noise; every drop is auditable.
 3. **Codex** (deterministic, no LLM) — harvests nothing, judges nothing: restores structurally, scores structural validity, dedupes and binds editions to works; every drop auditable in the trace.
 4. **Embed** — self-hosted nomic → pgvector.
-5. **Pigafetta** (gpt-4.1) — answers ONLY from retrieved sources and cites them; guarded by the AXIS `evaluate` gate.
+5. **Pigafetta** (gpt-4.1) — answers ONLY from retrieved sources and cites them; guarded by the Motus `evaluate` gate.
 6. **Human (Desk)** — authorizes publication, can retract. The Magna Carta's final authority.
 
 ## Principles (non-negotiable)
 1. **Sources are sacred.** PD/CC whitelist only; no fabricated quotes; copyrighted sites are linked, never ingested.
 2. **Human in the loop.** The machine proposes and prepares; a human authorizes what becomes public.
-3. **Audit everything.** Every ingestion and every answer leaves an AXIS trace.
-4. **Reuse before building.** Extend what exists — React components, the VPS services, the AXIS kernel.
+3. **Audit everything.** Every ingestion and every answer leaves a trace.
+4. **Reuse before building.** Extend what exists — React components, the VPS services, the Motus kernel.
 5. **Spend intelligence where it has leverage.** Embeddings are self-hosted (zero token, high volume); LLM spend is reserved for once-per-item judgment (curation, generation). Cheap models for mechanical work, powerful models for the hard calls.
 6. **English is canonical.** CC BY-SA, wiki-style.
 

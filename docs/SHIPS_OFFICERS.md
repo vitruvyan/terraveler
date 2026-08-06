@@ -254,20 +254,21 @@ consumer's side of the wire the two are indistinguishable.
 | `claims.reaped` | stale gap claims released | — |
 | `dlq.entry` | a consumer exhausted retries | **Herald** (as escalation) |
 
-## 6. Officers as AXIS graphs
+## 6. Officers as Motus graphs
 
-The officers do not need a second orchestrator. AXIS already is one, and it
-is built exactly right for this: a Node is a pure `GraphState → GraphState`
-function with one explicit responsibility, state is immutable, every run
-serializes to a trace, and the Runner already accepts a `bus` observer that
-nothing currently uses (`ingest/axis/runner.py`). The division of labour
-follows the Vitruvyan split between orchestration and distribution:
+The officers do not need a second orchestrator. Motus already is one, and it
+is built exactly right for this: a node is a pure `State → State` function
+with one explicit responsibility, state is immutable, every run produces a
+contract-validatable trace alongside its result, and observation has three
+declared surfaces (`TraceSink`, `Listener`, `StreamDriver`) rather than one
+unused hook. The division of labour follows the Vitruvyan split between
+orchestration and distribution:
 
 - **The mycelium moves information *between* runs.** It is transport:
   durable, causal, semantically blind.
-- **AXIS moves information *within* a run.** It is orchestration: an
-  officer acting is an AXIS graph executing, and the GraphState trace is
-  the record of *how* the officer reached what it did.
+- **Motus moves information *within* a run.** It is orchestration: an
+  officer acting is a Motus graph executing, and the trace is the record
+  of *how* the officer reached what it did.
 
 The two meet in one thin component, the **dispatcher**: a consumer loop
 (one consumer group per officer) that reads its stream, maps each event to
@@ -289,12 +290,19 @@ that exists today rather than replacing it:
 
 Three rules keep the kernel clean:
 
-1. **The Runner stays linear.** AXIS executes a fixed sequence; it has no
-   branches, and it should not grow any. Branching is *data in the state*:
-   the `judgment` node writes a Decision (or a Rejection, or an
-   `escalate` Fact), and `record_verdict` reads it and acts accordingly.
-   The trace then shows the decision as content, not as control flow —
-   which is how this project prefers its decisions anyway.
+1. **Branching is a recorded decision, not control flow in a node.**
+   *This rule was written against the predecessor and Motus fulfils it
+   rather than repeals it.* Axis executed a fixed sequence with no
+   branches, so the rule had to simulate causal routing: the `judgment`
+   node wrote a Decision and `record_verdict` read it back and acted
+   accordingly. Motus routes natively — a `route` transition dispatches on
+   a keyed `Decision`, and the trace records the exact decision the
+   dispatch observed, the candidates it had, and the target it selected
+   (trace rule T8). So the intent survives intact and gets stronger: the
+   decision is still content rather than control flow, and now the routing
+   record *names the entry it read* instead of leaving the reader to infer
+   it. What must not appear is an `if` inside a node that changes where
+   the run goes next without writing down why.
 2. **Guards are nodes.** A constitutional constraint (§10.4) is a node
    that raises under `Policy.STRICT`, so a run that would violate the
    Carta stops, traces the refusal, and dead-letters to the editor. The
@@ -302,14 +310,21 @@ Three rules keep the kernel clean:
    invoke the same graph, which closes the two-paths problem structurally.
 3. **Nodes emit through the outbox, never to Redis directly.** A node's
    only side-effect channel is the database transaction in its `record_*`
-   step; the relay does the publishing. The Runner's `bus` hook is wired
-   to observability (PRE/POST node telemetry), not to the mycelium —
-   observation and distribution stay distinct.
+   step; the relay does the publishing. Motus's observation surfaces carry
+   telemetry, never the mycelium — and there the separation is structural
+   rather than conventional: a `Listener` is isolated by construction and
+   cannot feed anything back into execution, so observation and
+   distribution cannot be conflated even by mistake.
 
 A trace of an officer's run is stored like an ingestion trace today
 (`traces/<trace_id>.json`, referenced from `audit_log`), so "why did the
 Curator rule this way" has the same answer-shape as "why did this document
-enter the corpus": read the trace.
+enter the corpus": read the trace. Motus ships `JsonlTraceSink` for exactly
+this — one JSONL document per run, in the form `contract/validate.py`
+accepts, which makes an officer's trace checkable by a party that trusts
+neither the officer nor the desk. Until an officer is a Motus graph, its
+runs leave no trace at all and the `findings` array serves in place of one;
+the envelope's `trace_id` is null on every event for the same reason.
 
 ## 7. The contracts that govern it
 

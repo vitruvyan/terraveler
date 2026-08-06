@@ -13,7 +13,7 @@ Each skill names the subagent tier that should carry it (see SUBAGENTS.md).
    → oculus + curator dry-run. Eyeball the KEEP/drop list.
 3. **Ingest** *(implementer)*:
    `docker compose run --rm terraveler_ingest --voyage <slug> --subject "<subject>" --discover --wipe`
-4. **Verify** *(scout)*: `/chat` with a subject question; check the AXIS trace in `ingestion_runs`.
+4. **Verify** *(scout)*: `/chat` with a subject question; check the Motus trace in `ingestion_runs`.
 5. **Publish** via the **Desk** — the human authorizes (option-1: corpus auto-publishes with async retract).
 
 ## deploy-frontend
@@ -28,7 +28,7 @@ assume a deploy is live; confirm the running response.
 ## review-before-ship
 *(reviewer, opus)* Gate on: **source integrity** (whitelist / no copyrighted or unsourced
 ingest), **no secrets** about to be committed, **live-site safety** (won't break map or chat),
-**audit intact** (AXIS trace sane). Report CONFIRMED issues first; approve only what survives.
+**audit intact** (Motus trace sane). Report CONFIRMED issues first; approve only what survives.
 
 ## run-full-reembed (a voyage)
 *(implementer)* `docker compose run --rm terraveler_ingest --voyage <slug> --policy exploration --wipe`

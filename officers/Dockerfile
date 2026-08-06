@@ -8,11 +8,14 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY requirements.txt .
-# The kernel, as a versioned wheel — the officers are AXIS graphs in the
+# The kernel, as a versioned wheel — the officers are Motus graphs in the
 # making (Ship's Officers §6), and this container could not import the
-# kernel at all until it arrived as a package.
+# kernel at all until it arrived as a package. Note that nothing here
+# imports it yet: the Curator handler still shells out to
+# scripts/desk_review.py. The officers never consumed the predecessor, so
+# they are the one place that can be born native rather than on compat.
 COPY wheels/ /tmp/wheels/
-RUN pip install --no-cache-dir -r requirements.txt /tmp/wheels/vitruvyan_axis-*.whl \
+RUN pip install --no-cache-dir -r requirements.txt /tmp/wheels/vitruvyan_motus-*.whl \
  && rm -rf /tmp/wheels
 COPY *.py .
 
