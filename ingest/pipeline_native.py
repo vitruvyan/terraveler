@@ -54,12 +54,24 @@ EXTERNAL = EffectClass.EXTERNAL_EFFECT
 
 # The three closing nodes are declared identically in both graphs; naming the
 # shape once keeps the two specs from drifting apart.
+# Every node below declares what it reads and what it writes, and the
+# declarations are COMPLETE — a partial one fails the run outright
+# (node-protocol §3.2), which is worse than none.
+#
+# `reads_declared` is empty on every node in both graphs, and that empty list
+# is the most informative thing in this file: no node here reads anything from
+# the state. The payload travels through the `staging` table instead, so what
+# the runtime can capture is only the tallies each node chooses to publish.
+# The declarations do not create that situation; they make it legible.
 _TAIL_NODES = [
-    {"name": "chunk", "effect_class": "recorded_effect"},
-    {"name": "embed", "effect_class": "recorded_effect"},
+    {"name": "chunk", "effect_class": "recorded_effect",
+     "reads_declared": [], "writes_declared": ["total_docs", "chunking"]},
+    {"name": "embed", "effect_class": "recorded_effect",
+     "reads_declared": [], "writes_declared": ["embedded", "rejected", "embedding"]},
     # upsert is the only node in either graph that changes the world outside
     # this run, and the only one that may not be re-run blindly.
-    {"name": "upsert", "effect_class": "external_effect"},
+    {"name": "upsert", "effect_class": "external_effect",
+     "reads_declared": [], "writes_declared": ["upserted", "wiped", "corpus"]},
 ]
 _TAIL_TRANSITIONS = {
     "chunk": {"kind": "next", "to": "embed"},
@@ -77,8 +89,14 @@ _TAIL_TRANSITIONS = {
 # before it is cut into chunks, whether a curator chose the source or
 # sources.py did. Declaring it once means neither graph can lose it quietly.
 _CODEX_NODES = [
-    {"name": "codex_restore", "effect_class": "recorded_effect"},
-    {"name": "codex_bind", "effect_class": "recorded_effect"},
+    {"name": "codex_restore", "effect_class": "recorded_effect",
+     "reads_declared": [],
+     "writes_declared": ["codex_invalid", "codex_flawed", "codex_deduped",
+                         "codex_kept", "codex_restored", "restoration"]},
+    {"name": "codex_bind", "effect_class": "recorded_effect",
+     "reads_declared": [],
+     "writes_declared": ["codex_works", "binding", "codex_edition_of",
+                         "codex_work_override"]},
 ]
 _CODEX_TRANSITIONS = {
     "codex_restore": {"kind": "next", "to": "codex_bind"},
@@ -90,7 +108,10 @@ INGESTION_SPEC = GraphSpec.from_dict({
     "name": "terraveler-ingestion",
     "version": "1.0.0",
     "entry": "load_sources",
-    "nodes": ([{"name": "load_sources", "effect_class": "recorded_effect"}]
+    "nodes": ([{"name": "load_sources", "effect_class": "recorded_effect",
+                "reads_declared": [],
+                "writes_declared": ["text_sources", "image_docs",
+                                    "licence_gate", "sources"]}]
               + _CODEX_NODES + _TAIL_NODES),
     "transitions": {"load_sources": {"kind": "next", "to": "codex_restore"},
                     **_CODEX_TRANSITIONS, **_TAIL_TRANSITIONS},
@@ -102,11 +123,15 @@ DISCOVERY_SPEC = GraphSpec.from_dict({
     "version": "1.0.0",
     "entry": "discover",
     "nodes": [
-        {"name": "discover", "effect_class": "recorded_effect"},
+        {"name": "discover", "effect_class": "recorded_effect",
+         "reads_declared": [], "writes_declared": ["candidates", "discovery"]},
         # The curator judges, so it is its own node and its verdicts are the
         # audit this graph exists to produce.
-        {"name": "curate", "effect_class": "recorded_effect"},
-        {"name": "fetch", "effect_class": "recorded_effect"},
+        {"name": "curate", "effect_class": "recorded_effect",
+         "reads_declared": [], "writes_declared": ["curated_kept", "curation"]},
+        {"name": "fetch", "effect_class": "recorded_effect",
+         "reads_declared": [],
+         "writes_declared": ["fetched_texts", "image_docs", "fetching"]},
     ] + _CODEX_NODES + _TAIL_NODES,
     "transitions": {
         "discover": {"kind": "next", "to": "curate"},

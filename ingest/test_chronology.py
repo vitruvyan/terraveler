@@ -2,9 +2,9 @@
 
     python3 -m unittest test_chronology -v      (from ingest/)
 
-extract.py imports psycopg2 and axis, neither of which needs to be installed to
-test a pure function over dictionaries, so the two functions are read out of the
-source rather than imported. That is uglier than an import and it keeps the
+extract_core.py imports psycopg2 and the fetch layer, neither of which needs to be
+installed to test a pure function over dictionaries, so the two functions are read
+out of the source rather than imported. That is uglier than an import and it keeps
 check testable on any machine, which matters more: this guard exists because a
 defect shipped that nobody could see.
 """
@@ -13,7 +13,7 @@ import re
 import unittest
 from pathlib import Path
 
-SRC = (Path(__file__).parent / "extract.py").read_text(encoding="utf-8")
+SRC = (Path(__file__).parent / "extract_core.py").read_text(encoding="utf-8")
 
 
 def _load():
@@ -21,7 +21,7 @@ def _load():
     wanted = {"_year_of", "chronology_breaks"}
     picked = [n for n in tree.body
               if isinstance(n, ast.FunctionDef) and n.name in wanted]
-    assert {n.name for n in picked} == wanted, "extract.py no longer defines both"
+    assert {n.name for n in picked} == wanted, "extract_core.py no longer defines both"
     ns = {"re": re}
     exec(compile(ast.Module(body=picked, type_ignores=[]), "<extract>", "exec"), ns)
     return ns["chronology_breaks"], ns["_year_of"]

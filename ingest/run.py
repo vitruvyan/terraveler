@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import psycopg2
 
 from vitruvyan_motus import JsonlTraceSink, NodeFailed, Policy, Runtime, State
+from vitruvyan_motus.context import ReplayStatus
 
 import staging
 from pipeline_native import (
@@ -92,11 +93,18 @@ def main():
     # A failed run is exactly the one the audit exists for. NodeFailed carries
     # the trace built up to the failure, so the evidence is persisted first and
     # the process dies loudly after — never the other way round.
+    # Neither graph has a `pure` node, so verify-replay re-executes nothing in
+    # either of them: everything here reads the open web, the embedding
+    # service or the database. Invariant IV says the absence of a declaration
+    # never implies reproducibility — it records `none` — so the honest thing
+    # is to say `none` on purpose, and say why, rather than let the default
+    # say it by accident.
     try:
         result = runtime.run(
             State.empty(f"ingest:{args.voyage}",
                         metadata={"voyage": args.voyage, "policy": args.policy}),
-            run_id=run_id)
+            run_id=run_id,
+            replay=ReplayStatus.declared("none", ("no-pure-nodes-in-this-graph",)))
         trace, state, failure = result.trace, result.state, None
         status = result.status
     except NodeFailed as exc:

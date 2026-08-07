@@ -6,7 +6,7 @@ candidate is checked against whitelist.is_allowed and tagged with its licence;
 anything off-whitelist is dropped. No open-web spidering, ever.
 
 A lean echo of Vitruvyan's Oculus intake gateway — minus Redis streams and
-evidence packs (the Axis GraphState trace is our audit).
+evidence packs (the Motus trace is our audit).
 """
 import re
 import urllib.parse

@@ -9,20 +9,20 @@ zero waypoints that looked like a completed voyage. Lewis & Clark — 6,052
 chunks of journal in the corpus — was published-shaped and empty.
 
 Loaded out of the source rather than imported, for the reason test_chronology
-gives: extract.py needs psycopg2 and axis, and this function needs neither.
+gives: extract_core.py needs psycopg2 and the fetch layer; this function needs neither.
 """
 import ast
 import unittest
 from pathlib import Path
 
-SRC = (Path(__file__).parent / "extract.py").read_text(encoding="utf-8")
+SRC = (Path(__file__).parent / "extract_core.py").read_text(encoding="utf-8")
 
 
 def _load():
     tree = ast.parse(SRC)
     picked = [n for n in tree.body
               if isinstance(n, ast.FunctionDef) and n.name == "_anthropic_text"]
-    assert picked, "extract.py no longer defines _anthropic_text"
+    assert picked, "extract_core.py no longer defines _anthropic_text"
     ns = {}
     exec(compile(ast.Module(body=picked, type_ignores=[]), "<extract>", "exec"), ns)
     return ns["_anthropic_text"]

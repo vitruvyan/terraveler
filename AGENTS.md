@@ -20,14 +20,21 @@ sourced knowledge. A Vitruvyan EOOD project.
   - `terraveler_ingest` — **Motus** batch: `discover → curate → fetch → codex (restore·bind) → chunk → embed → upsert`
 
 ## The content pipeline (product agents)
-Orchestrated by **Motus** (immutable GraphState trace = the audit).
+Orchestrated by **Motus** (immutable trace = the audit).
 
-*Where the kernel stands:* the pipelines run on `vitruvyan_motus.compat`, the
-audited Axis 0.4 surface — same behaviour, same legacy trace shape, and by
-its own docstring no Motus-native execution semantics. So the kernel is
-current and the evidence is not yet: native traces, replay, durable sinks and
-explanation arrive when a pipeline migrates off compat, one at a time. Say
-"Motus trace" only of a pipeline that has.
+*Where the kernel stands:* every pipeline is a native Motus graph —
+`GraphSpec` + `Runtime`, trace schema 1.1, accepted by `contract/validate.py`.
+`vitruvyan_motus.compat` is gone from the running code; the retired Axis graph
+survives only inside `ingest/test_extract_parity.py`, where it serves as the
+oracle the ported extractor is measured against.
+
+What that buys, and what it does not. Traces are now real evidence: every read
+a node performed, every write it committed, every effect it observed, and a
+routing record naming the decision each branch dispatched on. Replay is
+another matter — `verify()` re-executes `pure` nodes only, and most nodes here
+read the open web or the database, so coverage is 6 nodes of 28. Each graph
+declares its own replay capability rather than letting the default claim
+`none` by accident. Say "verified by replay" only of a `pure` node.
 1. **Oculus** — harvests candidate sources over a strict **whitelist**
    (Gutenberg, Wikipedia/Wikisource, Commons — PD/CC only). Never spiders the open web.
 2. **Curator** (gpt-4.1, scored 0-3 rubric) — drops off-topic noise; every drop is auditable.

@@ -13,7 +13,7 @@ import re
 import unittest
 from pathlib import Path
 
-SRC = (Path(__file__).parent / "extract.py").read_text(encoding="utf-8")
+SRC = (Path(__file__).parent / "extract_core.py").read_text(encoding="utf-8")
 
 
 def _load():
@@ -22,7 +22,7 @@ def _load():
             if (isinstance(n, ast.FunctionDef) and n.name == "reads_as_english")
             or (isinstance(n, ast.Assign)
                 and getattr(n.targets[0], "id", "") in {"_EN", "_FR"})]
-    assert len(body) == 3, "extract.py no longer defines _EN, _FR and reads_as_english"
+    assert len(body) == 3, "extract_core.py no longer defines _EN, _FR and reads_as_english"
     ns = {"re": re}
     exec(compile(ast.Module(body=body, type_ignores=[]), "<extract>", "exec"), ns)
     return ns["reads_as_english"]
