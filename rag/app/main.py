@@ -2,16 +2,28 @@
 
 Two endpoints:
   POST /rag/search  — embed question + pgvector search, return source docs.
-  POST /chat        — the full Antonio Pigafetta answer, orchestrated by an
-                      Axis graph (embed → retrieve → evaluate → generate). Every
-                      call yields an immutable trace persisted to `chat_traces`.
+  POST /chat        — the full Antonio Pigafetta answer, orchestrated by a
+                      native Motus graph (retrieve → evaluate → answer|decline).
+                      Every call yields a contract-validatable trace persisted
+                      to `chat_traces`.
 
 Bearer-token gated. Retrieval + generation both run here on our own infra.
+
+**The trace shape changed here, deliberately and by decision.** Rows written
+before this commit hold the Axis-era legacy shape — six keys, `trace_id` at
+the top, no schema version. Rows written after hold a Motus trace document:
+`{schema_version, run, records}`, the form `contract/validate.py` accepts.
+`guarantees.md` §4 pinned the legacy shape until "Terraveler migrates by
+decision, not by surprise"; this is that decision.
+
+The two are self-distinguishing and no migration of old rows is needed: a
+Motus document has `schema_version` at the top and a legacy one does not.
+Nothing in this repository reads the column programmatically — it is written
+here and read by people.
 """
 import os
 import json
 import urllib.request
-from types import SimpleNamespace
 from typing import List, Optional
 from datetime import datetime, timezone
 
@@ -20,13 +32,11 @@ from pydantic import BaseModel
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-from vitruvyan_motus.compat import NodeFailed
-from app.chat_graph import run_chat
+from vitruvyan_motus import NodeFailed
+from app.chat_graph_native import config_from_env, run_chat_native
 
 EMBED_URL = os.getenv("EMBED_URL", "http://terraveler_embedding:8010")
 TOKEN = os.getenv("RAG_TOKEN", "")
-OPENAI_KEY = os.getenv("OPENAI_API_KEY", "")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1")
 PG = dict(
     host=os.getenv("PGHOST", "terraveler_postgres"),
     port=int(os.getenv("PGPORT", "5432")),
@@ -36,8 +46,7 @@ PG = dict(
 )
 DEFAULT_VOYAGE = "boudeuse-1766"
 
-CHAT_CTX = SimpleNamespace(
-    embed_url=EMBED_URL, pg=PG, openai_key=OPENAI_KEY, openai_model=OPENAI_MODEL, k=8)
+CHAT_CFG = config_from_env(PG)
 
 app = FastAPI(title="Terraveler RAG + Chat API", version="2.0.0")
 
@@ -45,6 +54,36 @@ app = FastAPI(title="Terraveler RAG + Chat API", version="2.0.0")
 def _require(authorization: str):
     if TOKEN and authorization != f"Bearer {TOKEN}":
         raise HTTPException(status_code=401, detail="unauthorized")
+
+
+def _stamp() -> str:
+    return datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+
+
+def _persist(run_id, voyage, question, *, answerable, top_similarity,
+             n_sources, answer, trace, what):
+    """Write one row to `chat_traces`. Never raises: a run that answered must
+    not be turned into a 500 because the audit row would not go down.
+
+    `trace` is a Motus Trace (or None if the run died before producing one).
+    `to_json()` is the contract form — the same bytes `contract/validate.py`
+    accepts — so a row can be pulled out of the database and checked by
+    someone who trusts neither this service nor its author.
+    """
+    try:
+        conn = psycopg2.connect(**PG)
+        with conn, conn.cursor() as cur:
+            cur.execute("""
+                insert into chat_traces
+                  (trace_id, voyage_slug, question, answerable, top_similarity,
+                   n_sources, answer, trace)
+                values (%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (run_id, voyage, question, answerable, top_similarity,
+                  n_sources, answer,
+                  trace.to_json() if trace is not None else None))
+        conn.close()
+    except Exception as exc:
+        print(f"⚠ could not persist {what}: {exc}")
 
 
 @app.on_event("startup")
@@ -99,7 +138,8 @@ def health():
         pg = True
     except Exception:
         pg = False
-    return {"status": "healthy" if pg else "degraded", "pg": pg, "openai": bool(OPENAI_KEY)}
+    return {"status": "healthy" if pg else "degraded", "pg": pg,
+            "model_key": bool(CHAT_CFG.anthropic_key), "model": CHAT_CFG.model}
 
 
 @app.post("/rag/search")
@@ -130,46 +170,36 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
     _require(authorization)
     if not req.question or not req.question.strip():
         raise HTTPException(status_code=400, detail="empty question")
-    if not OPENAI_KEY:
-        raise HTTPException(status_code=503, detail="OPENAI_API_KEY not configured on the backend")
+    if not CHAT_CFG.anthropic_key:
+        raise HTTPException(status_code=503,
+                            detail="ANTHROPIC_API_KEY not configured on the backend")
     voyage = req.voyage or DEFAULT_VOYAGE
 
-    # The chat graph runs STRICT: a failing node used to burn its own trace
-    # and this endpoint 500'd with no audit row — the runs that most needed
-    # a record left none. NodeFailed now carries the accumulated state;
-    # persist it, then fail the request honestly.
+    run_id = f"chat-{voyage}-{_stamp()}"
+
+    # The graph runs STRICT: a failing node used to burn its own trace and
+    # this endpoint 500'd with no audit row — the runs that most needed a
+    # record left none. The native NodeFailed carries BOTH the accumulated
+    # state and the trace built up to the failure, so what gets persisted
+    # now is the real account of the run rather than a state snapshot: which
+    # nodes ran, which effects were observed, and where it stopped.
     try:
-        answer, sources, trace, meta = run_chat(CHAT_CTX, req.question, voyage)
+        answer, sources, result = run_chat_native(
+            CHAT_CFG, req.question, voyage, run_id=run_id)
     except NodeFailed as e:
-        try:
-            conn = psycopg2.connect(**PG)
-            with conn, conn.cursor() as cur:
-                cur.execute("""
-                    insert into chat_traces
-                      (trace_id, voyage_slug, question, answerable, top_similarity,
-                       n_sources, answer, trace)
-                    values (%s,%s,%s,%s,%s,%s,%s,%s)
-                """, (e.state.trace_id, voyage, req.question, None, None,
-                      None, None, json.dumps(e.state.to_dict())))
-            conn.close()
-        except Exception as pe:
-            print(f"⚠ could not persist failed chat trace: {pe}")
+        _persist(run_id, voyage, req.question,
+                 answerable=None, top_similarity=None, n_sources=None,
+                 answer=None, trace=e.trace, what="failed chat trace")
         raise HTTPException(status_code=500,
                             detail="chat failed — the trace was recorded")
 
-    # persist the Axis trace (answer-level governance / audit)
-    try:
-        conn = psycopg2.connect(**PG)
-        with conn, conn.cursor() as cur:
-            cur.execute("""
-                insert into chat_traces
-                  (trace_id, voyage_slug, question, answerable, top_similarity,
-                   n_sources, answer, trace)
-                values (%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (meta["trace_id"], voyage, req.question, meta["answerable"],
-                  meta["top_similarity"], meta["n_sources"], answer, json.dumps(trace)))
-        conn.close()
-    except Exception as e:
-        print(f"⚠ could not persist chat trace: {e}")
+    # Every figure below is read back OUT of the state the run committed,
+    # never carried alongside it: the row and the trace cannot disagree.
+    state = result.state
+    _persist(run_id, voyage, req.question,
+             answerable=(state.decision("answerable") == "yes"),
+             top_similarity=state.fact("top_similarity"),
+             n_sources=state.fact("n_sources"),
+             answer=answer, trace=result.trace, what="chat trace")
 
-    return {"answer": answer, "sources": sources, "trace_id": meta["trace_id"]}
+    return {"answer": answer, "sources": sources, "trace_id": run_id}

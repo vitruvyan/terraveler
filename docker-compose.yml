@@ -128,9 +128,11 @@ services:
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       RAG_TOKEN: ${RAG_TOKEN}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # The chat graph answers through Anthropic. The OpenAI pair that used to
+      # sit here left with chat_graph.py: nothing in this service reads it.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4.1}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      RAG_K: ${RAG_K:-6}
       PGHOST: terraveler_postgres
       PGPORT: 5432
       PGDATABASE: terraveler
