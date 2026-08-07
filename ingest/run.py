@@ -1,23 +1,37 @@
-"""Terraveler ingestion — Axis-orchestrated.
+"""Terraveler ingestion — orchestrated by Motus.
 
     python run.py --voyage boudeuse-1766 --policy exploration --wipe
     python run.py --voyage boudeuse-1766 --limit 40           # fast smoke test
+    python run.py --discover --subject "Magellan" --voyage magellan-1519
 
-Produces an immutable GraphState trace, persisted to:
-  - pgvector table `ingestion_runs` (jsonb)
-  - /app/traces/<trace_id>.json (mounted volume)
-The trace is the reliability evidence: every doc embedded/rejected, with reasons.
+Produces a contract-validatable Motus trace, persisted to:
+  - table `ingestion_runs` (jsonb)
+  - /app/traces/<run_id>.jsonl  (the JSONL form contract/validate.py accepts)
+
+The trace is the reliability evidence: every source loaded or refused, every
+curator drop with its score, every codex rejection with its quality reasons,
+every embed batch that failed — and, since 0.7, which effects each node
+observed and how the run reached its end.
+
+Two graphs live in `pipeline_native.py`; this file only chooses between them,
+runs one, and writes down what happened.
 """
 import os
 import json
 import argparse
-from types import SimpleNamespace
 from datetime import datetime, timezone
 
 import psycopg2
 
-from vitruvyan_motus.compat import GraphState, Runner, Policy, NodeFailed
-from pipeline import Corpus, build_nodes, build_discovery_nodes
+from vitruvyan_motus import JsonlTraceSink, NodeFailed, Policy, Runtime, State
+
+import staging
+from pipeline_native import (
+    DISCOVERY_SPEC, INGESTION_SPEC, IngestConfig,
+    make_discovery_nodes, make_ingestion_nodes,
+)
+
+TRACE_DIR = "/app/traces"
 
 
 def env(k, default=None):
@@ -26,24 +40,17 @@ def env(k, default=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--voyage", required=True, help="voyage/subject slug (e.g. laperouse-1785)")
-    ap.add_argument("--policy", choices=["strict", "exploration"], default="exploration")
-    ap.add_argument("--limit", type=int, default=0, help="cap docs (0 = all) for a smoke test")
-    ap.add_argument("--wipe", action="store_true", help="delete existing rows for this voyage first")
-    # discovery mode (oculus + curator agent)
-    ap.add_argument("--discover", action="store_true",
-                    help="auto-discover sources for --subject via oculus + curator")
-    ap.add_argument("--subject", default="", help="subject to harvest (discovery mode)")
+    ap.add_argument("--voyage", required=True)
+    ap.add_argument("--subject", default="")
     ap.add_argument("--lang", default="en")
-    ap.add_argument("--curator-model", default="gpt-4.1")
+    ap.add_argument("--curator-model", default="gpt-4.1-mini")
+    ap.add_argument("--policy", choices=["strict", "exploration"], default="exploration")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--wipe", action="store_true")
+    ap.add_argument("--discover", action="store_true")
     args = ap.parse_args()
 
-    if args.discover and not args.subject:
-        raise SystemExit("--discover requires --subject")
-    if args.discover:
-        os.environ["CURATOR_MODEL"] = args.curator_model
-
-    ctx = SimpleNamespace(
+    cfg = IngestConfig(
         voyage=args.voyage,
         subject=args.subject,
         lang=args.lang,
@@ -60,74 +67,95 @@ def main():
     )
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    trace_id = f"{args.voyage}-{stamp}"
+    run_id = f"{args.voyage}-{stamp}"
     started = datetime.now(timezone.utc)
 
-    corpus = Corpus()
-    nodes = build_discovery_nodes(ctx, corpus) if args.discover else build_nodes(ctx, corpus)
+    staging.ensure(cfg)
+    spec = DISCOVERY_SPEC if args.discover else INGESTION_SPEC
+    nodes = (make_discovery_nodes(cfg, run_id) if args.discover
+             else make_ingestion_nodes(cfg, run_id))
     policy = Policy.STRICT if args.policy == "strict" else Policy.EXPLORATION
 
-    state = GraphState.empty(trace_id).with_intent(f"ingest:{args.voyage}")
-    runner = Runner(nodes, policy=policy)
+    os.makedirs(TRACE_DIR, exist_ok=True)
+    # The sink writes the run as it happens, so a process killed mid-ingest
+    # still leaves the part it completed on disk, named for what it is.
+    sink = JsonlTraceSink(TRACE_DIR)
 
-    mode = f"discover subject={args.subject!r} curator={args.curator_model}" if args.discover else "curated-sources"
-    print(f"▶ Axis ingest  voyage={args.voyage}  mode=[{mode}]  policy={args.policy}"
-          f"{'  limit=' + str(args.limit) if args.limit else ''}{'  WIPE' if args.wipe else ''}")
-    # The kernel hands back the trace of a failed run (NodeFailed carries
-    # the accumulated state, ERROR event included) instead of burning it
-    # with the raise. Persist the evidence first, die loudly after — the
-    # runs that fail are exactly the ones the audit exists for. Before this,
-    # a STRICT failure left no trace file and no ingestion_runs row at all.
+    mode = (f"discover subject={args.subject!r} curator={args.curator_model}"
+            if args.discover else "curated-sources")
+    print(f"▶ Motus ingest  voyage={args.voyage}  graph={spec.name}  mode=[{mode}]  "
+          f"policy={args.policy}"
+          f"{'  limit=' + str(args.limit) if args.limit else ''}"
+          f"{'  WIPE' if args.wipe else ''}")
+
+    runtime = Runtime(spec, nodes, policy=policy, sink=sink)
+    # A failed run is exactly the one the audit exists for. NodeFailed carries
+    # the trace built up to the failure, so the evidence is persisted first and
+    # the process dies loudly after — never the other way round.
     try:
-        final = runner.run(state)
-        failure = None
-    except NodeFailed as e:
-        final = e.state
-        failure = e
+        result = runtime.run(
+            State.empty(f"ingest:{args.voyage}",
+                        metadata={"voyage": args.voyage, "policy": args.policy}),
+            run_id=run_id)
+        trace, state, failure = result.trace, result.state, None
+        status = result.status
+    except NodeFailed as exc:
+        trace, state, failure = exc.trace, exc.state, exc
+        status = "run_failed"
+    finally:
+        # Scratch space, never a second corpus: the payload goes once the run
+        # that owned it is over, whether it succeeded or not.
+        try:
+            staging.clear(cfg, run_id)
+        except Exception as exc:
+            print(f"⚠ could not clear staging for {run_id}: {exc}")
+
     finished = datetime.now(timezone.utc)
 
-    facts = {f.key: f.value for f in final.facts}
+    facts = {f.key: f.value for f in state.facts} if state is not None else {}
     summary = {
-        "trace_id": trace_id,
+        "run_id": run_id,
+        "graph": spec.name,
+        "graph_fingerprint": spec.graph_fingerprint,
         "voyage": args.voyage,
         "policy": args.policy,
+        "status": status,
         "started_at": started.isoformat(),
         "finished_at": finished.isoformat(),
         "facts": facts,
-        "decisions": [d.description for d in final.decisions],
-        "rejections": [{"what": r.description, "why": r.reason} for r in final.rejections],
-        "events": len(final.events),
+        "decisions": [{"key": d.key, "value": d.value, "reason": d.reason}
+                      for d in (state.decisions if state is not None else ())],
+        "rejections": [{"what": r.what, "why": r.reason}
+                       for r in (state.rejections if state is not None else ())],
+        "records": len(trace.records) if trace is not None else 0,
     }
 
-    # persist trace JSON to mounted volume
-    os.makedirs("/app/traces", exist_ok=True)
-    with open(f"/app/traces/{trace_id}.json", "w") as fh:
-        json.dump({**summary, "trace": final.to_dict()}, fh, indent=2)
-
-    # persist audit row to pgvector DB
     try:
-        conn = psycopg2.connect(host=ctx.pg_host, port=ctx.pg_port, dbname=ctx.pg_db,
-                                user=ctx.pg_user, password=ctx.pg_pass)
+        conn = psycopg2.connect(host=cfg.pg_host, port=cfg.pg_port, dbname=cfg.pg_db,
+                                user=cfg.pg_user, password=cfg.pg_pass)
         with conn, conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO ingestion_runs
+                insert into ingestion_runs
                   (trace_id, voyage_slug, policy, started_at, finished_at,
                    facts, chunks_embedded, chunks_rejected, trace)
-                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-            """, (trace_id, args.voyage, args.policy, started, finished,
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (run_id, args.voyage, args.policy, started, finished,
                   int(facts.get("total_docs", 0)), int(facts.get("embedded", 0)),
-                  int(facts.get("rejected", 0)), json.dumps(final.to_dict())))
+                  int(facts.get("rejected", 0)),
+                  trace.to_json() if trace is not None else None))
         conn.close()
-    except Exception as e:
-        print(f"⚠ could not persist audit row: {e}")
+    except Exception as exc:
+        print(f"⚠ could not persist audit row: {exc}")
 
     print("─" * 60)
-    print(json.dumps(summary, indent=2))
+    print(json.dumps(summary, indent=2, default=str))
     print("─" * 60)
+    for path in sink.artifacts:
+        print(f"  trace artifact: {path}")
     if failure:
-        print(f"✘ run FAILED — {failure}. Trace persisted: /app/traces/{trace_id}.json")
+        print(f"✘ run FAILED — {failure}")
         raise SystemExit(1)
-    print(f"✔ trace: /app/traces/{trace_id}.json")
+    print("✔ run complete")
 
 
 if __name__ == "__main__":

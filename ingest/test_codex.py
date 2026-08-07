@@ -7,9 +7,9 @@ against the real title shapes ingestion actually produces (see sources.py:
 """
 import unittest
 
-from vitruvyan_motus.compat import GraphState
+from vitruvyan_motus import GraphSpec, Runtime, State
 import codex as C
-from pipeline import Corpus
+import pipeline_native as PN
 
 
 def _mk_body(sentence, pad_to=520):
@@ -33,9 +33,80 @@ def _long_words_body(prefix, n, changed_at=None, changed_to="CHANGED"):
     return prefix + " ".join(words) + " " + ("Filler padding text for length. " * 3)
 
 
-def _run(node_factory, corpus, ctx=None):
-    state = GraphState.empty("t")
-    return node_factory(ctx, corpus)(state)
+class _FakeStaging:
+    """Staging held in memory, with the module's own four-call surface.
+
+    The codex nodes read and write the run's payload through `staging`, which
+    is Postgres in production. These tests are about what codex DECIDES —
+    which text is invalid, which twin is kept, how a drop is worded — so the
+    store is swapped for a dict and the assertions stay exactly as they were
+    when the logic lived in a node holding a `Corpus`.
+    """
+    RAW, IMG, DOC = "raw", "img", "doc"
+
+    def __init__(self):
+        self.rows = {}
+
+    def ensure(self, cfg):
+        pass
+
+    def put(self, cfg, run_id, stage, rows, embeddings=None):
+        self.rows[(run_id, stage)] = [dict(r) for r in rows]
+        return len(rows)
+
+    def get(self, cfg, run_id, stage):
+        return [dict(r) for r in self.rows.get((run_id, stage), ())]
+
+    def clear(self, cfg, run_id):
+        self.rows = {k: v for k, v in self.rows.items() if k[0] != run_id}
+
+
+class _Ctx:
+    """The two RunContext calls these nodes make. A real run gets the real
+    thing from the runtime; a unit test needs only a clock it can predict."""
+
+    def now(self):
+        return "2026-01-01T00:00:00.000000Z"
+
+    def record_effect(self, effect):
+        pass
+
+
+def _rows(*tuples):
+    """The old 5-tuple vocabulary these tests were written in, mapped onto the
+    staging rows the nodes read now. The shape moved; the cases did not."""
+    return [{"title": t, "url": u, "body": b, "license": l, "work_id": w}
+            for (t, u, b, l, w) in tuples]
+
+
+def _run_codex(which, raw_rows, image_rows=()):
+    """Run one codex node over `raw_rows`, returning (state, staged_raw).
+
+    The node goes through a real one-node Runtime rather than being called
+    directly, because Motus refuses to let anyone read a state's writes before
+    the runtime commits them — *attempt-local writes are outputs and cannot be
+    scanned before commit*. Calling the function and inspecting what it returns
+    raises. So the graph is the smallest one that can exist: this node, and an
+    end.
+    """
+    spec = GraphSpec.from_dict({
+        "schema_version": "1.0.0", "name": f"codex-{which}", "version": "1.0.0",
+        "entry": which,
+        "nodes": [{"name": which, "effect_class": "recorded_effect"}],
+        "transitions": {which: {"kind": "terminal"}},
+    })
+    store = _FakeStaging()
+    cfg = PN.IngestConfig(voyage="t")
+    store.put(cfg, "t", store.RAW, raw_rows)
+    store.put(cfg, "t", store.IMG, list(image_rows))
+    original = PN.staging
+    PN.staging = store
+    try:
+        node = PN.make_discovery_nodes(cfg, "t")[which]
+        result = Runtime(spec, {which: node}).run(State.empty("t"), run_id="t")
+    finally:
+        PN.staging = original
+    return result.state, store.get(cfg, "t", store.RAW), store.get(cfg, "t", store.IMG)
 
 
 class Restoration(unittest.TestCase):
@@ -71,14 +142,13 @@ class QualityGate(unittest.TestCase):
         structural errors, quality 1.0 - 2*0.3 = 0.4, under the 0.5 threshold."""
         body = ("Short entry. " * 8) + "*** START OF THE PROJECT GUTENBERG EBOOK EXAMPLE ***"
         self.assertLess(len(body), 500)
-        corpus = Corpus()
-        corpus.raw_texts = [("A Thin Pamphlet", "https://www.gutenberg.org/x", body,
-                              "Public domain", None)]
-        state = _run(C.codex_restore_node, corpus)
-        self.assertEqual(corpus.raw_texts, [])
+        rows = _rows(("A Thin Pamphlet", "https://www.gutenberg.org/x", body,
+                              "Public domain", None))
+        state, raw, imgs = _run_codex("codex_restore", rows)
+        self.assertEqual(raw, [])
         self.assertEqual(len(state.rejections), 1)
         rej = state.rejections[0]
-        self.assertEqual(rej.description, "A Thin Pamphlet")
+        self.assertEqual(rej.what, "A Thin Pamphlet")
         self.assertIn("codex: INVALID", rej.reason)
         self.assertIn("quality=0.4", rej.reason)
         self.assertIn("500", rej.reason)
@@ -90,17 +160,16 @@ class QualityGate(unittest.TestCase):
 class Dedupe(unittest.TestCase):
     def test_an_exact_duplicate_is_dropped_and_names_the_kept_twin(self):
         body = _mk_body("The ship made landfall at dawn, the crew silent at the rail.")
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("Journal, first copy", "https://www.gutenberg.org/a", body, "Public domain", None),
             ("Journal, second copy", "https://www.gutenberg.org/b", body, "Public domain", None),
-        ]
-        state = _run(C.codex_restore_node, corpus)
-        self.assertEqual(len(corpus.raw_texts), 1)
-        self.assertEqual(corpus.raw_texts[0][0], "Journal, first copy")
+        )
+        state, raw, imgs = _run_codex("codex_restore", rows)
+        self.assertEqual(len(raw), 1)
+        self.assertEqual(raw[0]["title"], "Journal, first copy")
         dup_rejections = [r for r in state.rejections if "exact duplicate" in r.reason]
         self.assertEqual(len(dup_rejections), 1)
-        self.assertEqual(dup_rejections[0].description, "Journal, second copy")
+        self.assertEqual(dup_rejections[0].what, "Journal, second copy")
         self.assertIn("Journal, first copy", dup_rejections[0].reason)
         self.assertIn("https://www.gutenberg.org/a", dup_rejections[0].reason)
 
@@ -126,28 +195,26 @@ class Dedupe(unittest.TestCase):
                            "Public domain", None)]),
         ):
             with self.subTest(order=order_name):
-                corpus = Corpus()
-                corpus.raw_texts = list(entries)
-                state = _run(C.codex_restore_node, corpus)
-                self.assertEqual(len(corpus.raw_texts), 1)
-                self.assertEqual(corpus.raw_texts[0][0], "Archive A scan")
-                self.assertEqual(corpus.raw_texts[0][3], "Public domain")
+                rows = _rows(*entries)
+                state, raw, imgs = _run_codex("codex_restore", rows)
+                self.assertEqual(len(raw), 1)
+                self.assertEqual(raw[0]["title"], "Archive A scan")
+                self.assertEqual(raw[0]["license"], "Public domain")
                 near_rejections = [r for r in state.rejections if "near-duplicate" in r.reason]
                 self.assertEqual(len(near_rejections), 1)
-                self.assertEqual(near_rejections[0].description, "Archive B scan")
+                self.assertEqual(near_rejections[0].what, "Archive B scan")
                 self.assertIn("jaccard=0.9", near_rejections[0].reason)
 
     def test_two_different_texts_are_both_kept(self):
         body_a = _mk_body("The Endeavour cleared the reef at first light.")
         body_b = _mk_body("Three days inland the porters refused to go further.")
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("Cook's Journal", "https://www.gutenberg.org/a", body_a, "Public domain", None),
             ("Stanley's Diary", "https://www.gutenberg.org/b", body_b, "Public domain", None),
-        ]
-        state = _run(C.codex_restore_node, corpus)
-        self.assertEqual(len(corpus.raw_texts), 2)
-        titles = {t for t, *_ in corpus.raw_texts}
+        )
+        state, raw, imgs = _run_codex("codex_restore", rows)
+        self.assertEqual(len(raw), 2)
+        titles = {r["title"] for r in raw}
         self.assertEqual(titles, {"Cook's Journal", "Stanley's Diary"})
         dup_rejections = [r for r in state.rejections
                            if "duplicate" in r.reason]
@@ -156,9 +223,7 @@ class Dedupe(unittest.TestCase):
         self.assertEqual(kept_fact.value, 2)
 
     def test_image_docs_dedupe_exactly_by_media_url(self):
-        corpus = Corpus()
-        corpus.raw_texts = []
-        corpus.docs = [
+        images = [
             {"voyage_slug": "v", "type": "image", "title": "File:A.jpg", "content": "a",
              "source_url": "https://commons/a", "license": "CC BY-SA 4.0", "credit": None,
              "media_url": "https://upload/a.jpg", "chunk_index": None, "work_id": None},
@@ -166,41 +231,39 @@ class Dedupe(unittest.TestCase):
              "source_url": "https://commons/a2", "license": "CC BY-SA 4.0", "credit": None,
              "media_url": "https://upload/a.jpg", "chunk_index": None, "work_id": None},
         ]
-        state = _run(C.codex_restore_node, corpus)
-        self.assertEqual(len(corpus.docs), 1)
+        state, raw, imgs = _run_codex("codex_restore", _rows(), image_rows=images)
+        self.assertEqual(len(imgs), 1)
         media_rejections = [r for r in state.rejections if "media_url" in r.reason]
         self.assertEqual(len(media_rejections), 1)
 
 
 class Binding(unittest.TestCase):
     def test_volumes_of_one_work_bind_to_the_same_work_id(self):
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("The Memoirs of the Conquistador Bernal Díaz del Castillo, Vol. I",
              "https://www.gutenberg.org/a", "body one", "Public domain", None),
             ("The Memoirs of the Conquistador Bernal Díaz del Castillo, Vol. II",
              "https://www.gutenberg.org/b", "body two", "Public domain", None),
-        ]
-        state = _run(C.codex_bind_node, corpus)
-        work_ids = {wid for *_rest, wid in corpus.raw_texts}
+        )
+        state, raw, imgs = _run_codex("codex_bind", rows)
+        work_ids = {r["work_id"] for r in raw}
         self.assertEqual(len(work_ids), 1)
         self.assertIsNotNone(next(iter(work_ids)))
-        multi_edition = [d for d in state.decisions if "bound 2 editions" in d.description]
+        multi_edition = [d for d in state.decisions if d.key == "codex_edition_of" and "2 editions" in (d.reason or "")]
         self.assertEqual(len(multi_edition), 1)
         works_fact = [f for f in state.facts if f.key == "codex_works"][0]
         self.assertEqual(works_fact.value, 1)
 
     def test_two_wikipedia_articles_get_distinct_work_ids(self):
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("Wikipedia — Louis Antoine de Bougainville",
              "https://en.wikipedia.org/wiki/Louis_Antoine_de_Bougainville",
              "body one", "CC BY-SA 4.0", None),
             ("Wikipedia — Tahiti", "https://en.wikipedia.org/wiki/Tahiti",
              "body two", "CC BY-SA 4.0", None),
-        ]
-        state = _run(C.codex_bind_node, corpus)
-        work_ids = [wid for *_rest, wid in corpus.raw_texts]
+        )
+        state, raw, imgs = _run_codex("codex_bind", rows)
+        work_ids = [r["work_id"] for r in raw]
         self.assertEqual(len(set(work_ids)), 2)
         for wid in work_ids:
             self.assertTrue(wid.startswith("wikipedia-"))
@@ -208,26 +271,25 @@ class Binding(unittest.TestCase):
         self.assertEqual(works_fact.value, 2)
 
     def test_image_docs_get_no_work_id(self):
-        corpus = Corpus()
-        corpus.raw_texts = []
-        corpus.docs = [{"type": "image", "work_id": None, "media_url": "https://x/a.jpg"}]
-        _run(C.codex_bind_node, corpus)
-        self.assertIsNone(corpus.docs[0]["work_id"])
+        """The binder never touches images: they are staged apart from the
+        texts precisely because they have no work to be an edition of."""
+        images = [{"type": "image", "work_id": None, "media_url": "https://x/a.jpg"}]
+        _, _, imgs = _run_codex("codex_bind", _rows(), image_rows=images)
+        self.assertIsNone(imgs[0]["work_id"])
 
     def test_a_commentary_titled_author_dash_title_binds_to_its_own_work(self):
         """Diderot's Supplément is a different book from Bougainville's own
         account — it must not collapse into "bougainville" just because it
         shares the "Author — Title" phrasing. The title segment (almost
         always the longer one) wins over the author segment."""
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("Diderot — Supplément au Voyage de Bougainville",
              "https://www.gutenberg.org/a", "body one", "Public domain", None),
             ("Bougainville — A Voyage Round the World (trans. Forster, 1772)",
              "https://www.gutenberg.org/b", "body two", "Public domain", None),
-        ]
-        state = _run(C.codex_bind_node, corpus)
-        wid_diderot, wid_bougainville = (wid for *_rest, wid in corpus.raw_texts)
+        )
+        state, raw, imgs = _run_codex("codex_bind", rows)
+        wid_diderot, wid_bougainville = (r["work_id"] for r in raw)
         self.assertNotEqual(wid_diderot, wid_bougainville)
         self.assertNotIn("diderot", wid_diderot)
         self.assertNotEqual(wid_diderot, "bougainville")
@@ -240,24 +302,23 @@ class Binding(unittest.TestCase):
         in common, only a subject. sources.py names the work explicitly for
         that case, and the override must be taken verbatim, not re-derived
         from the title."""
-        corpus = Corpus()
-        corpus.raw_texts = [
+        rows = _rows(
             ("Bougainville — A Voyage Round the World (trans. Forster, 1772)",
              "https://www.gutenberg.org/en", "body one", "Public domain",
              "voyage-autour-du-monde"),
             ("Bougainville — Voyage autour du monde (French, 1771)",
              "https://www.gutenberg.org/fr", "body two", "Public domain",
              "voyage-autour-du-monde"),
-        ]
-        state = _run(C.codex_bind_node, corpus)
-        work_ids = {wid for *_rest, wid in corpus.raw_texts}
+        )
+        state, raw, imgs = _run_codex("codex_bind", rows)
+        work_ids = {r["work_id"] for r in raw}
         self.assertEqual(work_ids, {"voyage-autour-du-monde"})
         override_decisions = [d for d in state.decisions
-                               if "explicit work override" in d.description]
+                               if d.key == "codex_work_override"]
         self.assertEqual(len(override_decisions), 2)
         works_fact = [f for f in state.facts if f.key == "codex_works"][0]
         self.assertEqual(works_fact.value, 1)
-        multi_edition = [d for d in state.decisions if "bound 2 editions" in d.description]
+        multi_edition = [d for d in state.decisions if d.key == "codex_edition_of" and "2 editions" in (d.reason or "")]
         self.assertEqual(len(multi_edition), 1)
 
 
