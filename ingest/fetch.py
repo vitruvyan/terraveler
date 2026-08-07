@@ -31,10 +31,15 @@ def fetch_gutenberg(url):
     txt = get_text(url)
     a = re.search(r"\*\*\* START OF.*?\*\*\*", txt, re.S)
     b = re.search(r"\*\*\* END OF", txt)
-    if a:
-        txt = txt[a.end():]
+    # Both offsets index the ORIGINAL text, so the tail must be cut before the
+    # head — or, as it did until codex's quality gate caught it, b.start() gets
+    # applied to a string already shortened by a.end() and lets exactly
+    # a.end() characters of Project Gutenberg licence ride into the corpus,
+    # labelled as the traveller's own words and "Public domain".
     if b:
         txt = txt[:b.start()]
+    if a:
+        txt = txt[a.end():]
     return txt.strip()
 
 

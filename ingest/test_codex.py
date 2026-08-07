@@ -9,6 +9,7 @@ import unittest
 
 from vitruvyan_motus import GraphSpec, Runtime, State
 import codex as C
+import fetch as F
 import pipeline_native as PN
 
 
@@ -320,6 +321,76 @@ class Binding(unittest.TestCase):
         self.assertEqual(works_fact.value, 1)
         multi_edition = [d for d in state.decisions if d.key == "codex_edition_of" and "2 editions" in (d.reason or "")]
         self.assertEqual(len(multi_edition), 1)
+
+
+class GutenbergBoilerplateTests(unittest.TestCase):
+    """The quality gate exists to catch a restoration failure; this is the one
+    it actually caught in production, so it gets a test at the source."""
+
+    HEAD = ("The Project Gutenberg eBook of Something\n\n"
+            "This ebook is for the use of anyone anywhere.\n\n"
+            "*** START OF THE PROJECT GUTENBERG EBOOK SOMETHING ***\n")
+    TAIL = ("\n*** END OF THE PROJECT GUTENBERG EBOOK SOMETHING ***\n\n"
+            "Updated editions will replace the previous one.\n"
+            "Section 1. General Terms of Use and Redistributing.\n")
+    NARRATIVE = "We sailed at dawn and the coast fell away behind us.\n"
+
+    def _fetch(self, raw):
+        original = F.get_text
+        F.get_text = lambda url: raw
+        try:
+            return F.fetch_gutenberg("http://example.invalid/x.txt")
+        finally:
+            F.get_text = original
+
+    def test_both_markers_and_the_licence_tail_are_cut(self):
+        """Both offsets index the ORIGINAL text. Cutting the head first and
+        then applying the tail offset to the shortened string leaves exactly
+        len(head) characters of Project Gutenberg licence in the corpus,
+        attributed to the traveller and labelled public domain."""
+        body = self._fetch(self.HEAD + self.NARRATIVE + self.TAIL)
+        self.assertEqual(body, self.NARRATIVE.strip())
+        for marker in C.GUTENBERG_BOILERPLATE_MARKERS:
+            self.assertNotIn(marker, body)
+        self.assertNotIn("General Terms of Use", body)
+
+    def test_the_quality_gate_reports_a_surviving_marker(self):
+        """The gate scores a residual marker at 0.7 — above the 0.5 floor, so
+        the source is KEPT. That is why the defect needed recording as well as
+        detecting (see codex_flawed)."""
+        errors = C.quality_errors(C.normalize_text(
+            self.NARRATIVE * 20 + self.TAIL))
+        self.assertTrue(any("*** END OF" in e for e in errors))
+        self.assertGreaterEqual(C.quality_score(errors), C.QUALITY_THRESHOLD_VALID)
+
+    def test_a_text_without_markers_is_returned_whole(self):
+        body = self._fetch(self.HEAD + self.NARRATIVE)
+        self.assertEqual(body, self.NARRATIVE.strip())
+
+
+class FlawedButKeptTests(unittest.TestCase):
+
+    def test_a_kept_text_with_a_structural_defect_is_recorded(self):
+        """A defect the gate saw belongs in the trace whether or not it was
+        enough to drop the source."""
+        flawed = _mk_body("The coast fell away. *** END OF THE EBOOK ***")
+        state, raw, _ = _run_codex("codex_restore", _rows(
+            ("A Voyage", "https://www.gutenberg.org/a", flawed, "Public domain", None)))
+        self.assertEqual(len(raw), 1, "the source clears the threshold and is kept")
+        flagged = [d for d in state.decisions if d.key == "codex_flawed"]
+        self.assertEqual(len(flagged), 1)
+        self.assertIn("*** END OF", flagged[0].reason)
+        fact = [f for f in state.facts if f.key == "codex_flawed"][0]
+        self.assertEqual(fact.value, 1)
+
+    def test_a_clean_text_is_not_flagged(self):
+        state, raw, _ = _run_codex("codex_restore", _rows(
+            ("A Voyage", "https://www.gutenberg.org/a",
+             _mk_body("The coast fell away."), "Public domain", None)))
+        self.assertEqual(len(raw), 1)
+        self.assertEqual([d for d in state.decisions if d.key == "codex_flawed"], [])
+        fact = [f for f in state.facts if f.key == "codex_flawed"][0]
+        self.assertEqual(fact.value, 0)
 
 
 if __name__ == "__main__":

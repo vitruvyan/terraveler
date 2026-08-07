@@ -67,13 +67,33 @@ _TAIL_TRANSITIONS = {
     "upsert": {"kind": "terminal"},
 }
 
+# Codex harvests nothing and judges nothing: it restores structurally, scores
+# structural validity, dedupes, and binds editions to works. Its LOGIC is
+# deterministic, but it reads and writes the staging table, and `pure` in this
+# contract means no I/O at all -- a pure node is re-executed by replay
+# verification, which would hit the database.
+#
+# Both graphs run it, for the same reason: text off the open web is restored
+# before it is cut into chunks, whether a curator chose the source or
+# sources.py did. Declaring it once means neither graph can lose it quietly.
+_CODEX_NODES = [
+    {"name": "codex_restore", "effect_class": "recorded_effect"},
+    {"name": "codex_bind", "effect_class": "recorded_effect"},
+]
+_CODEX_TRANSITIONS = {
+    "codex_restore": {"kind": "next", "to": "codex_bind"},
+    "codex_bind": {"kind": "next", "to": "chunk"},
+}
+
 INGESTION_SPEC = GraphSpec.from_dict({
     "schema_version": "1.0.0",
     "name": "terraveler-ingestion",
     "version": "1.0.0",
     "entry": "load_sources",
-    "nodes": [{"name": "load_sources", "effect_class": "recorded_effect"}] + _TAIL_NODES,
-    "transitions": {"load_sources": {"kind": "next", "to": "chunk"}, **_TAIL_TRANSITIONS},
+    "nodes": ([{"name": "load_sources", "effect_class": "recorded_effect"}]
+              + _CODEX_NODES + _TAIL_NODES),
+    "transitions": {"load_sources": {"kind": "next", "to": "codex_restore"},
+                    **_CODEX_TRANSITIONS, **_TAIL_TRANSITIONS},
 })
 
 DISCOVERY_SPEC = GraphSpec.from_dict({
@@ -87,20 +107,12 @@ DISCOVERY_SPEC = GraphSpec.from_dict({
         # audit this graph exists to produce.
         {"name": "curate", "effect_class": "recorded_effect"},
         {"name": "fetch", "effect_class": "recorded_effect"},
-        # Codex harvests nothing and judges nothing: it restores structurally,
-        # scores structural validity, dedupes, and binds editions to works.
-        # Its LOGIC is deterministic, but it reads and writes the staging
-        # table, and `pure` in this contract means no I/O at all -- a pure node
-        # is re-executed by replay verification, which would hit the database.
-        {"name": "codex_restore", "effect_class": "recorded_effect"},
-        {"name": "codex_bind", "effect_class": "recorded_effect"},
-    ] + _TAIL_NODES,
+    ] + _CODEX_NODES + _TAIL_NODES,
     "transitions": {
         "discover": {"kind": "next", "to": "curate"},
         "curate": {"kind": "next", "to": "fetch"},
         "fetch": {"kind": "next", "to": "codex_restore"},
-        "codex_restore": {"kind": "next", "to": "codex_bind"},
-        "codex_bind": {"kind": "next", "to": "chunk"},
+        **_CODEX_TRANSITIONS,
         **_TAIL_TRANSITIONS,
     },
 })
@@ -288,6 +300,137 @@ def _tail_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
     return {"chunk": chunk, "embed": embed, "upsert": upsert}
 
 
+# ------------------------------------------------------------- shared codex
+
+def _codex_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
+    """The Codex Hunters, shared by both graphs.
+
+    These two nodes were briefly wired into the discovery graph alone, which
+    quietly cost the curated path everything they do: normalization, the
+    quality gate, dedupe, and the binding of editions to works. Both graphs
+    fetch text from the open web and both need it restored before it is cut
+    into chunks, so the shape is named once here and neither spec can drop it
+    without the other noticing."""
+    def codex_restore(state: State, ctx) -> State:
+        """Structural repair, a scored quality gate, and dedupe. Harvests
+        nothing and judges nothing about a source's subject: the trace records
+        what raw looked like, what changed, and every drop with its reason."""
+        raw = staging.get(cfg, run_id, staging.RAW)
+        now = ctx.now()
+        entries, n_invalid, n_flawed = [], 0, 0
+        for r in raw:
+            raw_hash = CX.sha12(r["body"])
+            norm = CX.normalize_text(r["body"])
+            norm_hash = CX.sha12(norm)
+            state = state.with_decision(Decision(
+                "codex_restored", norm_hash, now,
+                reason=f"'{r['title'][:50]}' raw sha256:{raw_hash} "
+                       f"({len(r['body'])} chars) → normalized ({len(norm)} chars)"))
+            errors = CX.quality_errors(norm)
+            score = CX.quality_score(errors)
+            if score < CX.QUALITY_THRESHOLD_VALID:
+                n_invalid += 1
+                state = state.with_rejection(Rejection(
+                    r["title"], f"codex: INVALID, quality={score:.1f} — "
+                                + "; ".join(errors), now))
+                continue
+            if errors:
+                # A text can fail a structural check and still clear the
+                # threshold. Recording the failure only when it is fatal is how
+                # a Project Gutenberg licence footer sat in the corpus scoring
+                # 0.7: detected every run, written down in none of them. A
+                # defect the gate saw belongs in the trace whether or not it
+                # was enough to drop the source.
+                n_flawed += 1
+                state = state.with_decision(Decision(
+                    "codex_flawed", f"{score:.1f}", now,
+                    reason=f"'{r['title'][:50]}' kept despite "
+                           + "; ".join(errors)))
+            entries.append({"title": r["title"], "url": r["url"], "body": norm,
+                            "license": r["license"], "content_hash": norm_hash,
+                            "shingles": CX._shingles(norm),
+                            "work_override": r.get("work_id")})
+
+        kept, drops = CX._dedupe_texts(entries)
+        for desc, reason in drops:
+            state = state.with_rejection(Rejection(desc, reason, now))
+
+        survivors = []
+        for e in kept:
+            dkey = CX.dedupe_key(e["title"], e["url"], e["content_hash"])
+            state = state.with_decision(Decision(
+                "codex_kept", dkey, now, reason=f"'{e['title'][:50]}'"))
+            survivors.append({"title": e["title"], "url": e["url"], "body": e["body"],
+                              "license": e["license"], "work_id": e["work_override"]})
+        staging.put(cfg, run_id, staging.RAW, survivors)
+
+        # Images never had a body to restore, so they get the one check that
+        # applies to them: an exact duplicate of a media_url is a duplicate.
+        seen, kept_images, n_img_dropped = set(), [], 0
+        for d in staging.get(cfg, run_id, staging.IMG):
+            mu = d.get("media_url")
+            if mu in seen:
+                n_img_dropped += 1
+                state = state.with_rejection(Rejection(
+                    d.get("title") or mu, f"codex: exact duplicate media_url {mu}", now))
+                continue
+            seen.add(mu)
+            kept_images.append(d)
+        staging.put(cfg, run_id, staging.IMG, kept_images)
+
+        n_deduped = (len(entries) - len(kept)) + n_img_dropped
+        return (state
+                .with_fact(Fact("codex_invalid", n_invalid, "codex_restore", now))
+                .with_fact(Fact("codex_flawed", n_flawed, "codex_restore", now))
+                .with_fact(Fact("codex_deduped", n_deduped, "codex_restore", now))
+                .with_fact(Fact("codex_kept", len(kept), "codex_restore", now))
+                .with_decision(Decision(
+                    "restoration", "complete", now,
+                    reason=f"{len(kept)} kept of {len(raw)} "
+                           f"({n_invalid} invalid, {n_flawed} flawed, "
+                           f"{n_deduped} deduped)")))
+
+    def codex_bind(state: State, ctx) -> State:
+        """Bind each surviving text to its WORK. Two texts landing on one
+        work_id under different urls are editions of one work. The title
+        heuristic cannot bind cross-language editions, so sources.py may name
+        the work explicitly; the override wins verbatim and is recorded, so it
+        reads as a decision rather than a coincidence."""
+        raw = staging.get(cfg, run_id, staging.RAW)
+        now = ctx.now()
+        works: dict[str, list] = {}
+        bound = []
+        for r in raw:
+            override = r.get("work_id")
+            if override:
+                wid = override
+                state = state.with_decision(Decision(
+                    "codex_work_override", wid, now,
+                    reason=f"'{r['title'][:50]}' named its work in sources.py"))
+            else:
+                wid = CX.work_id_for(r["title"], r["url"])
+            works.setdefault(wid, []).append((r["title"], r["url"]))
+            bound.append({**r, "work_id": wid})
+        staging.put(cfg, run_id, staging.RAW, bound)
+
+        n_multi = 0
+        for wid, editions in works.items():
+            if len(editions) > 1:
+                n_multi += 1
+                names = "; ".join(f"{t[:40]} ({u})" for t, u in editions)
+                state = state.with_decision(Decision(
+                    "codex_edition_of", wid, now,
+                    reason=f"{len(editions)} editions — {names}"))
+        return (state
+                .with_fact(Fact("codex_works", len(works), "codex_bind", now))
+                .with_decision(Decision(
+                    "binding", "complete", now,
+                    reason=f"{len(bound)} text(s) into {len(works)} work(s), "
+                           f"{n_multi} multi-edition")))
+
+    return {"codex_restore": codex_restore, "codex_bind": codex_bind}
+
+
 # --------------------------------------------------------------- ingestion
 
 def make_ingestion_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
@@ -382,7 +525,8 @@ def make_ingestion_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
                     reason=f"{n_txt} text source(s) past the licence gate, "
                            f"{n_img} image doc(s)")))
 
-    return {"load_sources": load_sources, **_tail_nodes(cfg, run_id)}
+    return {"load_sources": load_sources,
+            **_codex_nodes(cfg, run_id), **_tail_nodes(cfg, run_id)}
 
 
 # --------------------------------------------------------------- discovery
@@ -487,109 +631,6 @@ def make_discovery_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
                     "fetching", "complete" if not failed else "partial", now,
                     reason=f"{len(raw)} text(s) and {n_img} image(s), {failed} failed")))
 
-    def codex_restore(state: State, ctx) -> State:
-        """Structural repair, a scored quality gate, and dedupe. Harvests
-        nothing and judges nothing about a source's subject: the trace records
-        what raw looked like, what changed, and every drop with its reason."""
-        raw = staging.get(cfg, run_id, staging.RAW)
-        now = ctx.now()
-        entries, n_invalid = [], 0
-        for r in raw:
-            raw_hash = CX.sha12(r["body"])
-            norm = CX.normalize_text(r["body"])
-            norm_hash = CX.sha12(norm)
-            state = state.with_decision(Decision(
-                "codex_restored", norm_hash, now,
-                reason=f"'{r['title'][:50]}' raw sha256:{raw_hash} "
-                       f"({len(r['body'])} chars) → normalized ({len(norm)} chars)"))
-            errors = CX.quality_errors(norm)
-            score = CX.quality_score(errors)
-            if score < CX.QUALITY_THRESHOLD_VALID:
-                n_invalid += 1
-                state = state.with_rejection(Rejection(
-                    r["title"], f"codex: INVALID, quality={score:.1f} — "
-                                + "; ".join(errors), now))
-                continue
-            entries.append({"title": r["title"], "url": r["url"], "body": norm,
-                            "license": r["license"], "content_hash": norm_hash,
-                            "shingles": CX._shingles(norm),
-                            "work_override": r.get("work_id")})
-
-        kept, drops = CX._dedupe_texts(entries)
-        for desc, reason in drops:
-            state = state.with_rejection(Rejection(desc, reason, now))
-
-        survivors = []
-        for e in kept:
-            dkey = CX.dedupe_key(e["title"], e["url"], e["content_hash"])
-            state = state.with_decision(Decision(
-                "codex_kept", dkey, now, reason=f"'{e['title'][:50]}'"))
-            survivors.append({"title": e["title"], "url": e["url"], "body": e["body"],
-                              "license": e["license"], "work_id": e["work_override"]})
-        staging.put(cfg, run_id, staging.RAW, survivors)
-
-        # Images never had a body to restore, so they get the one check that
-        # applies to them: an exact duplicate of a media_url is a duplicate.
-        seen, kept_images, n_img_dropped = set(), [], 0
-        for d in staging.get(cfg, run_id, staging.IMG):
-            mu = d.get("media_url")
-            if mu in seen:
-                n_img_dropped += 1
-                state = state.with_rejection(Rejection(
-                    d.get("title") or mu, f"codex: exact duplicate media_url {mu}", now))
-                continue
-            seen.add(mu)
-            kept_images.append(d)
-        staging.put(cfg, run_id, staging.IMG, kept_images)
-
-        n_deduped = (len(entries) - len(kept)) + n_img_dropped
-        return (state
-                .with_fact(Fact("codex_invalid", n_invalid, "codex_restore", now))
-                .with_fact(Fact("codex_deduped", n_deduped, "codex_restore", now))
-                .with_fact(Fact("codex_kept", len(kept), "codex_restore", now))
-                .with_decision(Decision(
-                    "restoration", "complete", now,
-                    reason=f"{len(kept)} kept of {len(raw)} "
-                           f"({n_invalid} invalid, {n_deduped} deduped)")))
-
-    def codex_bind(state: State, ctx) -> State:
-        """Bind each surviving text to its WORK. Two texts landing on one
-        work_id under different urls are editions of one work. The title
-        heuristic cannot bind cross-language editions, so sources.py may name
-        the work explicitly; the override wins verbatim and is recorded, so it
-        reads as a decision rather than a coincidence."""
-        raw = staging.get(cfg, run_id, staging.RAW)
-        now = ctx.now()
-        works: dict[str, list] = {}
-        bound = []
-        for r in raw:
-            override = r.get("work_id")
-            if override:
-                wid = override
-                state = state.with_decision(Decision(
-                    "codex_work_override", wid, now,
-                    reason=f"'{r['title'][:50]}' named its work in sources.py"))
-            else:
-                wid = CX.work_id_for(r["title"], r["url"])
-            works.setdefault(wid, []).append((r["title"], r["url"]))
-            bound.append({**r, "work_id": wid})
-        staging.put(cfg, run_id, staging.RAW, bound)
-
-        n_multi = 0
-        for wid, editions in works.items():
-            if len(editions) > 1:
-                n_multi += 1
-                names = "; ".join(f"{t[:40]} ({u})" for t, u in editions)
-                state = state.with_decision(Decision(
-                    "codex_edition_of", wid, now,
-                    reason=f"{len(editions)} editions — {names}"))
-        return (state
-                .with_fact(Fact("codex_works", len(works), "codex_bind", now))
-                .with_decision(Decision(
-                    "binding", "complete", now,
-                    reason=f"{len(bound)} text(s) into {len(works)} work(s), "
-                           f"{n_multi} multi-edition")))
 
     return {"discover": discover, "curate": curate_node, "fetch": fetch_node,
-            "codex_restore": codex_restore, "codex_bind": codex_bind,
-            **_tail_nodes(cfg, run_id)}
+            **_codex_nodes(cfg, run_id), **_tail_nodes(cfg, run_id)}
