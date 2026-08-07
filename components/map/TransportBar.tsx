@@ -116,6 +116,12 @@ export default function TransportBar({
   const shown = tracks.find((x) => x.key === activeTrack) ?? tracks[0];
   /* A switch with one choice is not a switch. */
   const switchable = phone && tracks.length > 1;
+  /* Whether the chain of legs is drawing the position. Where it is, the range
+     input stops drawing it too — a brass fill under a chain that already fills
+     is the same sentence printed twice, which is the argument that took the
+     thumb off the phone. The thumb itself stays on a wide screen: there it is
+     not a second reading, it is the thing the hand grabs. */
+  const chained = !!shown?.segmented && shown.marks.length > 1;
 
   return (
     <div className="transport-bar" ref={barRef}>
@@ -153,7 +159,7 @@ export default function TransportBar({
         </div>
       )}
 
-      <div className="voyage-track">
+      <div className={`voyage-track${chained ? " chained" : ""}`}>
         {/* A MARK IS NOT A DOOR — on a phone.
 
             Measured: each of these is 2×8 and there are fifteen across a 340px
@@ -161,8 +167,12 @@ export default function TransportBar({
             fit in 340px at any size. So on a phone they are printed marks, out
             of the tab order and out of the accessibility tree, and stepping
             between them moved into the log — where you are already reading the
-            thing they point at. A mouse can hit 2px, so a wide screen keeps
-            them as buttons. */}
+            thing they point at.
+            A wide screen kept them as buttons on the grounds that a mouse can
+            hit 2px. It can; it should not have to. Where the chain draws the
+            rail the doors move ONTO it, and this row is left to the world's
+            marks — which are moments, not the ends of anything, so they cannot
+            be a chain. */}
         {/* THE RAIL AS A CHAIN OF LEGS, on a phone.
 
             The thumb is gone, and it is not hidden — it is redundant. Once each
@@ -176,27 +186,61 @@ export default function TransportBar({
             repeating tones give a reader adjacent legs they can tell apart,
             which is the whole job, without the rail claiming a taxonomy the
             voyage does not have. */}
-        {phone && shown?.segmented && shown.marks.length > 1 && (
-          <div className="vt-segs" aria-hidden="true">
+        {/* THE CHAIN IS NOT A PHONE AFFORDANCE — it is the drawing.
+            It was built here because a phone had no room for a thumb, and it
+            turned out to be the better picture of a voyage on any screen. A
+            wide rail was a plain brass fill: it said how far through the TIME
+            you were and nothing at all about the legs the time is made of,
+            which on a map whose subject is the passage between two places is
+            the wrong half to draw. So the chain draws on both, and everything
+            that used to be said twice underneath it stops — the tick row goes
+            `:empty` and collapses, the range input gives up its fill and keeps
+            only the thumb a hand needs to grab.
+
+            A LEG IS A DOOR, on a wide screen, and it leads to the far end.
+            Two directions were possible and only one keeps every landfall
+            reachable: with N stops there are N−1 legs, so pointing each at
+            where it STARTS would strand the last landfall — the end of the
+            voyage, the one a reader is most likely to want to jump to — with
+            no leg after it to click. Pointing at where it ARRIVES strands the
+            FIRST stop instead, which costs nothing: every voyage opens there.
+            It also matches what the drawing already says. The leg fills as the
+            ship crosses it, so clicking one means "cross this leg", and you
+            are put down at the far end with it drawn full behind you. */}
+        {chained && shown && (
+          <div className="vt-segs" aria-hidden={phone ? "true" : undefined}>
             {shown.marks.slice(0, -1).map((m, i) => {
+              const next = shown.marks[i + 1];
               const from = pctOf(m.at);
-              const to = pctOf(shown.marks[i + 1].at);
+              const to = pctOf(next.at);
               const span = to - from || 0.001;
               const done = Math.max(0, Math.min(100, ((pct - from) / span) * 100));
-              return (
-                <span
-                  key={m.id}
-                  className={`vt-seg tone-${i % 4}`}
-                  style={{ left: `${from}%`, width: `${to - from}%` }}
-                >
-                  <span className="vt-seg-fill" style={{ width: `${done}%` }} />
+              const cls = `vt-seg tone-${i % 4}`;
+              const box = { left: `${from}%`, width: `${to - from}%` };
+              const fill = <span className="vt-seg-fill" style={{ width: `${done}%` }} />;
+              const leg = `${m.label} → ${next.label}`;
+              return phone || !shown.onMark ? (
+                <span key={m.id} className={cls} style={box}>
+                  {fill}
                 </span>
+              ) : (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={cls}
+                  style={box}
+                  title={leg}
+                  aria-label={leg}
+                  onClick={() => shown.onMark!(next.at)}
+                >
+                  {fill}
+                </button>
               );
             })}
           </div>
         )}
         <div className="vt-ticks">
-          {(phone && shown?.segmented ? [] : shown?.marks ?? []).map((m) =>
+          {(chained ? [] : shown?.marks ?? []).map((m) =>
             phone || !shown?.onMark ? (
               <span
                 key={m.id}

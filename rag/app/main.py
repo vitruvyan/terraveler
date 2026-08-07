@@ -37,6 +37,12 @@ from app.chat_graph_native import config_from_env, run_chat_native
 
 EMBED_URL = os.getenv("EMBED_URL", "http://terraveler_embedding:8010")
 TOKEN = os.getenv("RAG_TOKEN", "")
+# The chronicler writes through Anthropic. He wrote through OpenAI until that
+# account's credit ran out, which took every voyage WITH sources offline while
+# the two that have none kept answering — the failure was invisible from the
+# outside because the graph declined those two politely and 500'd the rest.
+# The key and the model name are read by `config_from_env` below, not here:
+# the graph owns its own configuration and this file does not duplicate it.
 PG = dict(
     host=os.getenv("PGHOST", "terraveler_postgres"),
     port=int(os.getenv("PGPORT", "5432")),
@@ -61,7 +67,7 @@ def _stamp() -> str:
 
 
 def _persist(run_id, voyage, question, *, answerable, top_similarity,
-             n_sources, answer, trace, what):
+             n_sources, answer, trace, what, failure=None):
     """Write one row to `chat_traces`. Never raises: a run that answered must
     not be turned into a 500 because the audit row would not go down.
 
@@ -69,6 +75,12 @@ def _persist(run_id, voyage, question, *, answerable, top_similarity,
     `to_json()` is the contract form — the same bytes `contract/validate.py`
     accepts — so a row can be pulled out of the database and checked by
     someone who trusts neither this service nor its author.
+
+    `answerable` is the EVIDENCE verdict and keeps its meaning: the sources
+    were sufficient. `failure` is separate and names the exception class that
+    stopped the writer. A row with answerable=true and a failure set is the
+    shape an operator wants to be able to count — it is our outage, not a gap
+    in the atlas, and collapsing the two would hide exactly that.
     """
     try:
         conn = psycopg2.connect(**PG)
@@ -76,11 +88,11 @@ def _persist(run_id, voyage, question, *, answerable, top_similarity,
             cur.execute("""
                 insert into chat_traces
                   (trace_id, voyage_slug, question, answerable, top_similarity,
-                   n_sources, answer, trace)
-                values (%s,%s,%s,%s,%s,%s,%s,%s)
+                   n_sources, answer, trace, failure)
+                values (%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """, (run_id, voyage, question, answerable, top_similarity,
                   n_sources, answer,
-                  trace.to_json() if trace is not None else None))
+                  trace.to_json() if trace is not None else None, failure))
         conn.close()
     except Exception as exc:
         print(f"⚠ could not persist {what}: {exc}")
@@ -105,6 +117,12 @@ def _ensure_trace_table():
                   created_at  timestamptz default now()
                 );
             """)
+            # Added after the fact, so it is an ALTER rather than part of the
+            # CREATE above — the table exists in production and this file has
+            # to be safe to re-run. Null means the chronicler wrote, or
+            # declined on the evidence; a value names the exception class that
+            # stopped him. Two silences, one column apart.
+            cur.execute("alter table chat_traces add column if not exists failure text;")
         conn.close()
     except Exception as e:
         print(f"⚠ chat_traces ensure failed: {e}")
@@ -138,8 +156,13 @@ def health():
         pg = True
     except Exception:
         pg = False
+    # `writer` rather than the provider's name: this line is a health probe, and
+    # naming the vendor in it is how the old one kept saying `openai: true` with
+    # an exhausted account behind it. It reports that a key is configured, which
+    # is all a key can tell you — whether it still buys anything is what the
+    # `failure` column on chat_traces is for.
     return {"status": "healthy" if pg else "degraded", "pg": pg,
-            "model_key": bool(CHAT_CFG.anthropic_key), "model": CHAT_CFG.model}
+            "writer": bool(CHAT_CFG.anthropic_key)}
 
 
 @app.post("/rag/search")
@@ -189,17 +212,22 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
     except NodeFailed as e:
         _persist(run_id, voyage, req.question,
                  answerable=None, top_similarity=None, n_sources=None,
-                 answer=None, trace=e.trace, what="failed chat trace")
+                 answer=None, trace=e.trace, what="failed chat trace",
+                 failure=type(e.__cause__ or e).__name__)
         raise HTTPException(status_code=500,
                             detail="chat failed — the trace was recorded")
 
     # Every figure below is read back OUT of the state the run committed,
-    # never carried alongside it: the row and the trace cannot disagree.
+    # never carried alongside it: the row and the trace cannot disagree. That
+    # includes `failure`: the writer being unreachable is not an exception that
+    # escapes any more, it is a fact the `answer` node commits, so the run
+    # completes, the sources reach the reader, and the outage is countable.
     state = result.state
     _persist(run_id, voyage, req.question,
              answerable=(state.decision("answerable") == "yes"),
              top_similarity=state.fact("top_similarity"),
              n_sources=state.fact("n_sources"),
-             answer=answer, trace=result.trace, what="chat trace")
+             answer=answer, trace=result.trace, what="chat trace",
+             failure=state.fact("failure"))
 
     return {"answer": answer, "sources": sources, "trace_id": run_id}

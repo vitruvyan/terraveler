@@ -128,10 +128,13 @@ services:
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       RAG_TOKEN: ${RAG_TOKEN}
-      # The chat graph answers through Anthropic. The OpenAI pair that used to
-      # sit here left with chat_graph.py: nothing in this service reads it.
+      # The chronicler writes through Anthropic. OPENAI_* is gone rather than
+      # kept as a fallback: a second provider nobody exercises is a path that
+      # rots, and this one had already rotted in place — the key was passed in
+      # for weeks and read by nothing, while the account it named ran dry. The
+      # pair left for good with chat_graph.py; nothing in this service reads it.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5}
       RAG_K: ${RAG_K:-6}
       PGHOST: terraveler_postgres
       PGPORT: 5432

@@ -664,13 +664,31 @@ are editing is already migrated; check it. As of the typography commit:
   Escape, same 12px square turned 45°, kept beside its twin in this file rather
   than by anyone remembering.
 
-- **The rail is a chain of legs and the thumb is gone.** Each leg fills as the
+- **The rail is a chain of legs, on both arrangements.** Each leg fills as the
   ship crosses it, so the boundary between filled and unfilled IS the position
   and an 18px dot marking it a second time went. Four tones cycled, not one per
   leg: a voyage's legs differ in ORDER, not in kind, and fifteen colours would
   assert a taxonomy the voyage does not have. When the chain draws the rail the
   tick row is `:empty` and collapses — leaving it in place cost 12px, the whole
   saving the thumb had just given back.
+
+  It was built for a phone and then kept on a wide screen too, which is worth
+  recording because the reasoning inverted. The chain arrived as a *compromise*
+  — no room for a thumb — and the wide rail it did not touch turned out to be
+  the poorer drawing: a brass fill saying how far through the TIME you were, on
+  a map whose subject is the passage between two places. A compact arrangement
+  is allowed to teach the roomy one; assuming the constraint produced something
+  worse is how the better picture stayed on 412px for a release.
+
+  What differs by arrangement is only what the chain *is*, not how it looks.
+  **A phone**: printed marks, `aria-hidden`, 6px, no thumb, stepping in the
+  log. **Wide**: 8px, the thumb stays because a hand wants something to grab,
+  and each leg is a door — which retires the 2px ticks on the voyage track
+  everywhere rather than only under a finger. A leg leads to where it
+  ARRIVES: with N stops there are N−1 legs, so pointing them at their start
+  strands the last landfall, and pointing them at their end strands the first,
+  which is where every voyage already opens. The tick row survives for the
+  world's marks, which are moments and cannot be a chain.
 
 - **The timeline switch is one mark, not two tabs.** Two labelled tabs spent
   the width of both words permanently on a choice made rarely — the argument
@@ -688,6 +706,13 @@ are editing is already migrated; check it. As of the typography commit:
   scrubber keeps its 4px rule and gained a 44px target by growing into padding
   and putting the drawn track back with `background-clip`; the alternative, a
   thicker line, answers touch by giving up the drawing.
+
+  And gone from the voyage track on a **wide** screen as well, which the first
+  repayment left standing on the argument that a mouse can hit 2px. It can; it
+  should not have to, and once the chain drew the legs above them the row was
+  repeating boundaries the chain had just drawn — the same thing said twice,
+  one line lower and less well. The door moved onto the leg, which is 8px tall,
+  as wide as the passage it stands for, and can name both its ends.
 
 - **The transport bar is built once.** `components/map/TransportBar.tsx`, with
   a lexicon — this is the instrument debt below, repaid for this one instrument.

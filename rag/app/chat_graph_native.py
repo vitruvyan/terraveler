@@ -1,11 +1,12 @@
 """The Terraveler chat pipeline as a native Motus graph.
 
-The Axis version of this pipeline (``chat_graph.py``) is kept beside it and
-still serves. This one exists to answer a question the predecessor could not:
-**what does the run look like when the runtime, not the code, decides where
-execution goes?**
+This is the only chat pipeline: ``chat_graph.py``, the Axis version it was
+ported from, is gone. It answers a question the predecessor could not: **what
+does the run look like when the runtime, not the code, decides where execution
+goes?**
 
-Three things are deliberately different, and each is the point of an experiment:
+Three things are deliberately different from that predecessor, and each is the
+point of an experiment:
 
 1.  **There is no `Bag`.** The Axis graph passes a mutable object to every node
     and the real data rides it — ``bag.answerable = True`` in one node, ``if
@@ -58,12 +59,44 @@ from vitruvyan_motus.effects import EffectClass
 
 RELEVANCE_THRESHOLD = 0.35  # cosine similarity below which we decline to answer
 
+# Two clauses here are not stylistic and were both written after watching the
+# answer land in the actual bubble.
+#
+#   THE LANGUAGE. "Reply in the user's language" read as a hint about who was
+#   being served, and the model took its cue from the sources instead: an
+#   English question about Cook's Endeavour came back in Spanish, fluently and
+#   entirely wrongly. This corpus is multilingual by construction — Bernal
+#   Díaz is Spanish, Pigafetta is Italian, Cook is English — so "the user's
+#   language" has to name the QUESTION as the thing it is read from, or the
+#   passages win.
+#
+#   THE MARKDOWN. components/Pigafetta.tsx renders the answer as text in a
+#   div; there is no markdown parser behind it and adding one is not the fix.
+#   Un-instructed, the model returns headings and **bold**, and the reader gets
+#   literal asterisks in a chat bubble on a site whose argument is typography.
+#   The prose voice is also the right one here: this is a chronicler speaking,
+#   not a report with sections.
 SYSTEM_PROMPT = (
     "You are Antonio Pigafetta, chronicler of great voyages. Answer the user's "
     "question ONLY from the numbered sources below, which come from the ship's "
     "journals and reference works for the voyage in question. Cite the sources "
     "you use inline as [n]. If the answer is not in the sources, say plainly that "
-    "the sources do not tell. Reply in the user's language. Be concise, accurate and vivid."
+    "the sources do not tell. "
+    "Answer in the language the QUESTION is written in, whatever language the "
+    "sources happen to be in. "
+    "Write plain prose only: no Markdown, no headings, no asterisks, no bullet "
+    "lists, no bold. Short paragraphs. "
+    "Be concise, accurate and vivid — a few sentences unless more is truly asked for."
+)
+
+# The second silence. A voyage whose sources do not cover the question and a
+# chronicler who cannot write today are not the same absence, and the graph
+# used to know how to declare only the first.
+UNREACHABLE_ANSWER = (
+    "The passages are before me — {n} of them, from this voyage's own sources — "
+    "but I cannot compose from them at this moment: the hand that writes my "
+    "answers is not responding. Nothing is missing from the record. The sources "
+    "are listed below; they are the ones I would have quoted."
 )
 
 DECLINED_ANSWER = (
@@ -94,9 +127,12 @@ SPEC = GraphSpec.from_dict({
         {"name": "evaluate", "effect_class": "pure",
          "reads_declared": ["top_similarity", "n_sources"],
          "writes_declared": ["answerable", "grounding"]},
+        # `failure` is declared here even though most runs never write it: a
+        # declaration is a list of what the node MAY write, and a writer that
+        # cannot be reached is one of the two ways this node can end.
         {"name": "answer", "effect_class": "recorded_effect",
          "reads_declared": ["sources", "question"],
-         "writes_declared": ["answer", "answered"]},
+         "writes_declared": ["answer", "answered", "failure"]},
         {"name": "decline", "effect_class": "pure",
          "reads_declared": [],
          "writes_declared": ["answer", "answered"]},
@@ -129,9 +165,9 @@ class ChatConfig:
     pg: dict[str, Any]
     embed_url: str
     anthropic_key: str
-    model: str = "claude-sonnet-5"
+    model: str = "claude-opus-5"
     k: int = 6
-    max_tokens: int = 1024
+    max_tokens: int = 4000
 
 
 # ---------------------------------------------------------------- adapters
@@ -146,16 +182,31 @@ def _embed(embed_url: str, text: str) -> list[float]:
 
 
 def _anthropic(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str, dict]:
+    """Write the answer from the retrieved passages.
+
+    THE LANGUAGE RULE IS REPEATED HERE, LAST, AND THAT IS THE POINT. Stated
+    only in the system prompt it lost twice to the passages: an English
+    question about Cook came back in Spanish, and "Who was Jeanne Barret?" came
+    back in French, because the sources that answer her are French and they are
+    the nearest thing to the answer. Eight retrieved passages are a great deal
+    of text in one language sitting between the instruction and the writing.
+    Putting it after the question makes it the last thing read, which is what
+    it took — the wording did not change, its position did.
+    """
     context = "\n\n".join(
         f"[{i + 1}] ({d['title']})\n{d['content']}" for i, d in enumerate(sources)
+    )
+    prompt = (
+        f"Sources:\n{context}\n\nQuestion: {question}\n\n"
+        "Answer the question above in the SAME LANGUAGE THE QUESTION IS WRITTEN "
+        "IN. The sources may be in other languages; that does not change which "
+        "language you answer in. Plain prose, no Markdown."
     )
     body = {
         "model": cfg.model,
         "max_tokens": cfg.max_tokens,
         "system": SYSTEM_PROMPT,
-        "messages": [
-            {"role": "user", "content": f"Sources:\n{context}\n\nQuestion: {question}"}
-        ],
+        "messages": [{"role": "user", "content": prompt}],
     }
     req = urllib.request.Request(
         "https://api.anthropic.com/v1/messages",
@@ -258,9 +309,57 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
         )).with_fact(Fact("grounding", "sources insufficient", "evaluate", now))
 
     def answer(state: State, ctx) -> State:
+        """The node that has to distinguish two silences.
+
+        A voyage whose sources do not cover the question, and a chronicler who
+        cannot write today, are not the same absence — and for a year this
+        graph only knew how to declare the first. The second arrived as a stack
+        trace: the model call raised, the exception left the run, and the one
+        failure with an external cause produced a 500 where a reader wanted the
+        passages. The reader was told "the chronicler is unavailable", which is
+        true and says nothing.
+
+        Both are declared now, in the atlas's own grammar: a Rejection carrying
+        the motive, a `failure` fact naming the exception class, and a sentence
+        that says WHICH silence this is. The sources travel with it — they were
+        retrieved successfully and are the same passages the answer would have
+        quoted, so a reader who came for the record still gets the record. This
+        is the Carta's rule about a burnt archive, applied to our own
+        machinery: an absence is stated, never disguised as an answer or as an
+        empty page.
+
+        It is a returned state rather than a raise on purpose. A raise under
+        STRICT aborts the run, and an aborted run discards the writes of the
+        attempt that failed — including the sources this reader is owed.
+        """
         sources = state.fact("sources") or []
         question = state.metadata("question")
-        text, payload = _anthropic(cfg, question, sources)
+        try:
+            text, payload = _anthropic(cfg, question, sources)
+        except Exception as exc:
+            now = ctx.now()
+            # The class, not the text: a message can carry a key or a URL, and
+            # this string is persisted to chat_traces and shown to a reader.
+            failure = type(exc).__name__
+            ctx.record_effect(EffectDescriptor(
+                effect_class=EffectClass.RECORDED_EFFECT,
+                description=(f"{cfg.model} was unreachable while composing from "
+                             f"{len(sources)} source(s): {failure}"),
+                receipt=EffectReceipt(receipt_id=failure, status="unknown"),
+            ))
+            print(f"⚠ compose failed ({failure}): {exc}")
+            return (
+                state
+                .with_fact(Fact("answer", UNREACHABLE_ANSWER.format(n=len(sources)),
+                                "policy", now))
+                .with_fact(Fact("answered", False, "answer", now))
+                .with_fact(Fact("failure", failure, "answer", now))
+                .with_rejection(Rejection(
+                    "compose an answer from sufficient sources",
+                    f"the writing model was unreachable ({failure})", now,
+                    evidence={"n_sources": len(sources), "model": cfg.model},
+                ))
+            )
         now = ctx.now()
 
         usage = payload.get("usage") or {}
@@ -300,7 +399,7 @@ def config_from_env(pg: dict[str, Any]) -> ChatConfig:
         pg=pg,
         embed_url=os.getenv("EMBED_URL", "http://terraveler_embedding:8010"),
         anthropic_key=os.getenv("ANTHROPIC_API_KEY", ""),
-        model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
+        model=os.getenv("ANTHROPIC_MODEL", "claude-opus-5"),
         k=int(os.getenv("RAG_K", "6")),
     )
 

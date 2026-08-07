@@ -81,7 +81,22 @@ export function buildLegs<T extends DatedPoint>(
     const { x, y } = getXY(wp, prevX);
     let arrival = parseHistoricalDate(wp.arrival_date);
     if (arrival === null) arrival = prevTime === -Infinity ? 0 : prevTime + 14 * DAY;
-    if (arrival < prevTime) arrival = prevTime + DAY;
+    /* STRICTLY LATER THAN THE ONE BEFORE, and the `<=` is the whole fix.
+       This resolves position at day granularity, so two stops recorded on the
+       same calendar day landed on the same instant — and everything drawn on
+       the time axis then drew them on top of each other. The Moon showed it
+       worst: Apollo 11's six stops are one EVA of two and a half hours, five
+       of them dated 21 July 1969, so the rail was ONE leg spanning the whole
+       width with four zero-width links stacked at its end. A chain of stages
+       that renders as an empty bar is not a rail with a styling problem; it is
+       six stages the reader cannot see or reach.
+       The bump is synthetic time, never shown: the log prints the date STRING
+       from the record (see formatRange), and a surface voyage inside one day
+       prints its real clock times from date_note instead. Six voyages had
+       collided stops — Pizarro's march had six of them — and only Apollo's
+       overall span moves at all, because elsewhere the day is absorbed by the
+       next real date. */
+    if (arrival <= prevTime) arrival = prevTime + DAY;
     let departure = parseHistoricalDate(wp.departure_date);
     if (departure === null || departure < arrival) departure = arrival;
 
