@@ -20,13 +20,21 @@
 --
 -- WHY trace_jsonl IS text AND NOT jsonb
 -- ------------------------------------
--- Because the bytes are the evidence. jsonb parses, reorders keys and
--- re-serialises, and the integrity chain was computed over the bytes Motus
--- wrote — so a trace stored as jsonb is checked against bytes Postgres chose
--- and fails `motus-validate` for a reason that has nothing to do with anyone
--- tampering with it. `chat_traces.trace` is jsonb and carries that defect
--- today; this column does not repeat it. The form stored is the canonical
--- JSONL the shipped validator accepts as-is:
+-- Not for the reason first written here. That reason was that jsonb reorders
+-- keys and re-serialises, so a trace stored in it would be checked against
+-- bytes Postgres chose rather than the ones Motus wrote, and would fail
+-- validation without anyone having tampered with it. That is false, and it was
+-- measured on this deployment rather than argued: `chat_traces.trace` IS
+-- jsonb, a trace read back out of it validates at zero violations, the same
+-- document with every object's keys reversed also validates, and the same
+-- document with one routing value altered is refused under T11. Motus hashes a
+-- canonical form; key order does not reach the digest.
+--
+-- What text buys is directness. The column holds the exact JSONL stream the
+-- shipped validator reads in its `jsonl` mode, so checking a verdict is one
+-- psql redirect and nothing else — no re-rendering a document into the stream
+-- form first, and so no question of whether the re-rendering was faithful.
+-- The stored artifact IS the evidence rather than a projection of it:
 --
 --   psql -tAc "select trace_jsonl from verdict_traces where id = 1" > t.jsonl
 --   motus-validate jsonl t.jsonl        # exit 0, and anyone can run it

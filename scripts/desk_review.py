@@ -134,14 +134,23 @@ def persist_trace(pg: dict, submission_id: int, run_id: str, verdict, trace,
                   evidence: str, status: str) -> str | None:
     """Store the trace beside the submission, and return its root.
 
-    `trace_jsonl` is `text` and not `jsonb` on purpose. jsonb reorders keys and
-    drops the duplicate-free byte sequence the hash chain was computed over, so
-    a trace stored as jsonb is a trace that no longer validates — the integrity
-    chain would be checked against bytes Postgres chose rather than the ones
-    Motus signed. `chat_traces.trace` is jsonb and has that defect today; this
-    column does not repeat it.
+    `trace_jsonl` is `text` and not `jsonb`, for a narrower reason than the one
+    first written here. The claim was that jsonb reorders keys and so breaks the
+    hash chain. It does not: Motus hashes a canonical form, so key order is
+    irrelevant, and this was measured rather than argued — `chat_traces.trace`
+    IS jsonb, and a trace read back out of it validates at zero violations,
+    while the same document with every object's keys reversed also validates and
+    the same document with one routing value altered is caught under T11.
 
-    The root gets its own column because it is the only value Phase 3 publishes,
+    What text buys is therefore not validity but directness: the column holds
+    the exact JSONL stream `motus-validate jsonl` reads, so checking a verdict
+    is `psql -tAc … > t.jsonl` and nothing else — no re-rendering a document
+    into the stream form first, and no question about whether the re-rendering
+    was faithful. The stored artifact IS the evidence rather than a projection
+    of it.
+
+    The root gets its own column because it is the only value the anchor
+    publishes,
     and something published deserves to be selectable rather than parsed back
     out of a document.
     """

@@ -119,12 +119,62 @@ to act on without reading the validator's source.
 
 ### 3.5 The canonical JSONL round-trips through Postgres
 
-Stored as `text` (deliberately not `jsonb`: jsonb reorders keys and
-re-serialises, and the chain is computed over bytes). Extracted with
-`psql -tAc` and validated: exit 0, byte-identical but for psql's trailing
-newline. So a third party can check a verdict with nothing but the database
-and the shipped validator, trusting neither us nor our code. **This is the
-claim that most needed to be true, and it is true.**
+Stored as `text`, extracted with `psql -tAc` and validated: exit 0,
+byte-identical but for psql's trailing newline. So a third party can check a
+verdict with nothing but the database and the shipped validator, trusting
+neither us nor our code. **This is the claim that most needed to be true, and
+it is true.**
+
+### 3.6 The integrity hash is over a canonical form, and that is worth saying out loud
+
+We had written, in three places, that a trace must not be stored as `jsonb`
+because Postgres reorders keys and the chain is computed over bytes. **That is
+wrong**, and testing it on the chat pipeline is what showed it:
+
+| document | `motus-validate trace` |
+|---|---|
+| chat trace read back out of a `jsonb` column | exit 0 |
+| same document, every object's keys sorted in reverse | exit 0 |
+| same document, one routing value changed `yes`→`no` | exit 1, T11 |
+
+So key order does not reach the digest, integrity checking is demonstrably
+live, and a jsonb column is a perfectly safe place to keep a trace. We have
+corrected our own comments.
+
+The reason this belongs in a report to the kernel rather than only in our own
+changelog: an integrator's first question about storage is exactly this one,
+and guessing wrong costs a column type and a migration. One line in the docs —
+"integrity digests are computed over the canonical serialisation; storage may
+reorder keys freely" — would have saved us the mistake and would save the next
+person the same one.
+
+(We still store JSONL as `text`, for a smaller reason that survives: the column
+then holds the exact stream `motus-validate jsonl` reads, so checking a verdict
+is one psql redirect with no intermediate rendering to be faithful about.)
+
+### 3.7 The routing record keeps the road not taken
+
+From the chat graph (`terraveler-chat`, `retrieve → evaluate → answer |
+decline`), the routing record after `evaluate`:
+
+```json
+{"on": "answerable", "value": "yes", "outcome": "matched", "selected": "answer",
+ "origin": {"seq": 6, "kind": "transition", "index": 0},
+ "candidates": [{"target": "answer",  "taken": true,  "condition": {"kind": "map", "key": "yes"}},
+                {"target": "decline", "taken": false, "condition": {"kind": "map", "key": "no"}},
+                {"target": "decline", "taken": false, "condition": {"kind": "default"}}]}
+```
+
+It records not only which branch was taken but which branches existed and were
+refused, and `origin` points back at the exact write that decided it. An
+auditor asking "could this run have declined, and why didn't it?" is answered
+by the record rather than by reading the graph definition alongside it. Worth
+advertising: it is not obvious from the API that routing is this introspectable,
+and it is the single most useful thing in either of our traces.
+
+The same node's `reads` block carries the same quality — each read names the
+seq, kind, collection and index of the write it read from, so a fact's
+provenance inside a run is a link rather than a name lookup.
 
 ---
 
@@ -257,6 +307,32 @@ were legible **because** the trace records shapes and digests:
 
 Both had been live for weeks. The pass had to become legible before they
 became visible.
+
+A third, from the chat graph, found the same way — by running it and reading
+the trace instead of trusting the diagram. `terraveler-chat` routes on an
+`answerable` Decision that `evaluate` computes as
+`top_cosine_similarity >= 0.35`. Three questions were put to the same voyage
+(Shackleton's *Endurance*, 1,789 indexed documents):
+
+| question | top similarity | routed to |
+|---|---|---|
+| what happened when the ice crushed the *Endurance* | 0.546 | `answer` |
+| the price of copper on the London exchange in 1914 | 0.533 | `answer` |
+| how to configure a Kubernetes ingress controller with TLS | 0.434 | `answer` |
+
+**The `decline` branch is unreachable in practice.** A question about container
+orchestration, put to Antarctic expedition journals, clears the threshold by a
+comfortable margin — because cosine similarity against a corpus of that size
+has a floor well above 0.35, whatever is asked. The graph is correct; the
+threshold is calibrated against nothing. Every question therefore reaches the
+model, and the honest refusal the reader eventually sees ("they tell nothing
+whatever of Kubernetes") is written by the chronicler in prose, not decided by
+the pipeline.
+
+That is our bug and not the kernel's, and it is recorded here because of HOW it
+surfaced: the `candidates` block showed `decline` present, offered and refused
+on all three runs. A branch that is never taken looks identical to a branch
+that cannot be taken, until something writes down that it was offered.
 
 ---
 
