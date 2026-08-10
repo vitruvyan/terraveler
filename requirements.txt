@@ -1,0 +1,51 @@
+# Terraveler — the host-side Python environment.
+#
+# The four containers each declare their own set (ingest/, rag/, embedding/,
+# officers/requirements.txt) and pip resolves those inside the image. Nothing
+# declared the environment that runs OUTSIDE a container: the ingest test
+# suite, scripts/desk_review.py, scripts/curator.py, scripts/publish_*.py.
+# That set existed only in whatever the developer's machine happened to have,
+# which is the same failure as a vendored copy, one level up. This file is it.
+#
+#   python3 -m pip install --user -r requirements.txt
+#
+# ---------------------------------------------------------------- the kernel
+#
+# Motus is not on PyPI yet: publication by Trusted Publishing is prepared and
+# deliberately held (vitruvyan/motus PR #72, open on purpose). Until it lands,
+# the pin is a commit, never a branch — `main` moves and a moving pin is the
+# drift this repository has already paid for once.
+#
+# 508fd52 is the v0.8.1 tag and the tip of main; the two are the same commit
+# today, and the SHA is what is written here because the tag is a name and a
+# name can be moved.
+#
+# The URL is the SSH alias, not https://github.com/vitruvyan/motus: the
+# repository is private, so the https form the migration brief suggests fails
+# with "could not read Username". The alias is defined in ~/.ssh/config
+# (Host github-vitruvyan -> github.com, IdentityFile id_ed25519_vitruvyan).
+#
+# The container images do NOT install this line. They COPY a wheel built by
+# scripts/fetch_motus_wheel.sh, because a build context must not hold SSH
+# credentials. Same commit, two delivery paths, one version — and the day
+# 0.8.1 reaches PyPI both collapse into `vitruvyan-motus==0.8.1`.
+vitruvyan-motus @ git+ssh://git@github-vitruvyan/vitruvyan/motus@508fd5203db09040170f260b23187e85c65fd3a4
+
+# jsonschema is Motus's own dependency (its shipped contract validator needs
+# it) and pip installs it transitively. It is not repeated here: a version
+# this repository does not choose is not this repository's to pin.
+
+# ------------------------------------------------------------ what we import
+#
+# Only what the host-side code actually imports. The model calls are raw HTTP
+# over the standard library (ingest/extract_core.py `_chat_json`), so there is
+# no `openai` and no `anthropic` line — adding either would declare a
+# dependency that does not exist.
+psycopg2-binary==2.9.10
+redis==5.2.1
+
+# ---------------------------------------------------- the anchor (Phase 3)
+#
+# The TRON client used to publish a trace root on Nile, pinned by
+# vitruvyan/mercator .github/Vitruvyan_Appendix_H_Blockchain_Ledger.md.
+tronpy==0.4.0

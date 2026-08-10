@@ -7,7 +7,7 @@
 # The old script kept working only through GitHub's rename redirect, and it
 # built a distribution that ADR-009 has since frozen at the v0.6.1 tag.
 #
-#   scripts/fetch_motus_wheel.sh v0.7.0
+#   scripts/fetch_motus_wheel.sh v0.8.1
 #
 # The repo is private and visible only over SSH (github-vitruvyan alias),
 # which is why the wheel is built here and COPY'd into images rather than
