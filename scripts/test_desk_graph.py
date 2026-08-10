@@ -511,5 +511,84 @@ class TheSpec(unittest.TestCase):
                          {"check_verbatim", "record_ruling", "record_escalation"})
 
 
+# --------------------------------------------- what the first live run found
+
+class TheRedirectGuard(unittest.TestCase):
+    """archive.org redirects to archive.org, and that is not an open redirect.
+
+    Both cases were found by running the pass against the real queue: every one
+    of submission #27's twelve quotations failed as `absent` because
+    `archive.org/download/…` answers from a per-item CDN node and the guard
+    re-verified the node against a whitelist holding only the apex.
+    """
+
+    def test_a_cdn_node_is_still_archive_org(self):
+        asked = ("https://archive.org/download/travelsininter00park/"
+                 "travelsininter00park_djvu.txt")
+        for answered in (
+            "https://dn760108.eu.archive.org/0/items/travelsininter00park/x.txt",
+            "https://ia800808.us.archive.org/19/items/travelsininter00park/x.txt",
+        ):
+            self.assertTrue(G.redirect_stays_home(asked, answered), answered)
+
+    def test_a_lookalike_host_is_not(self):
+        """The dot is the guarantee. Without it these three pass, and a
+        whitelisted host could hand provenance to a body it did not serve."""
+        asked = "https://archive.org/download/item/file.txt"
+        for answered in ("https://evil-archive.org/file.txt",
+                         "https://archive.org.evil.com/file.txt",
+                         "https://notarchive.org/file.txt",
+                         "https://www.gutenberg.org/files/1/1-0.txt"):
+            self.assertFalse(G.redirect_stays_home(asked, answered), answered)
+
+    def test_it_does_not_excuse_a_redirect_from_somewhere_else(self):
+        """The exemption is archive.org's, not every host's: a source that did
+        not start on archive.org cannot end there unexamined."""
+        self.assertFalse(G.redirect_stays_home(
+            "https://www.gutenberg.org/files/1/1-0.txt",
+            "https://ia800808.us.archive.org/19/items/x/x.txt"))
+
+
+class ShapeChecksKnowTheirType(unittest.TestCase):
+    """Carta §3.6 binds the voyage, and an enrichment makes no voyage.
+
+    All five `waypoint-enrichment` submissions in the queue failed on
+    `evidence_basis` and `what_was_lost` — fields their payloads are not built
+    with, because the voyage they enrich declared both when it was published.
+    """
+
+    ENRICHMENT = {"meta": {"carta_version": "0.7"},
+                  "waypoints": [{"seq": 1, "confidence": "certain"}]}
+
+    def _codes(self, payload, sub_type):
+        f = K.Findings()
+        K.check_shape(payload, f, "0.7", sub_type=sub_type)
+        return {r["code"] for r in f.rows if r["level"] == "FAIL"}
+
+    def test_an_enrichment_is_not_asked_for_a_voyages_fields(self):
+        self.assertEqual(self._codes(self.ENRICHMENT, "waypoint-enrichment"),
+                         set())
+
+    def test_a_new_voyage_still_is(self):
+        self.assertEqual(self._codes(self.ENRICHMENT, "new-voyage"),
+                         {"EVIDENCE_BASIS_INVALID", "WHAT_WAS_LOST_EMPTY"})
+
+    def test_an_unknown_type_is_checked_rather_than_waved_through(self):
+        """The exemption is a named list and the default is to check. A gate
+        that skips what it does not recognise is not a gate."""
+        for sub_type in (None, "something-invented-next-year"):
+            self.assertEqual(self._codes(self.ENRICHMENT, sub_type),
+                             {"EVIDENCE_BASIS_INVALID", "WHAT_WAS_LOST_EMPTY"},
+                             sub_type)
+
+    def test_the_checks_that_do_concern_an_enrichment_still_run(self):
+        """Exempting §3.6 exempts nothing else: an enrichment with no stages is
+        still an enrichment that enriches nothing."""
+        self.assertEqual(
+            self._codes({"meta": {"carta_version": "0.7"}, "waypoints": []},
+                        "waypoint-enrichment"),
+            {"NO_WAYPOINTS"})
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

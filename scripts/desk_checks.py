@@ -49,6 +49,20 @@ CONFIDENCE = {"certain", "approximate", "reconstructed", "contested"}
 # requirement ever changes.
 REVIEWS_TO_ADVANCE = 2
 
+# Submission types that bring no voyage record of their own.
+#
+# Carta §3.6 binds the VOYAGE — "every voyage declares its evidence basis …
+# and, in one sentence, what was lost" — and an enrichment does not make a
+# voyage, it adds stages to one that declared both when it was published.
+# Asking an enrichment for them again asks it to re-state a neighbouring
+# record's fields, and the desk failed all five in the queue for not carrying
+# a `voyage` key they are not built with.
+#
+# Stated as an exemption rather than as a list of the types that ARE checked,
+# so that a type nobody has thought of yet is checked rather than waved
+# through. Failing closed is the safer direction for a gate.
+VOYAGELESS_TYPES = {"waypoint-enrichment"}
+
 
 class Findings:
     """Everything the pass noticed, in shapes.
@@ -78,7 +92,15 @@ class Findings:
 
 # ------------------------------------------------------------- the checks
 
-def check_shape(payload: dict, f: Findings, carta: str) -> None:
+def check_shape(payload: dict, f: Findings, carta: str,
+                sub_type: str | None = None) -> None:
+    """The clauses a draft must satisfy to be publishable at all.
+
+    `sub_type` decides which of them apply: the §3.6 pair belongs to a voyage,
+    and a submission that makes no voyage is not asked for it. An unknown type
+    — or none passed — is checked in full, because a gate that skips what it
+    does not recognise is not a gate.
+    """
     meta = payload.get("meta") or {}
     voyage = payload.get("voyage") or {}
     drafted_under = meta.get("carta_version")
@@ -93,11 +115,12 @@ def check_shape(payload: dict, f: Findings, carta: str) -> None:
         (f.fail if material else f.note)(
             "meta", "CARTA_STALE_MATERIAL" if material else "CARTA_STALE_NOTED",
             drafted_under=drafted_under, carta=carta)
-    basis = voyage.get("evidence_basis")
-    if basis not in EVIDENCE_BASIS:
-        f.fail("voyage", "EVIDENCE_BASIS_INVALID", basis=basis)
-    if not (voyage.get("what_was_lost") or "").strip():
-        f.fail("voyage", "WHAT_WAS_LOST_EMPTY")
+    if sub_type not in VOYAGELESS_TYPES:
+        basis = voyage.get("evidence_basis")
+        if basis not in EVIDENCE_BASIS:
+            f.fail("voyage", "EVIDENCE_BASIS_INVALID", basis=basis)
+        if not (voyage.get("what_was_lost") or "").strip():
+            f.fail("voyage", "WHAT_WAS_LOST_EMPTY")
     if not payload.get("waypoints"):
         f.fail("waypoints", "NO_WAYPOINTS")
 

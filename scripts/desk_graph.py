@@ -69,7 +69,7 @@ from vitruvyan_motus.effects import EffectClass            # noqa: E402
 from verbatim import (                                     # noqa: E402
     UnverifiableSource, locate_in_source, norm, source_text,
 )
-from whitelist import verify_source                        # noqa: E402
+from whitelist import domain_of, verify_source             # noqa: E402
 
 import desk_checks as K                                    # noqa: E402
 
@@ -263,6 +263,39 @@ class DeskConfig:
         return psycopg2.connect(**self.pg)
 
 
+def _within(host: str, family: str) -> bool:
+    """True when `host` is `family` itself or a subdomain of it.
+
+    The leading dot is the whole guarantee and the reason this is not a
+    substring test: `evil-archive.org` does not end with `.archive.org`, and
+    neither does `archive.org.evil.com`.
+    """
+    return host == family or host.endswith("." + family)
+
+
+def redirect_stays_home(asked: str, answered: str) -> bool:
+    """True when a redirect never left the host whose licence was verified.
+
+    archive.org serves item files from per-item CDN nodes — dn760108.eu,
+    ia800808.us — and every `archive.org/download/…` URL redirects to one of
+    them. They are archive.org's own infrastructure, but `VERIFIED_DOMAINS`
+    matches exactly and holds only the apex, so the guard below refused every
+    one of them and no archive.org quotation could be verified at all. The
+    atlas's principal source was unusable by the desk that polices it.
+
+    Re-verifying the *destination* is still right, and stays right: a
+    whitelisted host that open-redirects off-list must not bind PD/CC
+    provenance to a body some other server chose. What this says is narrower —
+    that archive.org handing us to archive.org is not that redirect. The
+    item's licence was established against the URL we asked for, by
+    `verify_archive_item`, which reads the item's own metadata; a CDN node
+    serving that same item's file is the same guarantee arriving by a
+    different door.
+    """
+    return _within(domain_of(asked), "archive.org") and \
+        _within(domain_of(answered), "archive.org")
+
+
 def fetch(cfg: DeskConfig, url: str) -> str:
     """The readable text of a source, cached for the run.
 
@@ -282,7 +315,7 @@ def fetch(cfg: DeskConfig, url: str) -> str:
         # an unbounded r.read() on a shared VPS is an OOM with a contributor's
         # name on the trigger.
         final = r.geturl()
-        if final != url:
+        if final != url and not redirect_stays_home(url, final):
             ok, why = verify_source(final)
             if not ok:
                 raise UnverifiableSource(
@@ -369,15 +402,20 @@ def make_nodes(cfg: DeskConfig):
 
     def check_shape(state: State, ctx) -> State:
         sid = state.fact("submission_id")
-        payload, sha, _ = _payload(cfg, sid)
+        payload, sha, row = _payload(cfg, sid)
         payload = payload or {}
         now = ctx.now()
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=f"read submissions#{sid} payload {sha} for the shape checks"))
 
+        # The type comes from the row rather than from the state: the state's
+        # `type` was written by load_submission and this node re-reads the
+        # database anyway, so taking it from the same read that produced `sha`
+        # keeps one fact from one place. It also cannot drift from the payload
+        # the clauses are being applied to.
         f = K.Findings()
-        K.check_shape(payload, f, cfg.carta)
+        K.check_shape(payload, f, cfg.carta, sub_type=row.get("type"))
         K.check_confidence(payload.get("waypoints") or [], f)
         K.check_chronology(payload.get("waypoints") or [], f)
         state = (state
