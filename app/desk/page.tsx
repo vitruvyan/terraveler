@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
-import { DeskHeading, DeskStanding, ShipsLog } from "@/components/desk/Quarterdeck";
+import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
 import { hasEscalateFinding } from "@/lib/deskEscalation";
 
@@ -47,6 +47,13 @@ type Overview = {
   demand?: Demand[];
 };
 
+type Analytics = {
+  counts: { today: number; last7: number; last30: number };
+  truncated: boolean;
+  daily: { day: string; n: number }[];
+  topPaths: { path: string; n: number }[];
+};
+
 /* Where a submission stands. The values live in :root — four of the seven
    hexes that used to sit here failed AA on parchment while being the text
    colour of the badge that carries them. */
@@ -84,7 +91,13 @@ function appealGrounds(s: Sub): string | null {
 }
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
-type Tab = "overview" | "submissions" | "crew";
+type Tab = "overview" | "submissions" | "crew" | "analytics";
+const TAB_TITLE: Record<Tab, string> = {
+  overview: "Quarterdeck",
+  submissions: "Submissions",
+  crew: "Crew",
+  analytics: "Analytics",
+};
 
 /* Signed out is not the same as signed in without the desk, and the old
    boolean could not tell them apart — /api/desk/overview answers 401 to both.
@@ -99,6 +112,7 @@ export default function Desk() {
   const [subs, setSubs] = useState<Sub[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [note, setNote] = useState<Record<number, string>>({});
   const [rankPick, setRankPick] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
@@ -117,9 +131,10 @@ export default function Desk() {
 
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
-    const [rs, rc] = await Promise.all([fetch("/api/desk/submissions"), fetch("/api/desk/crew")]);
+    const [rs, rc, ra] = await Promise.all([fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics")]);
     if (rs.ok) setSubs((await rs.json()).submissions ?? []);
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
+    if (ra.ok) setAnalytics(await ra.json());
   }
 
   useEffect(() => {
@@ -237,7 +252,7 @@ export default function Desk() {
     <main className="dk-page">
       <DeskHeading
         eyebrow="Terraveler · editorial desk"
-        title={tab === "overview" ? "Quarterdeck" : tab === "submissions" ? "Submissions" : "Crew"}
+        title={TAB_TITLE[tab]}
         aside={
           <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); window.location.href = "/"; }}>
             Sign out
@@ -246,7 +261,7 @@ export default function Desk() {
       />
 
       <div className="dk-tabs" role="tablist">
-        {(["overview", "submissions", "crew"] as Tab[]).map((t) => (
+        {(["overview", "submissions", "crew", "analytics"] as Tab[]).map((t) => (
           <button
             key={t}
             role="tab"
@@ -531,6 +546,61 @@ export default function Desk() {
                 ))}
               </tbody>
             </table>
+          )}
+        </div>
+      )}
+
+      {tab === "analytics" && analytics && (
+        <div style={{ marginTop: "var(--space-5)" }}>
+          <DeskLedger
+            items={[
+              { label: "today", n: analytics.counts.today },
+              { label: "last 7 days", n: analytics.counts.last7 },
+              { label: "last 30 days", n: analytics.counts.last30, suffix: analytics.truncated ? "+" : "" },
+            ]}
+          />
+
+          <h2 className="dk-section-title">Last 14 days</h2>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            {analytics.daily.map((d) => (
+              <div
+                key={d.day}
+                style={{
+                  display: "flex", justifyContent: "space-between",
+                  borderBottom: "1px solid var(--rule-hair)",
+                  padding: "var(--space-1)",
+                  fontFamily: "var(--font-mono)", fontSize: "var(--step--1)",
+                }}
+              >
+                <span style={{ color: "var(--ink-soft)" }}>{d.day}</span>
+                <span style={{ color: d.n > 0 ? "var(--ink)" : "var(--ink-faint)", fontVariantNumeric: "tabular-nums lining-nums" }}>
+                  {d.n}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <h2 className="dk-section-title">Top pages, last 30 days</h2>
+          {analytics.topPaths.length === 0 ? (
+            <p className="dk-empty">No pageviews recorded yet.</p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {analytics.topPaths.map((p) => (
+                <div
+                  key={p.path}
+                  style={{
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                    border: "1px solid var(--parchment-deep)", borderRadius: "var(--radius-2)",
+                    background: "rgba(255,255,255,0.35)", padding: "var(--space-2) var(--space-3)",
+                  }}
+                >
+                  <span className="dk-id">{p.path}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", color: "var(--ink-soft)", fontVariantNumeric: "tabular-nums lining-nums" }}>
+                    {p.n}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

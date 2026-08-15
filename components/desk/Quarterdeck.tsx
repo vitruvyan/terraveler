@@ -179,15 +179,26 @@ export function DeskStanding({ demands, ledger }: { demands: Demand[]; ledger: L
           </div>
         ))}
       </div>
-      <div className="dk-ledger">
-        {ledger.map((l) => (
-          <span key={l.label}>
-            {l.label} <b>{l.n}</b>
-            {l.suffix ?? ""}
-          </span>
-        ))}
-      </div>
+      <DeskLedger items={ledger} />
     </>
+  );
+}
+
+/* The settled-counts half of DeskStanding, on its own: a surface with
+   nothing that needs action (analytics, for instance) has no demands to
+   show, and .dk-demands renders a padded, bottom-ruled band even with zero
+   items — a dead gap, not a graceful empty state. Pull the ledger out rather
+   than pass demands={[]} into it. */
+export function DeskLedger({ items }: { items: LedgerEntry[] }) {
+  return (
+    <div className="dk-ledger">
+      {items.map((l) => (
+        <span key={l.label}>
+          {l.label} <b>{l.n}</b>
+          {l.suffix ?? ""}
+        </span>
+      ))}
+    </div>
   );
 }
 

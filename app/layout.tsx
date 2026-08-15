@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { LAYOUT_SCRIPT } from "@/lib/layout";
+import PageviewBeacon from "@/components/PageviewBeacon";
 import "./globals.css";
 
 /* The three voices of the atlas. All OFL, self-hosted, subset to latin — the
@@ -115,6 +116,7 @@ export default function RootLayout({
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_JSONLD) }}
         />
+        <PageviewBeacon />
       </body>
     </html>
   );
