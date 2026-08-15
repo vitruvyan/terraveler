@@ -114,9 +114,15 @@ SPEC = GraphSpec.from_dict({
          "reads_declared": ["submission_id"],
          "writes_declared": ["source_findings", "cited_sources", "n_admitted",
                              "n_refused", "gate_stats"]},
-        # The only node that goes out to the archives. Declared conservatively:
-        # it fetches, and the spans it locates are staged for a write.
-        {"name": "check_verbatim", "effect_class": "external_effect",
+        # The only node that goes out to the archives. The criterion is READ
+        # or MUTATE and nothing else (TERRAVELER_MOTUS_TRON.md, Phase 2): this
+        # node only performs GETs, and a GET is a read whose result is the
+        # effect. It was declared `external_effect` here once, on the
+        # reasoning that "the spans it locates are staged for a write" — but
+        # the write that reasoning describes happens downstream, in
+        # `record_ruling`/`record_escalation`, which already declare it. This
+        # node mutates nothing outside the run itself.
+        {"name": "check_verbatim", "effect_class": "recorded_effect",
          "reads_declared": ["submission_id", "cited_sources", "gate_stats",
                             "evidence_basis"],
          "writes_declared": ["verbatim_findings", "stats", "n_spans",
@@ -495,8 +501,13 @@ def make_nodes(cfg: DeskConfig):
                        seq=entry["seq"], ci=entry["ci"],
                        url=entry["url"], failure=failure)
                 stats["unreachable"] = stats.get("unreachable", 0) + 1
+                # A failed GET is still a read: nothing was mutated by asking.
+                # The node's declared class governs which class its own
+                # effects may carry (a `recorded_effect` node may not record
+                # an `external_effect`), so this follows check_verbatim's
+                # declaration above.
                 ctx.record_effect(EffectDescriptor(
-                    effect_class=EXTERNAL,
+                    effect_class=RECORDED,
                     description=f"GET {entry['url']} failed: {failure}",
                     receipt=EffectReceipt(receipt_id=failure, status="unknown")))
                 continue
@@ -505,7 +516,7 @@ def make_nodes(cfg: DeskConfig):
                 fetched.append({"url": entry["url"], "length": len(body),
                                 "sha256": body_sha})
                 ctx.record_effect(EffectDescriptor(
-                    effect_class=EXTERNAL,
+                    effect_class=RECORDED,
                     description=(f"GET {entry['url']}: {len(body)} readable "
                                  f"character(s), {body_sha}"),
                     receipt=EffectReceipt(receipt_id=entry["url"],

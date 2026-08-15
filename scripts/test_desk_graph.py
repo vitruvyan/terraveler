@@ -505,10 +505,20 @@ class TheSpec(unittest.TestCase):
         spec = G.SPEC.to_dict()
         pure = {n["name"] for n in spec["nodes"] if n["effect_class"] == "pure"}
         self.assertEqual(pure, {"decide", "no_submission"})
+        # The criterion is READ or MUTATE and nothing else
+        # (TERRAVELER_MOTUS_TRON.md, Phase 2). check_verbatim only performs
+        # GETs — a read whose result is the effect — so it is
+        # `recorded_effect` alongside the other checks; the two nodes that
+        # actually mutate something outside the run are the two that write
+        # the verdict.
         external = {n["name"] for n in spec["nodes"]
                     if n["effect_class"] == "external_effect"}
-        self.assertEqual(external,
-                         {"check_verbatim", "record_ruling", "record_escalation"})
+        self.assertEqual(external, {"record_ruling", "record_escalation"})
+        recorded = {n["name"] for n in spec["nodes"]
+                   if n["effect_class"] == "recorded_effect"}
+        self.assertEqual(recorded, {"load_submission", "check_shape",
+                                    "check_sources", "check_verbatim",
+                                    "read_dossier"})
 
 
 # --------------------------------------------- what the first live run found
