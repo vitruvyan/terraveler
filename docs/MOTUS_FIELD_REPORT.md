@@ -5,6 +5,32 @@
 **Date:** 2026-08-10
 **Graph:** `terraveler-desk-verdict` v1.0.0, `graph:sha256:87919c18c41caa…`
 
+> **Correction, 2026-08-13 — the anchor below is not evidence of anything.**
+> `vitruvyan/motus` ADR-019 (accepted 2026-08-12, the day after this report)
+> found that trace schema 2.0.0's terminal `payload_hash` — what §3.1 below
+> calls "the run root" and what §7's bottom line rests on — covers **only the
+> terminal record**, not the run. Every digest in a 2.0.0 chain is nulled
+> before hashing, `prev_hash` included, so no digest incorporates its
+> predecessor and the "chain" is independent hashes standing next to a pointer
+> nothing hashes. An editor can rewrite `run_id`, `policy`, `metadata`, or any
+> non-terminal record, reseal by the published recipe, and the anchored value
+> — `sha256:1ca0f5f65226bcbab508992c2f1a44b2517fd25f35b94d49d0363a0a54fef1f1`,
+> published as TRON Nile txid
+> `bb294473c996ff97ae9a92c5b23c3ab2b7c28ad23322e4517c2495f44cc71b69` — does not
+> move. §3.1's "anchoring that one 32-byte value commits to the entire run" is
+> the claim ADR-019 disproves.
+>
+> What survives: the trace itself is a genuine, replayable record of a real
+> run (everything in §3 and §5 that is not about the anchor's guarantee is
+> unaffected), and §4.3's anchor implementation ( `scripts/anchor.py` ) is
+> correct as written — it publishes and re-reads whatever root it is handed,
+> and the defect was upstream of it, in what schema 2.0.0 called a root.
+>
+> §8 redoes this exercise on `vitruvyan-motus` 0.10.0 (trace schema 3.0.0,
+> where `Trace.root` is derived rather than read back) and gets a second,
+> real anchor whose tamper check actually holds. Read that section for the
+> evidence this one does not have.
+
 This is a field report, not a bug list. Terraveler ran a Motus graph against
 live production data for the first time, wrote the trace to Postgres,
 validated it with the shipped validator, published its root on a public
@@ -12,10 +38,9 @@ blockchain and read it back. Everything below is observed, with the command
 that produced it. Where something is a question rather than a defect it is
 written as a question.
 
-The short version: **it worked, end to end, on the first attempt.** The
-kernel's guarantees held under a real workload and the trace turned out to be
-worth what it claims. The findings are about the edges — replay, durability
-reporting, and the anchor interface that does not exist yet.
+The short version: **it worked, end to end, on the first attempt** — as a
+graph execution. The evidentiary claim (§7) did not; see the correction above
+and §8.
 
 ---
 
@@ -368,3 +393,333 @@ digest published on a public chain before the edit was possible.
 That is the property Terraveler needed and could not build for itself. The
 open questions above are refinements at the edges of something that already
 works.
+
+---
+
+## 8. Addendum, 2026-08-13 — the corrected anchor, on 0.10.0
+
+**Kernel:** `vitruvyan-motus` 0.10.0, commit `c861c9151c99ec5ec158aaf5b5eb5cddb1cf1710`
+(the v0.10.0 tag). Pinned past 0.9.0 deliberately — see
+`requirements.txt` — but nothing below exercises anything 0.10.0 adds over
+0.9.0. `Runtime(SPEC, make_nodes(cfg), policy=policy, sink=sink)` passes
+neither `commitments=` nor `witness=`, and `scripts/test_motus_inert.py`
+proves in a fresh subprocess that an unconfigured run never imports
+`vitruvyan_motus.commitlog`, `.commitments` or `.sealing` — ADR-021 decision
+1's "bit-for-bit 0.8.1", checked rather than trusted.
+
+**Subject:** submission #28, a waypoint-enrichment on Bougainville's *Boudeuse*
+voyage (1766), still live in the queue (`peer-review`, 0/2 reviews recorded).
+Chosen over re-running #27 because its likely verdict — `escalate`, for a
+short dossier — does not move the submission's status, so the run adds an
+audit trail without ruling on a live draft twice.
+
+**One other correction found along the way.** `desk_graph.py` had declared
+`check_verbatim` (which only issues GETs against archive.org) as
+`external_effect`, reasoning that "the spans it locates are staged for a
+write" — but that write happens downstream, in `record_ruling` /
+`record_escalation`, which already declare it. The criterion this migration's
+brief gives is READ or MUTATE and nothing else; a GET is a read regardless of
+what a later node does with its result. Reclassified to `recorded_effect`
+(the per-effect `EffectDescriptor` tags inside the node moved with it — Motus
+rejects a `recorded_effect` node that records an `external_effect`, and
+would have rejected this correction if it were wrong). Safe-direction, not
+the dangerous one — it only over-restricted resume, which this graph does not
+yet use — but wrong per the rule, and the run below reflects the fix.
+
+```
+$ python3 scripts/desk_review.py 28 --trace-dir /tmp/traces
+#28  boudeuse-1766        → ESCALATE  (0/0 quotations verified)
+     mechanical checks passed but the review dossier is short
+     INFO      meta: drafted under Carta v0.6, in force is v0.7 — no clause this draft depends on changed
+     ESCALATE  desk: §10.4 blocks this approval — 0/2 reviews recorded for submission #28, 0 refuting.
+     trace verdict-28-20260813T175054Z  root sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+
+$ python3 -m vitruvyan_motus.contract.validate jsonl /tmp/traces/verdict-28-*.jsonl --spec desk.spec.json
+(exit 0)
+
+$ python3 scripts/anchor.py --submission 28
+#28  verdict-28-20260813T175054Z  escalate
+  root     sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+  memo     VITRUVYAN_AUDIT:sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809  (87/100 characters)
+  txid     bf04dd767abefc20a89ea815f63c0eefb3a9daee32d3231780057266fff4f9e3
+  explorer https://nile.tronscan.org/#/transaction/bf04dd767abefc20a89ea815f63c0eefb3a9daee32d3231780057266fff4f9e3
+  verify   True
+
+$ python3 scripts/anchor.py --verify 28          # fresh process, independent re-read
+#28  verdict-28-20260813T175054Z
+  verdict  escalate
+  root     sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+  txid     bf04dd767abefc20a89ea815f63c0eefb3a9daee32d3231780057266fff4f9e3
+  on chain YES — the memo carries this root
+```
+
+**The memo, read by hand and not through our own code** —
+`gettransactionbyid` against `nile.trongrid.io`, `raw_data.data` decoded from
+hex outside `anchor.py` entirely:
+
+```
+VITRUVYAN_AUDIT:sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+```
+
+87 characters, published whole — `sha256:` prefix intact, as the migration
+brief's step 0 requires and `anchor.memo_for` asserts before broadcasting
+anything.
+
+### 8.1 The tamper check — the point of the whole exercise
+
+Not "break the chain and watch the validator refuse it" (§3.4 already showed
+that, and `TamperedTrace` in `test_desk_graph.py` covers it on every run). The
+question ADR-019 exists to answer is stronger: can an editor who rewrites a
+value **and correctly reseals everything after it** — recomputing every
+downstream `payload_hash`/`prev_hash` exactly by the published recipe, so the
+forged document is internally perfect — still be caught. Under schema 2.0.0,
+no: the terminal digest didn't move. Under 3.0.0:
+
+```
+stored root    sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+anchor txid    bf04dd767abefc20a89ea815f63c0eefb3a9daee32d3231780057266fff4f9e3
+loaded root    sha256:61f0f713e6cc7437453936125d009e30482606de32499d82989b81d56dd7a809
+
+tampering record #2 (load_submission.writes.facts.n_waypoints): 15 -> 16
+forged root    sha256:7ac13d3917254ed0fbc02a331c9906f62028fabbe35c2c0bf4a50ee5576965a4
+
+verify(original root, real receipt): True
+verify(forged root,    real receipt): False
+```
+
+The forged, resealed document is not merely rejected as broken — reading it
+back through `motus-validate jsonl` gives **exit 0**, the same clean result as
+the untouched trace: as a document it is internally flawless. It fails only
+because `verify()` re-reads the chain and the chain was written before the
+edit. That is the guarantee §3.1 claimed prematurely, now actually held: an
+editor holding the database password can rewrite and correctly reseal a
+verdict, and the one thing they cannot do is make the result agree with a
+root published somewhere they do not control.
+
+### 8.2 Where this leaves the old anchor
+
+`bb294473c996ff97ae9a92c5b23c3ab2b7c28ad23322e4517c2495f44cc71b69` stays on
+Nile — a testnet transaction cannot be un-sent and there is no reason to try —
+but it is not superseded evidence, it is void evidence: it never bound
+anything, on any schema. Submission #27's trace itself is untouched and
+remains a genuine record of that run; if it needs a valid anchor, re-running
+`desk_review.py 27` under 0.10.0 and anchoring the resulting (schema 3.0.0)
+root would give it one, the same way #28 got one here.
+
+---
+
+## 9. Addendum, 2026-08-15 — v0.11.0: update, don't adapt
+
+**Kernel:** `vitruvyan-motus` 0.11.0, commit `4243cd017f00aecae145fca8b03e6c38a977cda8`
+(the v0.11.0 tag, dereferenced — `git rev-parse v0.11.0` names the annotated tag
+object, `8ddc49c9515a4a49a8a3c712239dd82f58ade605`; `v0.11.0^{}` peels it to the
+commit above, which is what `requirements.txt` now pins, matching 0.10.0's pin
+being a plain commit too. Not a kernel defect — an annotated tag is always two
+addressable objects — but it cost us a confused half hour diffing a tag object
+against its own commit and finding zero difference, so it is recorded here for
+whoever does this next.)
+
+The brief for this round asked us not to adapt `desk_graph.py`,
+`desk_checks.py`, `desk_review.py`, `anchor.py` or `chat_graph_native.py` — run
+what exists, report what breaks. Nothing broke. Every line below is a thing we
+ran, not a thing we inferred.
+
+### 9.1 What ran, for real
+
+- `python3 -m unittest test_desk_graph test_motus_inert test_anchor -v` from
+  `scripts/` — 33 + 1 + 16 = 50 tests, all green, unmodified, against 0.11.0.
+- `python3 scripts/desk_review.py --dry-run --trace-dir …` against the **live**
+  queue (real Postgres, real archive.org) — three submissions awaiting a
+  verdict: #27 (`mungopark-1795`, re-run, still 12/12 quotations verified,
+  still `escalate`), #28 (`boudeuse-1766`), and #29 (`cortes-1519`, new since
+  §8, also `escalate` on a short dossier). `--dry-run` was our own choice, not
+  a limitation: this pass exists to check the update, not to hand the Curator's
+  desk a fresh verdict on a live draft, so we deliberately did not move a real
+  submission's status without asking first. A non-dry-run pass is one flag away
+  if it's wanted.
+- The chat graph (`rag/app/chat_graph_native.py`, `run_chat_native`), against
+  live Postgres + the live embedding service, unmodified: question "What
+  happened when Cook's ship first made landfall?" against `cook-1768`, 6
+  sources, top similarity **0.8008**. The `answer` node's Anthropic call
+  returned `401 Unauthorized` — an API-key problem on our side, unrelated to
+  Motus — and the node's own graceful-failure path (§ described in the
+  original report) handled it exactly as designed: no crash, a `Rejection`
+  recorded, the sources still returned. We did not chase the 401; it isn't
+  this report's subject and the graceful path is the thing worth confirming
+  still works, which it does.
+- **Not run:** `scripts/anchor.py` for real. A live anchor publishes a
+  transaction on TRON, permanently, at a real (if tiny) cost — not something to
+  spend during a routine update check without asking. `test_anchor.py` (stubbed,
+  no network) passed; the anchor's actual on-chain behavior under 0.11.0 is
+  unverified and we are saying so rather than assuming it from the stub.
+- **Not run:** registering `motus-mcp` as a live stdio server inside a client.
+  That needs editing this session's own MCP client configuration and a
+  restart, which is out of scope for a same-session check. We confirmed the
+  binary starts cleanly (`motus-mcp < /dev/null`, exit 0, no output, no
+  traceback) and used the documented CLI-equivalent form,
+  `python -m vitruvyan_motus.mcp <verb>`, for every question below — the brief
+  states the two are the same surface, and nothing we found contradicts that.
+
+### 9.2 The J2 question — the one you told us matters most
+
+Both real pipelines write schema `3.0.0`, so both are governed by J2. Every
+genuine trace we produced validated at exit 0, **including the one pipeline
+that writes floats**: the chat graph's `retrieve` node stages real pgvector
+cosine similarities — `0.7709, 0.7718, 0.7846, 0.7905, 0.7952, 0.8008` — after
+a `round(x, 4)`, and the resulting trace passed `motus-validate jsonl` and
+`vitruvyan_motus.mcp diagnose` clean. `desk_graph.py`'s own traces carry no
+floats at all (counts, digests, strings), so #27/#28/#29 were not a stress
+test of J2 — the chat-graph run is the one that actually exercised it against
+real data, and it did not reject anything.
+
+Read against the kernel source (`contract/validate.py`), this looks
+structural rather than lucky: `_canonical_number` only ever fires against a
+lexeme that was NOT produced by the same `json.dumps` call that computed the
+trace's own digest, and every number that reaches a genuine Motus-written
+trace passes through Motus's own canonical serializer on the way in — there
+is no code path in either of our graphs that hand-writes JSON text into a
+trace. The scenario J2 is built to catch (a re-serializing reader, or a hand
+edit, producing a lexeme that reads the same to a human but hashes
+differently) is not a scenario our own writers can produce by accident. So:
+**no rejection of a genuine trace, on either pipeline we have, and we don't
+expect one from the future either** — which is the answer you said would let
+you freeze the format, and we're glad to be the boring confirmation rather
+than the caught bug this time.
+
+One explicit gap: we did not attempt to construct an adversarial-but-genuine
+edge case (a similarity that rounds to exactly `0.35`, a `-0.0`, a value near
+a float64 boundary) because we don't have one in real data and manufacturing
+one would be a synthetic probe of your kernel, not a report on our
+integration — see the brief's own distinction between the two.
+
+### 9.3 The verifier
+
+No output from `motus-validate` or `vitruvyan_motus.mcp diagnose` differs in
+kind from 0.10.0: still rule names (T11, T8) on tamper, still `exit 0` on a
+clean trace, still a derived root printed alongside. `TamperedTrace` in
+`test_desk_graph.py` — turn `changes` into `approve` in the `decide`
+transition, flip a digit in a recorded value, delete a record — still catches
+all three, still cites T11/T8 by name, unchanged.
+
+### 9.4 The two questions
+
+**`stream()` or only `run()`?** Only `run()`. Checked exhaustively, not
+sampled: every `Runtime(...)` construction and every `.run(`/`.stream(` call
+site across `scripts/`, `rag/`, `ingest/`, and `officers/` —
+`scripts/desk_graph.py`, `scripts/test_desk_graph.py`,
+`scripts/test_motus_inert.py`, `rag/app/chat_graph_native.py`,
+`ingest/run.py`, `ingest/extract.py`, `ingest/test_codex.py`,
+`ingest/test_extract_parity.py` — calls `.run()`. `grep -rn "\.stream("` over
+the same tree returns nothing. `Runtime.stream()` exists in 0.11.0
+(`runtime.py:676`) — we checked it's there, not just absent from our grep — we
+simply never call it.
+
+**Can your sink fail at run open?** Only on local disk, never on an
+unreachable remote archive — we have no sink that is not `JsonlTraceSink`
+(`InMemoryTraceSink` appears only in tests) and every use of it points at a
+local path, never a network target. Whether it can still fail there:
+- `JsonlTraceSink.__init__` calls `self.directory.mkdir(parents=True,
+  exist_ok=True)` — so a *missing* directory is not actually a failure mode,
+  even at `desk_review.py`'s call site, which (unlike `ingest/run.py`) does
+  not `os.makedirs` first. The sink makes its own directory.
+- `open_run()` — called once per run, at the start — constructs a
+  `_JsonlRunSession` whose `__init__` opens a file eagerly, exclusively
+  (`O_EXCL`, `O_NOFOLLOW`). That is a real `open(2)` syscall on the run's
+  critical path before any node executes, and it can raise on a full disk or a
+  permissions problem. We did not reproduce this — you asked us not to spend
+  time reproducing what's already yours, and this one is a kernel-independent
+  filesystem condition, not a Terraveler bug — but reading `sinks.py` says
+  plainly that it is a live code path, not a hypothetical one, most exposed in
+  `ingest/run.py`'s long-running jobs (a full disk on `/app/traces` mid-ingest
+  is far more plausible over an hour-long run than in `desk_review.py`'s
+  seconds-long ones).
+- The decision-relevant fact, given the two answers together: **the specific
+  defect you described — an abandoned streaming driver whose sink fails at
+  bind, jamming the Runtime forever — cannot currently be triggered by any
+  Terraveler code**, because we never call `stream()`. A disk-full or
+  permissions failure in our `run()`-based usage fails the one call it
+  happened in; it does not leave a long-lived `Runtime` object jammed, because
+  we never keep one open across multiple sink binds the way a streaming
+  consumer would. We read that as: for our exposure specifically, the fix
+  urgency is low; we can't speak to whether it's urgent for embedders who do
+  use `stream()`.
+
+### 9.5 Questions we had to ask the MCP, and what that says about the docs
+
+Used as `python -m vitruvyan_motus.mcp <verb> …` (the documented CLI-equivalent
+of the stdio server, per §9.1). Every entry below is a real question we had —
+either live, during this update, or standing open since §4 of this report —
+and the server's real answer.
+
+**Answered well — and the answer is itself evidence the old brief was
+missing a page.** `classify` on "a node that only performs HTTP GET requests
+against an external archive, and the passages it locates are later written to
+a database by a downstream node" returned the exact table
+(`contract/node-protocol.md` §4.1/§4.4): GET → `recorded_effect`, sourced,
+with the asymmetry spelled out ("a read declared `external_effect` costs safe
+resumes — a real price, paid silently, forever"). That is precisely the
+information that would have stopped us mis-declaring `check_verbatim` as
+`external_effect` the first time (§8's correction). The MCP answering it well
+is not a reason to stop flagging it: it is proof a table like this belongs in
+the primary docs an integrator reads before writing a node, not only in a tool
+they have to think to ask.
+
+**Answered well.** `diagnose` on our own live-queue trace reproduced
+`motus-validate jsonl`'s result and added the derived root, matching what
+`desk_review.py` printed independently. `review-graph` on our real
+`desk_graph.SPEC` (dumped via `G.SPEC.to_dict()`) accepted it cleanly and
+printed a graph fingerprint. We did not compare that fingerprint against the
+one in §0 of this report's header — the graph changed (the §8 `check_verbatim`
+reclassification) between the two measurements, so a different fingerprint is
+expected regardless of the kernel version and comparing them would have been a
+made-up signal, not a real one. Whether `review-graph`'s fingerprint is stable
+for one unchanged spec across kernel versions is untested by us.
+
+**Did not help where we expected it to.** `where`, asked "how to parameterise
+a node's closure config so the replay constraint becomes `config:sha256:…`
+instead of `opaque_config`" (our own open question 4.1, standing since the
+0.8.1 report), returned all twelve top-level module docstrings, unfiltered —
+not a narrowed answer, just everything. The question is still open.
+
+**Declined rather than guessed — which is the right behavior, but the
+question is still open.** `explain`, asked the free-text version of open
+question 4.2 (`durability_profile: "in-memory"` next to a `RunResult` that
+reports `evidence: persisted`), answered "I cannot tell" and printed the list
+of exception class names instead. `explain SinkFailed` (a real class name)
+did answer, correctly but thinly: "a required trace sink refused a record;
+logical success is impossible," `SinkFailed → MotusError → Exception`. Reading
+the tool's own behavior: `explain` seems scoped to naming a known error class,
+not to adjudicating a conceptual/narrative question about field semantics —
+which is a reasonable scope, but it means our two standing open questions from
+§4 (4.1 and 4.2) are undiminished by 0.11.0's MCP, not resolved by it.
+
+We did not have a case of the MCP answering confidently and wrong — every weak
+answer above was either an honest non-answer or an unfiltered dump, never a
+wrong one stated as fact.
+
+### 9.6 One thing that did break, and it is on our host, not in your kernel
+
+`pip install "vitruvyan-motus[mcp] @ git+…"` pulled `starlette==1.6.0` into
+this machine's shared `--user` site-packages, which conflicts with an
+unrelated tool already installed there (`fastapi==0.115.14` wants
+`starlette<0.47.0`). This is not a Terraveler-repository problem — `rag/` and
+`embedding/` pin their own `starlette`/`fastapi` inside their own containers,
+independent of the host, and are unaffected — but it is a real, observed
+breakage from installing the `[mcp]` extra on a machine that has other Python
+tooling in the same site-packages, and worth knowing about before recommending
+a bare `pip install …[mcp]` to an integrator who isn't working inside a
+container.
+
+### 9.7 Bottom line
+
+Nothing in `desk_graph.py`, `desk_checks.py`, `desk_review.py`, `anchor.py`,
+or `chat_graph_native.py` needed to change for 0.11.0. Every genuine trace we
+produced — three from the live Curator queue, one from the live chat graph
+with real floating-point similarities — validated clean under J2. The two
+questions you asked us to answer directly: we use only `run()`, never
+`stream()`, so the streaming-sink-bind defect you already know about cannot
+reach us today; our own sink can still fail at run open on a full disk or a
+permissions error, on local disk only, never on a remote target, and we did
+not reproduce that failure ourselves. And the MCP is worth keeping: one answer
+above was good enough to retroactively explain our own §8 mistake, two were
+not useful, and none were confidently wrong.

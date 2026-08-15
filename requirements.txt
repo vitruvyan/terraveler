@@ -16,20 +16,31 @@
 # the pin is a commit, never a branch — `main` moves and a moving pin is the
 # drift this repository has already paid for once.
 #
-# 508fd52 is the v0.8.1 tag and the tip of main; the two are the same commit
-# today, and the SHA is what is written here because the tag is a name and a
-# name can be moved.
+# 4243cd017f00aecae145fca8b03e6c38a977cda8 is the v0.11.0 tag's commit — the
+# dereferenced commit, not the annotated tag object (`git rev-parse
+# v0.11.0` names the tag object, `git rev-parse v0.11.0^{}` peels it to this;
+# 0.10.0's pin below was a plain commit too, and this keeps that consistent).
+# The SHA is what is written here because the tag is a name and a name can be
+# moved. Update, not adaptation: nothing in desk_graph.py, desk_checks.py,
+# desk_review.py, anchor.py or chat_graph_native.py changed for this bump —
+# see docs/MOTUS_FIELD_REPORT.md §9 for what was actually run against it and
+# what, if anything, broke.
+#
+# c861c9151c99ec5ec158aaf5b5eb5cddb1cf1710 was the v0.10.0 tag's commit; the
+# jump before that (508fd52, v0.8.1) is explained in git history, not repeated
+# here.
 #
 # The URL is the SSH alias, not https://github.com/vitruvyan/motus: the
 # repository is private, so the https form the migration brief suggests fails
-# with "could not read Username". The alias is defined in ~/.ssh/config
-# (Host github-vitruvyan -> github.com, IdentityFile id_ed25519_vitruvyan).
+# with "could not read Username" — still true under 0.11.0, checked again for
+# this bump. The alias is defined in ~/.ssh/config (Host github-vitruvyan ->
+# github.com, IdentityFile id_ed25519_vitruvyan).
 #
 # The container images do NOT install this line. They COPY a wheel built by
 # scripts/fetch_motus_wheel.sh, because a build context must not hold SSH
 # credentials. Same commit, two delivery paths, one version — and the day
-# 0.8.1 reaches PyPI both collapse into `vitruvyan-motus==0.8.1`.
-vitruvyan-motus @ git+ssh://git@github-vitruvyan/vitruvyan/motus@508fd5203db09040170f260b23187e85c65fd3a4
+# 0.11.0 reaches PyPI both collapse into `vitruvyan-motus==0.11.0`.
+vitruvyan-motus @ git+ssh://git@github-vitruvyan/vitruvyan/motus@4243cd017f00aecae145fca8b03e6c38a977cda8
 
 # jsonschema is Motus's own dependency (its shipped contract validator needs
 # it) and pip installs it transitively. It is not repeated here: a version
