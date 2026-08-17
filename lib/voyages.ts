@@ -209,6 +209,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Twenty-four years out of Venice: through Persia and the Pamirs to Kublai Khan's court at Khanbaliq, years in the Khan's service across Cathay and the south, then home by sea\u2026",
   },
+  {
+    slug: "lewisclark-1804",
+    href: "/voyage/lewisclark-1804",
+    title: "Lewis and Clark: the Corps of Discovery (1804-1806)",
+    navigator: "Meriwether Lewis and William Clark",
+    years: "1804–1806",
+    blurb:
+      "Up the Missouri from St Louis, a winter among the Mandan, over the Bitterroots with Shoshone horses and Nez Perce guidance, down the Snake and Columbia to the Pacific, a wet\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
