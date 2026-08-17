@@ -227,6 +227,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Inland from the Gambia with two companions and a horse: imprisoned for four months by a Moorish chief, escaping alone across the Sahel, reaching the Niger at Segou to find it\u2026",
   },
+  {
+    slug: "ibnbattuta-1325",
+    href: "/voyage/ibnbattuta-1325",
+    title: "The Rihla of Ibn Battuta (1325-1354)",
+    navigator: "Ibn Battuta",
+    years: "1325–1352",
+    blurb:
+      "Perhaps 120,000 kilometres: Mecca by way of Egypt and Syria, then Persia, the Swahili coast, Anatolia, the Golden Horde, India and eight years in the service of the Sultan of\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
