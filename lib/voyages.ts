@@ -218,6 +218,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Up the Missouri from St Louis, a winter among the Mandan, over the Bitterroots with Shoshone horses and Nez Perce guidance, down the Snake and Columbia to the Pacific, a wet\u2026",
   },
+  {
+    slug: "mungopark-1795",
+    href: "/voyage/mungopark-1795",
+    title: "Mungo Park on the Niger (1795-1797)",
+    navigator: "Mungo Park",
+    years: "1795–1797",
+    blurb:
+      "Inland from the Gambia with two companions and a horse: imprisoned for four months by a Moorish chief, escaping alone across the Sahel, reaching the Niger at Segou to find it\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
