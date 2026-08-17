@@ -200,6 +200,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Overland through Dunhuang and the desert to Khotan, over the Pamirs to Gandhara and the Ganges plain, years at Pataliputra copying texts, then Ceylon, and home by merchant ship\u2026",
   },
+  {
+    slug: "polo-1271",
+    href: "/voyage/polo-1271",
+    title: "The Travels of Marco Polo (1271-1295)",
+    navigator: "Marco Polo",
+    years: "1271–1295",
+    blurb:
+      "Twenty-four years out of Venice: through Persia and the Pamirs to Kublai Khan's court at Khanbaliq, years in the Khan's service across Cathay and the south, then home by sea\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
