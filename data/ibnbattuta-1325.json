@@ -444,17 +444,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/A_dhow_in_Lamu_Island.jpg/1280px-A_dhow_in_Lamu_Island.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/A_dhow_in_Lamu_Island.jpg/1280px-A_dhow_in_Lamu_Island.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-          "caption": "File:A dhow in Lamu Island.jpg",
-          "credit": "Adebola Falade",
-          "source_url": "https://commons.wikimedia.org/wiki/File:A_dhow_in_Lamu_Island.jpg",
-          "license": "CC BY-SA 4.0",
-          "date": null
-        }
-      ]
+      "media_url": null,
+      "media": []
     },
     {
       "id": 19,
@@ -589,17 +580,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Empire_mansa_musa.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-      "media": [
-        {
-          "url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Empire_mansa_musa.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
-          "caption": "File:Empire mansa musa.jpeg",
-          "credit": "HistoryNmoor",
-          "source_url": "https://commons.wikimedia.org/wiki/File:Empire_mansa_musa.jpeg",
-          "license": "CC BY-SA 4.0",
-          "date": null
-        }
-      ]
+      "media_url": null,
+      "media": []
     }
   ],
   "provenance": {
