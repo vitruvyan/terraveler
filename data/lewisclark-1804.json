@@ -42,7 +42,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 2,
@@ -62,7 +72,8 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 3,
@@ -82,7 +93,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 4,
@@ -102,7 +123,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 5,
@@ -122,7 +153,8 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 6,
@@ -142,7 +174,8 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 7,
@@ -162,7 +195,17 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 8,
@@ -182,7 +225,25 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        },
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 9,
@@ -202,7 +263,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 10,
@@ -222,7 +293,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 11,
@@ -242,7 +323,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 12,
@@ -262,7 +353,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 13,
@@ -282,7 +383,8 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 14,
@@ -302,7 +404,17 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        }
+      ]
     },
     {
       "id": 15,
@@ -322,7 +434,25 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        },
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 16,
@@ -342,7 +472,25 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        },
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 17,
@@ -362,7 +510,17 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 18,
@@ -382,7 +540,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 19,
@@ -402,7 +570,17 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 20,
@@ -422,7 +600,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 21,
@@ -442,7 +630,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        }
+      ]
     },
     {
       "id": 22,
@@ -462,7 +660,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        }
+      ]
     },
     {
       "id": 23,
@@ -482,7 +690,8 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 24,
@@ -502,7 +711,25 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Mount_Sacagawea%2C_Fremont_Peak.jpg/1280px-Mount_Sacagawea%2C_Fremont_Peak.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Mount Sacagawea, Fremont Peak.jpg",
+          "credit": "Forest Service, USDA",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Mount_Sacagawea,_Fremont_Peak.jpg",
+          "license": "Public domain",
+          "date": null
+        },
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 25,
@@ -522,7 +749,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 26,
@@ -542,7 +779,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 27,
@@ -562,7 +809,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 28,
@@ -582,7 +839,17 @@
       "diary_source_citation": "The Journals of Lewis and Clark, 1804-1806",
       "diary_source_url": "https://www.gutenberg.org/cache/epub/8419/pg8419.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+      "media": [
+        {
+          "url": "https://commons.wikimedia.org/w/resources/assets/file-type-icons/fileicon-ogg.png",
+          "caption": "File:Journallewisandclarke 06 lewis-clark 64kb.ogg",
+          "credit": "Librivox (Denny Sayers)",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Journallewisandclarke_06_lewis-clark_64kb.ogg",
+          "license": "CC0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 29,
@@ -602,7 +869,17 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Engineers%2C_far_from_ordinary-_The_U.S._Army_Corps_of_Engineers_in_St._Louis_-_USACE-p16021coll4-173.pdf/page1-960px-Engineers%2C_far_from_ordinary-_The_U.S._Army_Corps_of_Engineers_in_St._Louis_-_USACE-p16021coll4-173.pdf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Engineers%2C_far_from_ordinary-_The_U.S._Army_Corps_of_Engineers_in_St._Louis_-_USACE-p16021coll4-173.pdf/page1-960px-Engineers%2C_far_from_ordinary-_The_U.S._Army_Corps_of_Engineers_in_St._Louis_-_USACE-p16021coll4-173.pdf.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Engineers, far from ordinary- The U.S. Army Corps of Engineers in St. Louis - USACE-p16021coll4-173.pdf",
+          "credit": "United States. Army. Corps of Engineers. St. Louis District",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Engineers,_far_from_ordinary-_The_U.S._Army_Corps_of_Engineers_in_St._Louis_-_USACE-p16021coll4-173.pdf",
+          "license": "Public domain",
+          "date": null
+        }
+      ]
     }
   ],
   "provenance": {

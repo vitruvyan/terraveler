@@ -21,6 +21,7 @@ import leoafricanus from "@/data/leoafricanus-1510.json";
 import faxian from "@/data/faxian-399.json";
 
 import polo_1271 from "@/data/polo-1271.json";
+import lewisclark_1804 from "@/data/lewisclark-1804.json";
 export interface VoyageBundle {
   navigator: Navigator;
   voyage: Voyage;
@@ -63,6 +64,7 @@ const LOCAL: Record<VoyageSlug, unknown> = {
   "leoafricanus-1510": leoafricanus,
   "faxian-399": faxian,
   "polo-1271": polo_1271,
+  "lewisclark-1804": lewisclark_1804,
 };
 
 export function knownVoyages(): readonly string[] {
