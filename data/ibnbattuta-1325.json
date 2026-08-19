@@ -42,7 +42,8 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 2,
@@ -64,7 +65,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 3,
@@ -86,7 +88,25 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Egypt%2C_Cairo%2C_Islamic_Cairo%2C_also_Medieval_or_Fatimid_Cairo.jpg/1280px-Egypt%2C_Cairo%2C_Islamic_Cairo%2C_also_Medieval_or_Fatimid_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Egypt%2C_Cairo%2C_Islamic_Cairo%2C_also_Medieval_or_Fatimid_Cairo.jpg/1280px-Egypt%2C_Cairo%2C_Islamic_Cairo%2C_also_Medieval_or_Fatimid_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Egypt, Cairo, Islamic Cairo, also Medieval or Fatimid Cairo.jpg",
+          "credit": "Vyacheslav Argenberg",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Egypt,_Cairo,_Islamic_Cairo,_also_Medieval_or_Fatimid_Cairo.jpg",
+          "license": "CC BY 4.0",
+          "date": null
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Egypt%2C_Cairo%2C_Panorama_of_Islamic_Cairo%2C_also_Medieval_Cairo.jpg/1280px-Egypt%2C_Cairo%2C_Panorama_of_Islamic_Cairo%2C_also_Medieval_Cairo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Egypt, Cairo, Panorama of Islamic Cairo, also Medieval Cairo.jpg",
+          "credit": "Vyacheslav Argenberg",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Egypt,_Cairo,_Panorama_of_Islamic_Cairo,_also_Medieval_Cairo.jpg",
+          "license": "CC BY 4.0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 4,
@@ -108,7 +128,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 5,
@@ -128,7 +149,8 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 6,
@@ -150,7 +172,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 7,
@@ -172,7 +195,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 8,
@@ -194,7 +218,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 9,
@@ -216,7 +241,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 10,
@@ -238,7 +264,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "reconstructed",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 11,
@@ -260,7 +287,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 12,
@@ -282,7 +310,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 13,
@@ -304,7 +333,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 14,
@@ -326,7 +356,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 15,
@@ -348,7 +379,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 16,
@@ -370,7 +402,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 17,
@@ -390,7 +423,8 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 18,
@@ -410,7 +444,17 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/A_dhow_in_Lamu_Island.jpg/1280px-A_dhow_in_Lamu_Island.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/A_dhow_in_Lamu_Island.jpg/1280px-A_dhow_in_Lamu_Island.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:A dhow in Lamu Island.jpg",
+          "credit": "Adebola Falade",
+          "source_url": "https://commons.wikimedia.org/wiki/File:A_dhow_in_Lamu_Island.jpg",
+          "license": "CC BY-SA 4.0",
+          "date": null
+        }
+      ]
     },
     {
       "id": 19,
@@ -432,7 +476,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 20,
@@ -452,7 +497,8 @@
       "diary_source_citation": null,
       "diary_source_url": null,
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 21,
@@ -474,7 +520,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 22,
@@ -496,7 +543,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 23,
@@ -518,7 +566,8 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": null,
+      "media": []
     },
     {
       "id": 24,
@@ -540,7 +589,17 @@
       "diary_source_citation": "Travels in Asia and Africa 1325-1354 (trans. H. A. R. Gibb, Broadway Travellers, Routledge 1929)",
       "diary_source_url": "https://archive.org/download/pli.kerala.rare.27987/pli.kerala.rare.27987_djvu.txt",
       "confidence": "certain",
-      "media_url": null
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Empire_mansa_musa.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/4/42/Empire_mansa_musa.jpeg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+          "caption": "File:Empire mansa musa.jpeg",
+          "credit": "HistoryNmoor",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Empire_mansa_musa.jpeg",
+          "license": "CC BY-SA 4.0",
+          "date": null
+        }
+      ]
     }
   ],
   "provenance": {
