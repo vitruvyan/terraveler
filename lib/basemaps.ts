@@ -5,9 +5,9 @@ import type { BodyId } from "./types";
  * basemap. Used verbatim as the `style` of the `new gl.Map({...})` call in
  * components/VoyageExperience.tsx.
  *
- * "earth" reproduces, byte-for-byte, the CARTO `light_nolabels` raster block
- * that VoyageExperience used inline before this file existed — Earth voyages
- * must render identically to before.
+ * "earth" requests tiles through the server-side map route. The route keeps
+ * the CARTO key out of the browser bundle and falls back to OpenStreetMap
+ * when the key is not configured.
  *
  * "moon" and "mars" use the OpenPlanetary (OPM) basemap tile server: XYZ
  * raster tiles in standard Web-Mercator tiling (`{z}/{x}/{y}.png`), so they
@@ -43,25 +43,19 @@ export function basemapStyle(body: BodyId): { version: 8; sources: any; layers: 
     };
   }
 
-  // "earth" — verbatim copy of the original inline block in VoyageExperience.
   return {
     version: 8,
     sources: {
-      carto: {
+      earth: {
         type: "raster",
-        tiles: [
-          "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-          "https://b.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-          "https://c.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-          "https://d.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png",
-        ],
+        tiles: ["/api/map-tiles/{z}/{x}/{y}.png"],
         tileSize: 256,
         attribution: "© OpenStreetMap contributors © CARTO",
       },
     },
     layers: [
       { id: "bg", type: "background", paint: { "background-color": "#dfe4e6" } },
-      { id: "carto", type: "raster", source: "carto", paint: { "raster-opacity": 1 } },
+      { id: "earth", type: "raster", source: "earth", paint: { "raster-opacity": 1 } },
     ],
   };
 }
