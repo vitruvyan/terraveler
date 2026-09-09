@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const CARTO_SUBDOMAINS = ["a", "b", "c", "d"];
 const TILE_PATH = /^(\d+)\/(\d+)\/(\d+)\.png$/;
 
 export async function GET(
@@ -15,10 +14,7 @@ export async function GET(
   if (!match) return new NextResponse("Invalid tile path", { status: 400 });
 
   const [, zoom, x, y] = match;
-  const cartoApiKey = process.env.NEXT_CARTO_API_KEY?.trim();
-  const upstream = cartoApiKey
-    ? `https://${CARTO_SUBDOMAINS[Number(x) % CARTO_SUBDOMAINS.length]}.basemaps.cartocdn.com/light_nolabels/${zoom}/${x}/${y}.png?api_key=${encodeURIComponent(cartoApiKey)}`
-    : `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+  const upstream = `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
 
   const response = await fetch(upstream, {
     headers: { "User-Agent": "Terraveler/1.0 basemap proxy" },

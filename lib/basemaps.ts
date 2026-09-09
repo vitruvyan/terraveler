@@ -50,7 +50,7 @@ export function basemapStyle(body: BodyId): { version: 8; sources: any; layers: 
         type: "raster",
         tiles: ["/api/map-tiles/{z}/{x}/{y}.png"],
         tileSize: 256,
-        attribution: "© OpenStreetMap contributors © CARTO",
+        attribution: "© OpenStreetMap contributors",
       },
     },
     layers: [
@@ -73,7 +73,7 @@ export function bodyBlurb(body: BodyId): string {
 }
 
 export const TILE_ATTRIBUTION: Record<BodyId, string> = {
-  earth: "© OpenStreetMap contributors © CARTO",
+  earth: "© OpenStreetMap contributors",
   moon: "Map tiles © OpenPlanetary · data NASA/USGS/JPL",
   mars: "Map tiles © OpenPlanetary · data NASA/USGS/JPL",
   venus: "Map tiles © OpenPlanetary · data NASA/USGS/JPL",
