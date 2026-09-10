@@ -38,6 +38,13 @@ test("modern transport rejects header/body routing disagreement", async () => {
   assert.match(middleware, /protocolVersion/);
 });
 
+test("modern unauthorised protected tools surface a real HTTP challenge", async () => {
+  const middleware = await read("../middleware.ts");
+  assert.match(middleware, /payload\?\.result\?\._meta\?\.\["mcp\/www_authenticate"\]/);
+  assert.match(middleware, /challenge && payload\?\.result\?\.isError && upstream\.status === 200/);
+  assert.match(middleware, /\? 401\s*:\s*upstream\.status/);
+});
+
 test("the modern Carta never sends an OAuth client back to legacy registration", async () => {
   const middleware = await read("../middleware.ts");
   assert.match(middleware, /moderniseContract/);
