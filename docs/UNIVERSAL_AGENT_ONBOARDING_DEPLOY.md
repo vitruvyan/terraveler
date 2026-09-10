@@ -39,27 +39,24 @@ docker exec -i terraveler_postgres \
   < supabase/mcp_oauth_write_functions.sql
 ```
 
-Then refresh PostgREST's schema cache. The deployment historically does this by
-restarting the service/container:
+Then refresh PostgREST's schema cache:
 
 ```bash
 docker restart terraveler_postgrest
 ```
 
-The application contains a temporary non-atomic compatibility fallback if the
-new functions are not visible yet. That fallback prevents an app-first deploy
-from breaking, but it is a deploy bridge, not the desired steady state. The
-steady state is the OAuth-native SQL functions. Do not declare the modern write
-path production-ready until those functions are visible through PostgREST.
+The application contains a temporary non-atomic fallback if the new functions
+are not visible yet. That prevents an app-first deploy from breaking, but it is
+a deployment bridge, not the intended steady state. Do not declare the modern
+write path production-ready until the OAuth-native functions are visible through
+PostgREST.
 
-The new functions do **not** remove or replace the legacy functions. Rolling the
-web application back therefore restores the old path without a database
-rollback.
+The new functions do not remove or replace the legacy functions. Rolling the web
+application back therefore restores the old path without a database rollback.
 
 ## Pre-merge gates
 
-GitHub Actions must be green on the **current PR head**, not on an earlier
-commit. It runs:
+GitHub Actions must be green on the current PR head. It runs:
 
 ```text
 npm ci
@@ -68,15 +65,9 @@ npm run build
 runtime MCP smoke
 ```
 
-The runtime smoke launches the production Next build and verifies:
-
-- `server/discover` negotiates MCP `2026-07-28`;
-- the modern catalogue contains `get_capabilities`;
-- the modern catalogue does not expose `register`;
-- anonymous `get_capabilities` reports read-only authority and no publish
-  capability;
-- an unauthorised protected call returns HTTP 401 and an OAuth challenge;
-- a routing-header/body mismatch returns JSON-RPC `-32020`.
+The runtime smoke launches the production Next build and verifies discovery,
+the modern tool catalogue, anonymous capability introspection, OAuth challenge
+semantics and routing-header/body mismatch rejection.
 
 ## Deployment order
 
@@ -85,71 +76,32 @@ The runtime smoke launches the production Next build and verifies:
 3. Restart/refresh PostgREST so the new RPCs are visible.
 4. Deploy the web application.
 5. Run the HTTP smoke suite against production.
-6. Run client-level smoke tests in this order: existing Claude path first,
-   Gemini CLI modern OAuth second, then an OpenAI MCP-capable host where write
-   linking is available.
-7. Only after the existing Claude path and at least one modern non-Anthropic
-   path pass should the PR leave draft state / be merged.
-
-## Client-level acceptance
-
-### Claude / 2025 compatibility
-
-- existing connector still lists tools;
-- public read works;
-- a protected write still starts the existing OAuth flow;
-- an already authorised connection still retains its contributor/standing.
-
-### Gemini CLI / MCP 2026
-
-- `server/discover` succeeds;
-- OAuth discovery finds Terraveler metadata;
-- callback validates the RFC 9207 `iss` parameter;
-- no API key is requested from the user;
-- first protected action creates/reuses a contributor automatically;
-- `get_capabilities` reflects the granted scope.
-
-### OpenAI-capable MCP host
-
-- public reads require no auth;
-- protected tool advertises its scope and returns a standards-compatible
-  challenge;
-- if the host supports write linking, approval completes without exposing a
-  Terraveler secret to the conversation.
-
-Do not weaken a write into a read or bypass OAuth to accommodate a host UI.
-Client limitations are not Terraveler permissions.
+6. Run client-level smoke tests: existing Claude path first, Gemini CLI modern
+   OAuth second, then an OpenAI MCP-capable host where write linking is available.
+7. Only after the existing Claude path and at least one modern non-Anthropic path
+   pass should the PR leave draft state / be merged.
 
 ## CIMD security boundary
 
-CIMD is supported only through the guarded resolver in `lib/cimd.ts`. Its
-outbound fetch is deliberately constrained:
-
-- HTTPS document URL only, stable/non-root, no userinfo, query or fragment;
-- DNS resolution must produce public addresses only;
-- the chosen public address is pinned for the HTTPS request to resist DNS
-  rebinding while SNI/TLS still verifies the declared hostname;
-- local/private/link-local/CGNAT/metadata/documentation/reserved address ranges
-  are rejected;
-- redirects are not followed;
-- 3 second timeout;
-- 64 KiB response ceiling;
-- strict client id / redirect URI / public-PKCE metadata validation;
-- bounded one-hour metadata cache in `oauth_clients`.
+CIMD is supported only through `lib/cimd.ts`. The resolver requires a stable
+HTTPS document URL, blocks non-public DNS results, pins the chosen public IP for
+the HTTPS request, disables redirects, imposes a 3 second timeout and 64 KiB
+response ceiling, validates client id and redirect URIs strictly, and caches a
+validated snapshot for a bounded period.
 
 Do not replace this with a generic `fetch(client_id)` helper.
 
 ## Authority invariants
 
-The following are release blockers if violated:
+Release blockers:
 
 - model/vendor name never grants a capability;
 - `publish` is never an OAuth scope or public MCP capability;
 - human-backed connections share the human tandem's contributor standing;
 - autonomous connections are explicitly recorded as autonomous;
 - an agent cannot review its own draft;
-- the Stage-0 gate and existing editorial workflow remain unchanged;
-- modern writes authenticate the Bearer/contributor id, never a conversation-
+- Stage-0 and the editorial workflow remain unchanged;
+- modern writes authenticate Bearer/contributor identity, never a conversation-
   supplied API key.
 
 ## Remaining compatibility debt
@@ -159,17 +111,16 @@ some scope/quota declarations. The modern facade derives authority from
 `lib/agentCapabilities.ts`; regression tests pin that registry to the legacy
 handler so the two cannot silently diverge during the compatibility window.
 
-Do **not** delete the legacy implementation in this release. Retire it only when
+Do not delete the legacy implementation in this release. Retire it only after
 supported legacy clients have moved to the modern path and their contributor
-identity/standing migration has been tested. Until then, compatibility is a
-feature; duplication is controlled debt.
+identity/standing migration has been tested.
 
 ## Why Orbis stays out of this PR
 
-Terraveler is already a real product surface with editorial semantics, source
-policy, agent identities and observable failure modes. That makes it much more
-valuable as an **acceptance vertical** for Orbis than as an early dependency on
-Orbis while Orbis and full Motus integration are still moving.
+Terraveler already has real editorial semantics, source policy, agent identities
+and observable failure modes. That makes it more useful as an acceptance vertical
+for Orbis than as an early dependency on Orbis while Orbis and full Motus
+integration are still moving.
 
 Keeping this release standalone gives the later Orbis work a control group: the
 same submissions, reviews, provenance and MCP requests can be run through both
@@ -177,15 +128,14 @@ architectures and compared rather than judged by impression.
 
 ## Later Orbis integration
 
-Once Orbis' interfaces and Motus integration are stable enough, integrate
-behind explicit ports so the same Terraveler acceptance corpus can run in two
-modes:
+Once Orbis' interfaces and Motus integration are stable enough, integrate behind
+explicit ports so the same Terraveler acceptance corpus can run in two modes:
 
 ```text
 standalone Terraveler   -> current services / Motus subset
 Orbis-backed Terraveler -> Orbis cognition + shared Motus contracts
 ```
 
-The target is not merely “Terraveler uses Orbis”. The target is to prove that
-Orbis can host a real cultural vertical **without changing Terraveler's public
-MCP contract, evidence policy or editorial semantics**.
+The goal is to prove that Orbis can host a real cultural vertical without
+changing Terraveler's public MCP contract, evidence policy or editorial
+semantics.
