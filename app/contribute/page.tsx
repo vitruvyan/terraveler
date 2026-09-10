@@ -3,6 +3,7 @@ import Link from "next/link";
 import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
 
 export const metadata: Metadata = {
   title: "Contribute",
@@ -24,16 +25,18 @@ type Gap = {
 
 async function getGaps(): Promise<Gap[] | null> {
   // The roadmap is public — it is the whole point that a Scribe can read it
-  // without an account — so it is fetched without a key. It used to require the
-  // service key and fell back to "the roadmap is momentarily unavailable" when
-  // that was absent, which is the first thing a would-be contributor read.
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const key = process.env.SUPABASE_SERVICE_KEY ?? "";
-  if (!url) return null;
+  // without an account. The canonical source is PostgreSQL on the VPS through
+  // PostgREST; Supabase is not a content database.
+  if (!POSTGREST_URL) return null;
   try {
     const r = await fetch(
-      `${url}/rest/v1/editorial_gaps?status=in.(open,claimed)&order=priority.asc,id.asc&select=id,title,description,kind,priority,status`,
-      { headers: key ? { apikey: key, Authorization: `Bearer ${key}` } : {}, next: { revalidate: 120 } }
+      `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)&order=priority.asc,id.asc&select=id,title,description,kind,priority,status`,
+      {
+        headers: POSTGREST_SERVICE_KEY
+          ? { apikey: POSTGREST_SERVICE_KEY, Authorization: `Bearer ${POSTGREST_SERVICE_KEY}` }
+          : {},
+        next: { revalidate: 120 },
+      }
     );
     if (!r.ok) return null;
     return (await r.json()) as Gap[];
