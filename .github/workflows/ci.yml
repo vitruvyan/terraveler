@@ -15,9 +15,11 @@ jobs:
     env:
       # Build/runtime placeholders only. The smoke suite exercises public MCP
       # paths that require no database; protected writes are stopped at OAuth.
-      SUPABASE_URL: https://example.invalid
-      SUPABASE_SERVICE_KEY: ci-placeholder
-      NEXT_PUBLIC_SUPABASE_URL: https://example.invalid
+      POSTGREST_URL: https://example.invalid
+      POSTGREST_SERVICE_KEY: ci-placeholder
+      SUPABASE_AUTH_URL: https://auth.example.invalid
+      SUPABASE_AUTH_KEY: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_URL: https://auth.example.invalid
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
     steps:
       - uses: actions/checkout@v4
