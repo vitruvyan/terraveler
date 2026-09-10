@@ -8,16 +8,36 @@ with a human authorizing what goes public. It began as a chrono-diary of
 navigation (terraveler.com); the direction is a **geospatial wiki** of cultured,
 sourced knowledge. A Vitruvyan EOOD project.
 
-## Two planes
-- **Front / app** — Next.js (App Router) on Vercel; Supabase for app data + Auth
-  (the Editorial **Desk**, Google login). The public site and the place where a
-  human authorizes content.
-- **Backend / knowledge** — self-hosted on the VPS (`caravaggio@161.97.140.157`),
-  isolated on `terraveler_net`; no open-web, no third-party embedding tokens:
-  - `terraveler_postgres` — pgvector (768-d)
+## Runtime boundaries — do not conflate them
+Terraveler deliberately separates identity from application data.
+
+- **Front / app** — Next.js (App Router) on Vercel. The public site and the
+  Editorial **Desk** live here.
+- **Identity plane** — **Supabase Auth only**: account login/signup, Google OAuth,
+  access/refresh tokens and stable user `sub`. The Supabase project's database is
+  **not** Terraveler's canonical application database.
+- **Data / knowledge plane** — self-hosted on the VPS
+  (`caravaggio@161.97.140.157`), isolated on `terraveler_net`:
+  - `terraveler_postgres` — canonical PostgreSQL + pgvector (768-d)
+  - `terraveler_postgrest` — HTTP/RPC surface for application and governance data
   - `terraveler_embedding` — nomic text+vision, self-hosted, **zero-token**
   - `terraveler_rag` — `/chat` (the **Motus-orchestrated** Pigafetta pipeline) + `/rag/search`
   - `terraveler_ingest` — **Motus** batch: `discover → curate → fetch → codex (restore·bind) → chunk → embed → upsert`
+
+Canonical environment names reflect that boundary:
+
+- `POSTGREST_URL`, `POSTGREST_SERVICE_KEY` → VPS data plane
+- `SUPABASE_AUTH_URL`, `SUPABASE_AUTH_KEY` → Supabase identity plane
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` → browser-side identity configuration
+
+`SUPABASE_URL` / `SUPABASE_SERVICE_KEY` survive only as temporary compatibility
+aliases for deployments that predate the naming cleanup. New code must not use
+them directly; `lib/backendConfig.ts` is the only compatibility boundary.
+
+The historical directory name `supabase/*.sql` does **not** mean those migrations
+belong to the Supabase cloud database. Terraveler application/governance SQL in
+that directory targets the canonical PostgreSQL instance on the VPS unless a file
+explicitly says otherwise.
 
 ## The content pipeline (product agents)
 Orchestrated by **Motus** (immutable trace = the audit).
