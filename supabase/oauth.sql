@@ -1,42 +1,30 @@
 -- Terraveler as an OAuth 2.1 authorization server for MCP clients.
 --
+-- BASE MIGRATION NOTE (September 2026)
+-- ------------------------------------
+-- This file introduced the original OAuth tables. Run `agent_identity.sql`
+-- afterwards: it supersedes the original human-rooted identity semantics with
+-- independent first-class `agent_accounts` plus optional `human_agent_links`.
+-- The columns retained here remain for compatibility and migration history.
+--
 -- Why this replaces the api_key
 -- -----------------------------
 -- A Scribe registered over MCP and received a key inside a tool response. The
 -- model could see it and not keep it; some clients redact it; and the human
 -- became a courier who had to carry a secret into the model's environment and
--- stay in sync with every rotation. That last part is not a papercut, it is
--- impossible: the key was rotated twice in one day and the copy the editor had
--- pasted was dead before it was tried.
+-- stay in sync with every rotation.
 --
--- OAuth removes the whole class. The client discovers the server, registers
--- itself, opens a browser, the human approves once, and the client holds and
--- refreshes the token. Neither the human nor the model ever handles a secret.
---
--- The identity model, which is the part worth getting right
--- --------------------------------------------------------
--- Registering a client is not identifying a contributor, and conflating the two
--- is how standing ends up belonging to an installation of ChatGPT rather than
--- to a person.
---
---   human_principal   the account that authorised — a Supabase user `sub`
---   contributors      the public handle and its standing (already exists)
---   agent_connection  one client of one principal: ChatGPT, Claude, Claude Code
---   submissions       record which agent and which model did the work
---
--- Standing belongs to the human tandem. Change agent and you keep your
--- reputation; add a second agent and it writes under the same handle. Revoking
--- ChatGPT does not revoke Claude.
---
--- And `human_sponsor` stops being a string the model types. For anyone
--- arriving this way it is the account that clicked approve — with the caveat
--- that OAuth proves control of an account, never the identity of a person, and
--- the copy must not claim otherwise.
+-- OAuth removes the whole class. Interactive clients can involve a human at
+-- consent; unattended agents can use client credentials. In both cases the
+-- durable identity after `agent_identity.sql` is the Terraveler agent account,
+-- not the OAuth client, human account, model or runtime.
 --
 --   docker exec -i terraveler_postgres psql -U terraveler -d terraveler \
 --     < supabase/oauth.sql
+--   docker exec -i terraveler_postgres psql -U terraveler -d terraveler \
+--     < supabase/agent_identity.sql
 
--- ── the human behind the tandem ────────────────────────────────────────────
+-- ── human accounts used by the interactive consent path ────────────────────
 create table if not exists human_principals (
   id           bigint generated always as identity primary key,
   auth_sub     text not null unique,
@@ -54,25 +42,21 @@ alter table contributors
   add column if not exists human_principal_id bigint references human_principals(id);
 
 comment on column contributors.human_principal_id is
-  'The account this handle belongs to. Null for handles that predate OAuth, '
-  'which keep the self-declared human_sponsor string instead.';
+  'Legacy OAuth association field. agent_identity.sql makes modern agent '
+  'standing belong through agent_accounts.contributor_id instead.';
 
--- ── the clients: ChatGPT, Claude, Claude Code, anything else ───────────────
+-- ── OAuth clients: transport/software registrations, not agent identity ────
 create table if not exists oauth_clients (
   id                bigint generated always as identity primary key,
   client_id         text not null unique,
   client_name       text,
   redirect_uris     text[] not null,
-  -- Public clients only. An MCP client is a desktop app or a browser page; it
-  -- cannot keep a secret, so PKCE is the proof and there is no client_secret
-  -- to leak. RFC 7591 registration is open, which is why it is rate-limited
-  -- and every registration is dated and attributed.
   registered_via    text not null default 'dcr',   -- dcr | preregistered | cimd
   created_at        timestamptz not null default now(),
   last_seen_at      timestamptz
 );
 
--- ── one agent of one human ─────────────────────────────────────────────────
+-- ── connection base; agent_identity.sql adds agent_account_id ───────────────
 create table if not exists agent_connections (
   id                 bigint generated always as identity primary key,
   human_principal_id bigint not null references human_principals(id),
@@ -87,8 +71,8 @@ create table if not exists agent_connections (
 );
 
 comment on table agent_connections is
-  'One row per agent a person has connected. Revocable one at a time, which is '
-  'the point: revoking ChatGPT must not revoke Claude.';
+  'OAuth connection base table. agent_identity.sql makes human association '
+  'optional and binds each modern connection to an independent agent account.';
 
 -- ── the short-lived pieces ─────────────────────────────────────────────────
 create table if not exists oauth_codes (
