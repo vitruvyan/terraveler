@@ -165,14 +165,22 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
     };
   }
 
+  const resultChallenges = payload?.result?._meta?.["mcp/www_authenticate"];
+  const challenge = upstream.headers.get("www-authenticate") ??
+    (Array.isArray(resultChallenges) && typeof resultChallenges[0] === "string" ? resultChallenges[0] : null);
+  // Legacy hosts needed a JSON-RPC error-shaped result with HTTP 200. Modern
+  // per-tool authorization expects the HTTP resource to challenge with 401.
+  const status = challenge && payload?.result?.isError && upstream.status === 200
+    ? 401
+    : upstream.status;
+
   const outHeaders = new Headers({
     "Content-Type": "application/json",
     "Cache-Control": upstream.headers.get("cache-control") ?? "no-store",
     "MCP-Protocol-Version": MODERN,
   });
-  const challenge = upstream.headers.get("www-authenticate");
   if (challenge) outHeaders.set("WWW-Authenticate", challenge);
-  return NextResponse.json(payload, { status: upstream.status, headers: outHeaders });
+  return NextResponse.json(payload, { status, headers: outHeaders });
 }
 
 async function modernWrite(req: NextRequest, msg: any, name: string) {
@@ -273,8 +281,6 @@ export async function middleware(req: NextRequest) {
 
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
 
-    // The first authenticated governed call no longer needs a separate register
-    // tool. The bearer relationship materialises/reuses its contributor first.
     if (TOOL_SCOPE[name] && req.headers.get("authorization")) {
       const boot = await capabilitySnapshot(req);
       if (!boot.ok) {
@@ -283,11 +289,10 @@ export async function middleware(req: NextRequest) {
       }
       if (MODERN_NATIVE_WRITES.has(name)) return modernWrite(req, msg, name);
     }
-    // No bearer deliberately reaches the legacy handler so its spec-compliant
-    // OAuth challenge (HTTP + mcp/www_authenticate) starts account linking.
-    // get_review_brief and appeal also remain here: their legacy code already
-    // authenticates the Bearer before touching state and therefore needs no
-    // API-key-era RPC bypass.
+    // No bearer deliberately reaches the legacy handler so its challenge can be
+    // lifted into an HTTP 401 on this modern facade. get_review_brief and appeal
+    // also remain there: their legacy code authenticates Bearer before state and
+    // does not depend on the API-key-era transactional RPCs.
     return proxyLegacy(req);
   }
 
