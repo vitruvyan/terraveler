@@ -48,7 +48,7 @@ export function basemapStyle(body: BodyId): { version: 8; sources: any; layers: 
     sources: {
       earth: {
         type: "raster",
-        tiles: ["/api/map-tiles/{z}/{x}/{y}.png"],
+        tiles: ["/api/map-tiles/{z}/{x}/{y}.png?v=2"],
         tileSize: 256,
         attribution: "© OpenStreetMap contributors",
       },
