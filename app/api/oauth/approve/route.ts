@@ -20,6 +20,8 @@ import { CODE_TTL_S, MCP_RESOURCE, parseScopes, secret, sha256 } from "@/lib/oau
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const ISSUER = "https://www.terraveler.com";
+
 function back(uri: string, params: Record<string, string>) {
   const u = new URL(uri);
   for (const [k, v] of Object.entries(params)) if (v) u.searchParams.set(k, v);
@@ -64,6 +66,9 @@ export async function POST(req: Request) {
       error: "access_denied",
       error_description: "the person declined",
       state: String(state ?? ""),
+      // RFC 9207: the client can prove this response came from the issuer it
+      // discovered, rather than from a mixed-up authorization server.
+      iss: ISSUER,
     });
 
   // ── the person
@@ -115,5 +120,11 @@ export async function POST(req: Request) {
     carta_version: null,
   }).catch(() => {});
 
-  return back(String(redirect_uri), { code, state: String(state ?? "") });
+  return back(String(redirect_uri), {
+    code,
+    state: String(state ?? ""),
+    // Gemini CLI and other RFC 9207 clients require this when an issuer was
+    // discovered. It must exactly match the RFC 8414 `issuer` value.
+    iss: ISSUER,
+  });
 }
