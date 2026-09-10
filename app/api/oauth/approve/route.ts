@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
-import { COOKIE, getUser, readCookie, sb } from "@/lib/deskAuth";
+import { getUser, readCookie, sb } from "@/lib/deskAuth";
 import { CODE_TTL_S, MCP_RESOURCE, parseScopes, secret, sha256 } from "@/lib/oauth";
+import { resolveOAuthClient } from "@/lib/cimd";
 
 /**
  * What the one click actually does.
  *
- * Four things, in order, and the order matters: find or create the person,
- * find or create the connection between that person and this client, mint a
- * code bound to both, and hand back the address to return to.
+ * Four things, in order, and the order matters: verify the client, find or
+ * create the person, find or create the connection between that person and this
+ * client, mint a code bound to both, and hand back the callback address.
  *
- * The connection is looked up rather than always created, so a second
- * authorisation by the same person with the same client re-uses the row and
- * keeps its standing. Approving again is not becoming somebody new.
- *
- * The browser is never redirected by this route — it returns the location and
- * lets the page navigate. A 302 from fetch() would be followed silently by the
- * browser and the client would never see the code.
+ * Client validation is repeated here rather than trusted from the rendered
+ * consent page. A hand-made POST must meet exactly the same DCR/CIMD rules.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,22 +38,22 @@ export async function POST(req: Request) {
   const resource = String(body?.resource ?? "").replace(/\/+$/, "");
   if (resource && resource !== MCP_RESOURCE)
     return NextResponse.json(
-      { error: "invalid_target",
-        error_description: `tokens here are issued for ${MCP_RESOURCE} only` },
+      { error: "invalid_target", error_description: `tokens here are issued for ${MCP_RESOURCE} only` },
       { status: 400 },
     );
   const scopes = parseScopes(body?.scope);
   if (!client_id || !redirect_uri || !code_challenge)
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
 
-  const clients = await sb("GET",
-    `oauth_clients?client_id=eq.${encodeURIComponent(String(client_id))}&select=client_id,redirect_uris`);
-  const client = clients?.[0];
-  // Re-checked here and not merely on the page: the page is a suggestion, this
-  // is the gate. A hand-made POST must meet the same conditions.
+  let client;
+  try {
+    client = await resolveOAuthClient(String(client_id));
+  } catch {
+    client = null;
+  }
   if (!client || !(client.redirect_uris ?? []).includes(String(redirect_uri)))
     return NextResponse.json(
-      { error: "invalid_request", error_description: "unknown client, or unregistered redirect address" },
+      { error: "invalid_request", error_description: "unverified client, or callback not present in verified client metadata" },
       { status: 400 },
     );
 
@@ -66,18 +62,14 @@ export async function POST(req: Request) {
       error: "access_denied",
       error_description: "the person declined",
       state: String(state ?? ""),
-      // RFC 9207: the client can prove this response came from the issuer it
-      // discovered, rather than from a mixed-up authorization server.
       iss: ISSUER,
     });
 
-  // ── the person
   const found = await sb("GET",
     `human_principals?auth_sub=eq.${encodeURIComponent(user.sub)}&select=id`);
   const principal = found?.[0]
     ?? (await sb("POST", "human_principals", { auth_sub: user.sub, email: user.email }))?.[0];
 
-  // ── the connection between that person and this client
   const existing = await sb("GET",
     `agent_connections?human_principal_id=eq.${principal.id}` +
     `&client_id=eq.${encodeURIComponent(String(client_id))}&select=id,scopes,revoked_at`);
@@ -94,7 +86,6 @@ export async function POST(req: Request) {
     }))?.[0];
   }
 
-  // ── the code, bound to the client, the connection and the exact redirect
   const code = secret();
   await sb("POST", "oauth_codes", {
     code_hash: sha256(code),
@@ -104,9 +95,6 @@ export async function POST(req: Request) {
     code_challenge: String(code_challenge),
     code_challenge_method: "S256",
     scopes,
-    // Bound at issue. A code with no resource can only come from a client that
-    // named none; new flows always carry one, and the token endpoint refuses a
-    // mismatch rather than trusting a permissive null.
     resource: resource || MCP_RESOURCE,
     expires_at: new Date(Date.now() + CODE_TTL_S * 1000).toISOString(),
   });
@@ -115,16 +103,13 @@ export async function POST(req: Request) {
     submission_id: null, actor: `human:${user.email ?? user.sub}`, action: "authorize",
     verdict: "granted",
     findings: [["INFO", 0,
-      `authorised client ${String(client_id)} with scopes ${scopes.join(", ")} — ` +
-      `connection ${connection.id}`]],
+      `authorised client ${String(client_id)} with scopes ${scopes.join(", ")} — connection ${connection.id}`]],
     carta_version: null,
   }).catch(() => {});
 
   return back(String(redirect_uri), {
     code,
     state: String(state ?? ""),
-    // Gemini CLI and other RFC 9207 clients require this when an issuer was
-    // discovered. It must exactly match the RFC 8414 `issuer` value.
     iss: ISSUER,
   });
 }
