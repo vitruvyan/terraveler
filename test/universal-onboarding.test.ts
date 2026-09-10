@@ -78,15 +78,54 @@ test("self-enrolled agents get a durable identity distinct from OAuth credential
   assert.match(token, /agent_id:\s*agent\.public_id/);
 });
 
-test("human consent associates an agent instead of making it act as the human", async () => {
+test("one-time link tokens make agent identity portable without a long-lived identity secret", async () => {
+  const migration = await read("../supabase/agent_identity.sql");
+  const mint = await read("../app/api/agent/link-token/route.ts");
+  const register = await read("../app/api/oauth/register/route.ts");
+  assert.match(migration, /create table if not exists agent_link_tokens/);
+  assert.match(migration, /purpose in \('runtime-binding', 'human-association'\)/);
+  assert.match(migration, /for update/,
+    "claiming a pairing token must be atomic");
+  assert.match(migration, /consumed_at = now\(\)/,
+    "pairing proof must be one-use");
+  assert.match(mint, /TTL_MS = 10 \* 60 \* 1000/);
+  assert.match(register, /p_purpose:\s*"runtime-binding"/);
+  assert.match(register, /identity_binding:\s*reboundExistingAgent \? "existing-agent" : "new-agent"/);
+});
+
+test("a human can associate an independently enrolled agent without becoming its identity root", async () => {
+  const link = await read("../app/api/account/agents/link/route.ts");
+  const unlink = await read("../app/api/account/agents/unlink/route.ts");
+  const page = await read("../app/account/agents/page.tsx");
+  assert.match(link, /p_purpose:\s*"human-association"/);
+  assert.match(link, /linkHumanToAgent/);
+  assert.match(unlink, /human_agent_links/);
+  assert.equal(unlink.includes("agent_accounts?"), false,
+    "removing a human association must not mutate the agent identity");
+  assert.match(page, /PairAgentForm/);
+  assert.match(page, /Removing an association does not revoke the agent/);
+});
+
+test("human consent can reuse an associated agent instead of silently cloning identity", async () => {
   const page = await read("../app/oauth/authorize/page.tsx");
+  const form = await read("../components/ConsentForm.tsx");
   const approve = await read("../app/api/oauth/approve/route.ts");
   assert.equal(page.includes("contribute to Terraveler as you"), false);
   assert.match(page, /keeps[\s\S]*human identity separate from the agent/);
-  assert.match(page, /own persistent[\s\S]*standing/);
-  assert.match(approve, /ensureAgentForConnection/);
-  assert.match(approve, /humanPrincipalId:\s*principal\.id/);
-  assert.match(approve, /action:\s*"associate-agent"/);
+  assert.match(form, /Which agent should this runtime represent\?/);
+  assert.match(form, /agent_account_id:/);
+  assert.match(approve, /human_agent_links\?human_principal_id/,
+    "the browser may select only an agent already associated with that human");
+  assert.match(approve, /agent_account_id:\s*selectedAgent\.id/);
+  assert.match(approve, /contributor_id:\s*selectedAgent\.contributor_id/);
+});
+
+test("the human-association token is safe to expose in MCP but runtime rebinding is not", async () => {
+  const middleware = await read("../middleware.ts");
+  assert.match(middleware, /create_human_link_token/);
+  assert.match(middleware, /purpose:\s*"human-association"/);
+  assert.equal(middleware.includes('purpose: "runtime-binding"'), false,
+    "runtime-binding proof must stay outside model-visible MCP tooling");
 });
 
 test("model and runtime are provenance, never the durable identity", async () => {
