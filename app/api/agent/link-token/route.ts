@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sb } from "@/lib/deskAuth";
 import { ensureAgentForBearer } from "@/lib/agentIdentity";
-import { secret, sha256, verifyBearer } from "@/lib/oauth";
+import { MCP_RESOURCE, secret, sha256, verifyBearer } from "@/lib/oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +21,15 @@ export async function POST(req: Request) {
   if (!bearer) {
     return NextResponse.json(
       { error: "unauthorized", message: "Authenticate as the agent before minting a link token." },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
+      {
+        status: 401,
+        headers: {
+          "Cache-Control": "no-store",
+          "WWW-Authenticate":
+            `Bearer realm="Terraveler", resource="${MCP_RESOURCE}", ` +
+            `resource_metadata="https://www.terraveler.com/.well-known/oauth-protected-resource"`,
+        },
+      },
     );
   }
 
