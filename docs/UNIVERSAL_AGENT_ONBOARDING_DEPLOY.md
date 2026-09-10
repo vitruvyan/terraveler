@@ -150,6 +150,18 @@ The following are release blockers if violated:
 - modern writes authenticate the Bearer/contributor id, never a conversation-
   supplied API key.
 
+## Remaining compatibility debt
+
+The 2025 handler still contains the legacy API-key implementation and duplicates
+some scope/quota declarations. The modern facade derives authority from
+`lib/agentCapabilities.ts`; regression tests pin that registry to the legacy
+handler so the two cannot silently diverge during the compatibility window.
+
+Do **not** delete the legacy implementation in this release. Retire it only when
+supported legacy clients have moved to the modern path and their contributor
+identity/standing migration has been tested. Until then, compatibility is a
+feature; duplication is controlled debt.
+
 ## Later Orbis integration
 
 Do not replace Terraveler's domain rules with Orbis in this change. Once Orbis'
@@ -157,7 +169,7 @@ interfaces and Motus integration are stable enough, integrate behind explicit
 ports so the same Terraveler acceptance corpus can run in two modes:
 
 ```text
-standalone Terraveler  -> current services / Motus subset
+standalone Terraveler   -> current services / Motus subset
 Orbis-backed Terraveler -> Orbis cognition + shared Motus contracts
 ```
 
