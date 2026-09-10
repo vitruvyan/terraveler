@@ -176,12 +176,14 @@ Built by [Vitruvyan](https://github.com/vitruvyan). Contributions go through
 - **MapLibre GL** with historical basemaps per epoch (see
   `lib/historical-maps.ts`).
 - **MCP** (Streamable HTTP, JSON-RPC) at `/api/mcp` — the agent-facing surface.
+  The compatibility facade accepts modern MCP `2026-07-28` while keeping the
+  previous client path during migration; see `docs/UNIVERSAL_AGENT_ONBOARDING_DEPLOY.md`.
 - No CSS framework: bespoke period-nautical styling in `app/globals.css`.
 
-> **Current state, honestly:** the VPS database is empty and the site is serving
-> the bundled JSON in `data/` through the fallback in `lib/data.ts`. There is no
-> loader from those bundles into Postgres — only `supabase/seed.sql`, which covers
-> Bougainville. A migration runner and a loader are the next infrastructure work.
+> **Current state, honestly:** the site can render from the bundled JSON in
+> `data/` through the fallback in `lib/data.ts`; the editorial/OAuth services use
+> the VPS database when configured. Treat the live deployment and its migration
+> history as authoritative rather than inferring database state from this README.
 
 ### Repository layout
 
@@ -192,21 +194,24 @@ Built by [Vitruvyan](https://github.com/vitruvyan). Contributions go through
 | `lib/evidence.ts` | the four evidence tiers, and the copy each one licenses the UI to use |
 | `lib/marginalia.ts` | the annotation layer's questions, assembled from verified fields |
 | `lib/gazetteer.ts` | place identity across voyages |
+| `lib/agentCapabilities.ts` | modern agent authority/quotas; tests pin it to the legacy enforcement during migration |
+| `lib/cimd.ts` | guarded Client ID Metadata Document resolver for modern OAuth clients |
 | `ingest/` | the Motus-orchestrated ingestion pipeline |
-| `supabase/*.sql` | schema and migrations, applied in the order each header documents |
+| `supabase/*.sql` | schema and migrations; each file header documents its dependency/intent |
 | `docs/LIBRARY_QUEUE.md` | verified source dossier for candidate voyages |
-| `test/`, `ingest/test_*.py` | `npm test`, and `python3 -m unittest` from `ingest/` |
+| `test/`, `ingest/test_*.py` | Node and Python regression suites |
 
 ### Running it
 
 ```bash
 cp .env.example .env.local     # fill in the API URL + keys
 npm install && npm run dev
-npm test                       # pure logic: evidence tiers, marginalia rules
+npm test
+npm run build
 ```
 
-The site renders without a backend: `lib/data.ts` falls back to the bundled
-voyage JSON, so a clean checkout works.
+GitHub Actions runs install, tests, production build and a live Next.js smoke of
+the modern MCP facade on every pull request.
 
 ### Ingestion
 
@@ -214,63 +219,43 @@ voyage JSON, so a clean checkout works.
 docker exec terraveler_ingest python3 run.py --voyage <slug> --policy exploration
 ```
 
-Sources live in `ingest/sources.py`, voyage metadata in `ingest/extract.py`. A run
-refuses to start unless the voyage declares `evidence_basis` and `what_was_lost` —
-better to lose a second than an hour of model calls to a voyage that reaches the
-desk claiming a journal it does not have.
+Sources live in `ingest/sources.py`, voyage metadata/core extraction under
+`ingest/`. A run refuses to start unless the voyage declares `evidence_basis`
+and `what_was_lost` — better to lose a second than an hour of model calls to a
+voyage that reaches the desk claiming a journal it does not have.
 
-That produces a **draft file**, and nothing more — `extract.py` touches nothing
-public by design. To put it in front of the editorial desk:
-
-```bash
-set -a; . .env; set +a          # TERRAVELER_MCP_HANDLE + TERRAVELER_MCP_KEY
-python3 ingest/submit_draft.py out/<slug>.submission.json --dry-run
-python3 ingest/submit_draft.py out/<slug>.submission.json
-```
-
-It submits through MCP as an ordinary contributor rather than writing to
-`submissions` directly. The direct write would be three lines and a second
-private entrance to the review queue — the shape that already let three
-in-copyright editions past the licence gate, because the curated path was
-trusted for having been vetted by a human. The pipeline gets the same Stage-0
-gate, the same peer review and the same verdict as anyone else, and a draft it
-cannot get past the gate is information rather than an obstacle.
+That produces a **draft file**, and nothing more. To put it in front of the
+editorial desk, submit through MCP as an ordinary contributor rather than
+writing directly to `submissions`. The curated pipeline must meet the same
+Stage-0 gate, peer review and verdict as any external Scribe.
 
 Every source passes `whitelist.verify_source()` first, curated ones included.
 `gutenberg.org` is trusted wholesale because everything it serves is public
 domain; **`archive.org` is not**, because it serves lending-restricted books from
-identical URLs, so each item is verified against its own metadata. That gate
-exists because three separate source proposals for this atlas turned out to be
-famous books in unusable editions — a 1989 Columbus, a 2012 Ibn Battuta reprint
-behind lending, and an in-copyright translation sitting in a user-upload
-collection under a public-domain mark it had applied to itself.
-`ingest/test_whitelist.py` pins all three, offline.
+identical URLs, so each item is verified against its own metadata. The offline
+whitelist tests pin known failure cases.
 
 ### Database
 
-Migrations are plain SQL in `supabase/`, applied in the order each file's header
-documents:
+Migrations are plain SQL in `supabase/`. The repository predates a formal
+migration runner, so **do not reconstruct the full live order from filename
+sorting**: use each migration's header and the deployment record for the target
+instance.
 
-```
-schema.sql → seed.sql → rag_schema.sql → governance_schema.sql
-  → governance_hardening.sql → governance_peer_review.sql
-  → search_misses.sql → mcp_write_functions.sql → evidence_basis.sql
-  → voyage_kinds_and_media.sql
-```
+For the universal-agent onboarding change specifically, the existing OAuth
+schema/atomic migrations and `mcp_write_functions.sql` must already be present,
+then apply:
 
-Then load the published voyages from the bundles:
-
-```bash
-PGHOST=127.0.0.1 PGPORT=6000 PGUSER=terraveler PGDATABASE=terraveler \
-  PGPASSWORD=… python3 scripts/load_bundles.py --dry-run
+```text
+supabase/mcp_oauth_write_functions.sql
 ```
 
-Note the port: the container publishes Postgres on **6000**, and the VPS host
-runs a *different* Postgres on 5432 that does not have this database. Connecting
-to 5432 fails with a password error rather than anything informative, and it has
-cost more than one debugging session.
+and refresh PostgREST's schema cache. The web application has a temporary
+availability fallback while that RPC migration is not visible, but the intended
+steady state uses the OAuth-native atomic functions. Exact deploy/rollback and
+client smoke steps are in `docs/UNIVERSAL_AGENT_ONBOARDING_DEPLOY.md`.
 
-PostgREST caches the schema, so after any migration:
-`docker restart terraveler_postgrest`. New tables and views arrive
-privilege-less for the service role — the grants are in the migrations that
-create them.
+Then load published voyage bundles where needed with the repository's loader.
+Remember that the containerised Terraveler Postgres historically publishes a
+non-default host port; verify the active deployment rather than assuming the
+host's native PostgreSQL instance is the Terraveler database.
