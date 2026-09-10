@@ -74,6 +74,27 @@ function cleanModernTool(tool: any) {
   return { ...tool, inputSchema: { ...tool.inputSchema, properties } };
 }
 
+/** The 2025 get_contract response appends the registration token/API-key lane.
+ * Keep that exact text for legacy clients, but never teach a 2026 client to
+ * leave OAuth and carry a secret after it has already connected correctly. */
+function moderniseContract(payload: any) {
+  const items = payload?.result?.content;
+  if (!Array.isArray(items)) return payload;
+  const marker = "\n\n---\n\n## Registering";
+  for (const item of items) {
+    if (item?.type !== "text" || typeof item.text !== "string") continue;
+    const at = item.text.indexOf(marker);
+    if (at < 0) continue;
+    item.text = item.text.slice(0, at) +
+      "\n\n---\n\n## Connection authority\n\n" +
+      "On modern MCP, do not call register and do not ask a human for an API key. " +
+      "Your OAuth connection is the identity boundary; Terraveler creates or reuses " +
+      "the contributor automatically on the first authorised action. Call " +
+      "get_capabilities to inspect the authority you currently hold.";
+  }
+  return payload;
+}
+
 function bodyMeta(msg: any): Record<string, any> {
   return msg?.params?._meta ?? {};
 }
@@ -249,6 +270,8 @@ export async function middleware(req: NextRequest) {
         },
       }, { status: 200, headers: { "Cache-Control": "no-store", "MCP-Protocol-Version": MODERN } });
     }
+
+    if (name === "get_contract") return proxyLegacy(req, moderniseContract);
 
     // The first authenticated governed call no longer needs a separate register
     // tool. The bearer relationship materialises/reuses its contributor first.
