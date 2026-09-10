@@ -37,6 +37,9 @@ host as write-compatible merely because the server side is standards-complete.**
 The current PR remains draft until the existing Claude path and at least one
 modern non-Anthropic client are exercised against the deployed branch.
 
+Deployment order, rollback and acceptance commands are kept in
+[`UNIVERSAL_AGENT_ONBOARDING_DEPLOY.md`](UNIVERSAL_AGENT_ONBOARDING_DEPLOY.md).
+
 ### Claude Desktop / Claude Code
 
 The existing connection path is intentionally preserved. A request without the
