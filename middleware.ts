@@ -60,6 +60,32 @@ function cleanModernTool(tool: any) {
   return { ...tool, inputSchema: { ...tool.inputSchema, properties } };
 }
 
+function bodyMeta(msg: any): Record<string, any> {
+  return msg?.params?._meta ?? {};
+}
+
+/** SEP-2243: modern routing headers mirror the JSON-RPC request. A gateway must
+ * never route on one operation while the application executes another. */
+function modernEnvelopeError(req: NextRequest, msg: any): string | null {
+  const method = req.headers.get("mcp-method");
+  const version = req.headers.get("mcp-protocol-version");
+  const name = req.headers.get("mcp-name");
+  if (!method || !version) return "Mcp-Method and MCP-Protocol-Version are required on 2026 requests";
+  if (version !== MODERN) return `unsupported modern protocol version '${version}'`;
+  if (!msg || Array.isArray(msg) || msg.method !== method)
+    return "Mcp-Method does not match the JSON-RPC body";
+
+  const metaVersion = bodyMeta(msg)["io.modelcontextprotocol/protocolVersion"];
+  if (metaVersion != null && metaVersion !== version)
+    return "MCP-Protocol-Version does not match params._meta protocolVersion";
+
+  const bodyName = msg?.params?.name ?? msg?.params?.uri ?? msg?.params?.taskId;
+  if (bodyName != null && !name) return "Mcp-Name is required for this named request";
+  if (name != null && bodyName == null) return "Mcp-Name was supplied for a request with no mirrored name";
+  if (name != null && String(bodyName) !== name) return "Mcp-Name does not match the JSON-RPC body";
+  return null;
+}
+
 async function capabilitySnapshot(req: NextRequest) {
   const headers = new Headers();
   const auth = req.headers.get("authorization");
@@ -77,6 +103,7 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
   const headers = new Headers(req.headers);
   headers.delete("mcp-method");
   headers.delete("mcp-name");
+  headers.delete("mcp-protocol-version");
   headers.delete("content-length");
   const body = await req.text();
   const upstream = await fetch(req.url, {
@@ -115,11 +142,11 @@ export async function middleware(req: NextRequest) {
   const method = req.headers.get("mcp-method");
   if (!method) return NextResponse.next(); // 2025-era client: unchanged.
 
-  if (method === "server/discover") {
-    const msg = await req.json().catch(() => null);
-    if (!msg || Array.isArray(msg) || msg.method !== "server/discover")
-      return jsonRpcError(msg?.id, -32600, "Invalid server/discover request");
+  const msg = await req.clone().json().catch(() => null);
+  const envelopeError = modernEnvelopeError(req, msg);
+  if (envelopeError) return jsonRpcError(msg?.id, -32020, envelopeError);
 
+  if (method === "server/discover") {
     return NextResponse.json({
       jsonrpc: "2.0",
       id: msg.id ?? null,
@@ -144,15 +171,21 @@ export async function middleware(req: NextRequest) {
         .filter((t: any) => !LEGACY_ONLY_TOOLS.has(String(t?.name)))
         .map(cleanModernTool);
       if (!modern.some((t: any) => t?.name === CAPABILITY_TOOL.name)) modern.unshift(CAPABILITY_TOOL);
-      return { ...payload, result: { ...(payload.result ?? {}), tools: modern } };
+      return {
+        ...payload,
+        result: {
+          ...(payload.result ?? {}),
+          tools: modern,
+          ttlMs: 300_000,
+          cacheScope: "public",
+        },
+      };
     });
   }
 
   if (method === "tools/call") {
     const name = req.headers.get("mcp-name") ?? "";
     if (name === "get_capabilities") {
-      const msg = await req.json().catch(() => null);
-      if (!msg || Array.isArray(msg)) return jsonRpcError(msg?.id, -32600, "Invalid tools/call request");
       const snapshot = await capabilitySnapshot(req);
       const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
       return NextResponse.json({
@@ -173,7 +206,7 @@ export async function middleware(req: NextRequest) {
       const boot = await capabilitySnapshot(req);
       if (!boot.ok) {
         const detail = await boot.text();
-        return jsonRpcError(null, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
+        return jsonRpcError(msg?.id, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
       }
     }
     return proxyLegacy(req);
