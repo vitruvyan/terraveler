@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseUrl } from "@/lib/deskAuth";
+import { authProviderUrl } from "@/lib/deskAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const next = requestUrl.searchParams.get("next") ?? "/desk";
   const returnPath = RETURN_PATHS.has(next) ? next : "/desk";
   const url =
-    `${supabaseUrl()}/auth/v1/authorize?provider=google` +
+    `${authProviderUrl()}/auth/v1/authorize?provider=google` +
     `&redirect_to=${encodeURIComponent(`${base}${returnPath}`)}`;
   return NextResponse.redirect(url, 302);
 }
