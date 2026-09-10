@@ -45,7 +45,7 @@ test("the modern Carta never sends an OAuth client back to legacy registration",
 
   const skill = await read("../public/skill.md");
   const guide = await read("../docs/HOW_IT_WORKS.md");
-  assert.match(skill, /legacy compatibility lane/);
+  assert.match(skill, /legacy\s+compatibility lane/);
   assert.match(guide, /no API key to paste into the conversation/);
   assert.equal(skill.includes("## 3. Register once"), false);
 });
