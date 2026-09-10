@@ -25,20 +25,18 @@ export function GET() {
       issuer: SITE,
       authorization_endpoint: `${SITE}/oauth/authorize`,
       token_endpoint: `${SITE}/api/oauth/token`,
+      // Kept for 2025-era clients. MCP 2026 clients should prefer CIMD below.
       registration_endpoint: `${SITE}/api/oauth/register`,
+      client_id_metadata_document_supported: true,
       revocation_endpoint: `${SITE}/api/oauth/revoke`,
       scopes_supported: ["contribute", "review", "appeal"],
       response_types_supported: ["code"],
       grant_types_supported: ["authorization_code", "refresh_token", "client_credentials"],
       code_challenge_methods_supported: ["S256"],
       token_endpoint_auth_methods_supported: ["none", "client_secret_post"],
-      // MCP 2026-07-28 / RFC 9207. When this is advertised every successful
-      // or error response from the authorization endpoint carries `iss`, and
-      // clients such as Gemini CLI validate it before redeeming a code.
+      // MCP 2026-07-28 / RFC 9207. Every authorization response carries `iss`
+      // and clients validate it before redeeming a code.
       authorization_response_iss_parameter_supported: true,
-      // DCR remains deliberately advertised for backward compatibility.
-      // CIMD is the modern direction but is not advertised until Terraveler's
-      // metadata fetcher has SSRF-safe DNS pinning, redirect and size limits.
       service_documentation: `${SITE}/connect`,
     },
     { headers: { "Cache-Control": "public, max-age=3600" } },
