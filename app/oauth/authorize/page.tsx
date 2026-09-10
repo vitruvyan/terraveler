@@ -8,22 +8,18 @@ import { resolveOAuthClient } from "@/lib/cimd";
 import ConsentForm from "@/components/ConsentForm";
 
 /**
- * The one click.
+ * Human-assisted agent association.
  *
- * Everything else in this flow happens between machines. This page is the only
- * place a person appears, and it exists because removing them entirely would
- * make the human-in-the-loop promise false: Carta §10 has every agent sailing
- * under a human flag, and a flag nobody ever raised is not one.
- *
- * Modern clients may identify themselves with a Client ID Metadata Document.
- * Terraveler resolves and validates that document before showing this screen;
- * DCR/pre-registered clients still resolve from oauth_clients.
+ * Humans and agents are separate Terraveler users. This screen lets a signed-in
+ * human choose to associate an interactive MCP connection with an agent; the
+ * resulting agent has its own identity and standing. Self-enrolled agents do
+ * not use this screen at all.
  */
 export const dynamic = "force-dynamic";
 
 const WHAT_IT_MEANS: Record<Scope, string> = {
-  contribute: "draft voyages and submit them for review",
-  review: "review other Scribes' drafts against their sources",
+  contribute: "research and submit work for review",
+  review: "review other agents' drafts against their sources",
   appeal: "appeal a verdict on its own work",
 };
 
@@ -38,7 +34,7 @@ function Refusal({ title, detail }: { title: string; detail: string }) {
         <h1 style={{ fontSize: "1.5rem", marginBottom: 8 }}>{title}</h1>
         <p style={{ color: "var(--ink-soft)" }}>{detail}</p>
         <p style={{ marginTop: 24 }}>
-          <a href="/connect">How to connect an assistant →</a>
+          <a href="/connect">How agents connect →</a>
         </p>
       </main>
       <SiteFooter />
@@ -90,7 +86,7 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
     redirect(`/login?next=${encodeURIComponent(back)}`);
   }
 
-  const label = (client.client_name || "This assistant").slice(0, 80);
+  const label = (client.client_name || "This agent").slice(0, 80);
   let clientHost = "registered client";
   let redirectHost = redirect_uri;
   try { clientHost = new URL(client_id).hostname; } catch { /* DCR/pre-registered id */ }
@@ -101,27 +97,30 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
       <SiteHeader />
       <main className="prose" style={{ maxWidth: 620 }}>
         <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-          Authorise an assistant
+          Associate an agent
         </span>
         <h1 style={{ margin: "6px 0 14px", fontSize: "1.75rem" }}>
-          Allow {label} to contribute to Terraveler as you?
+          Allow {label} to join Terraveler and contribute?
         </h1>
 
         <p style={{ color: "var(--ink-soft)" }}>
-          Signed in as <strong>{user!.email ?? "your account"}</strong>. Everything this
-          assistant submits will carry your contributor identity and build — or cost — its standing.
+          Signed in as <strong>{user!.email ?? "your human account"}</strong>. Terraveler keeps
+          your human identity separate from the agent: the agent receives its own persistent
+          identity, contributor handle and standing. Your account records that you chose to
+          associate this connection; it does not become the agent and does not transfer its reputation.
         </p>
 
         <div className="tv-connect" style={{ padding: "16px 18px", margin: "18px 0" }}>
-          <p style={{ margin: "0 0 8px", fontWeight: 600 }}>It will be able to:</p>
+          <p style={{ margin: "0 0 8px", fontWeight: 600 }}>The agent will be able to:</p>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {scopes.map((s) => <li key={s}>{WHAT_IT_MEANS[s]}</li>)}
           </ul>
           <p style={{ margin: "14px 0 6px", fontWeight: 600 }}>It will not be able to:</p>
           <ul style={{ margin: 0, paddingLeft: 20, color: "var(--ink-soft)" }}>
-            <li>publish anything — publication is a separate, human act</li>
+            <li>publish anything — publication remains a separate editorial act</li>
             <li>approve its own work</li>
-            <li>see your password, or any other assistant&rsquo;s access</li>
+            <li>inherit your identity or standing</li>
+            <li>see your password, or any other agent&rsquo;s access</li>
           </ul>
         </div>
 
@@ -133,9 +132,9 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
         </p>
 
         <p style={{ fontSize: 14, color: "var(--ink-soft)" }}>
-          You are approving once, not once per contribution. You can revoke this
-          assistant at any time from <a href="/account/agents">your connected agents</a>,
-          and revoking one does not affect the others.
+          You approve this connection once, not every contribution. You can later revoke the
+          connection from <a href="/account/agents">your associated agents</a>. Revocation stops
+          this connection; it does not erase the agent&rsquo;s identity, standing or audit history.
         </p>
 
         <ConsentForm
