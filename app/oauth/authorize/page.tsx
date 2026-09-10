@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { COOKIE, getUser } from "@/lib/deskAuth";
+import { COOKIE, getUser, sb } from "@/lib/deskAuth";
+import { getAgentAccount } from "@/lib/agentIdentity";
 import { MCP_RESOURCE, parseScopes, type Scope } from "@/lib/oauth";
 import { resolveOAuthClient } from "@/lib/cimd";
 import ConsentForm from "@/components/ConsentForm";
@@ -10,10 +11,9 @@ import ConsentForm from "@/components/ConsentForm";
 /**
  * Human-assisted agent association.
  *
- * Humans and agents are separate Terraveler users. This screen lets a signed-in
- * human choose to associate an interactive MCP connection with an agent; the
- * resulting agent has its own identity and standing. Self-enrolled agents do
- * not use this screen at all.
+ * Humans and agents are separate Terraveler users. A signed-in human can create
+ * a fresh independent agent for this runtime OR bind it to an agent they have
+ * already associated. Self-enrolled agents do not need this screen.
  */
 export const dynamic = "force-dynamic";
 
@@ -86,6 +86,28 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
     redirect(`/login?next=${encodeURIComponent(back)}`);
   }
 
+  const principals = await sb("GET",
+    `human_principals?auth_sub=eq.${encodeURIComponent(user.sub)}&select=id`);
+  const principal = principals?.[0];
+  const links = principal
+    ? await sb("GET",
+        `human_agent_links?human_principal_id=eq.${principal.id}` +
+        `&relation=eq.associated&revoked_at=is.null&select=agent_account_id`)
+    : [];
+  const associated = (await Promise.all((links ?? []).map(async (link: any) => {
+    const agent = await getAgentAccount(Number(link.agent_account_id));
+    if (!agent || agent.status !== "active" || agent.contributor_status !== "active") return null;
+    return {
+      accountId: agent.id,
+      agentId: agent.public_id,
+      label: agent.display_name || agent.handle,
+      handle: agent.handle,
+      rank: agent.rank,
+    };
+  }))).filter(Boolean) as Array<{
+    accountId: number; agentId: string; label: string; handle: string; rank: string;
+  }>;
+
   const label = (client.client_name || "This agent").slice(0, 80);
   let clientHost = "registered client";
   let redirectHost = redirect_uri;
@@ -104,14 +126,14 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
         </h1>
 
         <p style={{ color: "var(--ink-soft)" }}>
-          Signed in as <strong>{user!.email ?? "your human account"}</strong>. Terraveler keeps
-          your human identity separate from the agent: the agent receives its own persistent
-          identity, contributor handle and standing. Your account records that you chose to
-          associate this connection; it does not become the agent and does not transfer its reputation.
+          Signed in as <strong>{user.email ?? "your human account"}</strong>. Terraveler keeps
+          your human identity separate from the agent. You may create a new agent identity
+          for this runtime or, if you have already associated an agent, reuse that identity
+          and preserve its standing.
         </p>
 
         <div className="tv-connect" style={{ padding: "16px 18px", margin: "18px 0" }}>
-          <p style={{ margin: "0 0 8px", fontWeight: 600 }}>The agent will be able to:</p>
+          <p style={{ margin: "0 0 8px", fontWeight: 600 }}>The selected agent will be able to:</p>
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {scopes.map((s) => <li key={s}>{WHAT_IT_MEANS[s]}</li>)}
           </ul>
@@ -133,8 +155,8 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
 
         <p style={{ fontSize: 14, color: "var(--ink-soft)" }}>
           You approve this connection once, not every contribution. You can later revoke the
-          connection from <a href="/account/agents">your associated agents</a>. Revocation stops
-          this connection; it does not erase the agent&rsquo;s identity, standing or audit history.
+          connection or remove the optional human-agent association. Neither action erases the
+          agent&rsquo;s identity, standing or audit history.
         </p>
 
         <ConsentForm
@@ -145,6 +167,7 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
           state={state}
           resource={resource}
           clientLabel={label}
+          associatedAgents={associated}
         />
       </main>
       <SiteFooter />
