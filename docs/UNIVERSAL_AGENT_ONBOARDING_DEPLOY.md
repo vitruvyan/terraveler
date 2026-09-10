@@ -25,13 +25,58 @@ Modern interactive clients use OAuth. They never need `handle`, `api_key`,
 `recovery_code`, `register` or `rotate_key` in their tool catalogue. Older
 clients retain that compatibility lane.
 
+## Backend boundary and environment migration
+
+Terraveler has two separate backends and deployment must preserve that split:
+
+```text
+POSTGREST_URL / POSTGREST_SERVICE_KEY
+    -> api.terraveler.com -> PostgREST -> PostgreSQL on the VPS
+
+SUPABASE_AUTH_URL / SUPABASE_AUTH_KEY
+    -> Supabase Auth only (/auth/v1)
+```
+
+The Supabase project's database is not Terraveler's canonical application or
+governance database.
+
+Older deployments reused `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` for the VPS
+PostgREST endpoint. `lib/backendConfig.ts` accepts those names only as temporary
+compatibility aliases. Migrate the production environment by adding the
+canonical names with the **same existing VPS values** first:
+
+```text
+POSTGREST_URL=<current VPS/PostgREST value formerly in SUPABASE_URL>
+POSTGREST_SERVICE_KEY=<current data-plane key formerly in SUPABASE_SERVICE_KEY>
+```
+
+Keep the two legacy env variables during the MCP 2025 compatibility window.
+They may be removed only after the legacy MCP lane is retired or migrated.
+
+Supabase identity variables remain separate:
+
+```text
+SUPABASE_AUTH_URL=<Supabase project URL>
+SUPABASE_AUTH_KEY=<Supabase auth/anon key>
+NEXT_PUBLIC_SUPABASE_URL=<same Supabase identity project, browser-side>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<browser-side auth key>
+```
+
+Do not point `POSTGREST_URL` at the Supabase project, and do not point
+`SUPABASE_AUTH_URL` at `api.terraveler.com`.
+
+The historical directory name `supabase/*.sql` predates this clarification.
+Application/governance migrations in that directory target the PostgreSQL
+instance on the VPS unless a migration explicitly states otherwise.
+
 ## Database prerequisite
 
 The existing OAuth schema must already be present (`oauth.sql`, its hardening /
 atomic follow-ups, and `autonomous.sql` where autonomous agents are enabled).
 The legacy atomic MCP functions in `mcp_write_functions.sql` must also exist.
 
-Apply the new migration:
+Apply the new migration to **PostgreSQL on the Terraveler VPS**, not to the
+Supabase cloud database:
 
 ```bash
 docker exec -i terraveler_postgres \
@@ -72,14 +117,14 @@ semantics and routing-header/body mismatch rejection.
 ## Deployment order
 
 1. Keep PR #19 in draft until CI and preview builds are green.
-2. Apply `supabase/mcp_oauth_write_functions.sql` to the Terraveler database.
-3. Restart/refresh PostgREST so the new RPCs are visible.
-4. Deploy the web application.
-5. Run the HTTP smoke suite against production.
-6. Run client-level smoke tests: existing Claude path first, Gemini CLI modern
-   OAuth second, then an OpenAI MCP-capable host where write linking is available.
-7. Only after the existing Claude path and at least one modern non-Anthropic path
-   pass should the PR leave draft state / be merged.
+2. Add canonical `POSTGREST_*` env variables using the current VPS data-plane values; keep the legacy aliases temporarily.
+3. Verify `SUPABASE_AUTH_*` still points only to the Supabase identity project.
+4. Apply `supabase/mcp_oauth_write_functions.sql` to the Terraveler VPS database.
+5. Restart/refresh PostgREST so the new RPCs are visible.
+6. Deploy the web application.
+7. Run the HTTP smoke suite against production.
+8. Run client-level smoke tests: existing Claude path first, Gemini CLI modern OAuth second, then an OpenAI MCP-capable host where write linking is available.
+9. Only after the existing Claude path and at least one modern non-Anthropic path pass should the PR leave draft state / be merged.
 
 ## CIMD security boundary
 
@@ -110,6 +155,11 @@ The 2025 handler still contains the legacy API-key implementation and duplicates
 some scope/quota declarations. The modern facade derives authority from
 `lib/agentCapabilities.ts`; regression tests pin that registry to the legacy
 handler so the two cannot silently diverge during the compatibility window.
+
+The legacy handler also retains historical `SB_*` local naming. Those symbols
+refer to the VPS/PostgREST data plane, **not** to the Supabase cloud database.
+New code must use `POSTGREST_*` via `lib/backendConfig.ts`; the old names disappear
+when the 2025 lane is retired.
 
 Do not delete the legacy implementation in this release. Retire it only after
 supported legacy clients have moved to the modern path and their contributor
