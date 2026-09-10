@@ -9,11 +9,25 @@ import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
  * are proxied through this facade so we can add 2026 discovery, response
  * identity, a clean tool catalogue and lazy contributor bootstrap without
  * disturbing Claude/other legacy clients.
+ *
+ * The old handler's transactional write RPCs authenticate handle+api_key before
+ * its OAuth fallback can run. Modern bearer-authenticated writes therefore use
+ * /api/agent/write, which calls OAuth-native sibling RPCs (and has a temporary
+ * multi-call fallback until that SQL migration is deployed).
  */
 
 const MODERN = "2026-07-28";
 const LEGACY = "2025-06-18";
 const CAPABILITIES_PATH = "/api/agent/capabilities";
+const WRITE_PATH = "/api/agent/write";
+const MODERN_NATIVE_WRITES = new Set([
+  "claim_gap",
+  "propose_idea",
+  "submit_draft",
+  "suggest_feature",
+  "suggest_content",
+  "submit_review",
+]);
 
 const SERVER_INFO = {
   name: "terraveler",
@@ -86,13 +100,17 @@ function modernEnvelopeError(req: NextRequest, msg: any): string | null {
   return null;
 }
 
-async function capabilitySnapshot(req: NextRequest) {
+function authHeaders(req: NextRequest) {
   const headers = new Headers();
   const auth = req.headers.get("authorization");
   if (auth) headers.set("authorization", auth);
+  return headers;
+}
+
+async function capabilitySnapshot(req: NextRequest) {
   return fetch(new URL(CAPABILITIES_PATH, req.url), {
     method: "GET",
-    headers,
+    headers: authHeaders(req),
     cache: "no-store",
   });
 }
@@ -134,6 +152,38 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
   const challenge = upstream.headers.get("www-authenticate");
   if (challenge) outHeaders.set("WWW-Authenticate", challenge);
   return NextResponse.json(payload, { status: upstream.status, headers: outHeaders });
+}
+
+async function modernWrite(req: NextRequest, msg: any, name: string) {
+  const upstream = await fetch(new URL(WRITE_PATH, req.url), {
+    method: "POST",
+    headers: new Headers({
+      ...Object.fromEntries(authHeaders(req).entries()),
+      "Content-Type": "application/json",
+    }),
+    body: JSON.stringify({ name, arguments: msg?.params?.arguments ?? {} }),
+    cache: "no-store",
+  });
+  const data = await upstream.json().catch(() => ({ text: "ERROR: modern write handler returned invalid JSON", isError: true }));
+
+  if (!upstream.ok) {
+    const h = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store",
+      "MCP-Protocol-Version": MODERN });
+    const challenge = upstream.headers.get("www-authenticate");
+    if (challenge) h.set("WWW-Authenticate", challenge);
+    return NextResponse.json(data, { status: upstream.status, headers: h });
+  }
+
+  return NextResponse.json({
+    jsonrpc: "2.0",
+    id: msg.id ?? null,
+    result: {
+      content: [{ type: "text", text: String(data.text ?? "") }],
+      isError: Boolean(data.isError),
+      _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
+    },
+  }, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store",
+    "MCP-Protocol-Version": MODERN } });
 }
 
 export async function middleware(req: NextRequest) {
@@ -200,20 +250,24 @@ export async function middleware(req: NextRequest) {
       }, { status: 200, headers: { "Cache-Control": "no-store", "MCP-Protocol-Version": MODERN } });
     }
 
-    // The first authenticated write no longer needs a separate `register` tool.
-    // The bearer connection is enough to materialise/reuse its contributor.
+    // The first authenticated governed call no longer needs a separate register
+    // tool. The bearer relationship materialises/reuses its contributor first.
     if (TOOL_SCOPE[name] && req.headers.get("authorization")) {
       const boot = await capabilitySnapshot(req);
       if (!boot.ok) {
         const detail = await boot.text();
         return jsonRpcError(msg?.id, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
       }
+      if (MODERN_NATIVE_WRITES.has(name)) return modernWrite(req, msg, name);
     }
+    // No bearer deliberately reaches the legacy handler so its spec-compliant
+    // OAuth challenge (HTTP + mcp/www_authenticate) starts account linking.
+    // get_review_brief and appeal also remain here: their legacy code already
+    // authenticates the Bearer before touching state and therefore needs no
+    // API-key-era RPC bypass.
     return proxyLegacy(req);
   }
 
-  // Ping and future request/response methods still go through the proven handler,
-  // but receive the 2026 server identity stamp on their response.
   return proxyLegacy(req);
 }
 
