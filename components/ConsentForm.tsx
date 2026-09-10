@@ -16,7 +16,7 @@ type AgentOption = {
  * those identities instead of accidentally creating another agent.
  */
 export default function ConsentForm({
-  clientId, redirectUri, codeChallenge, scopes, state, clientLabel, resource,
+  clientId, redirectUri, codeChallenge, scopes, state, resource, clientLabel,
   associatedAgents = [],
 }: {
   clientId: string;
@@ -24,8 +24,8 @@ export default function ConsentForm({
   codeChallenge: string;
   scopes: string[];
   state: string;
-  clientLabel: string;
   resource?: string;
+  clientLabel: string;
   associatedAgents?: AgentOption[];
 }) {
   const [busy, setBusy] = useState<"" | "approve" | "deny">("");
