@@ -236,6 +236,15 @@ const ATLAS_ENTRIES = [
     blurb:
       "Perhaps 120,000 kilometres: Mecca by way of Egypt and Syria, then Persia, the Swahili coast, Anatolia, the Golden Horde, India and eight years in the service of the Sultan of\u2026",
   },
+  {
+    slug: "cabot-1497",
+    href: "/voyage/cabot-1497",
+    title: "John Cabot's Atlantic Landfall (1497)",
+    navigator: "John Cabot",
+    years: "1497–1497",
+    blurb:
+      "Thirty-five days west from Bristol to a landfall in North America, a single going-ashore to plant a flag and take on water, and a fast run home \u2014 the voyage that gave England its\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */

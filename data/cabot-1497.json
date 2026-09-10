@@ -1,0 +1,170 @@
+{
+  "navigator": {
+    "id": 1,
+    "slug": "john-cabot",
+    "name": "John Cabot",
+    "nationality": null,
+    "birth_year": null,
+    "death_year": null,
+    "portrait_url": null,
+    "bio": null
+  },
+  "voyage": {
+    "id": 1,
+    "navigator_id": 1,
+    "slug": "cabot-1497",
+    "title": "John Cabot's Atlantic Landfall (1497)",
+    "ships": "the Matthew, of Bristol, with a crew of about eighteen",
+    "sponsor": "sailing from Bristol under letters patent from Henry VII",
+    "purpose": null,
+    "start_date": "1497",
+    "end_date": "1497",
+    "summary": "Thirty-five days west from Bristol to a landfall in North America, a single going-ashore to plant a flag and take on water, and a fast run home — the voyage that gave England its claim to the continent, and whose landfall nobody can locate.",
+    "evidence_basis": "reconstructed",
+    "what_was_lost": "Cabot left nothing. No log, no letter, no chart, and no account by anyone who sailed with him. Everything known comes from four documents by people who were not there: a merchant's letter from Lisbon, two despatches by the Duke of Milan's man in London, and a payment in the king's household book. Where he landed has been argued over for four centuries — Newfoundland, Cape Breton, Labrador, Maine — and this atlas draws a route it cannot prove, because the voyage happened and the silence is the archive's, not history's."
+  },
+  "waypoints": [
+    {
+      "id": 1,
+      "voyage_id": 1,
+      "seq": 1,
+      "place_historical": "Bristol",
+      "place_modern": "Bristol, England",
+      "latitude": 51.4538,
+      "longitude": -2.5973,
+      "arrival_date": "1497-05-02",
+      "departure_date": null,
+      "date_note": null,
+      "event": "John Cabot departed from Bristol with a small ship and eighteen men to seek new lands to the west, sailing past Ireland before turning north and then west across the ocean, eventually striking mainland and claiming it for the King of England.",
+      "diary_excerpt": null,
+      "diary_excerpt_raw": null,
+      "diary_excerpt_transformations": null,
+      "diary_source_citation": "The Northmen, Columbus and Cabot, 985-1503 — the Pasqualigo and Soncino letters (ed. Olson & Bourne, 1906)",
+      "diary_source_url": "https://www.gutenberg.org/cache/epub/18571/pg18571.txt",
+      "confidence": "certain",
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/2023-09-16_The_Matthew_Bristol_01.jpg/1280px-2023-09-16_The_Matthew_Bristol_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/2023-09-16_The_Matthew_Bristol_01.jpg/1280px-2023-09-16_The_Matthew_Bristol_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:2023-09-16 The Matthew Bristol 01.jpg",
+          "credit": "Bärbel Miemietz",
+          "source_url": "https://commons.wikimedia.org/wiki/File:2023-09-16_The_Matthew_Bristol_01.jpg",
+          "license": "CC BY-SA 4.0",
+          "date": null
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg/1280px-Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Bristol City Docks - The Matthew - geograph.org.uk - 7378675.jpg",
+          "credit": "Colin Park",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg",
+          "license": "CC BY-SA 2.0",
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "voyage_id": 1,
+      "seq": 2,
+      "place_historical": "the mainland (new isle)",
+      "place_modern": "Cape Breton Island, Canada",
+      "latitude": 46.29503,
+      "longitude": -60.93606,
+      "arrival_date": "1497-06-24",
+      "departure_date": null,
+      "date_note": null,
+      "event": "John Cabot, sailing from Bristol in a small ship with eighteen men, crossed the Atlantic and after wandering about at last struck mainland, where he planted the royal banner and took possession on behalf of the King of England.",
+      "diary_excerpt": null,
+      "diary_excerpt_raw": null,
+      "diary_excerpt_transformations": null,
+      "diary_source_citation": "The Northmen, Columbus and Cabot, 985-1503 — the Pasqualigo and Soncino letters (ed. Olson & Bourne, 1906)",
+      "diary_source_url": "https://www.gutenberg.org/cache/epub/18571/pg18571.txt",
+      "confidence": "certain",
+      "media_url": null,
+      "media": []
+    },
+    {
+      "id": 3,
+      "voyage_id": 1,
+      "seq": 3,
+      "place_historical": "the mainland, the territory of the Grand Cham",
+      "place_modern": "Newfoundland coast, Canada",
+      "latitude": 49.12119,
+      "longitude": -56.64034,
+      "arrival_date": "1497-06",
+      "departure_date": null,
+      "date_note": null,
+      "event": null,
+      "diary_excerpt": null,
+      "diary_excerpt_raw": null,
+      "diary_excerpt_transformations": null,
+      "diary_source_citation": null,
+      "diary_source_url": null,
+      "confidence": "certain",
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Coast_Guard_Cutter_Northland_visits_St_John%27s%2C_Newfoundland_%288661113%29.jpg/1280px-Coast_Guard_Cutter_Northland_visits_St_John%27s%2C_Newfoundland_%288661113%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Coast_Guard_Cutter_Northland_visits_St_John%27s%2C_Newfoundland_%288661113%29.jpg/1280px-Coast_Guard_Cutter_Northland_visits_St_John%27s%2C_Newfoundland_%288661113%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Coast Guard Cutter Northland visits St John's, Newfoundland (8661113).jpg",
+          "credit": "U.S. Coast Guard photo by Petty Officer 3rd Class Anthony Randisi",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Coast_Guard_Cutter_Northland_visits_St_John%27s,_Newfoundland_(8661113).jpg",
+          "license": "Public domain",
+          "date": null
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/0/01/Coast_path_above_Newfoundland_Cove_-_geograph.org.uk_-_2327484.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+          "caption": "File:Coast path above Newfoundland Cove - geograph.org.uk - 2327484.jpg",
+          "credit": "Derek Harper",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Coast_path_above_Newfoundland_Cove_-_geograph.org.uk_-_2327484.jpg",
+          "license": "CC BY-SA 2.0",
+          "date": null
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "voyage_id": 1,
+      "seq": 4,
+      "place_historical": "Bristol",
+      "place_modern": "Bristol, England, United Kingdom",
+      "latitude": 51.4538,
+      "longitude": -2.5973,
+      "arrival_date": "1497-08",
+      "departure_date": null,
+      "date_note": null,
+      "event": "John Cabot returned to Bristol after his voyage across the Atlantic, during which he sailed west from Bristol, passed Ireland, and discovered mainland which he claimed for the King of England before returning home.",
+      "diary_excerpt": null,
+      "diary_excerpt_raw": null,
+      "diary_excerpt_transformations": null,
+      "diary_source_citation": "The Northmen, Columbus and Cabot, 985-1503 — the Pasqualigo and Soncino letters (ed. Olson & Bourne, 1906)",
+      "diary_source_url": "https://www.gutenberg.org/cache/epub/18571/pg18571.txt",
+      "confidence": "certain",
+      "media_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/2023-09-16_The_Matthew_Bristol_01.jpg/1280px-2023-09-16_The_Matthew_Bristol_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "media": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/2023-09-16_The_Matthew_Bristol_01.jpg/1280px-2023-09-16_The_Matthew_Bristol_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:2023-09-16 The Matthew Bristol 01.jpg",
+          "credit": "Bärbel Miemietz",
+          "source_url": "https://commons.wikimedia.org/wiki/File:2023-09-16_The_Matthew_Bristol_01.jpg",
+          "license": "CC BY-SA 4.0",
+          "date": null
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg/1280px-Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+          "caption": "File:Bristol City Docks - The Matthew - geograph.org.uk - 7378675.jpg",
+          "credit": "Colin Park",
+          "source_url": "https://commons.wikimedia.org/wiki/File:Bristol_City_Docks_-_The_Matthew_-_geograph.org.uk_-_7378675.jpg",
+          "license": "CC BY-SA 2.0",
+          "date": null
+        }
+      ]
+    }
+  ],
+  "provenance": {
+    "ideator": "terraveler-implementer",
+    "scribe_model": "claude-sonnet-5",
+    "carta_version": "0.5",
+    "date": "2026-07-28T17:50:55.175669+00:00",
+    "submission_id": 24
+  }
+}
