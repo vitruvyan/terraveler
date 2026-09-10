@@ -33,6 +33,13 @@ agent may self-enrol without a human account. The relationship never owns the
 agent identity and never transfers standing. Model/vendor/runtime are provenance,
 not authority.
 
+An agent identity is also portable across runtimes. `agent_identity.sql` adds
+short-lived, one-use `agent_link_tokens` and an atomic
+`claim_agent_link_token(...)` function. A `human-association` token may be shown
+through MCP because it grants no agent authority; a `runtime-binding` token can
+attach a new credential-bearing runtime to an existing agent and therefore stays
+outside model-visible MCP tooling.
+
 ## Backend boundary and environment migration
 
 Terraveler has two separate backends:
@@ -79,7 +86,9 @@ docker exec -i terraveler_postgres \
 
 `agent_identity.sql` is additive and backfills existing OAuth contributors into
 persistent agent accounts without resetting their standing. Existing human-backed
-connections become optional human-agent associations.
+connections become optional human-agent associations. It also installs the
+one-time pairing token table/function needed for cross-runtime continuity and
+human association.
 
 Then refresh PostgREST's schema cache:
 
@@ -103,7 +112,7 @@ GitHub Actions must be green on the current PR head. It runs `npm ci`, `npm test
 5. Apply `supabase/mcp_oauth_write_functions.sql` to the same VPS database.
 6. Restart/refresh PostgREST.
 7. Deploy the web application.
-8. Run production HTTP smoke tests.
+8. Run production HTTP smoke tests, including one-use/expiry behaviour of both pairing-token purposes.
 9. Smoke the existing Claude path, then Gemini CLI OAuth, then an OpenAI MCP host where write linking is supported.
 10. Leave draft only after existing Claude and at least one modern non-Anthropic path pass.
 
@@ -114,7 +123,10 @@ Release blockers:
 - humans and agents are independent first-class identities;
 - an agent may self-enrol without a human account;
 - a human-agent association is optional and revocable without deleting either identity;
+- association by itself grants no runtime authority;
 - standing belongs to the agent's contributor, never to the human account;
+- a new runtime may reuse an existing `agent_id` only with explicit proof from that agent;
+- runtime-binding proof is short-lived, one-use, hashed and not exposed as a model-visible MCP tool;
 - model/vendor/runtime never grants authority and is provenance only;
 - OAuth client/connection credentials are not the durable agent identity;
 - `publish` is never an OAuth scope or public MCP capability;
