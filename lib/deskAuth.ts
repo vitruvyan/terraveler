@@ -1,19 +1,21 @@
 /** Editor-desk auth helpers: Supabase Auth via server-side REST, token in an
  *  httpOnly cookie. Only the allowlisted editor email may pass.
  *
- *  Auth and data live on DIFFERENT backends since the VPS cutover: SB_URL
- *  (api.terraveler.com \u2192 PostgREST) serves the governance tables, while
- *  /auth/v1 endpoints only exist on the Supabase project, which stays the
- *  identity provider (Google OAuth lives there). AUTH_* defaults to the
- *  NEXT_PUBLIC_ vars, which still point at that project. */
+ *  Auth and data live on DIFFERENT backends since the VPS cutover:
+ *  - POSTGREST_URL (api.terraveler.com) -> PostgreSQL on the VPS
+ *  - SUPABASE_AUTH_URL -> Supabase Auth identity provider only
+ *
+ *  See lib/backendConfig.ts for the temporary legacy env aliases. */
 
 import type { NextResponse } from "next/server";
+import {
+  POSTGREST_SERVICE_KEY,
+  POSTGREST_URL,
+  SUPABASE_AUTH_KEY,
+  SUPABASE_AUTH_URL,
+  supabaseAuthConfigured,
+} from "@/lib/backendConfig";
 
-const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
-const SB_URL = cleanEnv(process.env.SUPABASE_URL);
-const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
-const AUTH_URL = cleanEnv(process.env.SUPABASE_AUTH_URL || process.env.NEXT_PUBLIC_SUPABASE_URL);
-const AUTH_KEY = cleanEnv(process.env.SUPABASE_AUTH_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 // No fallback: with EDITOR_EMAIL unset, editor checks fail closed.
 const EDITOR_EMAIL = (process.env.EDITOR_EMAIL ?? "").trim().toLowerCase();
 
@@ -71,10 +73,10 @@ export function clearSession(res: NextResponse) {
 export async function refreshSession(
   refresh: string,
 ): Promise<{ token: string; refresh: string } | null> {
-  if (!authConfigured() || !refresh) return null;
-  const r = await fetch(`${AUTH_URL}/auth/v1/token?grant_type=refresh_token`, {
+  if (!supabaseAuthConfigured() || !refresh) return null;
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/token?grant_type=refresh_token`, {
     method: "POST",
-    headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_AUTH_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refresh }),
   });
   if (!r.ok) return null;
@@ -85,10 +87,6 @@ export async function refreshSession(
 
 type AuthResult = { token?: string; refresh?: string; error?: string };
 
-function authConfigured(): boolean {
-  return Boolean(AUTH_URL && AUTH_KEY);
-}
-
 function authError(status: number, body: any, fallback: string): string {
   if (status === 400 && typeof body?.msg === "string") return body.msg;
   if (typeof body?.error_description === "string") return body.error_description;
@@ -96,13 +94,13 @@ function authError(status: number, body: any, fallback: string): string {
   return fallback;
 }
 
-/** Regular Terraveler account login. Desk access is checked separately. */
+/** Regular Terraveler account login through Supabase Auth. */
 export async function signInAccount(email: string, password: string): Promise<AuthResult> {
-  if (!authConfigured()) return { error: "server not configured" };
+  if (!supabaseAuthConfigured()) return { error: "server not configured" };
   if (!email || !password) return { error: "email and password required" };
-  const r = await fetch(`${AUTH_URL}/auth/v1/token?grant_type=password`, {
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
-    headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_AUTH_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const j = await r.json().catch(() => ({}));
@@ -112,11 +110,11 @@ export async function signInAccount(email: string, password: string): Promise<Au
 
 /** Creates a regular account with the configured Supabase Auth provider. */
 export async function signUpAccount(email: string, password: string): Promise<AuthResult> {
-  if (!authConfigured()) return { error: "server not configured" };
+  if (!supabaseAuthConfigured()) return { error: "server not configured" };
   if (!email || !password) return { error: "email and password required" };
-  const r = await fetch(`${AUTH_URL}/auth/v1/signup`, {
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/signup`, {
     method: "POST",
-    headers: { apikey: AUTH_KEY, "Content-Type": "application/json" },
+    headers: { apikey: SUPABASE_AUTH_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   const j = await r.json().catch(() => ({}));
@@ -131,9 +129,9 @@ export async function signUpAccount(email: string, password: string): Promise<Au
    /api/desk/me whose it is. One door in, the role checked at the room. */
 
 export async function getUserEmail(token: string): Promise<string | null> {
-  if (!AUTH_URL || !AUTH_KEY) return null;
-  const r = await fetch(`${AUTH_URL}/auth/v1/user`, {
-    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
+  if (!SUPABASE_AUTH_URL || !SUPABASE_AUTH_KEY) return null;
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+    headers: { apikey: SUPABASE_AUTH_KEY, Authorization: `Bearer ${token}` },
   });
   if (!r.ok) return null;
   const j = await r.json();
@@ -149,9 +147,9 @@ export async function getUserEmail(token: string): Promise<string | null> {
  * from, and an email address is neither stable nor unique enough to be one.
  */
 export async function getUser(token: string): Promise<{ sub: string; email: string | null } | null> {
-  if (!AUTH_URL || !AUTH_KEY || !token) return null;
-  const r = await fetch(`${AUTH_URL}/auth/v1/user`, {
-    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
+  if (!SUPABASE_AUTH_URL || !SUPABASE_AUTH_KEY || !token) return null;
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+    headers: { apikey: SUPABASE_AUTH_KEY, Authorization: `Bearer ${token}` },
   });
   if (!r.ok) return null;
   const j = await r.json().catch(() => null);
@@ -164,13 +162,17 @@ export function editorEmail(): string {
 }
 
 export async function verifyToken(token: string): Promise<{ ok: boolean; error?: string }> {
-  if (!AUTH_URL || !AUTH_KEY || !EDITOR_EMAIL) return { ok: false, error: "server not configured" };
-  const r = await fetch(`${AUTH_URL}/auth/v1/user`, {
-    headers: { apikey: AUTH_KEY, Authorization: `Bearer ${token}` },
+  if (!SUPABASE_AUTH_URL || !SUPABASE_AUTH_KEY || !EDITOR_EMAIL) {
+    return { ok: false, error: "server not configured" };
+  }
+  const r = await fetch(`${SUPABASE_AUTH_URL}/auth/v1/user`, {
+    headers: { apikey: SUPABASE_AUTH_KEY, Authorization: `Bearer ${token}` },
   });
   if (!r.ok) return { ok: false, error: "session expired — sign in again" };
   const j = await r.json();
-  if ((j?.email ?? "").toLowerCase() !== EDITOR_EMAIL) return { ok: false, error: "not an editor account" };
+  if ((j?.email ?? "").toLowerCase() !== EDITOR_EMAIL) {
+    return { ok: false, error: "not an editor account" };
+  }
   return { ok: true };
 }
 
@@ -180,17 +182,18 @@ export async function requireEditor(req: Request): Promise<{ ok: boolean; error?
   return verifyToken(token);
 }
 
-/** Base URL of the IDENTITY provider (Supabase Auth), not the data backend. */
-export function supabaseUrl(): string {
-  return AUTH_URL;
+/** Base URL of the IDENTITY provider (Supabase Auth), never the data backend. */
+export function authProviderUrl(): string {
+  return SUPABASE_AUTH_URL;
 }
 
-/** A stored procedure, for the writes that must be one statement. */
-export async function rpc(name: string, args: Record<string, unknown>): Promise<any> {
-  const r = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, {
+/** A stored procedure on the VPS PostgreSQL data plane via PostgREST. */
+export async function dataRpc(name: string, args: Record<string, unknown>): Promise<any> {
+  const r = await fetch(`${POSTGREST_URL}/rest/v1/rpc/${name}`, {
     method: "POST",
     headers: {
-      apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`,
+      apikey: POSTGREST_SERVICE_KEY,
+      Authorization: `Bearer ${POSTGREST_SERVICE_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(args),
@@ -200,12 +203,13 @@ export async function rpc(name: string, args: Record<string, unknown>): Promise<
   return t ? JSON.parse(t) : null;
 }
 
-export async function sb(method: string, path: string, body?: unknown): Promise<any> {
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+/** REST access to the VPS PostgreSQL data plane via PostgREST. */
+export async function dataApi(method: string, path: string, body?: unknown): Promise<any> {
+  const r = await fetch(`${POSTGREST_URL}/rest/v1/${path}`, {
     method,
     headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
+      apikey: POSTGREST_SERVICE_KEY,
+      Authorization: `Bearer ${POSTGREST_SERVICE_KEY}`,
       "Content-Type": "application/json",
       Prefer: method === "GET" ? "" : "return=representation",
     },
@@ -215,3 +219,8 @@ export async function sb(method: string, path: string, body?: unknown): Promise<
   const t = await r.text();
   return t ? JSON.parse(t) : null;
 }
+
+/** @deprecated Compatibility aliases for existing call sites during this PR. */
+export const rpc = dataRpc;
+/** @deprecated Compatibility aliases for existing call sites during this PR. */
+export const sb = dataApi;

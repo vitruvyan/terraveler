@@ -4,6 +4,7 @@ import { useState } from "react";
 
 type Agent = {
   id: number;
+  agentId: string | null;
   name: string;
   handle: string | null;
   scopes: string[];
@@ -13,9 +14,8 @@ type Agent = {
 };
 
 /**
- * One row, one revoke. No bulk action and no confirmation dialog: revoking is
- * cheap to undo — the agent asks again and the person approves again — so a
- * modal here would be friction protecting nothing.
+ * Each row is a revocable connection to an independently identified agent.
+ * Revoking the connection does not erase the agent account or its standing.
  */
 export default function AgentList({ agents }: { agents: Agent[] }) {
   const [state, setState] = useState<Record<number, "idle" | "working" | "revoked" | "error">>({});
@@ -46,13 +46,18 @@ export default function AgentList({ agents }: { agents: Agent[] }) {
                 {a.handle && (
                   <span style={{ color: "var(--ink-soft)" }}> — writes as {a.handle}</span>
                 )}
+                {a.agentId && (
+                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 3 }}>
+                    Agent identity: <code>{a.agentId}</code>
+                  </div>
+                )}
                 <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 4 }}>
-                  {a.scopes.length ? a.scopes.join(", ") : "no permissions"} · authorised {a.created}
+                  {a.scopes.length ? a.scopes.join(", ") : "no permissions"} · associated {a.created}
                   {a.lastUsed ? ` · last used ${a.lastUsed}` : " · never used"}
                 </div>
               </div>
               {gone ? (
-                <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>revoked</span>
+                <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>connection revoked</span>
               ) : (
                 <button
                   type="button"
@@ -60,7 +65,7 @@ export default function AgentList({ agents }: { agents: Agent[] }) {
                   disabled={state[a.id] === "working"}
                   onClick={() => revoke(a.id)}
                 >
-                  {state[a.id] === "working" ? "Revoking…" : "Revoke"}
+                  {state[a.id] === "working" ? "Revoking…" : "Revoke connection"}
                 </button>
               )}
             </div>

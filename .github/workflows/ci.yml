@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Build/runtime placeholders only. The smoke suite exercises public MCP
+      # paths that require no database; protected writes are stopped at OAuth.
+      POSTGREST_URL: https://example.invalid
+      POSTGREST_SERVICE_KEY: ci-placeholder
+      SUPABASE_AUTH_URL: https://auth.example.invalid
+      SUPABASE_AUTH_KEY: ci-placeholder
+      NEXT_PUBLIC_SUPABASE_URL: https://auth.example.invalid
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      - name: Smoke modern MCP runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm start -- -p 3000 >/tmp/terraveler-next.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+
+          ready=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:3000/connect >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/terraveler-next.log
+            exit 1
+          fi
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: server/discover' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}' \
+            >/tmp/discover.json
+          grep -q '2026-07-28' /tmp/discover.json
+          grep -q 'io.modelcontextprotocol/serverInfo' /tmp/discover.json
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/list' \
+            -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}' \
+            >/tmp/tools.json
+          grep -q 'get_capabilities' /tmp/tools.json
+          if grep -q '"name":"register"' /tmp/tools.json; then
+            echo 'modern catalogue leaked legacy register tool'
+            cat /tmp/tools.json
+            exit 1
+          fi
+
+          curl -fsS -X POST http://127.0.0.1:3000/api/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/call' \
+            -H 'Mcp-Name: get_capabilities' \
+            -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_capabilities","arguments":{},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}' \
+            >/tmp/caps.json
+          grep -q 'anonymous' /tmp/caps.json
+          grep -q 'publish' /tmp/caps.json
+
+          status=$(curl -sS -o /tmp/challenge.json -D /tmp/challenge.headers -w '%{http_code}' \
+            -X POST http://127.0.0.1:3000/api/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/call' \
+            -H 'Mcp-Name: claim_gap' \
+            -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"claim_gap","arguments":{"gap_id":1},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}')
+          test "$status" = '401'
+          grep -qi '^www-authenticate:.*Bearer' /tmp/challenge.headers
+          grep -q 'mcp/www_authenticate' /tmp/challenge.json
+
+          mismatch=$(curl -sS -o /tmp/mismatch.json -w '%{http_code}' \
+            -X POST http://127.0.0.1:3000/api/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/list' \
+            -H 'Mcp-Name: wrong-name' \
+            -d '{"jsonrpc":"2.0","id":5,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28"}}}')
+          test "$mismatch" = '400'
+          grep -q -- '-32020' /tmp/mismatch.json

@@ -4,11 +4,11 @@ import { sb } from "@/lib/deskAuth";
 /**
  * The authorization server's working parts.
  *
- * Terraveler mints its own tokens. The identity provider authenticates the
- * human once, at the consent step, and takes no further part — so a token is
- * bound to a Terraveler contributor, a Terraveler scope and one agent
- * connection, and nothing here depends on a feature flag on someone else's
- * project.
+ * Terraveler mints its own tokens. Human identity and agent identity are
+ * deliberately separate: Supabase Auth authenticates a person when a person
+ * chooses to associate/authorise an interactive agent, while the bearer itself
+ * is bound to a persistent Terraveler agent account through one connection.
+ * Self-enrolled agents never need a human account.
  *
  * Every secret is stored as a sha256 and compared in constant time, for the
  * same reason the api_key was: a table of live credentials is a table worth
@@ -27,8 +27,7 @@ export const REFRESH_TTL_S = 60 * 60 * 24 * 60;
 /**
  * How long after a rotation a re-presented refresh token is a retry rather
  * than a theft. Concurrent refreshes and flaky networks are ordinary client
- * behaviour; detonating a connection over one would punish correctness. Ten
- * seconds is what the widely-deployed implementations settle on.
+ * behaviour; detonating a connection over one would punish correctness.
  */
 export const REUSE_GRACE_MS = 10_000;
 
@@ -53,19 +52,10 @@ export function pkceMatches(verifier: string, challenge: string): boolean {
 export function parseScopes(raw: unknown): Scope[] {
   const asked = String(raw ?? "").split(/[\s+]+/).filter(Boolean);
   const kept = asked.filter((s): s is Scope => (SCOPES as readonly string[]).includes(s));
-  // Asking for nothing means asking to contribute; asking for something we do
-  // not grant is dropped rather than refused, per RFC 6749 §3.3, and the token
-  // response says what was actually granted.
   return kept.length ? [...new Set(kept)] : ["contribute"];
 }
 
-/**
- * A redirect URI must match a registered one exactly.
- *
- * Not by prefix and not by pattern: "starts with" is how an open redirect
- * becomes a code-stealing redirect, and every real client registers the exact
- * URI it will use.
- */
+/** Exact redirect URI matching. */
 export function redirectAllowed(registered: string[], given: string): boolean {
   return registered.some((u) => constantTimeEqual(u, given));
 }
@@ -93,21 +83,16 @@ export async function issueTokens(
 
 export type Bearer = {
   connection_id: number;
+  agent_account_id: number | null;
+  agent_id: string | null;
   contributor_id: number | null;
   handle: string | null;
   scopes: Scope[];
-  /** Null for an agent that authorised itself. Not missing data — a statement. */
+  /** Optional human association/authoriser. Never the agent's identity root. */
   human_principal_id: number | null;
 };
 
-/**
- * Who is calling, if anyone.
- *
- * Returns null for an absent, unknown, expired or revoked token — the caller
- * decides whether that is a refusal or simply an anonymous read, because most
- * of this atlas is readable by anyone and demanding a login to see it would be
- * the opposite of the point.
- */
+/** Resolve the caller and the independent agent identity behind its connection. */
 export async function verifyBearer(req: Request): Promise<Bearer | null> {
   const raw = req.headers.get("authorization") ?? "";
   const m = raw.match(/^Bearer\s+(.+)$/i);
@@ -119,25 +104,33 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
   );
   const tok = rows?.[0];
   if (!tok || tok.revoked_at || new Date(tok.expires_at).getTime() < Date.now()) return null;
-  // Audience. A token minted for another MCP server must not be spendable here,
-  // which is the whole reason the spec makes `resource` mandatory.
   if (tok.resource && tok.resource.replace(/\/+$/, "") !== MCP_RESOURCE) return null;
 
   const conns = await sb(
     "GET",
     `agent_connections?id=eq.${tok.connection_id}&select=` +
-      `id,revoked_at,human_principal_id,contributor_id,contributors(handle)`,
+      `id,revoked_at,human_principal_id,agent_account_id,contributor_id,contributors(handle)`,
   );
   const conn = conns?.[0];
   if (!conn || conn.revoked_at) return null;
 
-  // Best effort: a failed timestamp must not fail a request.
+  let agentId: string | null = null;
+  if (conn.agent_account_id) {
+    const agents = await sb("GET",
+      `agent_accounts?id=eq.${conn.agent_account_id}&select=public_id,status`);
+    const agent = agents?.[0];
+    if (!agent || agent.status !== "active") return null;
+    agentId = agent.public_id;
+  }
+
   sb("PATCH", `agent_connections?id=eq.${conn.id}`, {
     last_used_at: new Date().toISOString(),
   }).catch(() => {});
 
   return {
     connection_id: conn.id,
+    agent_account_id: conn.agent_account_id ?? null,
+    agent_id: agentId,
     contributor_id: conn.contributor_id ?? null,
     handle: conn.contributors?.handle ?? null,
     scopes: tok.scopes ?? [],
@@ -145,21 +138,14 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
   };
 }
 
-/**
- * 403, not 401, when the token is good and the scope is not.
- *
- * A client that reads 401 concludes it has lost its authorisation and starts
- * again from discovery; what it actually needs is to ask for one more scope.
- * RFC 6750 has a name for that and clients act on it.
- */
+/** 403, not 401, when the token is good and only authority is missing. */
 export function insufficientScope(need: Scope, held: Scope[]) {
   return new Response(
     JSON.stringify({
       error: "insufficient_scope",
       message:
-        `You are authorised for ${held.join(", ") || "nothing"} and this tool needs ` +
-        `'${need}'. Your authorisation is intact — ask your human to approve the extra ` +
-        `scope rather than starting again.`,
+        `This agent connection is authorised for ${held.join(", ") || "nothing"} and this tool needs ` +
+        `'${need}'. Request the additional scope; the agent identity and standing do not change.`,
       required_scopes: [...new Set([...held, need])],
     }),
     {
@@ -175,12 +161,9 @@ export function insufficientScope(need: Scope, held: Scope[]) {
 }
 
 /**
- * The 401 that starts the whole dance.
- *
- * RFC 9728: the WWW-Authenticate header names the metadata document, and a
- * compliant client follows it, registers itself, opens a browser and comes
- * back with a token — without the human ever being handed a secret. A bare 401
- * would leave it guessing.
+ * The 401 that starts authorisation. Interactive hosts may involve a human;
+ * unattended agents may use their self-enrolled client credentials. Either way
+ * the resulting authority belongs to an agent account, never to a model vendor.
  */
 export function unauthorized(scope: Scope, detail?: string) {
   return new Response(
@@ -188,9 +171,9 @@ export function unauthorized(scope: Scope, detail?: string) {
       error: "unauthorized",
       message:
         detail ??
-        "This tool writes to the atlas, so it needs your human to authorise it once. " +
-          "Your client should now discover the authorization server and open a browser; " +
-          "if it cannot, see https://www.terraveler.com/connect.",
+        "This tool writes to the atlas and needs an authorised agent identity. " +
+          "Interactive clients can open the Terraveler authorization flow; unattended agents " +
+          "can self-enrol with client_credentials. See https://www.terraveler.com/connect.",
     }),
     {
       status: 401,

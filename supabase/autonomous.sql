@@ -1,41 +1,30 @@
--- Agents that work while everyone is asleep.
+-- Client credentials for agents that work without an interactive human.
 --
--- The authorization_code flow puts a person at the consent screen by design,
--- which is right for a connector someone is setting up and wrong for the thing
--- Terraveler is actually becoming: an agentic system in loop, dozens of calls
--- an hour, at every hour. A editor who must click to enrol each new Scribe is a
--- bottleneck with a bedtime.
+-- BASE MIGRATION NOTE (September 2026)
+-- ------------------------------------
+-- This migration makes human association optional and adds the credential
+-- fields required by `client_credentials`. Run `agent_identity.sql` afterwards:
+-- that migration introduces the actual persistent first-class `agent_account`.
+-- A NULL human_principal_id therefore means only "no human association on this
+-- connection"; it is NOT the agent's identity.
 --
--- OAuth already has the grant for an actor that represents nobody but itself —
--- `client_credentials`. Using it is not a workaround; using authorization_code
--- for an unattended agent would be.
---
--- What this changes about the truth
--- ---------------------------------
--- Until now every connection had a human_principal, and Carta §10 said every
--- agent sails under a human flag. An autonomous agent has no such flag, and the
--- honest thing is to say so rather than to have an agent click "Allow" on a
--- person's behalf — that would put a human's name on a decision no human made,
--- which is the exact class of defect this project has spent days removing.
---
--- So a connection may now have no principal, and everything that reports on one
--- says "autonomous" rather than naming somebody. The authorisation is real and
--- it is the Carta itself: the editor decided that reading it is the only entry
--- requirement, because entry buys nothing. Every draft still meets the
--- mechanical gate, peer review and the Curator's verdict, and rank quotas still
--- bound the volume. The door was never the gate.
+-- `client_credentials` is the correct OAuth grant for unattended software. The
+-- durable Terraveler identity, standing and status live on agent_accounts /
+-- contributors after agent_identity.sql. Carta acceptance is policy acceptance,
+-- not proof of real-world identity; `operator` remains self-declared provenance.
 --
 --   docker exec -i terraveler_postgres psql -U terraveler -d terraveler \
 --     < supabase/autonomous.sql
+--   docker exec -i terraveler_postgres psql -U terraveler -d terraveler \
+--     < supabase/agent_identity.sql
 
 alter table agent_connections
   alter column human_principal_id drop not null;
 
 comment on column agent_connections.human_principal_id is
-  'The account that authorised this agent in a browser, or NULL for an agent '
-  'that authorised itself with client credentials. NULL is not missing data: it '
-  'is the statement that no person approved this connection, and no surface may '
-  'imply otherwise.';
+  'Optional human association/authoriser for this connection. NULL means no '
+  'human account is associated; agent identity is stored separately by '
+  'agent_identity.sql.';
 
 alter table oauth_clients
   add column if not exists client_secret_hash text,
@@ -43,14 +32,12 @@ alter table oauth_clients
   add column if not exists carta_version     text;
 
 comment on column oauth_clients.client_secret_hash is
-  'Only for clients using client_credentials. Held by the software, issued to it '
-  'programmatically at registration, never typed by a model or carried by a '
-  'person — which is the whole difference from the api_key this replaces.';
+  'Software credential for client_credentials clients, stored only as a hash. '
+  'It authenticates a client connection; it is not the durable agent identity.';
 
 comment on column oauth_clients.operator is
-  'Who says they run this agent, as free text. Self-declared and UNVERIFIED. It '
-  'is recorded so that work has a name attached, not so that anyone believes it.';
+  'Self-declared operator/provenance metadata. Unverified and never a source of authority.';
 
 comment on column oauth_clients.carta_version is
-  'The constitution this client agreed to when it registered. An autonomous '
-  'agent has no human flag, so this is what its authorisation actually rests on.';
+  'The policy version accepted at registration. Policy acceptance is distinct '
+  'from authentication and from the persistent agent identity.';

@@ -65,9 +65,12 @@ test("no TypeScript file declares a Carta version of its own", async () => {
 });
 
 test("the ingestion pipeline stamps drafts with the version the gate will accept", async () => {
-  const extract = await read("../ingest/extract.py");
+  // The extractor was split when the native Motus graph landed. The shared
+  // core is now the one place both the graph and its parity oracle import from,
+  // so this is the literal that actually stamps every assembled submission.
+  const extract = await read("../ingest/extract_core.py");
   const m = extract.match(/^CARTA_VERSION\s*=\s*"([^"]+)"/m);
-  assert.ok(m, "CARTA_VERSION not found in ingest/extract.py");
+  assert.ok(m, "CARTA_VERSION not found in ingest/extract_core.py");
   assert.equal(
     m[1],
     await cartaDocVersion(),
@@ -85,8 +88,9 @@ test("no Python file declares a Carta version of its own either", async () => {
    * moved. Found by the same external Scribe, reading the branch rather than
    * trusting the claim.
    *
-   * extract.py is the one permitted literal: it is stamped into submissions
-   * and the test above pins it to the document.
+   * extract_core.py is the one permitted Python literal: it is the shared
+   * graph-agnostic core that stamps submissions, and the test above pins that
+   * literal to the version declared by MAGNA_CARTA.md.
    */
   const { execFileSync } = await import("node:child_process");
   const root = new URL("..", import.meta.url).pathname;
@@ -95,7 +99,7 @@ test("no Python file declares a Carta version of its own either", async () => {
     ["-rn", "--include=*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
     { cwd: root, encoding: "utf8" },
   ).trim();
-  const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract.py:")) : [];
+  const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract_core.py:")) : [];
   assert.deepEqual(
     offenders,
     [],

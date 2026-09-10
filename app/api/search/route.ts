@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rank, searchIndex, topics, type EntryType } from "@/lib/search-index";
 import { ATLAS, voyagePath } from "@/lib/voyages";
+import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
 
 export const runtime = "nodejs";
 
@@ -21,9 +22,6 @@ export const runtime = "nodejs";
 const CACHE_HIT = "public, s-maxage=600, stale-while-revalidate=86400";
 const CACHE_MISS = "no-store";
 
-const SB_URL = (process.env.SUPABASE_URL ?? "").replace(/[\s​-‍﻿]+/g, "").replace(/\/+$/, "");
-const SB_KEY = (process.env.SUPABASE_SERVICE_KEY ?? "").replace(/[\s​-‍﻿]+/g, "").replace(/\/+$/, "");
-
 /** A query that found nothing is a request the atlas can't yet answer, so it
  *  is worth recording — but it is also unauthenticated free text that an
  *  editor will read, so only plausible topic-shaped queries are kept: letters,
@@ -33,13 +31,13 @@ const SB_KEY = (process.env.SUPABASE_SERVICE_KEY ?? "").replace(/[\s​-‍﻿]+
 const TOPIC_SHAPE = /^[\p{L}\p{N} .,'’()-]{3,80}$/u;
 
 async function recordMiss(q: string): Promise<void> {
-  if (!SB_URL || !SB_KEY || !TOPIC_SHAPE.test(q)) return;
+  if (!POSTGREST_URL || !POSTGREST_SERVICE_KEY || !TOPIC_SHAPE.test(q)) return;
   try {
-    await fetch(`${SB_URL}/rest/v1/rpc/record_search_miss`, {
+    await fetch(`${POSTGREST_URL}/rest/v1/rpc/record_search_miss`, {
       method: "POST",
       headers: {
-        apikey: SB_KEY,
-        Authorization: `Bearer ${SB_KEY}`,
+        apikey: POSTGREST_SERVICE_KEY,
+        Authorization: `Bearer ${POSTGREST_SERVICE_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ q: q.trim().slice(0, 80) }),
@@ -63,11 +61,6 @@ export async function GET(req: Request) {
   const exclude = url.searchParams.get("exclude") ?? "";
   const idx = await searchIndex();
 
-  // Empty query: hand back a bounded slice of what the atlas holds, so the
-  // reader can browse rather than guess — and so the panel never lists every
-  // voyage. The featured list is served from here rather than from a
-  // client-side copy of the atlas index, which keeps the browser's bundle flat
-  // however many voyages exist.
   if (!q.trim()) {
     const all = ATLAS.filter((v) => (v.kind ?? "earth") === (kind || "earth"));
     return NextResponse.json({
@@ -80,8 +73,6 @@ export async function GET(req: Request) {
         places: idx.filter((e) => e.type === "place").length,
         kind: all.length,
       },
-      // Curated order — ATLAS is the desk's own ordering. When the atlas is
-      // large this becomes an explicit editorial "featured" choice.
       featured: all
         .filter((v) => v.slug !== exclude)
         .slice(0, 5)
@@ -105,28 +96,15 @@ export async function GET(req: Request) {
     };
   })
     .filter((g) => g.items.length > 0)
-    // Strongest group first: searching a person's name should lead with the
-    // person, even though voyages usually outrank places.
     .sort((a, b) => b.best - a.best)
     .map(({ best, ...g }) => g);
 
-  // Only a settled query is a request. Autocomplete fires every 180ms of
-  // typing, so recording every empty result recorded every keystroke: typing
-  // "shackleton" produced shac, shak, shakle, shaklet, shakletong as five
-  // separate things the atlas was asked for and did not hold. The editor's
-  // demand list filled with the act of typing.
-  //
-  // The client sets record=1 once, after a longer pause, and only when the
-  // query it already tried came back empty — so the fast path stays fast and
-  // the demand log hears a person who finished asking.
   if (hits.length === 0 && url.searchParams.get("record") === "1") await recordMiss(q);
 
   return NextResponse.json({
     q,
     groups,
     total: hits.length,
-    // The dead end becomes the contribution funnel: nothing here yet, but the
-    // atlas grows by exactly this route.
     missing: hits.length === 0 ? { query: q.trim() } : null,
   }, {
     headers: { "Cache-Control": hits.length ? CACHE_HIT : CACHE_MISS },

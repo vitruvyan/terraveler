@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { readCookie, getUserEmail } from "@/lib/deskAuth";
+import { readCookie, getUserEmail, dataApi } from "@/lib/deskAuth";
 import { CARTA_VERSION } from "@/lib/carta";
+import { privilegedPostgrestConfigured } from "@/lib/backendConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,27 +13,10 @@ export const dynamic = "force-dynamic";
  * on the user's side (that path stays for power users who connect the MCP).
  * Lands as a `content-suggestion` submission on the editorial desk, exactly
  * like the MCP `suggest_content` tool.
+ *
+ * Auth is Supabase Auth; all application/governance data below is PostgreSQL on
+ * the VPS through PostgREST.
  */
-const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
-const SB_URL = cleanEnv(process.env.SUPABASE_URL);
-const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
-
-async function sb(method: string, path: string, body?: unknown): Promise<any> {
-  const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      apikey: SB_KEY,
-      Authorization: `Bearer ${SB_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: method === "GET" ? "" : "return=representation",
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!r.ok) throw new Error(`backend ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  const t = await r.text();
-  return t ? JSON.parse(t) : null;
-}
-
 const DAILY_LIMIT = 10;
 const INJECTION = [
   /ignore (all|any|previous|prior)/i, /disregard (the|all|previous)/i,
@@ -42,15 +26,15 @@ const INJECTION = [
 ];
 
 async function contributor(handle: string): Promise<{ id: number; status: string }> {
-  const rows = await sb("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
+  const rows = await dataApi("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
   if (rows.length) return rows[0];
-  const made = await sb("POST", "contributors", { handle });
+  const made = await dataApi("POST", "contributors", { handle });
   return { id: made[0].id, status: made[0].status ?? "active" };
 }
 
 export async function POST(req: Request) {
   try {
-    if (!SB_URL || !SB_KEY) {
+    if (!privilegedPostgrestConfigured()) {
       return NextResponse.json({ error: "Server not configured." }, { status: 500 });
     }
     const token = readCookie(req);
@@ -77,7 +61,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "This account is suspended." }, { status: 403 });
     }
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const recent = await sb("GET",
+    const recent = await dataApi("GET",
       `submissions?contributor_id=eq.${c.id}&created_at=gte.${since}&select=id&limit=${DAILY_LIMIT + 1}`);
     if (recent.length >= DAILY_LIMIT) {
       return NextResponse.json(
@@ -85,7 +69,7 @@ export async function POST(req: Request) {
         { status: 429 });
     }
 
-    const s = await sb("POST", "submissions", {
+    const s = await dataApi("POST", "submissions", {
       contributor_id: c.id,
       type: "content-suggestion",
       target_voyage: voyage.slice(0, 100),
@@ -99,7 +83,7 @@ export async function POST(req: Request) {
       status: "human-review",
       carta_version: CARTA_VERSION,
     });
-    await sb("POST", "audit_log", {
+    await dataApi("POST", "audit_log", {
       submission_id: s[0].id, actor: "web", action: "content-suggestion",
       verdict: null, findings: null, carta_version: CARTA_VERSION,
     });
