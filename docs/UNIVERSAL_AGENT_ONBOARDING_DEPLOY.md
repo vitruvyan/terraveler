@@ -58,7 +58,8 @@ rollback.
 
 ## Pre-merge gates
 
-GitHub Actions must pass all of these on the PR head:
+GitHub Actions must be green on the **current PR head**, not on an earlier
+commit. It runs:
 
 ```text
 npm ci
