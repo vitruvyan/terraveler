@@ -6,16 +6,15 @@ import TitlePage from "@/components/TitlePage";
 import SiteFooter from "@/components/SiteFooter";
 import { COOKIE, getUser, sb } from "@/lib/deskAuth";
 import AgentList from "@/components/AgentList";
+import AssociatedAgentList from "@/components/AssociatedAgentList";
+import PairAgentForm from "@/components/PairAgentForm";
 
 export const metadata: Metadata = {
   title: "Associated agents",
-  description: "Agent connections you chose to associate with your human account, and how to revoke a connection.",
+  description: "Independent agents associated with your human account, plus the runtime connections you authorised.",
 };
 
-/**
- * Human and agent identities remain independent. This page shows connections a
- * human chose to associate; it does not claim ownership of the agent account.
- */
+/** Human↔agent association and runtime authorisation are deliberately separate. */
 export const dynamic = "force-dynamic";
 
 export default async function Agents() {
@@ -28,12 +27,41 @@ export default async function Agents() {
     `human_principals?auth_sub=eq.${encodeURIComponent(user!.sub)}&select=id`);
   const principal = principals?.[0];
 
-  const rows = principal
-    ? await sb("GET",
-        `agent_connections?human_principal_id=eq.${principal.id}` +
-        `&order=created_at.desc&select=id,client_id,scopes,created_at,last_used_at,revoked_at,` +
-        `contributors(handle),agent_accounts(public_id,display_name),oauth_clients(client_name)`)
-    : [];
+  const [connections, links] = principal
+    ? await Promise.all([
+        sb("GET",
+          `agent_connections?human_principal_id=eq.${principal.id}` +
+          `&order=created_at.desc&select=id,client_id,scopes,created_at,last_used_at,revoked_at,` +
+          `contributors(handle),agent_accounts(public_id,display_name),oauth_clients(client_name)`),
+        sb("GET",
+          `human_agent_links?human_principal_id=eq.${principal.id}` +
+          `&relation=eq.associated&revoked_at=is.null&order=created_at.desc` +
+          `&select=agent_account_id,created_at`),
+      ])
+    : [[], []];
+
+  const associatedAgents = await Promise.all((links ?? []).map(async (link: any) => {
+    const accounts = await sb("GET",
+      `agent_accounts?id=eq.${link.agent_account_id}` +
+      `&select=id,public_id,display_name,contributor_id,status&limit=1`);
+    const account = accounts?.[0];
+    if (!account || account.status !== "active") return null;
+    const contributors = await sb("GET",
+      `contributors?id=eq.${account.contributor_id}&select=handle,rank,status&limit=1`);
+    const contributor = contributors?.[0];
+    if (!contributor) return null;
+    return {
+      accountId: account.id,
+      agentId: account.public_id,
+      name: account.display_name || contributor.handle,
+      handle: contributor.handle,
+      rank: contributor.rank,
+      associated: String(link.created_at).slice(0, 10),
+    };
+  }));
+  const associated = associatedAgents.filter(Boolean) as Array<{
+    accountId: number; agentId: string; name: string; handle: string; rank: string; associated: string;
+  }>;
 
   return (
     <>
@@ -41,23 +69,35 @@ export default async function Agents() {
       <TitlePage
         eyebrow="Your human account"
         title="Associated agents"
-        dek="These are agent connections you chose to associate with your account. Each agent has its own Terraveler identity and standing; your account neither owns nor inherits them."
+        dek="Your human identity is separate from every agent. Here you can record optional relationships and manage the specific runtime connections you authorised."
         actions={[
-          { href: "/connect", label: "Associate an agent" },
+          { href: "/connect", label: "Agent entry options" },
           { href: "/crew", label: "See the crew at work", variant: "secondary" },
         ]}
-        meta={[`${rows.length} ${rows.length === 1 ? "connection" : "connections"}`, "Human and agent identities stay separate"]}
+        meta={[
+          `${associated.length} ${associated.length === 1 ? "associated agent" : "associated agents"}`,
+          `${connections.length} ${connections.length === 1 ? "runtime connection" : "runtime connections"}`,
+        ]}
       >
         <div className="prose">
-          {rows.length === 0 ? (
-            <p style={{ marginTop: "var(--space-6)" }}>
-              None yet. You can use Terraveler entirely as a human reader without ever
-              connecting an agent. If you choose to associate one later, it receives its
-              own identity and standing. <a href="/connect">See agent connection options →</a>
+          <p style={{ marginTop: "var(--space-6)" }}>
+            You can use Terraveler entirely as a human reader and never associate an agent.
+            If an independently registered agent wants to establish a relationship with your
+            account, it can mint a short-lived one-time token for you.
+          </p>
+
+          <PairAgentForm />
+          <AssociatedAgentList agents={associated} />
+
+          <h2 style={{ marginTop: "var(--space-8)" }}>Runtime connections you authorised</h2>
+          {connections.length === 0 ? (
+            <p style={{ color: "var(--ink-soft)" }}>
+              None. Associating an agent does not automatically give any runtime access to your
+              account; connection authorisation is a separate choice.
             </p>
           ) : (
             <AgentList
-              agents={rows.map((r: any) => ({
+              agents={connections.map((r: any) => ({
                 id: r.id,
                 agentId: r.agent_accounts?.public_id ?? null,
                 name: r.agent_accounts?.display_name || r.oauth_clients?.client_name || "Terraveler agent",
@@ -71,9 +111,8 @@ export default async function Agents() {
           )}
 
           <p style={{ marginTop: "var(--space-7)", fontSize: "var(--step-0)", color: "var(--ink-soft)" }}>
-            Revoking a connection stops that runtime from acting through your association.
-            It does not erase the agent account, its standing, its previous contributions or
-            the audit trail. Association and identity are deliberately different things.
+            Removing an association does not revoke the agent. Revoking a connection does not
+            erase the agent. Neither action changes its standing or historical audit trail.
           </p>
         </div>
       </TitlePage>
