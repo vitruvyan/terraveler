@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { getUser, readCookie, sb } from "@/lib/deskAuth";
+import { ensureAgentForConnection } from "@/lib/agentIdentity";
 import { CODE_TTL_S, MCP_RESOURCE, parseScopes, secret, sha256 } from "@/lib/oauth";
 import { resolveOAuthClient } from "@/lib/cimd";
 
 /**
- * What the one click actually does.
+ * What the human click actually does.
  *
- * Four things, in order, and the order matters: verify the client, find or
- * create the person, find or create the connection between that person and this
- * client, mint a code bound to both, and hand back the callback address.
- *
- * Client validation is repeated here rather than trusted from the rendered
- * consent page. A hand-made POST must meet exactly the same DCR/CIMD rules.
+ * The person authenticates as a HUMAN account and chooses to associate an MCP
+ * connection with an AGENT account. The two identities remain independent:
+ * the agent gets its own contributor/standing and the human-agent relationship
+ * is recorded separately and may later be revoked without deleting either.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,11 +68,16 @@ export async function POST(req: Request) {
     `human_principals?auth_sub=eq.${encodeURIComponent(user.sub)}&select=id`);
   const principal = found?.[0]
     ?? (await sb("POST", "human_principals", { auth_sub: user.sub, email: user.email }))?.[0];
+  if (!principal?.id)
+    return NextResponse.json({ error: "server_error", error_description: "could not resolve human account" }, { status: 500 });
 
   const existing = await sb("GET",
     `agent_connections?human_principal_id=eq.${principal.id}` +
-    `&client_id=eq.${encodeURIComponent(String(client_id))}&select=id,scopes,revoked_at`);
+    `&client_id=eq.${encodeURIComponent(String(client_id))}` +
+    `&select=id,scopes,revoked_at,agent_account_id,contributor_id&limit=1`);
   let connection = existing?.[0];
+  let createdConnection = false;
+
   if (connection) {
     const merged = [...new Set([...(connection.scopes ?? []), ...scopes])];
     await sb("PATCH", `agent_connections?id=eq.${connection.id}`,
@@ -84,6 +88,23 @@ export async function POST(req: Request) {
       client_id: String(client_id),
       scopes,
     }))?.[0];
+    createdConnection = true;
+  }
+  if (!connection?.id)
+    return NextResponse.json({ error: "server_error", error_description: "could not create agent connection" }, { status: 500 });
+
+  let agent;
+  try {
+    agent = await ensureAgentForConnection({
+      connectionId: connection.id,
+      agentAccountId: connection.agent_account_id ?? null,
+      contributorId: connection.contributor_id ?? null,
+      humanPrincipalId: principal.id,
+      displayName: client.client_name || "Terraveler agent",
+    });
+  } catch (error) {
+    if (createdConnection) await sb("DELETE", `agent_connections?id=eq.${connection.id}`).catch(() => {});
+    throw error;
   }
 
   const code = secret();
@@ -100,10 +121,12 @@ export async function POST(req: Request) {
   });
 
   await sb("POST", "audit_log", {
-    submission_id: null, actor: `human:${user.email ?? user.sub}`, action: "authorize",
+    submission_id: null,
+    actor: `human:${user.email ?? user.sub}`,
+    action: "associate-agent",
     verdict: "granted",
     findings: [["INFO", 0,
-      `authorised client ${String(client_id)} with scopes ${scopes.join(", ")} — connection ${connection.id}`]],
+      `associated agent ${agent.public_id} with client ${String(client_id)} and scopes ${scopes.join(", ")} — connection ${connection.id}`]],
     carta_version: null,
   }).catch(() => {});
 
