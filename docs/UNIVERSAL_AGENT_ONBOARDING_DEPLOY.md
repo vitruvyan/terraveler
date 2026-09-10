@@ -49,7 +49,8 @@ docker restart terraveler_postgrest
 The application contains a temporary non-atomic compatibility fallback if the
 new functions are not visible yet. That fallback prevents an app-first deploy
 from breaking, but it is a deploy bridge, not the desired steady state. The
-steady state is the OAuth-native SQL functions.
+steady state is the OAuth-native SQL functions. Do not declare the modern write
+path production-ready until those functions are visible through PostgREST.
 
 The new functions do **not** remove or replace the legacy functions. Rolling the
 web application back therefore restores the old path without a database
