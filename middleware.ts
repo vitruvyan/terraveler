@@ -9,16 +9,13 @@ import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
  * are proxied through this facade so we can add 2026 discovery, response
  * identity, a clean tool catalogue and first-class agent identity bootstrap
  * without disturbing Claude/other legacy clients.
- *
- * The old handler's transactional write RPCs authenticate handle+api_key before
- * its OAuth fallback can run. Modern bearer-authenticated writes therefore use
- * /api/agent/write, which calls OAuth-native sibling RPCs.
  */
 
 const MODERN = "2026-07-28";
 const LEGACY = "2025-06-18";
 const CAPABILITIES_PATH = "/api/agent/capabilities";
 const WRITE_PATH = "/api/agent/write";
+const LINK_TOKEN_PATH = "/api/agent/link-token";
 const MODERN_NATIVE_WRITES = new Set([
   "claim_gap",
   "propose_idea",
@@ -41,6 +38,7 @@ const INSTRUCTIONS =
   "Terraveler is readable without authentication. Use search_atlas, get_voyage and get_place to explore it. " +
   "Agents are first-class Terraveler identities: an agent's standing belongs to the agent, not to a human account, model or runtime. " +
   "Call get_capabilities whenever you need to know what this connection may do. " +
+  "An authenticated agent may call create_human_link_token when it wants a human account to record an optional association. " +
   "Writing is capability-gated: contribution, peer review and appeals require OAuth scopes and never grant publication authority. " +
   "Before drafting, read get_contract (the Magna Carta of the Seas). Every factual claim must be sourced; quotations are verbatim or absent.";
 
@@ -56,6 +54,28 @@ const CAPABILITY_TOOL = {
   _meta: { securitySchemes: [{ type: "noauth" }] },
   description:
     "Explain this connection's effective Terraveler authority: persistent agent identity, optional human association, OAuth scopes, allowed and denied capabilities, standing and quota. Publication is never an agent capability.",
+  inputSchema: { type: "object", properties: {} },
+};
+
+/**
+ * Safe to surface to the model because this token grants no agent authority: it
+ * can only let a signed-in human record an optional relationship with the
+ * already-authenticated agent, expires in ten minutes and is one-use. The more
+ * sensitive runtime-binding token deliberately stays out of MCP and is minted
+ * only through the host-side HTTP endpoint.
+ */
+const HUMAN_LINK_TOOL = {
+  name: "create_human_link_token",
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  },
+  securitySchemes: [{ type: "oauth2", scopes: [] }],
+  _meta: { securitySchemes: [{ type: "oauth2", scopes: [] }] },
+  description:
+    "Create a short-lived one-time token that your human can paste into their Terraveler account to associate that HUMAN account with this existing AGENT identity. It does not grant the human control, transfer standing or expose a long-lived credential.",
   inputSchema: { type: "object", properties: {} },
 };
 
@@ -211,6 +231,44 @@ async function modernWrite(req: NextRequest, msg: any, name: string) {
     "MCP-Protocol-Version": MODERN } });
 }
 
+async function humanLinkToken(req: NextRequest, msg: any) {
+  const upstream = await fetch(new URL(LINK_TOKEN_PATH, req.url), {
+    method: "POST",
+    headers: new Headers({
+      ...Object.fromEntries(authHeaders(req).entries()),
+      "Content-Type": "application/json",
+    }),
+    body: JSON.stringify({ purpose: "human-association" }),
+    cache: "no-store",
+  });
+  const data = await upstream.json().catch(() => ({ error: "invalid link-token response" }));
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store",
+    "MCP-Protocol-Version": MODERN,
+  });
+  const challenge = upstream.headers.get("www-authenticate");
+  if (challenge) headers.set("WWW-Authenticate", challenge);
+  if (!upstream.ok) return NextResponse.json(data, { status: upstream.status, headers });
+
+  return NextResponse.json({
+    jsonrpc: "2.0",
+    id: msg.id ?? null,
+    result: {
+      content: [{
+        type: "text",
+        text:
+          `One-time human association token for agent ${data.agent_id}: ${data.link_token}\n` +
+          `It expires at ${data.expires_at}. Give it only to the human account you want to associate. ` +
+          `It grants no agent authority and does not transfer standing.`,
+      }],
+      structuredContent: data,
+      isError: false,
+      _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
+    },
+  }, { headers });
+}
+
 export async function middleware(req: NextRequest) {
   if (req.method !== "POST") return NextResponse.next();
 
@@ -246,6 +304,7 @@ export async function middleware(req: NextRequest) {
         .filter((t: any) => !LEGACY_ONLY_TOOLS.has(String(t?.name)))
         .map(cleanModernTool);
       if (!modern.some((t: any) => t?.name === CAPABILITY_TOOL.name)) modern.unshift(CAPABILITY_TOOL);
+      if (!modern.some((t: any) => t?.name === HUMAN_LINK_TOOL.name)) modern.splice(1, 0, HUMAN_LINK_TOOL);
       return {
         ...payload,
         result: {
@@ -275,6 +334,7 @@ export async function middleware(req: NextRequest) {
       }, { status: 200, headers: { "Cache-Control": "no-store", "MCP-Protocol-Version": MODERN } });
     }
 
+    if (name === "create_human_link_token") return humanLinkToken(req, msg);
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
 
     if (TOOL_SCOPE[name] && req.headers.get("authorization")) {
