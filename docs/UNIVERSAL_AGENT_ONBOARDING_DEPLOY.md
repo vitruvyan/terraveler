@@ -164,11 +164,22 @@ supported legacy clients have moved to the modern path and their contributor
 identity/standing migration has been tested. Until then, compatibility is a
 feature; duplication is controlled debt.
 
+## Why Orbis stays out of this PR
+
+Terraveler is already a real product surface with editorial semantics, source
+policy, agent identities and observable failure modes. That makes it much more
+valuable as an **acceptance vertical** for Orbis than as an early dependency on
+Orbis while Orbis and full Motus integration are still moving.
+
+Keeping this release standalone gives the later Orbis work a control group: the
+same submissions, reviews, provenance and MCP requests can be run through both
+architectures and compared rather than judged by impression.
+
 ## Later Orbis integration
 
-Do not replace Terraveler's domain rules with Orbis in this change. Once Orbis'
-interfaces and Motus integration are stable enough, integrate behind explicit
-ports so the same Terraveler acceptance corpus can run in two modes:
+Once Orbis' interfaces and Motus integration are stable enough, integrate
+behind explicit ports so the same Terraveler acceptance corpus can run in two
+modes:
 
 ```text
 standalone Terraveler   -> current services / Motus subset
