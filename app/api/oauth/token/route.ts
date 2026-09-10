@@ -1,34 +1,16 @@
 import { NextResponse } from "next/server";
 import { sb, rpc } from "@/lib/deskAuth";
+import { createAgentAccount, getAgentAccount } from "@/lib/agentIdentity";
 import {
   ACCESS_TTL_S, MCP_RESOURCE, REUSE_GRACE_MS, constantTimeEqual, issueTokens, parseScopes,
   pkceMatches, redirectAllowed, secret, sha256,
 } from "@/lib/oauth";
 
 /**
- * The token endpoint: authorization_code and refresh_token.
- *
- * Three things here are answers to a red-team report, and each was wrong in a
- * way that only shows up under contention or attack.
- *
- * **The claim is atomic.** Both grants used to read the credential, decide it
- * was unused, issue tokens, and only then mark it spent. Two requests arriving
- * together both read "unused" and both walked away with a valid token family —
- * so replay detection failed during exactly the race it exists for. The
- * database now decides the winner in a single statement, and a caller that
- * loses looks the credential up afterwards to tell "already spent" from "never
- * existed".
- *
- * **PKCE is checked before anything is revoked.** The point of PKCE is that a
- * stolen code is useless without the verifier. Revoking on a replayed code
- * before validating the verifier left it useful for one thing — disconnecting
- * the owner. Every binding is validated first; only a second presentation that
- * proves it holds the verifier is treated as compromise.
- *
- * **Reuse has a grace window.** Concurrent refreshes and network retries are
- * ordinary client behaviour, not attacks. A token re-presented within seconds
- * of its rotation returns the family that rotation produced instead of
- * detonating the connection.
+ * OAuth token endpoint. Interactive authorization and self-enrolled agents use
+ * different grants, but both end at an agent_connection bound to a persistent
+ * Terraveler agent identity. A human association is optional metadata; it is
+ * never the identity root of the agent.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -61,19 +43,9 @@ async function detonate(connectionId: number, why: string) {
   }).catch(() => {});
 }
 
-/**
- * A token may only be spent at the resource it was minted for.
- *
- * A null `bound` is tolerated only for codes issued before audience binding
- * existed; every code minted now carries one, so the permissive branch is a
- * migration allowance and not a rule. When both sides name something, they must
- * name the same thing — that is the whole point of the parameter being
- * mandatory, and trusting a null in the general case would have made the check
- * decorative.
- */
 function resourceOk(given: string | undefined, bound: string | null): boolean {
-  if (!bound) return true;                      // legacy code, issued unbound
-  if (!given) return true;                      // client omitted it; the token still binds
+  if (!bound) return true;
+  if (!given) return true;
   return given.replace(/\/+$/, "") === bound.replace(/\/+$/, "");
 }
 
@@ -86,9 +58,6 @@ async function authorizationCode(p: Record<string, string>) {
   const row = claimed?.[0];
 
   if (!row) {
-    // Either it never existed or somebody already spent it. Only the second is
-    // interesting, and it is still not enough to act on: a stolen code without
-    // the verifier must not be able to disconnect its owner.
     const known = await sb("GET", `oauth_codes?code_hash=eq.${sha256(code)}&select=*`);
     const prior = known?.[0];
     if (!prior) return fail("invalid_grant", "unknown or expired authorization code");
@@ -107,7 +76,6 @@ async function authorizationCode(p: Record<string, string>) {
     return fail("invalid_grant", "this authorization code has already been redeemed");
   }
 
-  // Won the race. Every binding still has to hold.
   if (new Date(row.expires_at).getTime() < Date.now())
     return fail("invalid_grant", "authorization code expired — start again");
   if (row.client_id !== client_id)
@@ -140,9 +108,6 @@ async function refresh(p: Record<string, string>) {
     const prior = known?.[0];
     if (!prior) return fail("invalid_grant", "unknown refresh token");
     if (prior.rotated_to) {
-      // A retry a moment after a successful rotation is ordinary client
-      // behaviour — a flaky network, two tabs, a racing refresh. Detonating on
-      // that would punish correctness.
       const rotatedRecently =
         Date.now() - new Date(prior.revoked_at ?? prior.created_at).getTime() < REUSE_GRACE_MS;
       if (rotatedRecently) {
@@ -163,11 +128,8 @@ async function refresh(p: Record<string, string>) {
     return fail("invalid_grant", "this token has been revoked");
   }
 
-  // The claim revoked it; from here it must either be rotated or the claim undone.
   if (new Date(tok.expires_at).getTime() < Date.now())
     return fail("invalid_grant", "refresh token expired — authorise again");
-  // Bound to the client it was issued to. Without this, a token leaked from one
-  // client is spendable by any other.
   if (client_id && tok.client_id && client_id !== tok.client_id)
     return fail("invalid_grant", "this refresh token belongs to a different client");
 
@@ -187,19 +149,10 @@ async function refresh(p: Record<string, string>) {
 }
 
 /**
- * An agent authorising itself, with nobody awake.
- *
- * `client_credentials` is the grant for an actor that represents no user, and
- * that is exactly what an unattended Scribe is. Using it here is not a way
- * around the consent screen — using authorization_code for a process that runs
- * at four in the morning would be the abuse.
- *
- * The connection it creates has no human_principal, and every surface that
- * reports on it says "autonomous" instead of naming somebody. That honesty is
- * the price of the convenience, and it is cheap: entry was never the gate.
- * Everything this agent submits meets the same mechanical verification, the
- * same peer review and the same Curator's verdict as work from a tandem with a
- * person in it, and its rank bounds how much it can send.
+ * A self-enrolled agent authenticates its software credential and receives a
+ * short-lived access token. The OAuth client is not the identity: it points to
+ * an agent_account, whose public id and contributor standing survive changes of
+ * model or runtime.
  */
 async function clientCredentials(p: Record<string, string>) {
   const { client_id, client_secret } = p;
@@ -207,47 +160,79 @@ async function clientCredentials(p: Record<string, string>) {
     return fail("invalid_client", "client_id and client_secret are required", 401);
 
   const rows = await sb("GET",
-    `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}&select=client_id,client_secret_hash`);
+    `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}` +
+    `&select=client_id,client_secret_hash,agent_account_id,client_name,operator`);
   const client = rows?.[0];
   if (!client?.client_secret_hash)
     return fail("invalid_client",
       "unknown client, or a client registered for the interactive flow. Register with " +
-      "grant_types: [\"client_credentials\"] to work unattended.", 401);
+      "grant_types: [\"client_credentials\"] to self-enrol an agent.", 401);
   if (!constantTimeEqual(sha256(client_secret), client.client_secret_hash))
     return fail("invalid_client", "client authentication failed", 401);
 
   const scopes = parseScopes(p.scope);
-  // One connection per autonomous client, reused. A second token request is
-  // the same agent asking again, not a new one being born.
-  const existing = await sb("GET",
+  let existing = (await sb("GET",
     `agent_connections?client_id=eq.${encodeURIComponent(client_id)}` +
-    `&human_principal_id=is.null&select=id,scopes,revoked_at`);
-  let conn = existing?.[0];
-  if (conn?.revoked_at)
-    return fail("invalid_client",
-      "this agent has been revoked by the editorial desk. Appeals go to the editor-in-chief.",
-      403);
-  if (conn) {
-    const merged = [...new Set([...(conn.scopes ?? []), ...scopes])];
-    await sb("PATCH", `agent_connections?id=eq.${conn.id}`, { scopes: merged });
-  } else {
-    conn = (await sb("POST", "agent_connections", {
-      client_id, scopes, human_principal_id: null,
-    }))?.[0];
+    `&human_principal_id=is.null&select=id,scopes,revoked_at,agent_account_id,contributor_id&limit=1`))?.[0];
+
+  let agentAccountId = client.agent_account_id ?? existing?.agent_account_id ?? null;
+  if (!agentAccountId) {
+    const agent = await createAgentAccount({
+      displayName: client.client_name ?? null,
+      operator: client.operator ?? null,
+      enrollment: "self",
+    });
+    agentAccountId = agent.id;
+    await sb("PATCH", `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}`, {
+      agent_account_id: agent.id,
+    });
+  } else if (!client.agent_account_id) {
+    await sb("PATCH", `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}`, {
+      agent_account_id: agentAccountId,
+    });
   }
 
-  // No refresh token: with the client secret in hand the agent can mint another
-  // access token whenever it likes, and a refresh token would be a second
-  // long-lived credential to steal for no gain.
+  const agent = await getAgentAccount(agentAccountId);
+  if (!agent || agent.status !== "active" || agent.contributor_status !== "active")
+    return fail("invalid_client", "this agent identity is suspended or no longer active", 403);
+
+  if (existing?.revoked_at)
+    return fail("invalid_client",
+      "this runtime connection has been revoked. The agent identity and its standing still exist, but this credential may no longer act.",
+      403);
+
+  if (existing) {
+    const merged = [...new Set([...(existing.scopes ?? []), ...scopes])];
+    await sb("PATCH", `agent_connections?id=eq.${existing.id}`, {
+      scopes: merged,
+      agent_account_id: agent.id,
+      contributor_id: agent.contributor_id,
+    });
+  } else {
+    existing = (await sb("POST", "agent_connections", {
+      client_id,
+      scopes,
+      human_principal_id: null,
+      agent_account_id: agent.id,
+      contributor_id: agent.contributor_id,
+    }))?.[0];
+  }
+  if (!existing?.id) return fail("server_error", "could not establish agent connection", 500);
+
   const access = secret();
   await sb("POST", "oauth_tokens", {
-    token_hash: sha256(access), kind: "access", connection_id: conn.id,
+    token_hash: sha256(access), kind: "access", connection_id: existing.id,
     scopes, resource: MCP_RESOURCE,
     expires_at: new Date(Date.now() + ACCESS_TTL_S * 1000).toISOString(),
   });
   return NextResponse.json(
-    { access_token: access, token_type: "Bearer", expires_in: ACCESS_TTL_S,
-      scope: scopes.join(" ") },
+    {
+      access_token: access,
+      token_type: "Bearer",
+      expires_in: ACCESS_TTL_S,
+      scope: scopes.join(" "),
+      agent_id: agent.public_id,
+    },
     { headers: noStore },
   );
 }
@@ -258,6 +243,5 @@ export async function POST(req: Request) {
   if (p.grant_type === "authorization_code") return authorizationCode(p);
   if (p.grant_type === "refresh_token") return refresh(p);
   return fail("unsupported_grant_type",
-    "this server issues tokens for client_credentials, authorization_code and " +
-    "refresh_token. An unattended agent wants the first.");
+    "this server issues tokens for client_credentials, authorization_code and refresh_token.");
 }
