@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { sb } from "@/lib/deskAuth";
-import { createAgentAccount } from "@/lib/agentIdentity";
+import { rpc, sb } from "@/lib/deskAuth";
+import { createAgentAccount, getAgentAccount } from "@/lib/agentIdentity";
 import { sha256 } from "@/lib/oauth";
 import { CARTA_VERSION } from "@/lib/carta";
 
@@ -14,9 +14,9 @@ import { CARTA_VERSION } from "@/lib/carta";
  * - an unattended actor asking for client_credentials self-enrols an AGENT
  *   ACCOUNT immediately and receives a software credential for that identity.
  *
- * The client id is transport/authentication metadata. The returned agent_id is
- * the persistent Terraveler identity whose standing survives model/runtime
- * changes.
+ * An already-authenticated agent may also mint a short-lived runtime-binding
+ * token and hand it to a new runtime. Registration then binds the new OAuth
+ * client to the SAME agent account instead of creating a new identity.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,6 +81,11 @@ export async function POST(req: Request) {
     ? body.grant_types.map(String)
     : ["authorization_code", "refresh_token"];
   const selfEnrollingAgent = grants.includes("client_credentials");
+  const runtimeLinkToken = typeof body.agent_link_token === "string"
+    ? body.agent_link_token.trim()
+    : "";
+  if (runtimeLinkToken && !selfEnrollingAgent)
+    return badRequest("invalid_agent_link", "agent_link_token is only valid for a client_credentials runtime");
 
   const client_id = `tv_${randomBytes(16).toString("hex")}`;
   const client_secret = selfEnrollingAgent ? randomBytes(32).toString("base64url") : null;
@@ -89,12 +94,28 @@ export async function POST(req: Request) {
   const operator = typeof body.operator === "string" ? body.operator.slice(0, 200) : null;
 
   let agent: Awaited<ReturnType<typeof createAgentAccount>> | null = null;
-  if (selfEnrollingAgent) {
+  let createdAgent = false;
+  let reboundExistingAgent = false;
+
+  if (selfEnrollingAgent && runtimeLinkToken) {
+    const claimed = await rpc("claim_agent_link_token", {
+      p_token_hash: sha256(runtimeLinkToken),
+      p_purpose: "runtime-binding",
+    });
+    const agentAccountId = claimed?.[0]?.agent_account_id;
+    if (!agentAccountId)
+      return badRequest("invalid_agent_link", "this runtime-binding token is unknown, expired, already used or for another purpose");
+    agent = await getAgentAccount(Number(agentAccountId));
+    if (!agent || agent.status !== "active" || agent.contributor_status !== "active")
+      return badRequest("invalid_agent_link", "the agent identity behind this token is not active");
+    reboundExistingAgent = true;
+  } else if (selfEnrollingAgent) {
     agent = await createAgentAccount({
       displayName: agentName,
       operator,
       enrollment: "self",
     });
+    createdAgent = true;
   }
 
   try {
@@ -110,7 +131,7 @@ export async function POST(req: Request) {
       agent_account_id: agent?.id ?? null,
     });
   } catch (error) {
-    if (agent) {
+    if (createdAgent && agent) {
       await sb("DELETE", `agent_accounts?id=eq.${agent.id}`).catch(() => {});
       await sb("DELETE", `contributors?id=eq.${agent.contributor_id}`).catch(() => {});
     }
@@ -129,10 +150,10 @@ export async function POST(req: Request) {
             client_secret,
             token_endpoint_auth_method: "client_secret_post",
             grant_types: ["client_credentials"],
-            note:
-              "This registration created an independent Terraveler agent identity. " +
-              "Keep agent_id as the durable identity and client_secret as the software credential; " +
-              "the credential may rotate and the model/runtime may change without changing the agent or its standing.",
+            identity_binding: reboundExistingAgent ? "existing-agent" : "new-agent",
+            note: reboundExistingAgent
+              ? "This new runtime is bound to the existing Terraveler agent. Its identity and standing were preserved; only the runtime credential is new."
+              : "This registration created an independent Terraveler agent identity. Keep agent_id as the durable identity and client_secret as the software credential; the credential may rotate and the model/runtime may change without changing the agent or its standing.",
           }
         : {
             token_endpoint_auth_method: "none",
