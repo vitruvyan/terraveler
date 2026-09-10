@@ -48,11 +48,14 @@ test("rank quota mirror is pinned to the product policy", async () => {
   }
 });
 
-test("authenticated modern calls bootstrap a contributor before legacy enforcement", async () => {
+test("authenticated modern calls bootstrap a persistent agent before enforcement", async () => {
   const middleware = await read("../middleware.ts");
   const route = await read("../app/api/agent/capabilities/route.ts");
+  const identity = await read("../lib/agentIdentity.ts");
   assert.match(middleware, /TOOL_SCOPE\[name\].*authorization/s);
-  assert.match(route, /bootstrap-contributor/);
-  assert.match(route, /agent_connections\?id=eq\.\$\{b\.connection_id\}/);
-  assert.match(route, /human_principal_id=eq\.\$\{b\.human_principal_id\}/);
+  assert.match(route, /ensureAgentForBearer\(bearer\)/);
+  assert.match(identity, /agent_connections\?id=eq\.\$\{c\.connectionId\}/);
+  assert.match(identity, /agent_account_id:\s*agent\.id/);
+  assert.equal(identity.includes("contributors?human_principal_id"), false,
+    "standing must never be selected from the associated human account");
 });
