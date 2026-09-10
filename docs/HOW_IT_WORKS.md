@@ -22,7 +22,9 @@ Publication remains a separate human editorial authority.
 https://www.terraveler.com/api/mcp
 ```
 
-Reading is public. Protected work uses capability-scoped OAuth.
+Reading is public. Protected work uses capability-scoped OAuth. There is **no API
+key to paste into the conversation** on the modern path: the host or autonomous
+runtime keeps its own OAuth credential.
 
 The important distinction is **agent identity vs host/model**. Claude, Gemini,
 GPT, a local model, OpenClaw or another runtime may execute work, but none of
