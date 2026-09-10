@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
 import { getUser, readCookie, sb } from "@/lib/deskAuth";
-import { ensureAgentForConnection } from "@/lib/agentIdentity";
+import { ensureAgentForConnection, getAgentAccount, linkHumanToAgent } from "@/lib/agentIdentity";
 import { CODE_TTL_S, MCP_RESOURCE, parseScopes, secret, sha256 } from "@/lib/oauth";
 import { resolveOAuthClient } from "@/lib/cimd";
 
 /**
  * What the human click actually does.
  *
- * The person authenticates as a HUMAN account and chooses to associate an MCP
- * connection with an AGENT account. The two identities remain independent:
- * the agent gets its own contributor/standing and the human-agent relationship
- * is recorded separately and may later be revoked without deleting either.
+ * The person authenticates as a HUMAN account and authorises an MCP runtime for
+ * an AGENT account. The agent may be freshly created or one the human already
+ * associated through a one-time token. Human and agent identities remain
+ * independent either way.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +34,16 @@ export async function POST(req: Request) {
 
   const body = await req.json().catch(() => ({}));
   const { decision, client_id, redirect_uri, code_challenge, state } = body ?? {};
+  const requestedAgentAccountId = body?.agent_account_id == null
+    ? null
+    : Number(body.agent_account_id);
+  if (requestedAgentAccountId !== null &&
+      (!Number.isInteger(requestedAgentAccountId) || requestedAgentAccountId <= 0))
+    return NextResponse.json(
+      { error: "invalid_request", error_description: "invalid agent_account_id" },
+      { status: 400 },
+    );
+
   const resource = String(body?.resource ?? "").replace(/\/+$/, "");
   if (resource && resource !== MCP_RESOURCE)
     return NextResponse.json(
@@ -71,6 +81,29 @@ export async function POST(req: Request) {
   if (!principal?.id)
     return NextResponse.json({ error: "server_error", error_description: "could not resolve human account" }, { status: 500 });
 
+  // A browser must not be able to name an arbitrary agent_account_id. Existing
+  // identities are selectable only after the agent itself authorised the human
+  // association through a one-time link token.
+  let selectedAgent: Awaited<ReturnType<typeof getAgentAccount>> = null;
+  if (requestedAgentAccountId !== null) {
+    const links = await sb("GET",
+      `human_agent_links?human_principal_id=eq.${principal.id}` +
+      `&agent_account_id=eq.${requestedAgentAccountId}` +
+      `&relation=eq.associated&revoked_at=is.null&select=agent_account_id&limit=1`);
+    if (!links?.[0])
+      return NextResponse.json(
+        { error: "invalid_agent_association",
+          error_description: "That agent is not currently associated with your human account." },
+        { status: 403 },
+      );
+    selectedAgent = await getAgentAccount(requestedAgentAccountId);
+    if (!selectedAgent || selectedAgent.status !== "active" || selectedAgent.contributor_status !== "active")
+      return NextResponse.json(
+        { error: "invalid_agent_association", error_description: "That agent is not active." },
+        { status: 403 },
+      );
+  }
+
   const existing = await sb("GET",
     `agent_connections?human_principal_id=eq.${principal.id}` +
     `&client_id=eq.${encodeURIComponent(String(client_id))}` +
@@ -95,13 +128,22 @@ export async function POST(req: Request) {
 
   let agent;
   try {
-    agent = await ensureAgentForConnection({
-      connectionId: connection.id,
-      agentAccountId: connection.agent_account_id ?? null,
-      contributorId: connection.contributor_id ?? null,
-      humanPrincipalId: principal.id,
-      displayName: client.client_name || "Terraveler agent",
-    });
+    if (selectedAgent) {
+      await sb("PATCH", `agent_connections?id=eq.${connection.id}`, {
+        agent_account_id: selectedAgent.id,
+        contributor_id: selectedAgent.contributor_id,
+      });
+      await linkHumanToAgent(principal.id, selectedAgent.id);
+      agent = selectedAgent;
+    } else {
+      agent = await ensureAgentForConnection({
+        connectionId: connection.id,
+        agentAccountId: connection.agent_account_id ?? null,
+        contributorId: connection.contributor_id ?? null,
+        humanPrincipalId: principal.id,
+        displayName: client.client_name || "Terraveler agent",
+      });
+    }
   } catch (error) {
     if (createdConnection) await sb("DELETE", `agent_connections?id=eq.${connection.id}`).catch(() => {});
     throw error;
@@ -124,9 +166,9 @@ export async function POST(req: Request) {
     submission_id: null,
     actor: `human:${user.email ?? user.sub}`,
     action: "associate-agent",
-    verdict: "granted",
+    verdict: selectedAgent ? "existing-agent-granted" : "new-agent-granted",
     findings: [["INFO", 0,
-      `associated agent ${agent.public_id} with client ${String(client_id)} and scopes ${scopes.join(", ")} — connection ${connection.id}`]],
+      `agent ${agent.public_id}; client ${String(client_id)}; scopes ${scopes.join(", ")}; connection ${connection.id}`]],
     carta_version: null,
   }).catch(() => {});
 
