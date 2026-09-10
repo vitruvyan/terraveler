@@ -7,13 +7,12 @@ import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
  * The product handler below /api/mcp is intentionally left on the proven 2025
  * implementation while the wire protocol changes around it. Modern requests
  * are proxied through this facade so we can add 2026 discovery, response
- * identity, a clean tool catalogue and lazy contributor bootstrap without
- * disturbing Claude/other legacy clients.
+ * identity, a clean tool catalogue and first-class agent identity bootstrap
+ * without disturbing Claude/other legacy clients.
  *
  * The old handler's transactional write RPCs authenticate handle+api_key before
  * its OAuth fallback can run. Modern bearer-authenticated writes therefore use
- * /api/agent/write, which calls OAuth-native sibling RPCs (and has a temporary
- * multi-call fallback until that SQL migration is deployed).
+ * /api/agent/write, which calls OAuth-native sibling RPCs.
  */
 
 const MODERN = "2026-07-28";
@@ -40,6 +39,7 @@ const SERVER_INFO = {
 
 const INSTRUCTIONS =
   "Terraveler is readable without authentication. Use search_atlas, get_voyage and get_place to explore it. " +
+  "Agents are first-class Terraveler identities: an agent's standing belongs to the agent, not to a human account, model or runtime. " +
   "Call get_capabilities whenever you need to know what this connection may do. " +
   "Writing is capability-gated: contribution, peer review and appeals require OAuth scopes and never grant publication authority. " +
   "Before drafting, read get_contract (the Magna Carta of the Seas). Every factual claim must be sourced; quotations are verbatim or absent.";
@@ -55,7 +55,7 @@ const CAPABILITY_TOOL = {
   securitySchemes: [{ type: "noauth" }],
   _meta: { securitySchemes: [{ type: "noauth" }] },
   description:
-    "Explain this connection's effective Terraveler authority: anonymous/human-backed/autonomous mode, OAuth scopes, allowed and denied capabilities, standing and quota. Publication is never an agent capability.",
+    "Explain this connection's effective Terraveler authority: persistent agent identity, optional human association, OAuth scopes, allowed and denied capabilities, standing and quota. Publication is never an agent capability.",
   inputSchema: { type: "object", properties: {} },
 };
 
@@ -86,11 +86,12 @@ function moderniseContract(payload: any) {
     const at = item.text.indexOf(marker);
     if (at < 0) continue;
     item.text = item.text.slice(0, at) +
-      "\n\n---\n\n## Connection authority\n\n" +
+      "\n\n---\n\n## Agent identity and authority\n\n" +
       "On modern MCP, do not call register and do not ask a human for an API key. " +
-      "Your OAuth connection is the identity boundary; Terraveler creates or reuses " +
-      "the contributor automatically on the first authorised action. Call " +
-      "get_capabilities to inspect the authority you currently hold.";
+      "Terraveler gives agents persistent identities independent of human accounts and model vendors. " +
+      "An interactive human may associate a connection, while an unattended agent may self-enrol; " +
+      "either way standing belongs to the agent. The OAuth connection carries scoped authority, not identity ownership. " +
+      "Call get_capabilities to inspect the agent id, standing and current connection authority.";
   }
   return payload;
 }
@@ -99,8 +100,7 @@ function bodyMeta(msg: any): Record<string, any> {
   return msg?.params?._meta ?? {};
 }
 
-/** SEP-2243: modern routing headers mirror the JSON-RPC request. A gateway must
- * never route on one operation while the application executes another. */
+/** SEP-2243: modern routing headers mirror the JSON-RPC request. */
 function modernEnvelopeError(req: NextRequest, msg: any): string | null {
   const method = req.headers.get("mcp-method");
   const version = req.headers.get("mcp-protocol-version");
@@ -136,8 +136,6 @@ async function capabilitySnapshot(req: NextRequest) {
   });
 }
 
-/** Call the legacy stateless handler without the 2026 routing headers, then
- * stamp the result with the server identity required by the modern era. */
 async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) {
   const headers = new Headers(req.headers);
   headers.delete("mcp-method");
@@ -168,8 +166,6 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
   const resultChallenges = payload?.result?._meta?.["mcp/www_authenticate"];
   const challenge = upstream.headers.get("www-authenticate") ??
     (Array.isArray(resultChallenges) && typeof resultChallenges[0] === "string" ? resultChallenges[0] : null);
-  // Legacy hosts needed a JSON-RPC error-shaped result with HTTP 200. Modern
-  // per-tool authorization expects the HTTP resource to challenge with 401.
   const status = challenge && payload?.result?.isError && upstream.status === 200
     ? 401
     : upstream.status;
@@ -289,10 +285,6 @@ export async function middleware(req: NextRequest) {
       }
       if (MODERN_NATIVE_WRITES.has(name)) return modernWrite(req, msg, name);
     }
-    // No bearer deliberately reaches the legacy handler so its challenge can be
-    // lifted into an HTTP 401 on this modern facade. get_review_brief and appeal
-    // also remain there: their legacy code authenticates Bearer before state and
-    // does not depend on the API-key-era transactional RPCs.
     return proxyLegacy(req);
   }
 
