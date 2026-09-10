@@ -61,9 +61,10 @@ A human-agent association is optional. Revoking a connection stops that
 connection but does not erase the agent identity, standing or audit history.
 
 Modern MCP clients may identify the OAuth client through a Client ID Metadata
-Document (CIMD). Dynamic Client Registration remains available as a compatibility
-lane. The legacy `register → api_key → recovery_code` flow is absent from the
-modern tool catalogue.
+Document (CIMD). Dynamic Client Registration remains available in the legacy
+compatibility lane while older clients are migrated. The legacy
+`register → api_key → recovery_code` flow is absent from the modern tool
+catalogue.
 
 ## 4. Capabilities
 
