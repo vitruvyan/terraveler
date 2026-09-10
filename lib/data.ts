@@ -1,4 +1,4 @@
-import { getSupabase } from "./supabase";
+import { POSTGREST_URL, postgrestConfigured } from "./backendConfig";
 import { ATLAS, isVoyageSlug, type VoyageSlug } from "./voyages";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
@@ -19,23 +19,16 @@ import gama from "@/data/gama-1497.json";
 import drake from "@/data/drake-1577.json";
 import leoafricanus from "@/data/leoafricanus-1510.json";
 import faxian from "@/data/faxian-399.json";
-
 import polo_1271 from "@/data/polo-1271.json";
 import lewisclark_1804 from "@/data/lewisclark-1804.json";
 import mungopark_1795 from "@/data/mungopark-1795.json";
 import ibnbattuta_1325 from "@/data/ibnbattuta-1325.json";
 import cabot_1497 from "@/data/cabot-1497.json";
+
 export interface VoyageBundle {
   navigator: Navigator;
   voyage: Voyage;
   waypoints: Waypoint[] | SpaceWaypoint[];
-}
-
-function hasSupabase(): boolean {
-  return Boolean(
-    (process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL) &&
-    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY)
-  );
 }
 
 /**
@@ -83,48 +76,60 @@ function fromJson(slug: string): VoyageBundle {
   return (bundle ?? bougainville) as VoyageBundle;
 }
 
+async function postgrestRows(table: string, params: Record<string, string>): Promise<any[]> {
+  const url = new URL(`/rest/v1/${table}`, `${POSTGREST_URL}/`);
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error(`PostgREST ${table}: ${response.status} ${(await response.text()).slice(0, 160)}`);
+  }
+  const body = await response.json();
+  if (!Array.isArray(body)) throw new Error(`PostgREST ${table}: expected an array`);
+  return body;
+}
+
 /**
- * Loads a voyage bundle. Prefers Supabase when configured, and falls back to
- * the bundled JSON so the prototype renders even before Supabase is wired.
+ * Loads a voyage bundle from the canonical DATA PLANE: PostgreSQL on the VPS
+ * through PostgREST. Supabase is the identity provider only and is never
+ * queried for atlas content. Bundled JSON remains the availability fallback.
  */
 export async function getVoyageBundle(
   slug = "boudeuse-1766"
 ): Promise<VoyageBundle> {
-  if (hasSupabase()) {
+  if (postgrestConfigured()) {
     try {
-      const supabase = getSupabase() as any;
-      if (!supabase) return fromJson(slug);
-
-      const { data: voyage } = await supabase
-        .from("voyages")
-        .select("*")
-        .eq("slug", slug)
-        .single();
+      const voyages = await postgrestRows("voyages", {
+        select: "*",
+        slug: `eq.${slug}`,
+        limit: "1",
+      });
+      const voyage = voyages[0];
 
       if (voyage) {
-        const [navRes, wpRes] = await Promise.all([
-          supabase
-            .from("navigators")
-            .select("*")
-            .eq("id", voyage.navigator_id)
-            .single(),
-          supabase
-            .from("waypoints")
-            .select("*")
-            .eq("voyage_id", voyage.id)
-            .order("seq", { ascending: true }),
+        const [navigators, waypoints] = await Promise.all([
+          postgrestRows("navigators", {
+            select: "*",
+            id: `eq.${voyage.navigator_id}`,
+            limit: "1",
+          }),
+          postgrestRows("waypoints", {
+            select: "*",
+            voyage_id: `eq.${voyage.id}`,
+            order: "seq.asc",
+          }),
         ]);
 
-        if (navRes.data && wpRes.data && wpRes.data.length > 0) {
+        if (navigators[0] && waypoints.length > 0) {
           return {
-            navigator: navRes.data as Navigator,
+            navigator: navigators[0] as Navigator,
             voyage: voyage as Voyage,
-            waypoints: wpRes.data as Waypoint[],
+            waypoints: waypoints as Waypoint[],
           };
         }
       }
     } catch {
-      // fall through to the bundled JSON
+      // Availability first: if the VPS data plane is unavailable, use the
+      // checked-in published bundle rather than accidentally querying Supabase.
     }
   }
   return fromJson(slug);
