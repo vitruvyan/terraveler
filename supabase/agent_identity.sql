@@ -63,12 +63,59 @@ comment on column oauth_clients.agent_account_id is
   'Set for self-enrolled client_credentials agents. Interactive public clients '
   'remain reusable and therefore do not carry one globally.';
 
+-- A durable identity must be able to acquire another runtime without becoming a
+-- new agent. The already-authenticated agent mints a short-lived, one-use token;
+-- the receiving runtime or human consumes it. Only the hash is stored.
+create table if not exists agent_link_tokens (
+  id                       bigint generated always as identity primary key,
+  token_hash               text not null unique,
+  agent_account_id         bigint not null references agent_accounts(id),
+  purpose                  text not null
+    check (purpose in ('runtime-binding', 'human-association')),
+  issued_by_connection_id  bigint references agent_connections(id),
+  created_at               timestamptz not null default now(),
+  expires_at               timestamptz not null,
+  consumed_at              timestamptz
+);
+
+comment on table agent_link_tokens is
+  'Short-lived one-use proof that an already authenticated agent authorised a '
+  'new runtime binding or a human association. The token is not a standing or '
+  'long-lived identity credential.';
+
 create index if not exists agent_connections_agent_idx
   on agent_connections(agent_account_id)
   where agent_account_id is not null;
 create index if not exists human_agent_links_agent_idx
   on human_agent_links(agent_account_id)
   where revoked_at is null;
+create index if not exists agent_link_tokens_live_idx
+  on agent_link_tokens(expires_at)
+  where consumed_at is null;
+
+-- Claim is atomic so one pairing token cannot attach two humans/runtimes during
+-- a race. The service already authenticated the caller before invoking it.
+create or replace function claim_agent_link_token(p_token_hash text, p_purpose text)
+returns table (agent_account_id bigint)
+language plpgsql
+as $$
+declare t record;
+begin
+  select alt.id, alt.agent_account_id into t
+    from agent_link_tokens alt
+   where alt.token_hash = p_token_hash
+     and alt.purpose = p_purpose
+     and alt.consumed_at is null
+     and alt.expires_at > now()
+   for update;
+  if not found then return; end if;
+
+  update agent_link_tokens set consumed_at = now() where id = t.id;
+  return query select t.agent_account_id::bigint;
+end;
+$$;
+
+grant execute on function claim_agent_link_token(text, text) to terraveler_service;
 
 -- Preserve any already-materialised OAuth contributor/standing. Old code could
 -- attach the same contributor to several connections; treating those as several
