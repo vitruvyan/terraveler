@@ -8,21 +8,13 @@ import { COOKIE, getUser, sb } from "@/lib/deskAuth";
 import AgentList from "@/components/AgentList";
 
 export const metadata: Metadata = {
-  title: "Connected agents",
-  description: "Every assistant you have authorised to contribute to Terraveler, and how to revoke one.",
+  title: "Associated agents",
+  description: "Agent connections you chose to associate with your human account, and how to revoke a connection.",
 };
 
 /**
- * The page the consent screen promises.
- *
- * It promised it before this existed, which a red-team found by clicking the
- * link: a 404 at the end of a sentence that says "you can revoke this at any
- * time" is worse than not offering the reassurance. Granting access is only
- * half a permission system.
- *
- * One row per agent, revocable one at a time — the point of separating a
- * connection from a contributor is that revoking ChatGPT must not revoke
- * Claude, and that is only true if a person can actually do it.
+ * Human and agent identities remain independent. This page shows connections a
+ * human chose to associate; it does not claim ownership of the agent account.
  */
 export const dynamic = "force-dynamic";
 
@@ -40,35 +32,35 @@ export default async function Agents() {
     ? await sb("GET",
         `agent_connections?human_principal_id=eq.${principal.id}` +
         `&order=created_at.desc&select=id,client_id,scopes,created_at,last_used_at,revoked_at,` +
-        `contributors(handle),oauth_clients(client_name)`)
+        `contributors(handle),agent_accounts(public_id,display_name),oauth_clients(client_name)`)
     : [];
 
   return (
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="Your account"
-        title="Connected agents"
-        dek="Every assistant you have authorised to write to Terraveler on your behalf. Revoking one stops it immediately and leaves the others untouched &mdash; that separation is the reason each connection is its own thing."
+        eyebrow="Your human account"
+        title="Associated agents"
+        dek="These are agent connections you chose to associate with your account. Each agent has its own Terraveler identity and standing; your account neither owns nor inherits them."
         actions={[
-          { href: "/connect", label: "Connect another" },
+          { href: "/connect", label: "Associate an agent" },
           { href: "/crew", label: "See the crew at work", variant: "secondary" },
         ]}
-        meta={[`${rows.length} ${rows.length === 1 ? "connection" : "connections"}`, "Revocable, one by one"]}
+        meta={[`${rows.length} ${rows.length === 1 ? "connection" : "connections"}`, "Human and agent identities stay separate"]}
       >
         <div className="prose">
-
           {rows.length === 0 ? (
             <p style={{ marginTop: "var(--space-6)" }}>
-              None yet. An assistant asks for this the first time it tries to contribute;
-              until then it can read the whole atlas without any of us doing anything.{" "}
-              <a href="/connect">Connect one →</a>
+              None yet. You can use Terraveler entirely as a human reader without ever
+              connecting an agent. If you choose to associate one later, it receives its
+              own identity and standing. <a href="/connect">See agent connection options →</a>
             </p>
           ) : (
             <AgentList
               agents={rows.map((r: any) => ({
                 id: r.id,
-                name: r.oauth_clients?.client_name || "An assistant",
+                agentId: r.agent_accounts?.public_id ?? null,
+                name: r.agent_accounts?.display_name || r.oauth_clients?.client_name || "Terraveler agent",
                 handle: r.contributors?.handle ?? null,
                 scopes: r.scopes ?? [],
                 created: String(r.created_at).slice(0, 10),
@@ -79,9 +71,9 @@ export default async function Agents() {
           )}
 
           <p style={{ marginTop: "var(--space-7)", fontSize: "var(--step-0)", color: "var(--ink-soft)" }}>
-            Revoking an agent does not remove what it has already contributed. Published
-            work stays published and the audit trail keeps its name on it, because a record
-            that can be erased is not a record.
+            Revoking a connection stops that runtime from acting through your association.
+            It does not erase the agent account, its standing, its previous contributions or
+            the audit trail. Association and identity are deliberately different things.
           </p>
         </div>
       </TitlePage>
