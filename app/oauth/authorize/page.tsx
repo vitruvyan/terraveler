@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { COOKIE, getUser, sb } from "@/lib/deskAuth";
-import { MCP_RESOURCE, SCOPES, parseScopes, type Scope } from "@/lib/oauth";
+import { COOKIE, getUser } from "@/lib/deskAuth";
+import { MCP_RESOURCE, parseScopes, type Scope } from "@/lib/oauth";
+import { resolveOAuthClient } from "@/lib/cimd";
 import ConsentForm from "@/components/ConsentForm";
 
 /**
@@ -14,13 +15,9 @@ import ConsentForm from "@/components/ConsentForm";
  * make the human-in-the-loop promise false: Carta §10 has every agent sailing
  * under a human flag, and a flag nobody ever raised is not one.
  *
- * So: one approval, at the first contribution, not one per contribution. After
- * this the client holds a token it refreshes by itself, and the human is not
- * asked again unless the scopes widen or the Carta changes materially.
- *
- * Deliberately plain. A consent screen that has to be read is a consent screen
- * that gets clicked through, so it says who is asking, what they will be able
- * to do, what they will not, and under whose name.
+ * Modern clients may identify themselves with a Client ID Metadata Document.
+ * Terraveler resolves and validates that document before showing this screen;
+ * DCR/pre-registered clients still resolve from oauth_clients.
  */
 export const dynamic = "force-dynamic";
 
@@ -57,15 +54,8 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
   const method = one(q.code_challenge_method) || "S256";
   const state = one(q.state);
   const scopes = parseScopes(one(q.scope));
-  // MCP makes `resource` mandatory at both endpoints so a token cannot be
-  // minted for one server and spent at another. It was read nowhere and stored
-  // nowhere, so every code was issued unbound — the audience check existed and
-  // had nothing to check against.
   const resource = one(q.resource);
 
-  // Every check that can be made before a person is shown anything, is. A
-  // consent screen for a request that was going to be refused anyway teaches
-  // people to click through consent screens.
   if (!client_id || !redirect_uri || !code_challenge)
     return <Refusal title="Incomplete request"
       detail="An authorization request needs a client_id, a redirect_uri and a PKCE code challenge. Whatever sent you here left one out." />;
@@ -74,20 +64,21 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
       detail="This server accepts S256 only. The 'plain' method is in the specification and protects nothing." />;
   if (resource && resource.replace(/\/+$/, "") !== MCP_RESOURCE)
     return <Refusal title="Wrong resource"
-      detail={`This authorization server issues tokens for ${MCP_RESOURCE} and nothing else. ` +
-        `The request named a different one, so no code will be issued.`} />;
+      detail={`This authorization server issues tokens for ${MCP_RESOURCE} and nothing else. The request named a different one, so no code will be issued.`} />;
 
-  const clients = await sb("GET",
-    `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}&select=client_id,client_name,redirect_uris`);
-  const client = clients?.[0];
+  let client;
+  try {
+    client = await resolveOAuthClient(client_id);
+  } catch {
+    return <Refusal title="Client metadata refused"
+      detail="Terraveler could not safely verify this client's metadata. No authorisation was granted." />;
+  }
   if (!client)
     return <Refusal title="Unknown client"
-      detail="No client is registered under that id. A client registers itself before it asks for consent." />;
-  // Exact match, never a prefix: "starts with" is how an open redirect becomes
-  // a code-stealing redirect.
+      detail="This client is neither pre-registered nor a valid HTTPS Client ID Metadata Document." />;
   if (!(client.redirect_uris ?? []).includes(redirect_uri))
     return <Refusal title="Redirect address not registered"
-      detail="The address this request wants to return to is not one this client registered. The code will not be issued." />;
+      detail="The callback address is not one the verified client metadata allows. No code will be issued." />;
 
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value ?? "";
@@ -100,6 +91,10 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
   }
 
   const label = (client.client_name || "This assistant").slice(0, 80);
+  let clientHost = "registered client";
+  let redirectHost = redirect_uri;
+  try { clientHost = new URL(client_id).hostname; } catch { /* DCR/pre-registered id */ }
+  try { redirectHost = new URL(redirect_uri).host || new URL(redirect_uri).protocol; } catch { /* keep literal */ }
 
   return (
     <>
@@ -114,7 +109,7 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
 
         <p style={{ color: "var(--ink-soft)" }}>
           Signed in as <strong>{user!.email ?? "your account"}</strong>. Everything this
-          assistant submits will carry your handle and build — or cost — its standing.
+          assistant submits will carry your contributor identity and build — or cost — its standing.
         </p>
 
         <div className="tv-connect" style={{ padding: "16px 18px", margin: "18px 0" }}>
@@ -125,10 +120,17 @@ export default async function Authorize({ searchParams }: { searchParams: Promis
           <p style={{ margin: "14px 0 6px", fontWeight: 600 }}>It will not be able to:</p>
           <ul style={{ margin: 0, paddingLeft: 20, color: "var(--ink-soft)" }}>
             <li>publish anything — publication is a separate, human act</li>
-            <li>approve its own work, or anyone else&rsquo;s</li>
+            <li>approve its own work</li>
             <li>see your password, or any other assistant&rsquo;s access</li>
           </ul>
         </div>
+
+        <p style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+          Client: <strong>{clientHost}</strong> · callback: <strong>{redirectHost}</strong>.
+          {redirectHost.includes("localhost") || redirectHost.startsWith("127.0.0.1")
+            ? " This callback is local to your machine; approve only if you started this connection yourself."
+            : ""}
+        </p>
 
         <p style={{ fontSize: 14, color: "var(--ink-soft)" }}>
           You are approving once, not once per contribution. You can revoke this
