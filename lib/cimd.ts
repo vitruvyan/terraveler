@@ -22,7 +22,6 @@ export function validateCimdClientId(raw: string): URL | null {
   if (u.protocol !== "https:") return null;
   if (u.username || u.password || u.hash || u.search) return null;
   if (!u.pathname || u.pathname === "/") return null;
-  // Stable identifiers must not change through URL normalisation.
   if (u.toString() !== raw) return null;
   return u;
 }
@@ -80,7 +79,6 @@ export function isPublicIp(ip: string): boolean {
     return !blocked.some(([base, bits]) => inV4(ip, base, bits));
   }
   if (net.isIP(ip) === 6) {
-    // IPv4-mapped IPv6.
     const mapped = ip.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) return isPublicIp(mapped[1]);
     const blocked: Array<[string, number]> = [
@@ -164,10 +162,11 @@ function validateDocument(clientId: string, doc: any): OAuthClient {
     throw new Error("Terraveler CIMD currently supports public PKCE clients only");
   if (doc.grant_types && (!Array.isArray(doc.grant_types) || !doc.grant_types.includes("authorization_code")))
     throw new Error("CIMD must allow authorization_code when grant_types is declared");
+  const redirectUris: string[] = doc.redirect_uris.map((u: unknown) => String(u));
   return {
     client_id: clientId,
     client_name: doc.client_name.trim().slice(0, 120),
-    redirect_uris: [...new Set(doc.redirect_uris.map(String))],
+    redirect_uris: [...new Set<string>(redirectUris)],
     registered_via: "cimd",
     last_seen_at: new Date().toISOString(),
   };
