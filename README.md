@@ -250,7 +250,8 @@ then apply:
 supabase/mcp_oauth_write_functions.sql
 ```
 
-and refresh PostgREST's schema cache. The web application has a temporary
+PostgREST caches the schema; after any migration, refresh or restart it before
+testing newly added tables or RPC functions. The web application has a temporary
 availability fallback while that RPC migration is not visible, but the intended
 steady state uses the OAuth-native atomic functions. Exact deploy/rollback and
 client smoke steps are in `docs/UNIVERSAL_AGENT_ONBOARDING_DEPLOY.md`.
