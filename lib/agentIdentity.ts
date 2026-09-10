@@ -40,10 +40,7 @@ async function hydrate(agent: AgentAccount): Promise<AgentIdentity> {
   };
 }
 
-/**
- * Create a persistent agent identity and the contributor row that owns its
- * standing. No human principal is written here: association is a separate act.
- */
+/** Create an agent identity and the contributor row that owns its standing. */
 export async function createAgentAccount(opts: {
   displayName?: string | null;
   operator?: string | null;
@@ -60,8 +57,7 @@ export async function createAgentAccount(opts: {
         human_sponsor: null,
       }))?.[0] ?? null;
     } catch {
-      // A random-handle collision is extraordinarily unlikely, but retrying is
-      // cheaper and clearer than turning that into an enrolment failure.
+      // Random handle collisions are extraordinarily unlikely; retry cleanly.
     }
   }
   if (!contributor) throw new Error("could not create agent contributor");
@@ -78,16 +74,14 @@ export async function createAgentAccount(opts: {
     if (!account) throw new Error("could not create agent account");
     return hydrate(account);
   } catch (error) {
-    // Avoid leaving a standing-bearing contributor with no agent identity if
-    // the second half of this two-table creation fails.
     await sb("DELETE", `contributors?id=eq.${contributor.id}`).catch(() => {});
     throw error;
   }
 }
 
 /**
- * An optional human↔agent association. It is provenance/consent, not identity:
- * revoking it must never delete the agent or transfer its standing.
+ * Optional human↔agent association. It records consent/provenance, not identity:
+ * unlinking must never delete the agent or transfer its standing.
  */
 export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId: number) {
   const rows = await sb("GET",
@@ -109,50 +103,75 @@ export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId:
   });
 }
 
+export type ConnectionIdentity = {
+  connectionId: number;
+  agentAccountId?: number | null;
+  contributorId?: number | null;
+  humanPrincipalId?: number | null;
+  displayName?: string | null;
+  operator?: string | null;
+};
+
 /**
- * Resolve the independent agent behind a bearer connection. This also upgrades
- * connections created by the earlier PR implementation: existing contributor
- * standing is wrapped in an agent account instead of being thrown away.
+ * Give one connection an independent agent identity. This is the migration
+ * seam used by both bearer bootstrap and browser authorisation: old contributor
+ * standing is wrapped rather than copied or reset.
  */
-export async function ensureAgentForBearer(b: Bearer): Promise<AgentIdentity> {
-  if (b.agent_account_id) {
-    const existing = await readAgent(b.agent_account_id);
-    if (existing) return hydrate(existing);
+export async function ensureAgentForConnection(c: ConnectionIdentity): Promise<AgentIdentity> {
+  if (c.agentAccountId) {
+    const existing = await readAgent(c.agentAccountId);
+    if (existing) {
+      if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, existing.id);
+      return hydrate(existing);
+    }
   }
 
-  if (b.contributor_id) {
+  if (c.contributorId) {
     const existing = await sb("GET",
-      `agent_accounts?contributor_id=eq.${b.contributor_id}` +
+      `agent_accounts?contributor_id=eq.${c.contributorId}` +
       `&select=id,public_id,contributor_id,display_name,operator,enrollment,status&limit=1`);
     let agent = existing?.[0] as AgentAccount | undefined;
     if (!agent) {
-      const c = await sb("GET", `contributors?id=eq.${b.contributor_id}&select=handle`);
+      const rows = await sb("GET", `contributors?id=eq.${c.contributorId}&select=handle`);
       agent = (await sb("POST", "agent_accounts", {
         public_id: publicId(),
-        contributor_id: b.contributor_id,
-        display_name: c?.[0]?.handle ?? null,
-        operator: null,
+        contributor_id: c.contributorId,
+        display_name: c.displayName ?? rows?.[0]?.handle ?? null,
+        operator: c.operator ?? null,
         enrollment: "legacy-import",
         status: "active",
       }))?.[0];
     }
     if (!agent) throw new Error("could not upgrade contributor to agent identity");
-    await sb("PATCH", `agent_connections?id=eq.${b.connection_id}`, {
+    await sb("PATCH", `agent_connections?id=eq.${c.connectionId}`, {
       agent_account_id: agent.id,
+      contributor_id: agent.contributor_id,
     });
-    if (b.human_principal_id) await linkHumanToAgent(b.human_principal_id, agent.id);
+    if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id);
     return hydrate(agent);
   }
 
   const agent = await createAgentAccount({
-    enrollment: b.human_principal_id ? "human-assisted" : "self",
+    displayName: c.displayName ?? null,
+    operator: c.operator ?? null,
+    enrollment: c.humanPrincipalId ? "human-assisted" : "self",
   });
-  await sb("PATCH", `agent_connections?id=eq.${b.connection_id}`, {
+  await sb("PATCH", `agent_connections?id=eq.${c.connectionId}`, {
     agent_account_id: agent.id,
     contributor_id: agent.contributor_id,
   });
-  if (b.human_principal_id) await linkHumanToAgent(b.human_principal_id, agent.id);
+  if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id);
   return agent;
+}
+
+/** Resolve the independent agent behind a bearer connection. */
+export async function ensureAgentForBearer(b: Bearer): Promise<AgentIdentity> {
+  return ensureAgentForConnection({
+    connectionId: b.connection_id,
+    agentAccountId: b.agent_account_id,
+    contributorId: b.contributor_id,
+    humanPrincipalId: b.human_principal_id,
+  });
 }
 
 export async function getAgentAccount(id: number): Promise<AgentIdentity | null> {
