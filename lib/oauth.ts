@@ -83,6 +83,7 @@ export async function issueTokens(
 
 export type Bearer = {
   connection_id: number;
+  client_id: string;
   agent_account_id: number | null;
   agent_id: string | null;
   contributor_id: number | null;
@@ -109,7 +110,7 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
   const conns = await sb(
     "GET",
     `agent_connections?id=eq.${tok.connection_id}&select=` +
-      `id,revoked_at,human_principal_id,agent_account_id,contributor_id,contributors(handle)`,
+      `id,client_id,revoked_at,human_principal_id,agent_account_id,contributor_id,contributors(handle)`,
   );
   const conn = conns?.[0];
   if (!conn || conn.revoked_at) return null;
@@ -129,6 +130,7 @@ export async function verifyBearer(req: Request): Promise<Bearer | null> {
 
   return {
     connection_id: conn.id,
+    client_id: conn.client_id,
     agent_account_id: conn.agent_account_id ?? null,
     agent_id: agentId,
     contributor_id: conn.contributor_id ?? null,
