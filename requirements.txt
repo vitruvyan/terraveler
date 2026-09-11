@@ -40,7 +40,7 @@
 # scripts/fetch_motus_wheel.sh, because a build context must not hold SSH
 # credentials. Same commit, two delivery paths, one version — and the day
 # 0.11.0 reaches PyPI both collapse into `vitruvyan-motus==0.11.0`.
-vitruvyan-motus @ git+ssh://git@github-vitruvyan/vitruvyan/motus@4243cd017f00aecae145fca8b03e6c38a977cda8
+vitruvyan-motus @ git+ssh://git@github-vitruvyan/vitruvyan/motus@b33385cbbf7092c9601f9c892051cd62b5aa4f17
 
 # jsonschema is Motus's own dependency (its shipped contract validator needs
 # it) and pip installs it transitively. It is not repeated here: a version
