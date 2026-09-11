@@ -34,6 +34,6 @@ test("operator and agent documentation states Supabase is auth-only", () => {
   assert.match(env, /DATA PLANE: PostgreSQL on the Terraveler VPS/);
   assert.match(env, /IDENTITY PLANE: Supabase Auth only/);
   assert.match(agents, /Supabase Auth only/);
-  assert.match(agents, /Supabase project's database is\n  \*\*not\*\* Terraveler's canonical application database/);
+  assert.match(agents, /Supabase project's database is\r?\n  \*\*not\*\* Terraveler's canonical application database/);
   assert.match(agents, /historical directory name `supabase\/\*\.sql`/);
 });

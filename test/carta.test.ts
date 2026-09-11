@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 /**
  * The Magna Carta's version number lives in three places that must agree, and
@@ -49,12 +50,12 @@ test("no TypeScript file declares a Carta version of its own", async () => {
    * it; nothing in this repository would have.
    */
   const { execFileSync } = await import("node:child_process");
-  const root = new URL("..", import.meta.url).pathname;
+  const root = fileURLToPath(new URL("..", import.meta.url));
   const out = execFileSync(
-    "grep",
-    ["-rn", "--include=*.ts", "--include=*.tsx", "CARTA_VERSION *= *\"", "app", "lib", "components"],
+    "rg",
+    ["-n", "--glob", "*.ts", "--glob", "*.tsx", "CARTA_VERSION *= *\"", "app", "lib", "components"],
     { cwd: root, encoding: "utf8" },
-  ).trim();
+  ).trim().replaceAll("\\", "/");
   const offenders = out.split("\n").filter((l) => !l.startsWith("lib/carta.ts:"));
   assert.deepEqual(
     offenders,
@@ -93,12 +94,12 @@ test("no Python file declares a Carta version of its own either", async () => {
    * literal to the version declared by MAGNA_CARTA.md.
    */
   const { execFileSync } = await import("node:child_process");
-  const root = new URL("..", import.meta.url).pathname;
+  const root = fileURLToPath(new URL("..", import.meta.url));
   const out = execFileSync(
-    "grep",
-    ["-rn", "--include=*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
+    "rg",
+    ["-n", "--glob", "*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
     { cwd: root, encoding: "utf8" },
-  ).trim();
+  ).trim().replaceAll("\\", "/");
   const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract_core.py:")) : [];
   assert.deepEqual(
     offenders,
