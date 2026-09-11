@@ -39,15 +39,28 @@ jobs:
           pid=$!
           trap 'kill "$pid" 2>/dev/null || true' EXIT
 
+          # Readiness is intentionally outside errexit. A refused connection
+          # during Next.js startup is expected and must not abort the smoke on
+          # the first probe. If the launcher itself dies, fail immediately and
+          # print its log instead of waiting for the full timeout.
           ready=0
+          set +e
           for _ in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:3000/connect >/dev/null; then
+            curl -fsS http://127.0.0.1:3000/connect >/dev/null 2>&1
+            if [ $? -eq 0 ]; then
               ready=1
               break
             fi
+            if ! kill -0 "$pid" 2>/dev/null; then
+              echo 'Next.js launcher exited before becoming ready'
+              cat /tmp/terraveler-next.log
+              exit 1
+            fi
             sleep 1
           done
+          set -e
           if [ "$ready" -ne 1 ]; then
+            echo 'Next.js did not become ready within 30 seconds'
             cat /tmp/terraveler-next.log
             exit 1
           fi
