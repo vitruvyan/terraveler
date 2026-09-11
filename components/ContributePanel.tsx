@@ -1,38 +1,89 @@
 "use client";
 
-import Icon from "@/components/Icon";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DraggableWindow from "@/components/DraggableWindow";
 import type { MediaItem, Waypoint } from "@/lib/types";
+import {
+  waypointTypeLabel,
+  type ChartroomWaypoint,
+  type WaypointType,
+} from "@/lib/chartroom";
 
 export type ContributeContentType = "log" | "image";
 
 type SuggestType = "source" | "image" | "coordinate" | "date";
-
-interface Gap {
+type ContextGap = {
   key: "diary" | "date" | "confidence" | "media";
   label: string;
-  type: SuggestType;
-}
+  type: WaypointType;
+  suggestType: SuggestType;
+  title: (place: string) => string;
+};
 
-/** Compute the concrete gaps for THIS waypoint, straight from its data. */
-function computeGaps(wp: Waypoint): Gap[] {
-  const gaps: Gap[] = [];
+type Voyager = {
+  accountId: number;
+  agentId: string;
+  name: string;
+  handle: string;
+  rank: string;
+};
+
+type Assistant = { name: string; url?: (p: string) => string; open: string; carries: boolean };
+
+const ASSISTANTS: Assistant[] = [
+  { name: "Claude", carries: true, open: "https://claude.ai/new",
+    url: (p) => `https://claude.ai/new?q=${encodeURIComponent(p)}` },
+  { name: "ChatGPT", carries: true, open: "https://chatgpt.com/",
+    url: (p) => `https://chatgpt.com/?q=${encodeURIComponent(p)}` },
+  { name: "Gemini", carries: false, open: "https://gemini.google.com/app" },
+];
+
+const RAISE_TYPES: Array<{ value: WaypointType; label: string }> = [
+  { value: "source", label: "Source" },
+  { value: "image", label: "Image" },
+  { value: "map", label: "Map / location" },
+  { value: "claim", label: "Claim / fact" },
+  { value: "translation", label: "Translation" },
+  { value: "narrative", label: "Narrative" },
+];
+
+function computeGaps(wp: Waypoint): ContextGap[] {
+  const gaps: ContextGap[] = [];
   if (!wp.diary_excerpt) {
-    gaps.push({ key: "diary", label: "no verified journal excerpt", type: "source" });
+    gaps.push({
+      key: "diary",
+      label: "No verified journal excerpt",
+      type: "source",
+      suggestType: "source",
+      title: (place) => `Find a verified primary source for ${place}`,
+    });
   }
   if (!wp.arrival_date) {
-    gaps.push({ key: "date", label: "no confirmed arrival date", type: "date" });
+    gaps.push({
+      key: "date",
+      label: "No confirmed arrival date",
+      type: "claim",
+      suggestType: "date",
+      title: (place) => `Verify the arrival date at ${place}`,
+    });
   }
   if (wp.confidence !== "certain") {
-    gaps.push({ key: "confidence", label: `coordinate is ${wp.confidence}`, type: "coordinate" });
+    gaps.push({
+      key: "confidence",
+      label: `Coordinate is ${wp.confidence}`,
+      type: "map",
+      suggestType: "coordinate",
+      title: (place) => `Verify the historical location of ${place}`,
+    });
   }
   const mediaCount = wp.media?.length ?? 0;
   if (mediaCount < 2) {
     gaps.push({
       key: "media",
-      label: mediaCount === 0 ? "no images" : `only ${mediaCount} image${mediaCount === 1 ? "" : "s"}`,
+      label: mediaCount === 0 ? "No verified images" : `Only ${mediaCount} verified image`,
       type: "image",
+      suggestType: "image",
+      title: (place) => `Find verified historical imagery for ${place}`,
     });
   }
   return gaps;
@@ -43,68 +94,19 @@ function truncate(s: string, n: number): string {
   return t.length > n ? t.slice(0, n - 1).trimEnd() + "…" : t;
 }
 
-/** Which gap (and which suggest_content type) this button's context should lead with. */
-function primaryGap(contentType: ContributeContentType, gaps: Gap[]): Gap {
-  if (contentType === "image") {
-    return (
-      gaps.find((g) => g.key === "media") ?? {
-        key: "media",
-        label: "more or better images for this stop",
-        type: "image",
-      }
-    );
-  }
-  return (
-    gaps.find((g) => g.key === "diary") ??
-    gaps.find((g) => g.key === "confidence") ??
-    gaps.find((g) => g.key === "date") ?? {
-      key: "diary",
-      label: "a stronger source or fuller context for this stop",
-      type: "source",
-    }
-  );
-}
-
 function buildPrompt(opts: {
   voyageTitle: string;
-  voyageSlug: string;
   seq: number;
   place: string;
-  gapSentence: string;
+  need: string;
   type: SuggestType;
 }): string {
-  return `Help me contribute to the "${opts.voyageTitle}" voyage, stop ${opts.seq} — ${opts.place}.
-What's needed: ${opts.gapSentence}.
-Find ONE public-domain or CC source that supplies this — from Gutenberg, Wikisource,
-Wikipedia, Wikimedia Commons, Wikidata, archive.org, Gallica, or loc.gov only.
-Quote verbatim, cite the exact source URL, never fabricate. If the gap is a
-coordinate, propose lat/lng with the gazetteer source.
-Then give me a short suggestion I can paste back, in this form:
-  <what to add, 1-2 sentences> — Source: <the source URL>`;
+  return `Help me research a Terraveler contribution for "${opts.voyageTitle}", stop ${opts.seq} — ${opts.place}.
+What needs work: ${opts.need}.
+Use a public-domain or openly licensed source that Terraveler can verify. Start with Project Gutenberg, Wikisource, Wikimedia Commons, or a verifiable institutional/Archive.org edition.
+Quote verbatim, cite the exact record/source URL, never fabricate. If this is a coordinate question, include lat/lng and the gazetteer or historical-map source.
+Return a concise finding plus provenance. I will check it before submitting it under my own human contributor identity.`;
 }
-
-/**
- * The contextual contribution panel: scoped to one waypoint (and optionally
- * one image). Centerpiece is "Hand to your AI" — it builds a ready-made task
- * prompt (no secrets — the MCP invite code lives in the user's own connector
- * config) and opens Claude / ChatGPT / Gemini with it pre-filled.
- */
-/* Named assistants are shortcuts, not the list of what works. Anything that
-   reads a pasted prompt works — Copilot, Perplexity, a local model, or a
-   Gemini window you already have open — which is why copying is the primary
-   action and this is the convenience layer.
-
-   `url` means the prompt travels in the link. Without it the prompt has to be
-   pasted, and the button says so rather than finding out for you. */
-type Assistant = { name: string; url?: (p: string) => string; open: string; carries: boolean };
-
-const ASSISTANTS: Assistant[] = [
-  { name: "Claude", carries: true, open: "https://claude.ai/new",
-    url: (p) => `https://claude.ai/new?q=${encodeURIComponent(p)}` },
-  { name: "ChatGPT", carries: true, open: "https://chatgpt.com/",
-    url: (p) => `https://chatgpt.com/?q=${encodeURIComponent(p)}` },
-  { name: "Gemini", carries: false, open: "https://gemini.google.com/app" },
-];
 
 export default function ContributePanel({
   voyageSlug,
@@ -118,16 +120,23 @@ export default function ContributePanel({
   voyageTitle: string;
   waypoint: Waypoint;
   contentType: ContributeContentType;
-  /** When scoped to one specific image (Plates lens, per-thumbnail). */
   media?: MediaItem;
   onClose: () => void;
 }) {
+  const [contextWaypoints, setContextWaypoints] = useState<ChartroomWaypoint[]>([]);
+  const [voyagers, setVoyagers] = useState<Voyager[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
+  const [contextLoading, setContextLoading] = useState(true);
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [question, setQuestion] = useState("");
+  const [questionType, setQuestionType] = useState<WaypointType>("claim");
+
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
   const [idea, setIdea] = useState("");
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  // The reference the desk will use. The response carried it and this threw it
-  // away, leaving a contributor with nothing to ask about later.
   const [ref, setRef] = useState<number | null>(null);
   const [sendErr, setSendErr] = useState<string | null>(null);
 
@@ -138,19 +147,17 @@ export default function ContributePanel({
       ? `${waypoint.place_historical} (${waypoint.place_modern})`
       : waypoint.place_historical || waypoint.place_modern || "this stop";
 
-  const gaps = computeGaps(waypoint);
-  const chosen = primaryGap(contentType, gaps);
-  const gapSentence = gaps.length
-    ? gaps.map((g) => g.label).join("; ")
-    : "this stop already has good coverage — an additional angle, source, translation, or connection is still welcome";
-
+  const gaps = useMemo(() => computeGaps(waypoint), [waypoint]);
+  const primary = contentType === "image"
+    ? gaps.find((g) => g.key === "media") ?? gaps[0]
+    : gaps.find((g) => g.key === "diary") ?? gaps.find((g) => g.key === "confidence") ?? gaps[0];
+  const fallbackNeed = primary?.label ?? "A stronger source, translation or additional context";
   const prompt = buildPrompt({
     voyageTitle,
-    voyageSlug,
     seq: waypoint.seq,
     place,
-    gapSentence,
-    type: chosen.type,
+    need: fallbackNeed,
+    type: primary?.suggestType ?? "source",
   });
 
   const snippet =
@@ -158,15 +165,105 @@ export default function ContributePanel({
       ? media
         ? media.caption
         : waypoint.media && waypoint.media.length
-        ? `${waypoint.media.length} image${waypoint.media.length === 1 ? "" : "s"} currently: ${waypoint.media
-            .map((m) => m.caption)
-            .join(", ")}`
-        : "No images recorded yet."
+          ? `${waypoint.media.length} image${waypoint.media.length === 1 ? "" : "s"} currently: ${waypoint.media
+              .map((m) => m.caption)
+              .join(", ")}`
+          : "No images recorded yet."
       : waypoint.diary_excerpt
-      ? `“${truncate(waypoint.diary_excerpt, 140)}”`
-      : waypoint.event
-      ? truncate(waypoint.event, 140)
-      : "No journal text recorded yet.";
+        ? `“${truncate(waypoint.diary_excerpt, 140)}”`
+        : waypoint.event
+          ? truncate(waypoint.event, 140)
+          : "No journal text recorded yet.";
+
+  async function loadContext() {
+    setContextLoading(true);
+    setContextError(null);
+    try {
+      const r = await fetch(
+        `/api/chartroom/waypoints?voyage=${encodeURIComponent(voyageSlug)}` +
+          `&waypoint=${encodeURIComponent(String(waypoint.seq))}`,
+        { cache: "no-store" },
+      );
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error || "The Chartroom could not load this stop.");
+      const nextWaypoints = Array.isArray(j?.waypoints) ? j.waypoints : [];
+      const nextVoyagers = Array.isArray(j?.agents) ? j.agents : [];
+      setContextWaypoints(nextWaypoints);
+      setVoyagers(nextVoyagers);
+      setSelectedAgentId((current) => current ?? nextVoyagers[0]?.accountId ?? null);
+    } catch (e: any) {
+      setContextError(String(e?.message || e));
+    } finally {
+      setContextLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadContext();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voyageSlug, waypoint.seq]);
+
+  const derivedGaps = gaps.filter(
+    (gap) => !contextWaypoints.some((item) => item.type === gap.type && item.status !== "accepted"),
+  );
+
+  function draftForGap(gap: ContextGap) {
+    return {
+      type: gap.type,
+      title: gap.title(place),
+      description: `${gap.label}. Research this as one bounded, evidence-backed task for ${voyageTitle}, stop ${waypoint.seq}.`,
+      context: { voyage: voyageSlug, waypoint_seq: waypoint.seq, place },
+    };
+  }
+
+  async function chartroomAction(
+    action: "take" | "offer" | "raise",
+    options: { waypointId?: number; draft?: any } = {},
+  ) {
+    const key = `${action}:${options.waypointId ?? options.draft?.type ?? "new"}`;
+    setBusy(key);
+    setNotice(null);
+    try {
+      const body: any = { action, ...(options.draft ?? {}) };
+      if (options.waypointId) body.waypoint_id = options.waypointId;
+      if (action === "offer") {
+        if (!selectedAgentId) throw new Error("Choose one of your associated Voyagers first.");
+        body.agent_account_id = selectedAgentId;
+      }
+      const r = await fetch("/api/chartroom/waypoints", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error || "The Chartroom could not record that action.");
+
+      if (action === "take") {
+        setNotice(`Waypoint #${j?.waypoint?.id ?? options.waypointId} is now in My Waypoints.`);
+      } else if (action === "offer") {
+        setNotice(
+          `Offered to ${j?.waypoint?.agent_name ?? "your Voyager"}. It remains the agent's independent work: when it claims the Waypoint through MCP, its standing receives the credit.`,
+        );
+      } else {
+        setNotice(`Waypoint #${j?.waypoint?.id ?? ""} added to the Chartroom.`);
+        setQuestion("");
+      }
+      await loadContext();
+    } catch (e: any) {
+      setNotice(String(e?.message || e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function requestedVoyagerName(item: ChartroomWaypoint): string | null {
+    const requested = item.requestedVoyager;
+    if (!requested) return null;
+    return requested.name
+      || voyagers.find((a) => a.accountId === requested.accountId)?.name
+      || requested.agentId
+      || "Voyager";
+  }
 
   function flash(msg: string, ms = 2500) {
     setCopyMsg(msg);
@@ -178,14 +275,10 @@ export default function ContributePanel({
       await navigator.clipboard.writeText(prompt);
       flash("Copied!");
     } catch {
-      flash("Couldn't copy — select the text below manually.");
+      flash("Couldn't copy — select the prompt manually.");
     }
   }
 
-  /* Three buttons that looked alike and behaved differently: two carried the
-     prompt in the URL, the third quietly copied it to the clipboard and opened
-     an empty app. Which one you got was invisible until you had already
-     clicked. The behaviour is declared here instead, and the label says it. */
   async function handTo(a: Assistant) {
     if (a.url) {
       window.open(a.url(prompt), "_blank", "noopener,noreferrer");
@@ -195,7 +288,7 @@ export default function ContributePanel({
       await navigator.clipboard.writeText(prompt);
       flash(`Prompt copied — paste it into ${a.name}.`, 4000);
     } catch {
-      flash(`Couldn't copy — use “Copy the prompt” above, then paste into ${a.name}.`, 5000);
+      flash(`Couldn't copy — copy the prompt manually, then paste it into ${a.name}.`, 5000);
     }
     window.open(a.open, "_blank", "noopener,noreferrer");
   }
@@ -211,7 +304,7 @@ export default function ContributePanel({
         body: JSON.stringify({
           voyage: voyageSlug,
           waypoint: waypoint.seq,
-          type: chosen.type,
+          type: primary?.suggestType ?? "source",
           idea,
         }),
       });
@@ -227,164 +320,226 @@ export default function ContributePanel({
   }
 
   return (
-    /* Beside the ship's log, not under it. Both were anchored to the same right
-       edge, so Contribute stacked below the window it belongs to and the two
-       could not be read together — which is the whole point of opening it: you
-       are looking at a stop and proposing something for that stop. The log is
-       360 wide at right:16, so this clears it by twelve. */
     <DraggableWindow
-      title="Contribute"
+      title="Contribute · Chartroom"
       onClose={onClose}
-      width={340}
-      /* Beside the log while there is room for both, and back to the right
-         edge once there is not — below about 730px the pair no longer fits and
-         this would have walked off the left of the screen. */
-      initial={{ right: "min(388px, calc(100vw - 356px))", top: 68 }}
+      width={380}
+      initial={{ right: "min(388px, calc(100vw - 396px))", top: 68 }}
     >
       <div>
         <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
-          {voyageTitle} · stop {waypoint.seq} · {contentType === "image" ? "image" : "ship's log"}
+          {voyageTitle} · stop {waypoint.seq}
         </span>
         <h2 style={{ margin: "4px 0 2px", fontSize: "1.15rem" }}>{place}</h2>
-        <div
-          style={{
-            fontSize: 12.5,
-            color: "var(--ink-soft)",
-            fontStyle: contentType === "log" ? "italic" : "normal",
-            lineHeight: 1.45,
-          }}
-        >
+        <div style={{ fontSize: 12.5, color: "var(--ink-soft)", lineHeight: 1.45 }}>
           {snippet}
         </div>
       </div>
 
-      <div style={{ marginTop: 10 }}>
-        <div
-          style={{
-            fontSize: 11,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--brass)",
-          }}
-        >
-          What this stop needs
-        </div>
-        {gaps.length ? (
-          <ul className="contrib-gaps">
-            {gaps.map((g) => (
-              <li key={g.key}>{g.label}</li>
-            ))}
-          </ul>
-        ) : (
-          <div className="contrib-gaps-ok">
-            Well documented already — an extra angle, source, or translation is still welcome.
-          </div>
+      <section style={{ marginTop: 14 }}>
+        <div className="contrib-step">Open Waypoints for this stop</div>
+        <p className="contrib-hint" style={{ marginTop: 4 }}>
+          These are the same work items visible in The Chartroom and, for agents, through MCP.
+        </p>
+
+        {contextLoading && <p className="ed-muted">Reading the Chartroom…</p>}
+        {contextError && (
+          <p className="ed-muted">
+            {contextError} You can still research and submit a human contribution below.
+          </p>
         )}
-      </div>
 
-      <div style={{ marginTop: 12 }}>
-        {/* If the reader's assistant is already connected, none of what follows
-            applies: it can put this on the desk itself. That was a parenthetical
-            at the very bottom, labelled "power users" — the best path on the
-            page, in brackets, after everything. */}
-        <div className="contrib-connected">
-          <Icon name="key" size={15} />
-          <span>
-            <strong>Connected your assistant?</strong> Ask it directly — it can put this
-            on the desk itself, sources and all. <a href="/connect">Connect one →</a>
-          </span>
-        </div>
+        {!contextLoading && !contextError && contextWaypoints.map((item) => {
+          const requested = requestedVoyagerName(item);
+          return (
+            <article key={item.id} className="ed-roadmap-card chartroom-waypoint" style={{ marginTop: 8 }}>
+              <div className="ed-card-head">
+                <strong>{item.title}</strong>
+                <span className="conf-badge">{waypointTypeLabel(item.type)}</span>
+              </div>
+              {item.description && <p>{item.description}</p>}
+              {item.status === "taken" ? (
+                <p className="ed-muted">Already being worked{item.takenBy ? ` by ${item.takenBy}` : ""}.</p>
+              ) : requested ? (
+                <p className="ed-muted">Offered to {requested}. It stays that Voyager's independent work.</p>
+              ) : (
+                <div className="chartroom-actions">
+                  <button
+                    type="button"
+                    className="welcome-btn primary"
+                    disabled={busy !== null}
+                    onClick={() => chartroomAction("take", { waypointId: item.id })}
+                  >
+                    Work on this
+                  </button>
+                  {voyagers.length > 0 && (
+                    <button
+                      type="button"
+                      className="welcome-btn chartroom-follow"
+                      disabled={busy !== null || !selectedAgentId}
+                      onClick={() => chartroomAction("offer", { waypointId: item.id })}
+                    >
+                      Ask a Voyager
+                    </button>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
 
-        {/* The order is the inversion. Copying works with every assistant that
-            exists; the named three are a convenience for the ones that take a
-            link. It used to be the other way round, which read as "these are
-            your options" — and one of the three did not even carry the prompt. */}
-        <div className="contrib-step">Hand it to your AI</div>
+        {!contextLoading && !contextError && derivedGaps.map((gap) => {
+          const draft = draftForGap(gap);
+          return (
+            <article key={gap.key} className="ed-roadmap-card chartroom-waypoint" style={{ marginTop: 8 }}>
+              <div className="ed-card-head">
+                <strong>{draft.title}</strong>
+                <span className="conf-badge">{waypointTypeLabel(gap.type)}</span>
+              </div>
+              <p>{gap.label}. This becomes a real Waypoint when someone takes or offers it.</p>
+              <div className="chartroom-actions">
+                <button
+                  type="button"
+                  className="welcome-btn primary"
+                  disabled={busy !== null}
+                  onClick={() => chartroomAction("take", { draft })}
+                >
+                  Work on this
+                </button>
+                {voyagers.length > 0 && (
+                  <button
+                    type="button"
+                    className="welcome-btn chartroom-follow"
+                    disabled={busy !== null || !selectedAgentId}
+                    onClick={() => chartroomAction("offer", { draft })}
+                  >
+                    Ask a Voyager
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
 
+        {voyagers.length > 0 ? (
+          <label style={{ display: "block", marginTop: 10, fontSize: 12.5 }}>
+            Voyager
+            <select
+              value={selectedAgentId ?? ""}
+              onChange={(e) => setSelectedAgentId(Number(e.target.value) || null)}
+              style={{ width: "100%", marginTop: 4, padding: 7 }}
+            >
+              {voyagers.map((agent) => (
+                <option key={agent.accountId} value={agent.accountId}>
+                  {agent.name} · {agent.rank}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : !contextLoading && !contextError ? (
+          <p className="contrib-hint" style={{ marginTop: 10 }}>
+            No Voyager is associated with this account. <a href="/account/agents">Associate one</a>,
+            or work on the Waypoint yourself.
+          </p>
+        ) : null}
+
+        {notice && <p className="chartroom-message" role="status">{notice}</p>}
+        <p style={{ marginTop: 10, fontSize: 12.5 }}>
+          <a href={`/contribute?voyage=${encodeURIComponent(voyageSlug)}&waypoint=${waypoint.seq}`}>
+            View this work in The Chartroom →
+          </a>
+        </p>
+      </section>
+
+      <section style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(120,90,60,0.18)" }}>
+        <div className="contrib-step">Raise another question</div>
+        <p className="contrib-hint" style={{ marginTop: 4 }}>
+          Humans can originate knowledge work too. The question becomes an open Waypoint for any eligible contributor.
+        </p>
+        <select
+          value={questionType}
+          onChange={(e) => setQuestionType(e.target.value as WaypointType)}
+          style={{ width: "100%", marginTop: 6, padding: 7 }}
+        >
+          {RAISE_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        <textarea
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          rows={2}
+          placeholder="What is missing, uncertain or worth checking here?"
+          style={{ width: "100%", marginTop: 6, boxSizing: "border-box", resize: "vertical", padding: 8 }}
+        />
+        <button
+          type="button"
+          className="welcome-btn chartroom-follow"
+          disabled={busy !== null || question.trim().length < 4}
+          onClick={() => chartroomAction("raise", {
+            draft: {
+              type: questionType,
+              title: truncate(question, 160),
+              description: question.trim(),
+              context: { voyage: voyageSlug, waypoint_seq: waypoint.seq, place },
+            },
+          })}
+        >
+          Add Waypoint
+        </button>
+      </section>
+
+      <details style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(120,90,60,0.18)" }}>
+        <summary style={{ cursor: "pointer", fontSize: 12.5, fontWeight: 600 }}>
+          Use an assistant, but submit the work as mine
+        </summary>
+        <p className="contrib-hint">
+          This is different from Ask a Voyager. Here an assistant only helps with research;
+          you check the result and the final submission is attributed to your human contributor identity.
+        </p>
         <div className="contrib-copy-row">
           <button type="button" className="contrib-copy-btn is-primary" onClick={copyPrompt}>
-            Copy the prompt
+            Copy research prompt
           </button>
           {copyMsg && <span className="contrib-toast">{copyMsg}</span>}
         </div>
-        <p className="contrib-hint">
-          Paste it into any assistant — including one already open. It asks for a
-          public-domain source; bring its answer back below.
-        </p>
-
-        <div className="contrib-or">or open it in</div>
-        <div className="contrib-ai-row">
+        <div className="contrib-ai-row" style={{ marginTop: 7 }}>
           {ASSISTANTS.map((a) => (
-            <button
-              key={a.name}
-              type="button"
-              className="contrib-ai-btn"
-              onClick={() => handTo(a)}
-              title={a.carries
-                ? `Opens ${a.name} with the prompt already in it`
-                : `${a.name} cannot take a prompt in a link — it will be copied for you to paste`}
-            >
-              {a.name}
-              {!a.carries && <span className="contrib-ai-note">paste</span>}
+            <button key={a.name} type="button" className="contrib-ai-btn" onClick={() => handTo(a)}>
+              {a.name}{!a.carries && <span className="contrib-ai-note">paste</span>}
             </button>
           ))}
         </div>
-      </div>
+      </details>
 
-      {/* Seamless submit — no MCP needed */}
-      <div style={{ marginTop: 12 }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brass)" }}>
-          Then paste it back
-        </div>
+      <section style={{ marginTop: 14 }}>
+        <div className="contrib-step">Submit my finding</div>
         {sent ? (
           <div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 6, lineHeight: 1.45 }}>
-            Thank you — your suggestion is on the editor&rsquo;s desk. It&rsquo;s reviewed
-            before anything goes live.
-            {ref !== null && (
-              <>
-                {" "}Your reference is <strong>#{ref}</strong> — quote it if you write to
-                the desk about this.
-              </>
-            )}
+            Thank you — your suggestion is on the editor&rsquo;s desk and remains attributed to you.
+            {ref !== null && <> Your reference is <strong>#{ref}</strong>.</>}
           </div>
         ) : (
           <>
             <textarea
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Paste your AI's finding here (or write your own) — include a PD/CC source URL."
+              placeholder="Write your finding — or paste research you have checked — and include the source URL."
               rows={3}
-              style={{
-                width: "100%", marginTop: 6, boxSizing: "border-box", resize: "vertical",
-                fontSize: 12.5, lineHeight: 1.4, padding: 8, borderRadius: 6,
-                border: "1px solid rgba(120,90,60,0.28)", background: "rgba(255,255,255,0.55)",
-                color: "var(--ink)", fontFamily: "inherit",
-              }}
+              style={{ width: "100%", marginTop: 6, boxSizing: "border-box", resize: "vertical", padding: 8 }}
             />
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
               <button
                 type="button"
+                className="welcome-btn primary"
                 onClick={submit}
                 disabled={sending || !idea.trim()}
-                style={{
-                  padding: "6px 14px", borderRadius: 6, border: "none",
-                  cursor: sending || !idea.trim() ? "default" : "pointer",
-                  background: "var(--accent)", color: "#fff", fontSize: 13,
-                  opacity: sending || !idea.trim() ? 0.6 : 1,
-                }}
               >
-                {sending ? "Sending…" : "Submit suggestion"}
+                {sending ? "Sending…" : "Submit finding"}
               </button>
               {sendErr && <span style={{ fontSize: 11.5, color: "#b0715d" }}>{sendErr}</span>}
             </div>
           </>
         )}
-      </div>
-
-      <div className="contrib-note">
-        The machine drafts, a human authorises: your suggestion lands on the editor&rsquo;s
-        desk and is read before anything goes live.
-      </div>
+      </section>
     </DraggableWindow>
   );
 }

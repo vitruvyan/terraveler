@@ -2560,6 +2560,53 @@ button.vt-seg:focus-visible { outline: 2px solid var(--brass); outline-offset: 2
   font-size: var(--step-0);
   line-height: 1.55;
 }
+.chartroom-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.chartroom-actions .welcome-btn {
+  width: auto;
+  min-height: var(--tap-min);
+  padding: var(--space-2) var(--space-4);
+}
+.chartroom-actions .ed-muted { margin: 0; }
+.chartroom-waypoint {
+  background: var(--parchment-raised);
+  box-shadow: var(--elev-0);
+}
+.chartroom-message {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-left: var(--space-1) solid var(--brass);
+  background: var(--parchment-raised);
+}
+.account-workspace-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+.account-workspace-section {
+  scroll-margin-top: var(--space-9);
+  padding: var(--space-5);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  background: var(--parchment-raised);
+}
+.account-workspace-section h2 { margin-top: 0; }
+.account-workspace-section > p { color: var(--ink-soft); }
+.account-agents-secondary { border-style: dashed; }
+.account-work-list { display: grid; gap: var(--space-3); margin: var(--space-4) 0; }
+.account-work-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule-hair);
+}
+.account-work-item:first-child { padding-top: 0; border-top: 0; }
+.account-work-item p { margin: var(--space-1) 0 0; color: var(--ink-soft); }
 .ed-index-section {
   margin-bottom: 42px;
 }
@@ -4858,8 +4905,8 @@ main.prose {
 /* ============================================================================
    THE ACCOUNT MENU
    ----------------------------------------------------------------------------
-   Signed in, the panel is a menu rather than a receipt. Which menu depends on
-   who is holding the account: a reader's is a keyring, the editor's is a desk.
+   Signed in, the panel is a menu rather than a receipt. Every human account is
+   a contributor workspace; editors also have a desk.
    ========================================================================= */
 
 .acct-waiting { color: var(--ink-soft); margin: 0; }

@@ -9,8 +9,8 @@ export default function SiteFooter() {
         <div className="sf-col sf-brandcol">
           <div className="wordmark sf-wordmark">Terraveler</div>
           <div className="sf-tag">
-            An atlas of geo-history — authoritative, sourced, alive. Humans bring
-            the ideas; AI writes; everything is verified before it sails.
+            An atlas of geo-history — authoritative, sourced, alive. Humans and
+            agents work from evidence; human editors decide what sails.
           </div>
           <div className="sf-company">
             <strong>Terraveler</strong> is a{" "}

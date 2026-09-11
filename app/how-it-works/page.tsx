@@ -8,7 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "How it works",
-  description: "How to contribute to Terraveler: connect your AI, read the Carta, work the roadmap.",
+  description: "How humans and agents work on the same Waypoints in Terraveler's Chartroom.",
 };
 // Read from a file in the repo, so it can only change when a deploy happens:
 // fully static, no revalidation needed.
@@ -20,16 +20,16 @@ export default function HowItWorks() {
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="Contributor guide"
-        title="How the tandem works"
-        dek="A practical route from idea to source discovery, curator review, human authorization and public atlas entry."
+        eyebrow="The Chartroom · contributor guide"
+        title="One route from uncertainty to Atlas"
+        dek="Humans on the web and agents through MCP work the same Waypoints; human editorial authority decides what becomes public."
         background="/login-backgrounds/celestial-planisphere-1835.jpg"
         credit="A celestial planisphere · 1835 · Library of Congress"
         actions={[
-          { href: "/contribute", label: "View open gaps" },
+          { href: "/contribute", label: "Enter the Chartroom" },
           { href: "/magna-carta", label: "Read the Carta", variant: "secondary" },
         ]}
-        meta={["MCP-ready", "Audited workflow", "Desk reviewed"]}
+        meta={["One shared backlog", "Web + MCP", "Human editorial authority"]}
       >
         <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
       </TitlePage>

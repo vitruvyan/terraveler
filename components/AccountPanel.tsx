@@ -8,23 +8,22 @@ type Me = { signed_in: boolean; email?: string; is_editor?: boolean };
 
 type Item = { href: string; icon: IconName; label: string; note: string };
 
-/* Two menus, because there are two kinds of person holding an account and they
- * want opposite things. A reader's account is a keyring: its whole purpose is
- * authorising the assistants that write under their name. The editor's is a
- * desk. A single "signed in as…" line and a sign-out button told neither of
- * them what the account was for. */
+/* Every human account opens onto the contributor workspace. Editorial powers
+ * add a desk; they do not replace the editor's own first-class human identity.
+ * Agent associations stay secondary and never confer authority or standing. */
 
 const READER: Item[] = [
-  { href: "/account/agents", icon: "quill", label: "Your scribes", note: "The assistants writing under your name" },
-  { href: "/connect", icon: "key", label: "Connect a scribe", note: "One approval, and no key to handle" },
-  { href: "/crew", icon: "wheel", label: "The crew", note: "Every scribe's standing, in public" },
+  { href: "/account#my-waypoints", icon: "quill", label: "My Waypoints", note: "Knowledge work you have taken on" },
+  { href: "/account#recommended", icon: "lens", label: "Open Waypoints", note: "Recommended work in the Chartroom" },
+  { href: "/account#contributions", icon: "scroll", label: "My Contributions", note: "Submissions and their review state" },
+  { href: "/account#following", icon: "wheel", label: "Following", note: "Work you are watching" },
+  { href: "/account#my-agents", icon: "key", label: "My Agents", note: "Independent associated agents" },
 ];
 
 const EDITOR: Item[] = [
+  ...READER,
   { href: "/desk", icon: "scroll", label: "The editorial desk", note: "Submissions waiting on a verdict" },
-  { href: "/crew", icon: "wheel", label: "The crew", note: "Ranks, standing and keys" },
   { href: "/specimen", icon: "plates", label: "The design system", note: "Type, colour, mark and plates" },
-  { href: "/account/agents", icon: "quill", label: "Your scribes", note: "The assistants writing under your name" },
 ];
 
 /* The destination cannot survive the Google round trip in a query string — the
@@ -88,13 +87,13 @@ export default function AccountPanel({ open, onClose }: { open: boolean; onClose
               <span className="acct-who-text">
                 {/* An address is an identifier, so it keeps the machine's voice. */}
                 <span className="acct-who-mail">{me.email}</span>
-                <span className="acct-who-role">{me.is_editor ? "editor-in-chief" : "reader"}</span>
+              <span className="acct-who-role">{me.is_editor ? "editor-in-chief · contributor" : "contributor"}</span>
               </span>
             </div>
 
             <nav className="acct-menu">
               {items.map((i) => (
-                <a className="acct-menu-item" href={i.href} key={i.href}>
+                <a className="acct-menu-item" href={i.href} key={i.label}>
                   <Icon name={i.icon} size={17} />
                   <span className="acct-menu-label">
                     {i.label}
@@ -125,9 +124,9 @@ export default function AccountPanel({ open, onClose }: { open: boolean; onClose
               or sign in with an email address
             </a>
             <div className="acct-note">
-              <strong>Your account is a keyring.</strong> It authorises the AI assistants
-              that write under your name &mdash; the writing is theirs, and they earn
-              their own standing. <a href="/connect">Connect one</a>, or{" "}
+              <strong>Your account is a contributor workspace.</strong> Take on Waypoints,
+              submit research, follow work and build your own standing. Agents are optional,
+              independent contributors. <a href="/contribute">Enter the Chartroom</a>, or{" "}
               <a href="/how-it-works">read how it works</a> first.
             </div>
           </>

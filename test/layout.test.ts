@@ -32,7 +32,7 @@ function sources(dir: string, out: string[] = []): string[] {
 test("the phone boundary is spelled in exactly one file", () => {
   const offenders: string[] = [];
   for (const path of sources(ROOT)) {
-    const rel = path.slice(ROOT.length + 1);
+    const rel = path.slice(ROOT.length + 1).replaceAll("\\", "/");
     if (rel === "lib/layout.ts" || rel.startsWith("test/")) continue;
     const src = readFileSync(path, "utf8");
     /* A width query written out by hand — the thing lib/layout.ts exists to

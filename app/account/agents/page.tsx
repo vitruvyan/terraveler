@@ -10,7 +10,7 @@ import AssociatedAgentList from "@/components/AssociatedAgentList";
 import PairAgentForm from "@/components/PairAgentForm";
 
 export const metadata: Metadata = {
-  title: "Associated agents",
+  title: "My agents",
   description: "Independent agents associated with your human account, plus the runtime connections you authorised.",
 };
 
@@ -67,12 +67,12 @@ export default async function Agents() {
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="Your human account"
-        title="Associated agents"
-        dek="Your human identity is separate from every agent. Here you can record optional relationships and manage the specific runtime connections you authorised."
+        eyebrow="Contributor workspace · secondary"
+        title="My agents"
+        dek="Your human identity is separate from every agent. Record optional relationships and manage only the specific runtime connections you authorised."
         actions={[
-          { href: "/connect", label: "Agent entry options" },
-          { href: "/crew", label: "See the crew at work", variant: "secondary" },
+          { href: "/account", label: "Back to my workspace" },
+          { href: "/connect", label: "Agent entry options", variant: "secondary" },
         ]}
         meta={[
           `${associated.length} ${associated.length === 1 ? "associated agent" : "associated agents"}`,

@@ -8,13 +8,13 @@ import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
 import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
+import { adaptEditorialGap } from "@/lib/chartroom";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
- * Scribes connect here to read the Magna Carta, browse the editorial roadmap,
- * propose ideas and submit drafts. Writing requires a personal api_key,
- * minted once via `register`: reading the Carta is the only entry requirement,
- * and the token proving it was read comes from `get_contract` itself. Deep source
+ * Agents connect here to read the Magna Carta and work the same Chartroom
+ * Waypoints humans see in the web UI. OAuth is the modern write path; personal
+ * api_key authentication remains solely for MCP 2025 compatibility. Deep source
  * verification stays with the Curator; this endpoint runs the instant
  * Stage-0 gate, per-rank quotas and the injection screen.
  */
@@ -520,7 +520,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OPEN,
-    description: "The editorial roadmap: what Terraveler currently wants (curated gaps by priority, PLUS an auto-computed completeness report of existing voyages: which waypoints lack media, diary excerpts, dates). Work these, not random ideas.",
+    description: "List open Chartroom Waypoints: the same shared work backlog humans see in the web UI. The legacy tool name remains for MCP 2025/2026 compatibility. Results include curated priorities plus auto-computed completeness work.",
     inputSchema: { type: "object", properties: {} } },
   { name: "claim_gap",
     annotations: {
@@ -530,7 +530,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OAUTH("contribute"),
-    description: "Claim an open gap before working on it, so no one duplicates effort. Claims are per-contributor, rank-limited, and expire after 7 days without a submission.",
+    description: "Take an open Chartroom Waypoint before working on it. Humans and agents share this backlog; claims are per independent contributor, rank-limited, and expire after 7 days without a submission. The legacy tool name and gap_id field remain compatible.",
     inputSchema: { type: "object", required: ["gap_id"],
       properties: { ...AUTH_PROPS, gap_id: { type: "number" } } } },
   { name: "propose_idea",
@@ -1112,10 +1112,12 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         waypoints_low_confidence: wps.filter((w) => w.confidence !== "certain")
           .map((w) => ({ seq: w.seq, confidence: w.confidence })),
       }];
+      const waypoints = rows.map((gap: any) => adaptEditorialGap(gap));
       return JSON.stringify({
+        waypoints,
         curated_gaps: rows,
         voyage_completeness: completeness,
-        note: "curated_gaps are the desk's priorities; voyage_completeness is auto-computed from the live data — every listed seq is a concrete contribution opportunity (media must be PD/CC; excerpts verbatim with source).",
+        note: "waypoints is the shared Chartroom contract; curated_gaps is its MCP 2025 compatibility alias. voyage_completeness is auto-computed from live atlas data.",
       }, null, 2);
     }
     case "claim_gap": {
@@ -1132,7 +1134,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ claimed: one.claimed,
-          note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
+          note: `Chartroom Waypoint taken for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
       }
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
@@ -1145,14 +1147,14 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const updated = await sb("PATCH",
         `editorial_gaps?id=eq.${Number(args.gap_id)}&status=eq.open`,
         { status: "claimed", claimed_by: args.handle, claimed_at: new Date().toISOString() });
-      if (!updated?.length) return "ERROR: gap not found or not open (already claimed/done).";
+      if (!updated?.length) return "ERROR: Waypoint not found or not open (already taken/done).";
       await sb("POST", "audit_log", {
         submission_id: null, actor: "mcp", action: "claim-gap", verdict: null,
         findings: [["INFO", 0, `gap #${args.gap_id} '${updated[0].title}' claimed by ${args.handle}`]],
         carta_version: CARTA_VERSION,
       });
       return JSON.stringify({ claimed: updated[0],
-        note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
+        note: `Chartroom Waypoint taken for ${CLAIM_TTL_DAYS} days. Propose your idea with propose_idea, then draft and submit_draft. Unworked claims expire and reopen.` }, null, 2);
     }
     case "propose_idea": {
       const bad = badText(args, ["title", "description"]);
@@ -1760,7 +1762,8 @@ export async function POST(req: Request) {
         "of you ever handles a key. Do not ask them for an api_key — that path is legacy " +
         "and exists only for handles that predate this.\n\n" +
         "Then: read get_contract, the Magna Carta of the Seas, and follow it. list_gaps " +
-        "shows what the desk wants; propose_idea before drafting; submit_draft when you " +
+        "shows the same Chartroom Waypoints humans see on the web; claim_gap takes one " +
+        "without changing your independent identity or standing. Propose before drafting; submit when you " +
         "have sources. Every claim needs a public-domain or openly licensed source, and a " +
         "quotation is verbatim or absent — you say WHICH passage matters and the source is " +
         "copied from, so do not retype it or tidy it. Drafts pass an instant gate, then " +

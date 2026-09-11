@@ -18,11 +18,13 @@ export type Destination = { href: string; label: string };
    destination — but it has to LAND somewhere, and that somewhere is the atlas.
    Written out by hand it would break in silence the day the atlas moved. */
 export const ATLAS: Destination = { href: "/voyages", label: "The Atlas" };
-export const CONTRIBUTE: Destination = { href: "/contribute", label: "Contribute" };
+export const CHARTROOM: Destination = { href: "/contribute", label: "The Chartroom" };
+/** @deprecated Use CHARTROOM; the href remains stable for existing links. */
+export const CONTRIBUTE = CHARTROOM;
 export const CREW: Destination = { href: "/crew", label: "The crew" };
 
 /** What the site IS, and how to take part. */
-export const PRIMARY: Destination[] = [ATLAS, CONTRIBUTE, CREW];
+export const PRIMARY: Destination[] = [ATLAS, CHARTROOM, CREW];
 
 /** Read once, not every visit — behind a disclosure in the header. */
 export const PROJECT: Destination[] = [

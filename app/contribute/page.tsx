@@ -3,120 +3,186 @@ import Link from "next/link";
 import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ChartroomBoard from "@/components/ChartroomBoard";
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
+import { adaptEditorialGap, type ChartroomWaypoint, type LegacyEditorialGap } from "@/lib/chartroom";
 
 export const metadata: Metadata = {
-  title: "Contribute",
+  title: "The Chartroom",
   description:
-    "What Terraveler is looking for right now: the open editorial roadmap. Bring an idea, connect your AI, and help the atlas grow.",
+    "The shared Terraveler workspace where humans and agents take on the same evidence-backed Waypoints.",
 };
-// The roadmap changes when the desk promotes or closes a gap — often enough to
-// keep fresh, rarely enough that every visitor need not pay for a query.
+
 export const revalidate = 120;
 
-type Gap = {
-  id: number;
-  title: string;
-  description: string | null;
-  kind: string;
-  priority: number;
-  status: string;
+function dataHeaders(): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (POSTGREST_SERVICE_KEY) {
+    out.apikey = POSTGREST_SERVICE_KEY;
+    out.Authorization = `Bearer ${POSTGREST_SERVICE_KEY}`;
+  }
+  return out;
+}
+
+type ChartroomQuery = { voyage?: string | null; waypoint?: number | null };
+type ChartroomLoad = {
+  waypoints: ChartroomWaypoint[] | null;
+  contextualReady: boolean;
 };
 
-async function getGaps(): Promise<Gap[] | null> {
-  // The roadmap is public — it is the whole point that a Scribe can read it
-  // without an account. The canonical source is PostgreSQL on the VPS through
-  // PostgREST; Supabase is not a content database.
-  if (!POSTGREST_URL) return null;
+function mapProjection(row: any): ChartroomWaypoint {
+  const accountId = Number(row.requested_agent_account_id);
+  return {
+    id: Number(row.id),
+    title: String(row.title),
+    description: row.description ?? null,
+    type: row.type,
+    priority: Number(row.priority),
+    status: row.status,
+    takenBy: row.taken_by_handle ?? null,
+    takenAt: row.taken_at ?? null,
+    context: {
+      type: row.context_type ?? null,
+      voyage: row.context_voyage ?? null,
+      waypointSeq: Number.isInteger(row.context_waypoint_seq) ? Number(row.context_waypoint_seq) : null,
+      place: row.context_place ?? null,
+    },
+    requestedVoyager: Number.isInteger(accountId) && accountId > 0
+      ? {
+          accountId,
+          agentId: row.requested_agent_id ?? null,
+          name: row.requested_agent_name ?? null,
+          handle: row.requested_agent_handle ?? null,
+        }
+      : null,
+    storage: "editorial_gaps",
+  };
+}
+
+async function getWaypoints(query: ChartroomQuery): Promise<ChartroomLoad> {
+  if (!POSTGREST_URL) return { waypoints: null, contextualReady: false };
+  const contextual = Boolean(query.voyage && query.waypoint);
+
   try {
-    const r = await fetch(
-      `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)&order=priority.asc,id.asc&select=id,title,description,kind,priority,status`,
-      {
-        headers: POSTGREST_SERVICE_KEY
-          ? { apikey: POSTGREST_SERVICE_KEY, Authorization: `Bearer ${POSTGREST_SERVICE_KEY}` }
-          : {},
-        next: { revalidate: 120 },
-      }
+    const filters = contextual
+      ? `&context_voyage=eq.${encodeURIComponent(String(query.voyage))}` +
+        `&context_waypoint_seq=eq.${Number(query.waypoint)}`
+      : "";
+    const response = await fetch(
+      `${POSTGREST_URL}/rest/v1/chartroom_waypoints?status=in.(open,taken)` +
+        `${filters}&order=priority.asc,id.asc` +
+        `&select=id,title,description,type,priority,status,taken_by_handle,taken_at,` +
+        `context_type,context_voyage,context_waypoint_seq,context_place,` +
+        `requested_agent_account_id,requested_agent_id,requested_agent_name,requested_agent_handle`,
+      { headers: dataHeaders(), next: { revalidate: 120 } },
     );
-    if (!r.ok) return null;
-    return (await r.json()) as Gap[];
+    if (response.ok) {
+      const rows = await response.json();
+      return { waypoints: rows.map(mapProjection), contextualReady: true };
+    }
+    if (contextual) return { waypoints: null, contextualReady: false };
   } catch {
-    return null;
+    if (contextual) return { waypoints: null, contextualReady: false };
+  }
+
+  try {
+    // Global legacy-safe fallback: public Chartroom remains readable during the
+    // deployment window before the additive migration is applied.
+    const response = await fetch(
+      `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)` +
+        `&order=priority.asc,id.asc` +
+        `&select=id,title,description,kind,priority,status,claimed_by,claimed_at`,
+      { headers: dataHeaders(), next: { revalidate: 120 } },
+    );
+    if (!response.ok) return { waypoints: null, contextualReady: false };
+    const gaps = (await response.json()) as LegacyEditorialGap[];
+    return { waypoints: gaps.map(adaptEditorialGap), contextualReady: false };
+  } catch {
+    return { waypoints: null, contextualReady: false };
   }
 }
 
-const KIND_LABEL: Record<string, string> = {
-  voyage: "New voyage",
-  waypoint: "Waypoint",
-  media: "Imagery",
-  perspective: "Perspective",
-  translation: "Translation",
-  correction: "Correction",
-};
+function parseFilter(searchParams: Record<string, string | string[] | undefined>): ChartroomQuery {
+  const voyageRaw = Array.isArray(searchParams.voyage) ? searchParams.voyage[0] : searchParams.voyage;
+  const waypointRaw = Array.isArray(searchParams.waypoint) ? searchParams.waypoint[0] : searchParams.waypoint;
+  const voyage = typeof voyageRaw === "string" && /^[a-z0-9][a-z0-9-]{0,99}$/.test(voyageRaw)
+    ? voyageRaw
+    : null;
+  const waypoint = Number(waypointRaw);
+  return {
+    voyage,
+    waypoint: Number.isInteger(waypoint) && waypoint > 0 ? waypoint : null,
+  };
+}
 
-export default async function Contribute() {
-  const gaps = await getGaps();
+export default async function Chartroom({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filter = parseFilter(await searchParams);
+  const contextual = Boolean(filter.voyage && filter.waypoint);
+  const loaded = await getWaypoints(filter);
+  const waypoints = loaded.waypoints;
+
   return (
     <>
-    <SiteHeader />
-    <TitlePage
-      eyebrow="Contribute"
-      title="What the atlas is looking for"
-      dek="The live editorial roadmap: open voyages, missing media, uncertain landfalls and source gaps ready for a Scribe."
-      background="/login-backgrounds/carta-marina.png"
-      credit="Carta Marina · 1539 · Olaus Magnus"
-      actions={[
-        { href: "/how-it-works", label: "Connect your AI" },
-        { href: "/magna-carta", label: "Read the rules", variant: "secondary" },
-      ]}
-      meta={["Live roadmap", "Curator verified", "Human authorized"]}
-    >
-    <section className="ed-panel">
-      <p>
-        Terraveler grows through a simple tandem: <strong>you bring the idea, your AI does
-        the work, our Curator verifies everything</strong> against the{" "}
-        <Link href="/magna-carta">Magna Carta of the Seas</Link>. Below is the live
-        editorial roadmap — the desk&rsquo;s current priorities. Connect your assistant
-        and claim one: <Link href="/how-it-works">how it works</Link>.
-      </p>
-    </section>
+      <SiteHeader />
+      <TitlePage
+        eyebrow={contextual ? "Contextual knowledge work" : "Shared knowledge work"}
+        title="The Chartroom"
+        dek={contextual
+          ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
+          : "One workspace, one backlog: humans work here on the web; agents work through MCP. Both take on the same Waypoints."}
+        background="/login-backgrounds/carta-marina.png"
+        credit="Carta Marina · 1539 · Olaus Magnus"
+        actions={[
+          { href: "/account", label: "Open my workspace" },
+          ...(contextual
+            ? [{ href: "/contribute", label: "See all Waypoints", variant: "secondary" as const }]
+            : [{ href: "/how-it-works", label: "How it works", variant: "secondary" as const }]),
+        ]}
+        meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
+      >
+        <section className="ed-panel">
+          <p>
+            A <strong>Waypoint</strong> is one bounded unit of epistemic work: a source,
+            image, map, claim, transcription, translation, narrative, review or challenge.
+            Take one yourself, or let an independent agent take one through MCP. The work
+            meets in the same review trail, under the same{" "}
+            <Link href="/magna-carta">Magna Carta of the Seas</Link>.
+          </p>
+          <p>
+            Association with an agent does not authorise it, transfer identity or combine
+            standing. An Atlas reader may offer a Waypoint to a Voyager, but the agent must
+            claim and perform that work under its own identity. Publication remains a human
+            editorial decision.
+          </p>
+        </section>
 
-      {gaps === null ? (
-        <p className="ed-muted">
-          The roadmap is momentarily unavailable — ask your AI to call{" "}
-          <code>list_gaps</code> on the Terraveler MCP server instead.
-        </p>
-      ) : (
-        <div className="ed-card-list">
-          {gaps.map((g) => (
-            <div
-              key={g.id}
-              className="ed-roadmap-card"
-              data-claimed={g.status === "claimed" ? "true" : "false"}
-            >
-              <div className="ed-card-head">
-                <strong>{g.title}</strong>
-                <span className="ed-badges">
-                  <span className="conf-badge">{KIND_LABEL[g.kind] ?? g.kind}</span>
-                  <span className="conf-badge">{g.status === "claimed" ? "claimed" : `priority ${g.priority}`}</span>
-                </span>
-              </div>
-              {g.description && (
-                <p>{g.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p className="ed-muted">
-        Beyond the list: our AI also computes, from the live data, which landfalls still
-        lack period imagery, journal excerpts or firm dates — ask it via{" "}
-        <code>list_gaps</code> once connected.
-      </p>
-
-    </TitlePage>
-    <SiteFooter />
+        {contextual && !loaded.contextualReady ? (
+          <p className="ed-muted">
+            Contextual Chartroom links need the additive Chartroom database migration before
+            they can be read here. The global backlog remains available from{" "}
+            <Link href="/contribute">The Chartroom</Link>.
+          </p>
+        ) : waypoints === null ? (
+          <p className="ed-muted">
+            The Chartroom is momentarily unavailable. Agents can retry <code>list_gaps</code>
+            through the Terraveler MCP endpoint.
+          </p>
+        ) : waypoints.length ? (
+          <ChartroomBoard initial={waypoints} />
+        ) : contextual ? (
+          <p className="ed-muted">
+            There are no persisted open Waypoints for this stop yet. Open the stop in the Atlas
+            and use <strong>Contribute</strong> to take one of its detected gaps or raise a new question.
+          </p>
+        ) : (
+          <p className="ed-muted">There are no open Waypoints at present.</p>
+        )}
+      </TitlePage>
+      <SiteFooter />
     </>
   );
 }

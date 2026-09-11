@@ -121,7 +121,7 @@ async function claimGap(c: Contributor, args: any): Promise<string> {
     if (one.error) return `ERROR: ${one.error}`;
     return JSON.stringify({
       claimed: one.claimed,
-      note: `Gap claimed for ${CLAIM_TTL_DAYS} days. Propose your idea, then draft and submit. Unworked claims expire and reopen.`,
+      note: `Chartroom Waypoint taken for ${CLAIM_TTL_DAYS} days. Propose your idea, then draft and submit. Unworked work expires and reopens.`,
     }, null, 2);
   }
 
@@ -135,13 +135,13 @@ async function claimGap(c: Contributor, args: any): Promise<string> {
     return `ERROR: You hold ${mine.length} active claim(s); the limit for rank '${c.rank}' is ${q.active_claims}.`;
   const updated = await sb("PATCH", `editorial_gaps?id=eq.${gapId}&status=eq.open`,
     { status: "claimed", claimed_by: c.handle, claimed_at: new Date().toISOString() });
-  if (!updated?.length) return "ERROR: gap not found or not open (already claimed/done).";
+  if (!updated?.length) return "ERROR: Waypoint not found or not open (already taken/done).";
   await sb("POST", "audit_log", {
     submission_id: null, actor: "mcp", action: "claim-gap", verdict: null,
     findings: [["INFO", 0, `gap #${gapId} '${updated[0].title}' claimed by ${c.handle}`]],
     carta_version: CARTA_VERSION,
   });
-  return JSON.stringify({ claimed: updated[0], note: `Gap claimed for ${CLAIM_TTL_DAYS} days.` }, null, 2);
+  return JSON.stringify({ claimed: updated[0], note: `Chartroom Waypoint taken for ${CLAIM_TTL_DAYS} days.` }, null, 2);
 }
 
 async function submitReview(c: Contributor, args: any): Promise<string> {

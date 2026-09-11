@@ -6,6 +6,7 @@ import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
+import AccountWorkspace from "@/components/AccountWorkspace";
 
 /* Due proposte vere, come arrivano dall'MCP: una suggestione (prosa scritta
    dall'agente) e una bozza (waypoint, tavole, licenze). Il desk sta dietro una
@@ -120,6 +121,35 @@ const machine = localFont({
 export const metadata: Metadata = {
   title: "Type specimen",
   robots: { index: false, follow: false },
+};
+
+const CHARTROOM_FIXTURE = {
+  mine: [{
+    id: 104,
+    title: "Verify a portrait of Mungo Park",
+    description: "Establish subject, date, creator, holding institution and reuse rights.",
+    kind: "media",
+    priority: 1,
+    status: "claimed",
+    claimed_by: "davide",
+    claimed_at: "2026-09-10T10:00:00Z",
+  }],
+  recommended: [{
+    id: 103,
+    title: "Primary source for the Kamalia arrival date",
+    description: "Locate the exact passage and preserve the wording and edition provenance.",
+    kind: "waypoint",
+    priority: 1,
+    status: "open",
+  }],
+  contributions: [{
+    id: 82,
+    type: "content-suggestion",
+    target_voyage: "mungo-park-1795",
+    status: "human-review",
+  }],
+  followed: [],
+  associatedCount: 1,
 };
 
 /* ---------------------------------------------------------------------------
@@ -361,13 +391,13 @@ export default function SpecimenPage() {
               { label: "escalated", n: 2, alarm: true },
               { label: "awaiting desk", n: 0 },
               { label: "in peer review", n: 1 },
-              { label: "claimed gaps, unfinished", n: 1 },
+              { label: "taken Waypoints, unfinished", n: 1 },
             ]}
             ledger={[
               { label: "approved", n: 18 },
               { label: "rejected", n: 6 },
               { label: "reviews given", n: 3 },
-              { label: "open gaps", n: 4 },
+              { label: "open Waypoints", n: 4 },
               { label: "crew", n: 8, suffix: " active" },
               { label: "suspended", n: 1 },
             ]}
@@ -400,6 +430,15 @@ export default function SpecimenPage() {
             <em>record</em> come dato. <b>Tre:</b> le quattro correzioni identiche collassano in
             una con il conteggio a lato — la ripetizione era un problema di content design, non
             di CSS.
+          </div>
+
+          <h3 className="dk-section-title">Contributor workspace</h3>
+          <AccountWorkspace {...CHARTROOM_FIXTURE} />
+          <div className="spec-note">
+            <b>L&rsquo;account non è più un portachiavi.</b> Il lavoro umano viene prima:
+            Waypoint presi, priorità aperte, contributi e ciò che si segue. Gli agenti restano
+            visibili in fondo come relazione secondaria, senza fondere identità, autorizzazione
+            o standing. Questo è lo stesso componente della pagina protetta.
           </div>
         </section>
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { readCookie, getUserEmail, dataApi } from "@/lib/deskAuth";
+import { readCookie, getUser, dataApi } from "@/lib/deskAuth";
+import { ensureHumanContributor } from "@/lib/humanContributor";
 import { CARTA_VERSION } from "@/lib/carta";
 import { privilegedPostgrestConfigured } from "@/lib/backendConfig";
 
@@ -25,21 +26,14 @@ const INJECTION = [
   /editor[- ]in[- ]chief (has )?(approved|authorised|authorized)/i,
 ];
 
-async function contributor(handle: string): Promise<{ id: number; status: string }> {
-  const rows = await dataApi("GET", `contributors?handle=eq.${encodeURIComponent(handle)}&select=id,status`);
-  if (rows.length) return rows[0];
-  const made = await dataApi("POST", "contributors", { handle });
-  return { id: made[0].id, status: made[0].status ?? "active" };
-}
-
 export async function POST(req: Request) {
   try {
     if (!privilegedPostgrestConfigured()) {
       return NextResponse.json({ error: "Server not configured." }, { status: 500 });
     }
     const token = readCookie(req);
-    const email = token ? await getUserEmail(token) : null;
-    if (!email) {
+    const user = token ? await getUser(token) : null;
+    if (!user) {
       return NextResponse.json({ error: "Sign in to contribute." }, { status: 401 });
     }
     const { voyage, waypoint, type, idea } = await req.json();
@@ -56,7 +50,7 @@ export async function POST(req: Request) {
         { status: 400 });
     }
 
-    const c = await contributor(email);
+    const c = await ensureHumanContributor(user);
     if (c.status !== "active") {
       return NextResponse.json({ error: "This account is suspended." }, { status: 403 });
     }

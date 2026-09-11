@@ -836,7 +836,7 @@ export default function VoyageExperience({
             excludeSlug={voyage.slug}
           />
           <div className="voy-more">
-            Missing one? <a href="/contribute">See what the atlas is looking for</a>.
+            Missing one? <a href="/contribute">Find a Waypoint in the Chartroom</a>.
           </div>
         </DraggableWindow>
       )}
@@ -995,7 +995,7 @@ export default function VoyageExperience({
                             onClick={() => setContribute({ waypoint: wp, contentType: "image" })}
                             title={`Suggest an image or source for ${wp.place_historical || wp.place_modern}`}
                           >
-                            <Icon name="quill" size={15} /> Contribute
+                            <Icon name="quill" size={15} /> Open Waypoint
                           </button>
                         )}
                       </div>
@@ -1077,7 +1077,7 @@ export default function VoyageExperience({
                       onClick={() => setContribute({ waypoint: current, contentType: "log" })}
                       title="Suggest a source, correction, or detail for this stop"
                     >
-                      <Icon name="quill" size={15} /> Contribute
+                      <Icon name="quill" size={15} /> Open Waypoint
                     </button>
                   </div>
                 )}
