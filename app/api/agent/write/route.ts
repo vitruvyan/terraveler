@@ -359,19 +359,20 @@ export async function POST(req: Request) {
   const need = TOOL_SCOPE[name];
   if (!need) return response(`ERROR: '${name}' is not a governed write tool.`, 400);
 
-  if (!mutationsEnabled()) {
-    const reason = mutationGuardReason() ?? "external mutation guard unavailable";
-    await securityAudit({ source, action: name, outcome: "rejected", status: 503, reason });
-    return response("ERROR: external agent mutations are temporarily disabled; public reading remains available.",
-      503, { "Retry-After": "300" });
-  }
-
   const bearer = await verifyBearer(req);
   if (!bearer) {
     await securityAudit({ source, action: name, outcome: "rejected", status: 401, reason: "missing or expired bearer" });
     return response("ERROR: missing or expired OAuth bearer token.", 401, {
       "WWW-Authenticate": `Bearer realm="Terraveler", resource_metadata="https://www.terraveler.com/.well-known/oauth-protected-resource"`,
     });
+  }
+
+  if (!mutationsEnabled()) {
+    const reason = mutationGuardReason() ?? "external mutation guard unavailable";
+    await securityAudit({ source, action: name, outcome: "rejected", status: 503, reason,
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return response("ERROR: external agent mutations are temporarily disabled; public reading remains available.",
+      503, { "Retry-After": "300" });
   }
   if (!bearer.scopes.includes(need)) {
     await securityAudit({ source, action: name, outcome: "rejected", status: 403, reason: `missing scope ${need}`,

@@ -243,7 +243,10 @@ async function modernWrite(req: NextRequest, msg: any, name: string) {
     if (challenge) h.set("WWW-Authenticate", challenge);
     const retry = upstream.headers.get("retry-after");
     if (retry) h.set("Retry-After", retry);
-    return NextResponse.json(data, { status: upstream.status, headers: h });
+    const body = challenge
+      ? { ...data, _meta: { ...(data?._meta ?? {}), "mcp/www_authenticate": [challenge] } }
+      : data;
+    return NextResponse.json(body, { status: upstream.status, headers: h });
   }
   return NextResponse.json({
     jsonrpc: "2.0",
@@ -363,13 +366,14 @@ export async function middleware(req: NextRequest) {
     if (name === "create_human_link_token") return humanLinkToken(req, msg);
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
 
-    if (TOOL_SCOPE[name] && req.headers.get("authorization")) {
+    if (TOOL_SCOPE[name] && MODERN_NATIVE_WRITES.has(name)) {
+      if (!req.headers.get("authorization")) return modernWrite(req, msg, name);
       const boot = await capabilitySnapshot(req);
       if (!boot.ok) {
         const detail = await boot.text();
         return jsonRpcError(msg?.id, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
       }
-      if (MODERN_NATIVE_WRITES.has(name)) return modernWrite(req, msg, name);
+      return modernWrite(req, msg, name);
     }
     return proxyLegacy(req);
   }
