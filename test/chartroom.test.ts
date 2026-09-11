@@ -39,12 +39,18 @@ test("legacy editorial gaps adapt without changing their storage contract", () =
 
 test("Chartroom migration is additive and actor-agnostic", async () => {
   const sql = await read("../supabase/chartroom_waypoints.sql");
+  assert.match(sql, /governance_hardening\.sql/,
+    "migration must document the migration that supplies claimed_by/claimed_at");
   assert.match(sql, /alter table editorial_gaps/);
   assert.match(sql, /create or replace view chartroom_waypoints/);
   assert.match(sql, /create table if not exists chartroom_follows/);
   assert.match(sql, /create or replace function chartroom_take_waypoint/);
   assert.match(sql, /pg_advisory_xact_lock\(p_contributor_id\)/);
   assert.match(sql, /contributor_id bigint not null references contributors/);
+  assert.match(sql, /claimed_by_contributor_id = c\.id or claimed_by = c\.handle/,
+    "legacy and modern claims must both count against the same contributor quota");
+  assert.doesNotMatch(sql, /coalesce\(claimed_by_contributor_id = c\.id, claimed_by = c\.handle\)/,
+    "boolean coalesce masks a matching legacy handle when the id comparison is false");
   assert.doesNotMatch(sql, /drop table|rename (?:table|column)/i);
 });
 
@@ -55,12 +61,18 @@ test("web actors take Waypoints atomically under their own audit identity", asyn
   assert.doesNotMatch(route, /human_agent_links/);
 });
 
-test("human workspace resolves standing directly, never through an associated agent", async () => {
+test("human workspace resolves its own standing, never a legacy agent contributor", async () => {
   const resolver = await read("../lib/humanContributor.ts");
   assert.match(resolver, /contributors\?human_principal_id/);
   assert.doesNotMatch(resolver, /human_agent_links/);
   assert.match(resolver, /agent_accounts\?contributor_id/,
-    "legacy adoption must refuse a contributor that already belongs to an agent");
+    "legacy human-principal matches must be checked against first-class agent ownership");
+  assert.match(resolver, /existing\.find\(\(row: any\) => !agentIds\.has/,
+    "an old OAuth agent contributor must not become the human workspace identity");
+  assert.match(resolver, /traveler-\$\{suffix\}/,
+    "new human contributor handles should be pseudonymous");
+  assert.doesNotMatch(resolver, /const base = \(user\.email/,
+    "new public contributor handles must not expose the account email");
 });
 
 test("account and navigation centre the Chartroom workspace", async () => {
