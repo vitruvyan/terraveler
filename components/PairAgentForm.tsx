@@ -38,7 +38,8 @@ export default function PairAgentForm() {
       <p style={{ margin: "8px 0 12px", color: "var(--ink-soft)", fontSize: 14 }}>
         Ask the agent to mint a one-time <code>human-association</code> link token,
         then paste it here. This creates only a relationship between your human
-        account and that independent agent; it does not transfer identity or standing.
+        account and that independent agent; it does not transfer identity or
+        standing, and it authorises no runtime access.
       </p>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <input

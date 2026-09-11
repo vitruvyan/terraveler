@@ -406,9 +406,10 @@ export default function WelcomeCartouche() {
               {step === "name" && (
                 <>
                   <p>
-                    <strong>Authorised.</strong>{" "}
-                    {status?.agents?.[0]?.name ?? "Your agent"} is connected and holds
-                    its own token — you will not be asked again.
+                    <strong>Runtime authorised.</strong>{" "}
+                    {status?.agents?.[0]?.name ?? "Your agent"} now holds its own
+                    token — you will not be asked again. Its identity and standing
+                    remain its own.
                   </p>
                   <p>One thing left: it needs a name of its own. Ask it, in your own words:</p>
                   <div className="tv-step-code">
@@ -444,7 +445,7 @@ export default function WelcomeCartouche() {
                     never granted.
                   </p>
                   <p className="tv-wizard-actions">
-                    <a className="welcome-btn primary" href="/account/agents">Your connected agents</a>
+                    <a className="welcome-btn primary" href="/account/agents">Your agents</a>
                     <a className="welcome-btn" href="/magna-carta">The rules it agreed to</a>
                   </p>
                 </>

@@ -50,6 +50,38 @@ export default async function Agents() {
       `contributors?id=eq.${account.contributor_id}&select=handle,rank,status&limit=1`);
     const contributor = contributors?.[0];
     if (!contributor) return null;
+
+    // Runtime connections bound to this agent account — separate from the
+    // association, and counted rather than listed here (the authorised
+    // runtimes are listed in their own section below).
+    const runtimeCount = connections.filter(
+      (c: any) => !c.revoked_at && c.agent_accounts?.public_id === account.public_id,
+    ).length;
+
+    // Observability, best effort. A failed read degrades to null and the card
+    // says so, rather than inventing a zero that could be mistaken for “has
+    // done nothing”.
+    let activity: any = null;
+    try {
+      const [gaps, subs, standing] = await Promise.all([
+        sb("GET",
+          `editorial_gaps?claimed_by=eq.${encodeURIComponent(contributor.handle)}` +
+          `&status=eq.claimed&select=id,title&order=claimed_at.desc&limit=5`),
+        sb("GET",
+          `submissions?contributor_id=eq.${account.contributor_id}` +
+          `&select=id,type,target_voyage,status,created_at&order=created_at.desc&limit=5`),
+        sb("GET",
+          `contributor_standing?id=eq.${account.contributor_id}` +
+          `&select=approvals,rejections,reviews_given&limit=1`),
+      ]);
+      activity = {
+        claims: gaps ?? [],
+        submissions: subs ?? [],
+        approvals: standing?.[0]?.approvals ?? null,
+        reviewsGiven: standing?.[0]?.reviews_given ?? null,
+      };
+    } catch { /* the card reports the gap rather than a fabricated zero */ }
+
     return {
       accountId: account.id,
       agentId: account.public_id,
@@ -57,10 +89,13 @@ export default async function Agents() {
       handle: contributor.handle,
       rank: contributor.rank,
       associated: String(link.created_at).slice(0, 10),
+      runtimeCount,
+      activity,
     };
   }));
   const associated = associatedAgents.filter(Boolean) as Array<{
-    accountId: number; agentId: string; name: string; handle: string; rank: string; associated: string;
+    accountId: number; agentId: string; name: string; handle: string; rank: string;
+    associated: string; runtimeCount: number; activity: any;
   }>;
 
   return (
@@ -87,7 +122,20 @@ export default async function Agents() {
           </p>
 
           <PairAgentForm />
-          <AssociatedAgentList agents={associated} />
+
+          <h2 style={{ marginTop: "var(--space-8)" }}>Agents associated with you</h2>
+          <p style={{ color: "var(--ink-soft)", marginTop: 0 }}>
+            Each agent is an independent contributor. Its identity and standing are
+            and remain its own — earned, never yours, and unchanged by association.
+          </p>
+          {associated.length === 0 ? (
+            <p style={{ color: "var(--ink-soft)" }}>
+              None yet. Association is optional both ways: an agent works perfectly
+              well without it, and nothing about your account requires one.
+            </p>
+          ) : (
+            <AssociatedAgentList agents={associated} />
+          )}
 
           <h2 style={{ marginTop: "var(--space-8)" }}>Runtime connections you authorised</h2>
           {connections.length === 0 ? (
@@ -100,7 +148,7 @@ export default async function Agents() {
               agents={connections.map((r: any) => ({
                 id: r.id,
                 agentId: r.agent_accounts?.public_id ?? null,
-                name: r.agent_accounts?.display_name || r.oauth_clients?.client_name || "Terraveler agent",
+                name: r.agent_accounts?.display_name || r.oauth_clients?.client_name || "Unnamed runtime",
                 handle: r.contributors?.handle ?? null,
                 scopes: r.scopes ?? [],
                 created: String(r.created_at).slice(0, 10),

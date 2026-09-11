@@ -14,11 +14,14 @@ type Agent = {
 };
 
 /**
- * Each row is a revocable connection to an independently identified agent.
- * Revoking the connection does not erase the agent account or its standing.
+ * Each row is one runtime the account authorised — a technical connection,
+ * which is not the agent (named beside it where one is bound) and not the
+ * association. Revoking it stops the runtime; it does not delete, revoke or
+ * disassociate the agent.
  */
 export default function AgentList({ agents }: { agents: Agent[] }) {
   const [state, setState] = useState<Record<number, "idle" | "working" | "revoked" | "error">>({});
+  const [confirming, setConfirming] = useState<number | null>(null);
 
   async function revoke(id: number) {
     setState((s) => ({ ...s, [id]: "working" }));
@@ -27,7 +30,8 @@ export default function AgentList({ agents }: { agents: Agent[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ connection_id: id }),
     });
-    setState((s) => ({ ...s, [id]: r.ok ? "revoked" : "error" }));
+    setState((s) => ({ ...s, [id]: r.ok ? "revoked" : "error", }));
+    setConfirming(null);
   }
 
   return (
@@ -40,32 +44,56 @@ export default function AgentList({ agents }: { agents: Agent[] }) {
             className="tv-connect"
             style={{ padding: "14px 18px", opacity: gone ? 0.55 : 1 }}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline", flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 6 }}>
               <div>
                 <strong>{a.name}</strong>
                 {a.handle && (
                   <span style={{ color: "var(--ink-soft)" }}> — writes as {a.handle}</span>
                 )}
-                {a.agentId && (
-                  <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 3 }}>
-                    Agent identity: <code>{a.agentId}</code>
-                  </div>
-                )}
-                <div style={{ fontSize: 13, color: "var(--ink-soft)", marginTop: 4 }}>
-                  {a.scopes.length ? a.scopes.join(", ") : "no permissions"} · associated {a.created}
-                  {a.lastUsed ? ` · last used ${a.lastUsed}` : " · never used"}
-                </div>
               </div>
+              {a.agentId && (
+                <div style={{ fontSize: 12, color: "var(--ink-soft)" }}>
+                  Agent identity: <code style={{ wordBreak: "break-all" }}>{a.agentId}</code>
+                </div>
+              )}
+              <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+                Authorised {a.created}
+                {a.lastUsed ? ` · last active ${a.lastUsed}` : " · never active"}
+              </div>
+              <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+                Authorisation: {a.scopes.length ? a.scopes.join(", ") : "none granted"}
+              </div>
+            </div>
+            <div style={{ marginTop: 10, display: "flex", justifyContent: "flex-end", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
               {gone ? (
-                <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>connection revoked</span>
+                <span style={{ fontSize: 13, color: "var(--ink-soft)" }}>Runtime access revoked</span>
+              ) : confirming === a.id ? (
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ margin: "0 0 10px", fontSize: 13, lineHeight: 1.55 }}>
+                    This runtime will no longer be authorised to act through this
+                    connection. The agent itself is not deleted or disassociated.
+                  </p>
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <button type="button" className="tv-tab" onClick={() => setConfirming(null)}>
+                      Keep access
+                    </button>
+                    <button
+                      type="button"
+                      className="tv-tab tv-tab-on"
+                      disabled={state[a.id] === "working"}
+                      onClick={() => revoke(a.id)}
+                    >
+                      {state[a.id] === "working" ? "Revoking…" : "Revoke runtime access"}
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button
                   type="button"
                   className="tv-tab"
-                  disabled={state[a.id] === "working"}
-                  onClick={() => revoke(a.id)}
+                  onClick={() => setConfirming(a.id)}
                 >
-                  {state[a.id] === "working" ? "Revoking…" : "Revoke connection"}
+                  Revoke runtime access…
                 </button>
               )}
             </div>
