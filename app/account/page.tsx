@@ -27,7 +27,12 @@ export default async function AccountPage() {
 
   const contributor = await ensureHumanContributor(user);
   const fields = "id,title,description,kind,priority,status,claimed_by,claimed_at";
-  const [mine, recommended, contributions, follows, associated] = await Promise.all([
+  const offerFields = [
+    "id", "title", "type", "status", "context_voyage", "context_waypoint_seq", "context_place",
+    "requested_agent_id", "requested_agent_name", "requested_agent_handle", "requested_agent_offered_at",
+  ].join(",");
+
+  const [mine, recommended, contributions, follows, associated, offers] = await Promise.all([
     safeData(
       `editorial_gaps?claimed_by=eq.${encodeURIComponent(contributor.handle)}` +
         `&status=eq.claimed&order=claimed_at.desc&select=${fields}`,
@@ -44,6 +49,10 @@ export default async function AccountPage() {
     safeData(
       `human_agent_links?human_principal_id=eq.${contributor.humanPrincipalId}` +
         `&relation=eq.associated&revoked_at=is.null&select=agent_account_id`,
+    ),
+    safeData(
+      `chartroom_waypoints?requested_agent_offered_by_contributor_id=eq.${contributor.id}` +
+        `&status=eq.open&order=requested_agent_offered_at.desc&select=${offerFields}`,
     ),
   ]);
 
@@ -63,13 +72,19 @@ export default async function AccountPage() {
           { href: "/contribute", label: "Find Waypoints" },
           { href: "/account/agents", label: "My agents", variant: "secondary" },
         ]}
-        meta={[contributor.rank, `${mine.length} active`, `${contributions.length} recent contributions`]}
+        meta={[
+          contributor.rank,
+          `${mine.length} active`,
+          `${offers.length} Voyager offer${offers.length === 1 ? "" : "s"}`,
+          `${contributions.length} recent contributions`,
+        ]}
       >
         <AccountWorkspace
           mine={mine}
           recommended={recommended}
           contributions={contributions}
           followed={followed}
+          offers={offers}
           associatedCount={associated.length}
         />
       </TitlePage>
