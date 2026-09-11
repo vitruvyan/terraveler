@@ -38,16 +38,6 @@ async function readLimitedJson(req: Request, maxBytes: number) {
   catch { return { ok: false as const, status: 400 as const, error: "body must be valid JSON" }; }
 }
 
-/**
- * MCP 2026-07-28 compatibility facade.
- *
- * The product handler below /api/mcp is intentionally left on the proven 2025
- * implementation while the wire protocol changes around it. Modern requests
- * are proxied through this facade so we can add 2026 discovery, response
- * identity, a clean tool catalogue and first-class agent identity bootstrap
- * without disturbing Claude/other legacy clients.
- */
-
 const MODERN = "2026-07-28";
 const LEGACY = "2025-06-18";
 const CAPABILITIES_PATH = "/api/agent/capabilities";
@@ -60,7 +50,26 @@ const MODERN_NATIVE_WRITES = new Set([
   "suggest_feature",
   "suggest_content",
   "submit_review",
+  "appeal",
 ]);
+const LEGACY_MUTATIONS = new Set([
+  "register",
+  "rotate_key",
+  "claim_gap",
+  "propose_idea",
+  "submit_draft",
+  "suggest_feature",
+  "suggest_content",
+  "submit_review",
+  "appeal",
+]);
+
+function legacyMutationsEnabled() {
+  const legacy = /^(1|true|on|enabled)$/i.test(process.env.MCP_LEGACY_MUTATIONS_ENABLED ?? "");
+  const external = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? "");
+  const pepper = (process.env.MCP_SECURITY_PEPPER ?? "").trim();
+  return legacy && external && pepper.length >= 32;
+}
 
 const SERVER_INFO = {
   name: "terraveler",
@@ -103,6 +112,13 @@ function jsonRpcError(id: unknown, code: number, message: string, status = 400) 
   return NextResponse.json(
     { jsonrpc: "2.0", id: id ?? null, error: { code, message } },
     { status, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } },
+  );
+}
+
+function legacyRpcError(id: unknown, code: number, message: string, status = 400) {
+  return NextResponse.json(
+    { jsonrpc: "2.0", id: id ?? null, error: { code, message } },
+    { status, headers: NO_STORE_HEADERS },
   );
 }
 
@@ -280,12 +296,32 @@ async function humanLinkToken(req: NextRequest, msg: any) {
 
 export async function middleware(req: NextRequest) {
   if (req.method !== "POST") return NextResponse.next();
-  const method = req.headers.get("mcp-method");
-  if (!method) return NextResponse.next();
 
+  // Every MCP POST, including the 2025 compatibility lane, gets the same hard
+  // byte ceiling before the application route can buffer it.
   const parsed = await readLimitedJson(req.clone(), MCP_BODY_LIMIT);
-  if (!parsed.ok) return jsonRpcError(null, -32600, parsed.error, parsed.status);
+  if (!parsed.ok) {
+    const modern = Boolean(req.headers.get("mcp-method"));
+    return modern
+      ? jsonRpcError(null, -32600, parsed.error, parsed.status)
+      : legacyRpcError(null, -32600, parsed.error, parsed.status);
+  }
   const msg = parsed.value;
+  const method = req.headers.get("mcp-method");
+
+  // External beta is OAuth-native. The 2025 API-key write lane remains readable
+  // for compatibility but its mutations are a separate, explicitly disabled
+  // operator surface rather than a second public write path.
+  if (!method) {
+    const legacyName = msg?.method === "tools/call" ? String(msg?.params?.name ?? "") : "";
+    if (LEGACY_MUTATIONS.has(legacyName) && !legacyMutationsEnabled()) {
+      return legacyRpcError(msg?.id, -32003,
+        "Legacy MCP mutations are disabled. Use the OAuth-native MCP connection for writes; public reads remain available.",
+        503);
+    }
+    return NextResponse.next();
+  }
+
   const envelopeError = modernEnvelopeError(req, msg);
   if (envelopeError) return jsonRpcError(msg?.id, -32020, envelopeError);
 
