@@ -1523,7 +1523,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "get_submission_status": {
-      const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at`);
+      const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at,contributor_id`);
       if (!s.length) return "ERROR: no such submission";
       const audit = await sb("GET", `audit_log?submission_id=eq.${Number(args.id)}&order=id.asc&select=actor,action,verdict,findings,created_at`);
       const already = audit.some((a: any) => a.action === "appeal");
@@ -1546,17 +1546,63 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         "curator-rejected": "The instant gate refused it, before any human saw it. The findings " +
           "above say which clause. Fix them and submit again — that is faster than an appeal.",
       };
+
+      // Identity is optional here — this tool is also how an uninvolved
+      // observer reads a public submission's history — but when an identity
+      // IS known, review/appeal eligibility must be the same projection of
+      // the same rules submit_review/appeal themselves enforce, not merely a
+      // status lookup blind to who is asking.
+      const identity = await authenticate(args, bearer);
+      const me = identity.ok ?? null;
+      const isAuthor = me != null && me.id === s[0].contributor_id;
+
+      const appealBlocked: Record<string, string> = {};
+      if (already) appealBlocked.appeal = "already appealed — one per submission, and it has been spent";
+      else if (st === "changes-requested") appealBlocked.appeal = "not a refusal — make the requested changes and resubmit instead";
+      else if (!["curator-rejected", "rejected"].includes(st)) appealBlocked.appeal = `no verdict to appeal yet (status: '${st}')`;
+      else if (me != null && !isAuthor) appealBlocked.appeal = "only the contributor who made this submission may appeal it";
+      const appealAvailable = !appealBlocked.appeal && (me == null || isAuthor);
+
+      let reviewBlocked: string | null = null;
+      if (st !== "peer-review") reviewBlocked = `submission is in '${st}', not open for review`;
+      else if (me == null) reviewBlocked = "authenticate with 'review' scope to check your own eligibility";
+      else if (isAuthor) reviewBlocked = "you cannot review your own draft (Carta 10.4)";
+      else {
+        const dup = await sb("GET", `reviews?submission_id=eq.${s[0].id}&reviewer_id=eq.${me.id}&select=id`);
+        if (dup.length) reviewBlocked = "you already reviewed this draft — one review per Scribe";
+        else {
+          const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+          const limit = reviewsPerDay(me.rank);
+          const recent = await sb("GET", `reviews?reviewer_id=eq.${me.id}&created_at=gte.${since}&select=id&limit=${limit + 1}`);
+          if (recent.length >= limit) reviewBlocked = `daily review quota reached for rank '${me.rank}' (${limit}/24h)`;
+        }
+      }
+
+      const allowed_actions: string[] = [];
+      const blocked_actions: Record<string, string> = {};
+      if (!reviewBlocked) allowed_actions.push("submit_review"); else blocked_actions.submit_review = reviewBlocked;
+      if (appealAvailable) allowed_actions.push("appeal"); else if (appealBlocked.appeal) blocked_actions.appeal = appealBlocked.appeal;
+      const next_required_action =
+        st === "curator-rejected" && (me == null || isAuthor) ? "fix the cited findings and call submit_draft again (a new submission — there is no in-place resubmit)" :
+        st === "changes-requested" && (me == null || isAuthor) ? "make the requested changes and call submit_draft again" :
+        !reviewBlocked ? "submit_review" :
+        appealAvailable ? "appeal" :
+        null;
+
       return JSON.stringify({
         submission: s[0],
         audit,
         what_this_means: guidance[st] ?? "In progress.",
+        workflow: { state: st, allowed_actions, blocked_actions, next_required_action },
         appeal: {
-          available: !already && ["rejected", "curator-rejected"].includes(st),
+          available: appealAvailable,
           used: already,
           how: already
             ? "Already appealed. One per submission, and it has been spent."
             : ["rejected", "curator-rejected"].includes(st)
-              ? "get_audit { id } first, then appeal { id, grounds } citing what the audit shows."
+              ? (me != null && !isAuthor)
+                ? "Not available: only the contributor who made this submission may appeal it."
+                : "get_audit { id } first, then appeal { id, grounds } citing what the audit shows."
               : st === "approved"
                 ? "Nothing to appeal — it was approved. get_audit { id } shows who ruled, on " +
                   "what grounds, under which Carta version."
