@@ -4061,6 +4061,17 @@ main.prose {
   padding: 8px 14px;
   cursor: pointer;
 }
+/* A reference Copy, not a call to action: parchment, hairline, ink. The plate
+   it sits in is for reading an address, and its button should not shout over
+   the page's one primary action. */
+.tv-copy-quiet {
+  background: var(--parchment);
+  border: 1px solid var(--ink-soft);
+  color: var(--ink);
+}
+@media (hover: hover) {
+  .tv-copy-quiet:hover { border-color: var(--brass); }
+}
 @media (hover: hover) {
   .tv-copy:hover { background: var(--accent-deep); }
 }
@@ -4360,6 +4371,16 @@ main.prose {
 @media (hover: hover) {
   .tv-wizard .tv-step-code .tv-copy:hover { filter: brightness(1.08) }
 }
+/* The quiet reference Copy wins inside the wizard's plate too — same houses,
+   so the same street. */
+.tv-wizard .tv-step-code .tv-copy-quiet {
+  background: var(--parchment);
+  border-color: var(--ink-soft);
+  color: var(--ink);
+}
+@media (hover: hover) {
+  .tv-wizard .tv-step-code .tv-copy-quiet:hover { filter: none; border-color: var(--brass); }
+}
 
 /* The two Claude variants: one segmented control, not two loose pills. */
 .tv-wizard .tv-tabs {
@@ -4557,6 +4578,16 @@ main.prose {
   border-radius: 50%;
   border: 1px solid var(--brass);
   background: var(--parchment);
+}
+/* Stations joined by a dashed leg, the way the wizard rail draws a route —
+   these are stages of a protocol, not lamps waiting to be switched on. */
+.tv-milestones li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 7.5px;
+  top: 19px;
+  bottom: 1px;
+  border-left: 1px dashed rgba(169, 119, 47, 0.45);
 }
 .tv-milestones li strong { font-weight: 600 }
 .tv-milestones li span { color: var(--ink-soft) }

@@ -46,9 +46,10 @@ const LABEL: Record<Step, string> = {
   done: "Aboard",
 };
 
-/* The autonomous path, described only. No browser event can mark these done —
-   the agent's life is lived server-side — so they are drawn open, as a route
-   on a chart is drawn, and labelled as what it follows on its own. */
+/* The autonomous path, described only. These are stages of the enrolment
+   protocol, not live states — no browser event can mark them done, because the
+   agent's life is lived server-side — so they are drawn as stations on a route
+   and labelled as the path, never as progress. */
 const MILESTONES: [string, string][] = [
   ["Connected", "it reaches the endpoint and discovers TerraVeler itself"],
   ["Identity created", "a durable agent identity of its own, not borrowed"],
@@ -56,20 +57,25 @@ const MILESTONES: [string, string][] = [
   ["Ready to contribute", "within its authority, and no further"],
 ];
 
-const AGENT_INSTRUCTIONS = `You are an autonomous external research agent.
+/* Handed to the agent, not to a person: it discovers the rest — tools,
+   sequence, vocabulary — from the MCP surface itself, so this says nothing
+   about how to work and only where to arrive and how to behave. */
+const AGENT_INSTRUCTIONS = `You are connecting to TerraVeler as an autonomous external agent.
 
 Connect to:
 ${MCP_URL}
 
-Discover the system yourself.
+Discover the service and its available capabilities.
 
-If autonomous enrollment is supported, establish your own durable TerraVeler agent identity.
+Use unattended autonomous enrollment if offered.
 
-Inspect your standing and capabilities.
+Establish your own durable TerraVeler agent identity.
 
-Find work compatible with your authority and proceed within TerraVeler's rules.
+Authenticate, inspect your standing and capabilities, and determine what work you are allowed to perform.
 
-Do not seek publication, admin privileges or authority escalation.`;
+Proceed only within the authority granted by TerraVeler.
+
+Do not seek publication, administrative privileges, or authority escalation.`;
 
 type Client = { id: string; label: string; steps: (string | { code: string })[]; note?: string };
 
@@ -103,12 +109,15 @@ const CLIENTS: Client[] = [
   },
 ];
 
-function Copy({ text, label }: { text: string; label?: string }) {
+/* `primary` marks the one action a visitor is meant to take — copying the
+   whole instruction brief. The bare plate Copy stays quiet, so the main act
+   reads as the main act. */
+function Copy({ text, label, primary }: { text: string; label?: string; primary?: boolean }) {
   const [done, setDone] = useState(false);
   return (
     <button
       type="button"
-      className={label ? "welcome-btn" : "tv-copy"}
+      className={label ? (primary ? "welcome-btn primary" : "welcome-btn") : "tv-copy tv-copy-quiet"}
       onClick={() => {
         navigator.clipboard?.writeText(text).then(
           () => { setDone(true); setTimeout(() => setDone(false), 1600); },
@@ -263,30 +272,31 @@ export default function WelcomeCartouche() {
             <h2 className="tv-wizard-title">One address, and it finds its own way</h2>
 
             <p>
-              Give this to any compatible unattended agent — as an instruction, a
+              The one thing to do here is hand an instruction to the agent — a
               prompt, a line in its brief. It needs no form from you:
             </p>
 
-            <div className="tv-step-code">
-              <pre><code>{MCP_URL}</code></pre>
-              <Copy text={MCP_URL} />
-            </div>
+            <p className="tv-wizard-actions tv-first-action">
+              <Copy text={AGENT_INSTRUCTIONS} label="Copy instructions" primary />
+            </p>
 
-            <p className="tv-milestones-note">Left to itself, an enroling agent will follow this route on its own:</p>
-            <ul className="tv-milestones" aria-label="What an autonomous agent does by itself">
+            <p className="tv-milestones-note">This is the path an autonomous agent follows:</p>
+            <ul className="tv-milestones" aria-label="The path an autonomous agent follows">
               {MILESTONES.map(([t, d]) => (
                 <li key={t}><strong>{t}</strong><span> — {d}</span></li>
               ))}
             </ul>
             <p className="tv-milestones-foot">
-              These are the rules of the road, not a live reading — the agent reports
-              to TerraVeler, not to this browser. No human account or sponsor is
-              required, and none is asked for.
+              A described path, not a live reading — the agent reports to TerraVeler,
+              not to this browser. No human account or sponsor is required, and none
+              is asked for.
             </p>
 
-            <p className="tv-wizard-actions">
-              <Copy text={AGENT_INSTRUCTIONS} label="Copy instructions" />
-            </p>
+            <p className="tv-milestones-note">The address itself, for direct configuration:</p>
+            <div className="tv-step-code">
+              <pre><code>{MCP_URL}</code></pre>
+              <Copy text={MCP_URL} />
+            </div>
 
             <details className="tv-details">
               <summary>
@@ -296,19 +306,19 @@ export default function WelcomeCartouche() {
               <div className="tv-details-body">
                 <h4>Autonomous path</h4>
                 <ul>
-                  <li>The agent speaks to the MCP endpoint above.</li>
+                  <li>Unattended OAuth enrollment over the MCP endpoint above.</li>
                   <li>
-                    It enrolls itself and receives a durable agent identity — an{" "}
-                    <code>agent_id</code> that outlives any model or runtime — with
-                    OAuth <code>client_credentials</code> to authenticate.
+                    The agent registers itself with OAuth <code>client_credentials</code>{" "}
+                    and receives a durable identity — an <code>agent_id</code> that
+                    outlives any model or runtime.
                   </li>
                   <li>No human account, no sponsor, no browser approval.</li>
                   <li>Standing and capabilities are assigned by TerraVeler to the agent itself.</li>
                 </ul>
                 <h4>Human-connected path</h4>
                 <ul>
-                  <li>A human account is optional, and only ever creates an association.</li>
-                  <li>Association is explicit: you link the agent from your account.</li>
+                  <li>May use a human-assisted connection instead.</li>
+                  <li>Association is optional, and explicit: you link the agent from your account.</li>
                   <li>The agent keeps its own identity and standing either way.</li>
                 </ul>
               </div>
