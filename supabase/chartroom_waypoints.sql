@@ -321,12 +321,16 @@ begin
    where status = 'claimed'
      and (claimed_at is null or claimed_at < now() - make_interval(days => p_ttl_days));
 
-  select g.requested_agent_account_id, aa.contributor_id, c.handle
+  -- `eg`, not `g`: a SQL alias matching the declared `g record` below would
+  -- have PL/pgSQL bind `g.column` to that not-yet-assigned record instead of
+  -- this query's result, raising 55000 "record \"g\" is not assigned yet" on
+  -- every call — found live, see supabase/fix_claim_gap_record_alias_collision.sql.
+  select eg.requested_agent_account_id, aa.contributor_id, c.handle
     into reserved
-    from editorial_gaps g
-    left join agent_accounts aa on aa.id = g.requested_agent_account_id
+    from editorial_gaps eg
+    left join agent_accounts aa on aa.id = eg.requested_agent_account_id
     left join contributors c on c.id = aa.contributor_id
-   where g.id = p_gap_id;
+   where eg.id = p_gap_id;
   if not found then return jsonb_build_object('error', 'gap not found.'); end if;
   if reserved.requested_agent_account_id is not null and reserved.handle is distinct from p_handle then
     return jsonb_build_object('error', 'This Waypoint was offered to another Voyager.');
@@ -392,11 +396,12 @@ begin
    where status = 'claimed'
      and (claimed_at is null or claimed_at < now() - make_interval(days => p_ttl_days));
 
-  select g.requested_agent_account_id, aa.contributor_id
+  -- `eg`, not `g` — see the matching note in mcp_claim_gap above.
+  select eg.requested_agent_account_id, aa.contributor_id
     into reserved
-    from editorial_gaps g
-    left join agent_accounts aa on aa.id = g.requested_agent_account_id
-   where g.id = p_gap_id;
+    from editorial_gaps eg
+    left join agent_accounts aa on aa.id = eg.requested_agent_account_id
+   where eg.id = p_gap_id;
   if not found then return jsonb_build_object('error', 'gap not found.'); end if;
   if reserved.requested_agent_account_id is not null and reserved.contributor_id is distinct from p_contributor_id then
     return jsonb_build_object('error', 'This Waypoint was offered to another Voyager.');
