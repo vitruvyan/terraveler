@@ -15,9 +15,14 @@ export const metadata: Metadata = {
 
 export const revalidate = 120;
 
-const headers = () => POSTGREST_SERVICE_KEY
-  ? { apikey: POSTGREST_SERVICE_KEY, Authorization: `Bearer ${POSTGREST_SERVICE_KEY}` }
-  : {};
+function dataHeaders(): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (POSTGREST_SERVICE_KEY) {
+    out.apikey = POSTGREST_SERVICE_KEY;
+    out.Authorization = `Bearer ${POSTGREST_SERVICE_KEY}`;
+  }
+  return out;
+}
 
 type ChartroomQuery = { voyage?: string | null; waypoint?: number | null };
 type ChartroomLoad = {
@@ -69,7 +74,7 @@ async function getWaypoints(query: ChartroomQuery): Promise<ChartroomLoad> {
         `&select=id,title,description,type,priority,status,taken_by_handle,taken_at,` +
         `context_type,context_voyage,context_waypoint_seq,context_place,` +
         `requested_agent_account_id,requested_agent_id,requested_agent_name,requested_agent_handle`,
-      { headers: headers(), next: { revalidate: 120 } },
+      { headers: dataHeaders(), next: { revalidate: 120 } },
     );
     if (response.ok) {
       const rows = await response.json();
@@ -87,7 +92,7 @@ async function getWaypoints(query: ChartroomQuery): Promise<ChartroomLoad> {
       `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)` +
         `&order=priority.asc,id.asc` +
         `&select=id,title,description,kind,priority,status,claimed_by,claimed_at`,
-      { headers: headers(), next: { revalidate: 120 } },
+      { headers: dataHeaders(), next: { revalidate: 120 } },
     );
     if (!response.ok) return { waypoints: null, contextualReady: false };
     const gaps = (await response.json()) as LegacyEditorialGap[];
