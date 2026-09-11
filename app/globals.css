@@ -4474,6 +4474,162 @@ main.prose {
   }
 }
 
+/* ── the two doors of onboarding ─────────────────────────────────────────
+   The wizard opens on a question — how will your agent join? — and the two
+   answers sit side by side as two leaves of a document, not as feature cards:
+   parchment, hairlines, a brass kind-line. They stack on a phone. */
+.tv-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 22px 0 0;
+}
+.tv-choice {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 16px;
+  background: linear-gradient(180deg, rgba(255, 252, 244, 0.75), rgba(242, 230, 207, 0.55));
+  border: 1px solid var(--parchment-deep);
+  border-left: 3px solid var(--brass);
+  border-radius: var(--radius-2);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+}
+.tv-choice-kind {
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin-bottom: 7px;
+}
+.tv-choice-title {
+  font-family: var(--font-ui);
+  font-size: 1.08rem;
+  font-weight: 600;
+  margin: 0 0 7px;
+  color: var(--ink);
+}
+.tv-choice p {
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+.tv-choice-actions {
+  margin-top: auto !important;   /* the two CTAs sit on one baseline */
+}
+.tv-choices-note {
+  margin: 16px 0 0;
+  padding-top: 13px;
+  border-top: 1px solid rgba(169, 119, 47, 0.3);
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* The autonomous path. Its milestones are a described route, not a live
+   reading — open circles, drawn the way an unvisited port is drawn on a
+   chart, and labelled as what the agent does on its own. */
+.tv-milestones-note {
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  margin: 16px 0 8px;
+}
+.tv-milestones {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+.tv-milestones li {
+  position: relative;
+  padding: 0 0 9px 24px;
+  font-size: var(--step-0);
+  line-height: 1.5;
+}
+.tv-milestones li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--brass);
+  background: var(--parchment);
+}
+.tv-milestones li strong { font-weight: 600 }
+.tv-milestones li span { color: var(--ink-soft) }
+.tv-milestones-foot {
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 0 0 4px;
+}
+
+/* Setup details: a native disclosure, so keyboard and screen-reader semantics
+   come with it. The summary swaps its own words when open. */
+.tv-details {
+  margin: 14px 0 0;
+  border: 1px dashed rgba(169, 119, 47, 0.6);
+  border-radius: var(--radius-2);
+  background: rgba(255, 252, 244, 0.6);
+}
+.tv-details summary {
+  cursor: pointer;
+  padding: 11px 14px;
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  list-style: none;
+}
+.tv-details summary::-webkit-details-marker { display: none }
+.tv-details summary::before {
+  content: "❧";
+  margin-right: 9px;
+  color: var(--brass-text);
+}
+.tv-details[open] summary { border-bottom: 1px dashed rgba(169, 119, 47, 0.4) }
+.tv-details .tv-details-shown { display: inline }
+.tv-details .tv-details-hidden { display: none }
+.tv-details[open] .tv-details-shown { display: none }
+.tv-details[open] .tv-details-hidden { display: inline }
+.tv-details-body { padding: 12px 14px 14px }
+.tv-details-body h4 {
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+  margin: 0 0 7px;
+}
+.tv-details-body h4 + ul { margin-top: 0 }
+.tv-details-body h4:not(:first-child) { margin-top: 14px }
+.tv-details-body ul {
+  margin: 0 0 4px;
+  padding-left: 18px;
+  font-size: var(--step--1);
+  line-height: 1.6;
+  color: var(--ink);
+}
+.tv-details-body li { margin-bottom: 5px }
+.tv-details-body code {
+  font-family: var(--font-mono, ui-monospace, Menlo, Consolas, monospace);
+  font-size: var(--step--2);
+}
+.tv-details-caption {
+  margin: 10px 0 0;
+  font-size: var(--step--2);
+  letter-spacing: 0.03em;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 720px) {
+  .tv-choices { grid-template-columns: 1fr }
+}
+
 /* ── the crew at work ────────────────────────────────────────────────────
    The audit trail rendered for a reader. Cards for the Scribes, a log for the
    record — deliberately closer to a ship's book than to a dashboard, because it
