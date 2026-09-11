@@ -1,6 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
+const MCP_BODY_LIMIT = 384 * 1024;
+const NO_STORE_HEADERS = {
+  "Cache-Control": "no-store, max-age=0",
+  Pragma: "no-cache",
+  "X-Content-Type-Options": "nosniff",
+};
+
+async function readLimitedJson(req: Request, maxBytes: number) {
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declared) && declared > maxBytes)
+    return { ok: false as const, status: 413 as const, error: `request body exceeds ${maxBytes} bytes` };
+
+  const reader = req.body?.getReader();
+  if (!reader) return { ok: false as const, status: 400 as const, error: "body must be valid JSON" };
+  const decoder = new TextDecoder();
+  let text = "";
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => {});
+        return { ok: false as const, status: 413 as const, error: `request body exceeds ${maxBytes} bytes` };
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    text += decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+  try { return { ok: true as const, value: JSON.parse(text) }; }
+  catch { return { ok: false as const, status: 400 as const, error: "body must be valid JSON" }; }
+}
+
 /**
  * MCP 2026-07-28 compatibility facade.
  *
@@ -44,12 +81,7 @@ const INSTRUCTIONS =
 
 const CAPABILITY_TOOL = {
   name: "get_capabilities",
-  annotations: {
-    readOnlyHint: true,
-    destructiveHint: false,
-    idempotentHint: true,
-    openWorldHint: false,
-  },
+  annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   securitySchemes: [{ type: "noauth" }],
   _meta: { securitySchemes: [{ type: "noauth" }] },
   description:
@@ -57,21 +89,9 @@ const CAPABILITY_TOOL = {
   inputSchema: { type: "object", properties: {} },
 };
 
-/**
- * Safe to surface to the model because this token grants no agent authority: it
- * can only let a signed-in human record an optional relationship with the
- * already-authenticated agent, expires in ten minutes and is one-use. The more
- * sensitive runtime-binding token deliberately stays out of MCP and is minted
- * only through the host-side HTTP endpoint.
- */
 const HUMAN_LINK_TOOL = {
   name: "create_human_link_token",
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-    idempotentHint: false,
-    openWorldHint: false,
-  },
+  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
   securitySchemes: [{ type: "oauth2", scopes: [] }],
   _meta: { securitySchemes: [{ type: "oauth2", scopes: [] }] },
   description:
@@ -82,7 +102,7 @@ const HUMAN_LINK_TOOL = {
 function jsonRpcError(id: unknown, code: number, message: string, status = 400) {
   return NextResponse.json(
     { jsonrpc: "2.0", id: id ?? null, error: { code, message } },
-    { status, headers: { "Cache-Control": "no-store", "MCP-Protocol-Version": MODERN } },
+    { status, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } },
   );
 }
 
@@ -94,9 +114,6 @@ function cleanModernTool(tool: any) {
   return { ...tool, inputSchema: { ...tool.inputSchema, properties } };
 }
 
-/** The 2025 get_contract response appends the registration token/API-key lane.
- * Keep that exact text for legacy clients, but never teach a 2026 client to
- * leave OAuth and carry a secret after it has already connected correctly. */
 function moderniseContract(payload: any) {
   const items = payload?.result?.content;
   if (!Array.isArray(items)) return payload;
@@ -120,7 +137,6 @@ function bodyMeta(msg: any): Record<string, any> {
   return msg?.params?._meta ?? {};
 }
 
-/** SEP-2243: modern routing headers mirror the JSON-RPC request. */
 function modernEnvelopeError(req: NextRequest, msg: any): string | null {
   const method = req.headers.get("mcp-method");
   const version = req.headers.get("mcp-protocol-version");
@@ -129,11 +145,9 @@ function modernEnvelopeError(req: NextRequest, msg: any): string | null {
   if (version !== MODERN) return `unsupported modern protocol version '${version}'`;
   if (!msg || Array.isArray(msg) || msg.method !== method)
     return "Mcp-Method does not match the JSON-RPC body";
-
   const metaVersion = bodyMeta(msg)["io.modelcontextprotocol/protocolVersion"];
   if (metaVersion != null && metaVersion !== version)
     return "MCP-Protocol-Version does not match params._meta protocolVersion";
-
   const bodyName = msg?.params?.name ?? msg?.params?.uri ?? msg?.params?.taskId;
   if (bodyName != null && !name) return "Mcp-Name is required for this named request";
   if (name != null && bodyName == null) return "Mcp-Name was supplied for a request with no mirrored name";
@@ -150,9 +164,7 @@ function authHeaders(req: NextRequest) {
 
 async function capabilitySnapshot(req: NextRequest) {
   return fetch(new URL(CAPABILITIES_PATH, req.url), {
-    method: "GET",
-    headers: authHeaders(req),
-    cache: "no-store",
+    method: "GET", headers: authHeaders(req), cache: "no-store",
   });
 }
 
@@ -164,11 +176,7 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
   headers.delete("content-length");
   const body = await req.text();
   const upstream = await fetch(req.url, {
-    method: "POST",
-    headers,
-    body,
-    redirect: "manual",
-    cache: "no-store",
+    method: "POST", headers, body, redirect: "manual", cache: "no-store",
   });
   const raw = await upstream.text();
   let payload: any;
@@ -186,10 +194,7 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
   const resultChallenges = payload?.result?._meta?.["mcp/www_authenticate"];
   const challenge = upstream.headers.get("www-authenticate") ??
     (Array.isArray(resultChallenges) && typeof resultChallenges[0] === "string" ? resultChallenges[0] : null);
-  const status = challenge && payload?.result?.isError && upstream.status === 200
-    ? 401
-    : upstream.status;
-
+  const status = challenge && payload?.result?.isError && upstream.status === 200 ? 401 : upstream.status;
   const outHeaders = new Headers({
     "Content-Type": "application/json",
     "Cache-Control": upstream.headers.get("cache-control") ?? "no-store",
@@ -200,25 +205,30 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
 }
 
 async function modernWrite(req: NextRequest, msg: any, name: string) {
+  const upstreamHeaders = new Headers({
+    ...Object.fromEntries(authHeaders(req).entries()),
+    "Content-Type": "application/json",
+  });
+  for (const h of ["idempotency-key", "mcp-request-id", "x-request-id"]) {
+    const value = req.headers.get(h);
+    if (value) upstreamHeaders.set(h, value);
+  }
   const upstream = await fetch(new URL(WRITE_PATH, req.url), {
     method: "POST",
-    headers: new Headers({
-      ...Object.fromEntries(authHeaders(req).entries()),
-      "Content-Type": "application/json",
-    }),
+    headers: upstreamHeaders,
     body: JSON.stringify({ name, arguments: msg?.params?.arguments ?? {} }),
     cache: "no-store",
   });
   const data = await upstream.json().catch(() => ({ text: "ERROR: modern write handler returned invalid JSON", isError: true }));
-
   if (!upstream.ok) {
-    const h = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store",
+    const h = new Headers({ "Content-Type": "application/json", ...NO_STORE_HEADERS,
       "MCP-Protocol-Version": MODERN });
     const challenge = upstream.headers.get("www-authenticate");
     if (challenge) h.set("WWW-Authenticate", challenge);
+    const retry = upstream.headers.get("retry-after");
+    if (retry) h.set("Retry-After", retry);
     return NextResponse.json(data, { status: upstream.status, headers: h });
   }
-
   return NextResponse.json({
     jsonrpc: "2.0",
     id: msg.id ?? null,
@@ -227,7 +237,7 @@ async function modernWrite(req: NextRequest, msg: any, name: string) {
       isError: Boolean(data.isError),
       _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
     },
-  }, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store",
+  }, { headers: { "Content-Type": "application/json", ...NO_STORE_HEADERS,
     "MCP-Protocol-Version": MODERN } });
 }
 
@@ -242,13 +252,12 @@ async function humanLinkToken(req: NextRequest, msg: any) {
     cache: "no-store",
   });
   const data = await upstream.json().catch(() => ({ error: "invalid link-token response" }));
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    "Cache-Control": "no-store",
-    "MCP-Protocol-Version": MODERN,
-  });
+  const headers = new Headers({ "Content-Type": "application/json", ...NO_STORE_HEADERS,
+    "MCP-Protocol-Version": MODERN });
   const challenge = upstream.headers.get("www-authenticate");
   if (challenge) headers.set("WWW-Authenticate", challenge);
+  const retry = upstream.headers.get("retry-after");
+  if (retry) headers.set("Retry-After", retry);
   if (!upstream.ok) return NextResponse.json(data, { status: upstream.status, headers });
 
   return NextResponse.json({
@@ -271,49 +280,33 @@ async function humanLinkToken(req: NextRequest, msg: any) {
 
 export async function middleware(req: NextRequest) {
   if (req.method !== "POST") return NextResponse.next();
-
   const method = req.headers.get("mcp-method");
-  if (!method) return NextResponse.next(); // 2025-era client: unchanged.
+  if (!method) return NextResponse.next();
 
-  const msg = await req.clone().json().catch(() => null);
+  const parsed = await readLimitedJson(req.clone(), MCP_BODY_LIMIT);
+  if (!parsed.ok) return jsonRpcError(null, -32600, parsed.error, parsed.status);
+  const msg = parsed.value;
   const envelopeError = modernEnvelopeError(req, msg);
   if (envelopeError) return jsonRpcError(msg?.id, -32020, envelopeError);
 
   if (method === "server/discover") {
     return NextResponse.json({
-      jsonrpc: "2.0",
-      id: msg.id ?? null,
+      jsonrpc: "2.0", id: msg.id ?? null,
       result: {
-        supportedVersions: [MODERN, LEGACY],
-        capabilities: { tools: {} },
-        instructions: INSTRUCTIONS,
-        ttlMs: 3_600_000,
-        cacheScope: "public",
+        supportedVersions: [MODERN, LEGACY], capabilities: { tools: {} },
+        instructions: INSTRUCTIONS, ttlMs: 3_600_000, cacheScope: "public",
         _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
       },
-    }, { headers: {
-      "Cache-Control": "public, max-age=3600",
-      "MCP-Protocol-Version": MODERN,
-    } });
+    }, { headers: { "Cache-Control": "public, max-age=3600", "MCP-Protocol-Version": MODERN } });
   }
 
   if (method === "tools/list") {
     return proxyLegacy(req, (payload) => {
       const tools = Array.isArray(payload?.result?.tools) ? payload.result.tools : [];
-      const modern = tools
-        .filter((t: any) => !LEGACY_ONLY_TOOLS.has(String(t?.name)))
-        .map(cleanModernTool);
+      const modern = tools.filter((t: any) => !LEGACY_ONLY_TOOLS.has(String(t?.name))).map(cleanModernTool);
       if (!modern.some((t: any) => t?.name === CAPABILITY_TOOL.name)) modern.unshift(CAPABILITY_TOOL);
       if (!modern.some((t: any) => t?.name === HUMAN_LINK_TOOL.name)) modern.splice(1, 0, HUMAN_LINK_TOOL);
-      return {
-        ...payload,
-        result: {
-          ...(payload.result ?? {}),
-          tools: modern,
-          ttlMs: 300_000,
-          cacheScope: "public",
-        },
-      };
+      return { ...payload, result: { ...(payload.result ?? {}), tools: modern, ttlMs: 300_000, cacheScope: "public" } };
     });
   }
 
@@ -323,17 +316,14 @@ export async function middleware(req: NextRequest) {
       const snapshot = await capabilitySnapshot(req);
       const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
       return NextResponse.json({
-        jsonrpc: "2.0",
-        id: msg.id ?? null,
+        jsonrpc: "2.0", id: msg.id ?? null,
         result: {
           content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data,
-          isError: !snapshot.ok,
+          structuredContent: data, isError: !snapshot.ok,
           _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
         },
-      }, { status: 200, headers: { "Cache-Control": "no-store", "MCP-Protocol-Version": MODERN } });
+      }, { status: 200, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } });
     }
-
     if (name === "create_human_link_token") return humanLinkToken(req, msg);
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
 
@@ -351,6 +341,4 @@ export async function middleware(req: NextRequest) {
   return proxyLegacy(req);
 }
 
-export const config = {
-  matcher: ["/api/mcp"],
-};
+export const config = { matcher: ["/api/mcp"] };
