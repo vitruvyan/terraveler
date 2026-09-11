@@ -1,11 +1,26 @@
 import Link from "next/link";
-import { adaptEditorialGap, waypointTypeLabel, type LegacyEditorialGap } from "@/lib/chartroom";
+import ReleaseOfferButton from "@/components/ReleaseOfferButton";
+import { adaptEditorialGap, waypointTypeLabel, type LegacyEditorialGap, type WaypointType } from "@/lib/chartroom";
 
 export type ContributionSummary = {
   id: number;
   type: string;
   target_voyage: string | null;
   status: string;
+};
+
+export type OfferedWaypoint = {
+  id: number;
+  title: string;
+  type: WaypointType;
+  status: string;
+  context_voyage: string | null;
+  context_waypoint_seq: number | null;
+  context_place: string | null;
+  requested_agent_id: string | null;
+  requested_agent_name: string | null;
+  requested_agent_handle: string | null;
+  requested_agent_offered_at: string | null;
 };
 
 function WaypointList({ rows, empty }: { rows: LegacyEditorialGap[]; empty: string }) {
@@ -28,18 +43,48 @@ function WaypointList({ rows, empty }: { rows: LegacyEditorialGap[]; empty: stri
   );
 }
 
+function OfferList({ rows }: { rows: OfferedWaypoint[] }) {
+  if (!rows.length) return <p className="ed-muted">You have no outstanding Voyager offers.</p>;
+  return (
+    <div className="account-work-list">
+      {rows.map((row) => {
+        const voyager = row.requested_agent_name || row.requested_agent_handle || row.requested_agent_id || "Voyager";
+        const context = row.context_voyage
+          ? `${row.context_voyage}${row.context_waypoint_seq ? ` · stop ${row.context_waypoint_seq}` : ""}`
+          : null;
+        return (
+          <article className="account-work-item" key={row.id}>
+            <span className="conf-badge">{waypointTypeLabel(row.type)}</span>
+            <div>
+              <strong>{row.title}</strong>
+              <p>
+                Offered to {voyager}
+                {row.context_place ? ` · ${row.context_place}` : ""}
+                {context ? ` · ${context}` : ""}
+              </p>
+              <ReleaseOfferButton waypointId={row.id} />
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Shared by the gated account route and its visible specimen fixture. */
 export default function AccountWorkspace({
   mine,
   recommended,
   contributions,
   followed,
+  offers,
   associatedCount,
 }: {
   mine: LegacyEditorialGap[];
   recommended: LegacyEditorialGap[];
   contributions: ContributionSummary[];
   followed: LegacyEditorialGap[];
+  offers: OfferedWaypoint[];
   associatedCount: number;
 }) {
   return (
@@ -48,6 +93,15 @@ export default function AccountWorkspace({
         <h2>My Waypoints</h2>
         <p>Work you have taken on through the web.</p>
         <WaypointList rows={mine} empty="You have no active Waypoints." />
+      </section>
+
+      <section id="voyager-offers" className="account-workspace-section">
+        <h2>Offers to Voyagers</h2>
+        <p>
+          Open Waypoints you addressed to one of your independent Voyagers. Release an offer
+          if you want the work to return immediately to the common Chartroom pool.
+        </p>
+        <OfferList rows={offers} />
       </section>
 
       <section id="recommended" className="account-workspace-section">
