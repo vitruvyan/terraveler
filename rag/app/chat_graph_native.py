@@ -1,43 +1,16 @@
-"""The Terraveler chat pipeline as a native Motus graph.
+"""The TerraVeler chat pipeline as a native Motus graph.
 
-This is the only chat pipeline: ``chat_graph.py``, the Axis version it was
-ported from, is gone. It answers a question the predecessor could not: **what
-does the run look like when the runtime, not the code, decides where execution
-goes?**
-
-Three things are deliberately different from that predecessor, and each is the
-point of an experiment:
-
-1.  **There is no `Bag`.** The Axis graph passes a mutable object to every node
-    and the real data rides it — ``bag.answerable = True`` in one node, ``if
-    bag.answerable`` in the next. ``node-protocol.md`` §1.2 forbids exactly
-    that, and §1.4 forbids the branch inside the node. Everything here flows
-    through ``State``, which means everything here is in the trace.
-
-2.  **The branch is a routing record, not an `if`.** ``evaluate`` writes a
-    keyed ``Decision`` and the *spec* maps its value onto a node. A reader of
-    the trace sees which decision the dispatch observed, which candidates it
-    had, and which it took — instead of inferring it from source.
-
-3.  **`embed_query` and `retrieve` are one node.** They were two in the Axis
-    graph, and the 768-float query vector had to cross the boundary between
-    them. That vector is not evidence of anything — it is working memory — but
-    a contract with no side channel would have forced it into the trace. So the
-    contract made the seam visible, and the honest fix was to remove the seam:
-    embedding is an implementation detail of retrieval, not a step anybody
-    audits. What crosses a node boundary here is only what a reader would want
-    to see.
-
-The retrieved sources DO stay in the state, at their full length. For
-Terraveler that volume is evidence rather than noise: *which sources the
-chronicler consulted, and what they actually said*, is precisely the thing the
-trace exists to prove.
+The graph keeps all auditable state in Motus. Retrieval and composition are
+recorded effects; routing is declared in the GraphSpec rather than hidden in
+node-local branching.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -57,25 +30,24 @@ from vitruvyan_motus import (
 )
 from vitruvyan_motus.effects import EffectClass
 
-RELEVANCE_THRESHOLD = 0.35  # cosine similarity below which we decline to answer
+RELEVANCE_THRESHOLD = 0.35
+_TRANSIENT_PROVIDER_STATUSES = frozenset({408, 409, 429, 500, 502, 503, 504, 529})
 
-# Two clauses here are not stylistic and were both written after watching the
-# answer land in the actual bubble.
-#
-#   THE LANGUAGE. "Reply in the user's language" read as a hint about who was
-#   being served, and the model took its cue from the sources instead: an
-#   English question about Cook's Endeavour came back in Spanish, fluently and
-#   entirely wrongly. This corpus is multilingual by construction — Bernal
-#   Díaz is Spanish, Pigafetta is Italian, Cook is English — so "the user's
-#   language" has to name the QUESTION as the thing it is read from, or the
-#   passages win.
-#
-#   THE MARKDOWN. components/Pigafetta.tsx renders the answer as text in a
-#   div; there is no markdown parser behind it and adding one is not the fix.
-#   Un-instructed, the model returns headings and **bold**, and the reader gets
-#   literal asterisks in a chat bubble on a site whose argument is typography.
-#   The prose voice is also the right one here: this is a chronicler speaking,
-#   not a report with sections.
+
+class OpenRouterHTTPError(RuntimeError):
+    """A safe, classified OpenRouter failure.
+
+    Provider response text is kept for operator logs only. The trace persists
+    only status and a provider error type/code, never arbitrary response text.
+    """
+
+    def __init__(self, status: int, error_type: str, message: str) -> None:
+        self.status = status
+        self.error_type = error_type
+        self.provider_message = message
+        super().__init__(f"OpenRouter HTTP {status} ({error_type}): {message}")
+
+
 SYSTEM_PROMPT = (
     "You are Antonio Pigafetta, chronicler of great voyages. Answer the user's "
     "question ONLY from the numbered sources below, which come from the ship's "
@@ -89,9 +61,6 @@ SYSTEM_PROMPT = (
     "Be concise, accurate and vivid — a few sentences unless more is truly asked for."
 )
 
-# The second silence. A voyage whose sources do not cover the question and a
-# chronicler who cannot write today are not the same absence, and the graph
-# used to know how to declare only the first.
 UNREACHABLE_ANSWER = (
     "The passages are before me — {n} of them, from this voyage's own sources — "
     "but I cannot compose from them at this moment: the hand that writes my "
@@ -105,31 +74,18 @@ DECLINED_ANSWER = (
 )
 
 
-# ---------------------------------------------------------------- the spec
-
 SPEC = GraphSpec.from_dict({
     "schema_version": "1.0.0",
     "name": "terraveler-chat",
     "version": "1.0.0",
     "entry": "retrieve",
     "nodes": [
-        # recorded_effect: it reads the outside world (the embedding service
-        # and the corpus) and the *results* are the effect. It mutates nothing.
-        # Declaring reads is optional — but declaring SOME means declaring all:
-        # the runtime holds a node to whatever list it gives. Reading a
-        # metadata key counts as a read of that key (node-protocol §3.2), which
-        # is how `question` and `voyage` come to be listed here.
         {"name": "retrieve", "effect_class": "recorded_effect",
          "reads_declared": ["question", "voyage"],
          "writes_declared": ["n_sources", "top_similarity", "sources", "retrieval"]},
-        # pure: it reads what retrieve wrote and decides. Nothing outside.
-        # A pure node may still draw the clock through ctx (node-protocol §6.1).
         {"name": "evaluate", "effect_class": "pure",
          "reads_declared": ["top_similarity", "n_sources"],
          "writes_declared": ["answerable", "grounding"]},
-        # `failure` is declared here even though most runs never write it: a
-        # declaration is a list of what the node MAY write, and a writer that
-        # cannot be reached is one of the two ways this node can end.
         {"name": "answer", "effect_class": "recorded_effect",
          "reads_declared": ["sources", "question"],
          "writes_declared": ["answer", "answered", "failure"]},
@@ -137,9 +93,6 @@ SPEC = GraphSpec.from_dict({
          "reads_declared": [],
          "writes_declared": ["answer", "answered"]},
     ],
-    # The whole argument of the port is in these four lines: the branch lives
-    # in the spec, keyed to a decision a node recorded, so the trace carries a
-    # routing record naming the exact Decision the dispatch observed.
     "transitions": {
         "retrieve": {"kind": "next", "to": "evaluate"},
         "evaluate": {
@@ -156,43 +109,58 @@ SPEC = GraphSpec.from_dict({
 
 @dataclass(frozen=True)
 class ChatConfig:
-    """Deployment configuration, read-only and shared.
-
-    This is NOT the `Bag` in disguise: nothing here is ever written by a node,
-    and no information passes between nodes through it. It is the connection
-    string and the model name — the sort of thing §1.2 was never about.
-    """
     pg: dict[str, Any]
     embed_url: str
-    anthropic_key: str
-    model: str = "claude-opus-5"
+    openrouter_key: str
+    model: str = "~anthropic/claude-opus-latest"
     k: int = 6
     max_tokens: int = 4000
 
-
-# ---------------------------------------------------------------- adapters
 
 def _embed(embed_url: str, text: str) -> list[float]:
     req = urllib.request.Request(
         embed_url.rstrip("/") + "/v1/embeddings/create",
         data=json.dumps({"text": text}).encode(),
-        headers={"Content-Type": "application/json"})
+        headers={"Content-Type": "application/json"},
+    )
     with urllib.request.urlopen(req, timeout=60) as r:
         return json.load(r)["embedding"]
 
 
-def _anthropic(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str, dict]:
-    """Write the answer from the retrieved passages.
+def _provider_error(exc: urllib.error.HTTPError) -> tuple[str, str]:
+    """Extract a safe error discriminator plus an operator-facing message."""
+    try:
+        raw = exc.read().decode("utf-8", "replace")
+        payload = json.loads(raw)
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return "http_error", str(exc.reason or "request failed")
 
-    THE LANGUAGE RULE IS REPEATED HERE, LAST, AND THAT IS THE POINT. Stated
-    only in the system prompt it lost twice to the passages: an English
-    question about Cook came back in Spanish, and "Who was Jeanne Barret?" came
-    back in French, because the sources that answer her are French and they are
-    the nearest thing to the answer. Eight retrieved passages are a great deal
-    of text in one language sitting between the instruction and the writing.
-    Putting it after the question makes it the last thing read, which is what
-    it took — the wording did not change, its position did.
-    """
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if not isinstance(error, dict):
+        return "http_error", str(exc.reason or "request failed")
+
+    # OpenRouter is OpenAI-compatible, while its Anthropic-compatible Messages
+    # endpoint can expose provider-shaped error metadata. Accept both forms.
+    discriminator = error.get("type") or error.get("code") or "http_error"
+    message = error.get("message") or exc.reason or "request failed"
+    return str(discriminator), str(message)
+
+
+def _retry_delay(exc: urllib.error.HTTPError, attempt: int) -> float:
+    retry_after = exc.headers.get("retry-after") if exc.headers else None
+    if retry_after:
+        try:
+            return min(max(float(retry_after), 0.0), 10.0)
+        except ValueError:
+            pass
+    return float(2 ** attempt)
+
+
+def _openrouter(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str, dict]:
+    """Compose through OpenRouter's Anthropic-compatible Messages endpoint."""
+    if not cfg.openrouter_key:
+        raise RuntimeError("OPENROUTER_API_KEY is not configured")
+
     context = "\n\n".join(
         f"[{i + 1}] ({d['title']})\n{d['content']}" for i, d in enumerate(sources)
     )
@@ -208,29 +176,58 @@ def _anthropic(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str
         "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}],
     }
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(body).encode(),
-        headers={
-            "content-type": "application/json",
-            "x-api-key": cfg.anthropic_key,
-            "anthropic-version": "2023-06-01",
-        })
-    with urllib.request.urlopen(req, timeout=120) as r:
-        payload = json.load(r)
-    text = "".join(part.get("text", "") for part in payload.get("content", []))
-    return text, payload
+
+    for attempt in range(3):
+        req = urllib.request.Request(
+            "https://openrouter.ai/api/v1/messages",
+            data=json.dumps(body).encode(),
+            headers={
+                "content-type": "application/json",
+                "authorization": f"Bearer {cfg.openrouter_key}",
+                "http-referer": "https://terraveler.com",
+                "x-title": "TerraVeler",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                payload = json.load(r)
+            text = "".join(
+                part.get("text", "") for part in payload.get("content", [])
+                if isinstance(part, dict)
+            )
+            if not text.strip():
+                raise RuntimeError("OpenRouter returned no text content")
+            return text, payload
+        except urllib.error.HTTPError as exc:
+            error_type, message = _provider_error(exc)
+            if exc.code in _TRANSIENT_PROVIDER_STATUSES and attempt < 2:
+                delay = _retry_delay(exc, attempt)
+                print(
+                    f"⚠ OpenRouter transient HTTP {exc.code} ({error_type}); "
+                    f"retry {attempt + 2}/3 in {delay:g}s"
+                )
+                time.sleep(delay)
+                continue
+            raise OpenRouterHTTPError(exc.code, error_type, message) from exc
+        except urllib.error.URLError as exc:
+            if attempt < 2:
+                delay = float(2 ** attempt)
+                print(
+                    f"⚠ OpenRouter network failure ({type(exc.reason).__name__}); "
+                    f"retry {attempt + 2}/3 in {delay:g}s"
+                )
+                time.sleep(delay)
+                continue
+            raise
+
+    raise RuntimeError("OpenRouter retry loop exhausted")
 
 
 def _fingerprint(text: str) -> str:
     return "effect:sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-# ---------------------------------------------------------------- the nodes
-
 def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
-    """Build the node table. The closure carries configuration only."""
-
     def retrieve(state: State, ctx) -> State:
         question = state.metadata("question")
         voyage = state.metadata("voyage")
@@ -245,11 +242,14 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
         conn = psycopg2.connect(**cfg.pg)
         try:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                cur.execute("select * from match_rag_docs(%s::vector, %s, %s)",
-                            (lit, cfg.k, voyage))
+                cur.execute(
+                    "select * from match_rag_docs(%s::vector, %s, %s)",
+                    (lit, cfg.k, voyage),
+                )
                 rows = [dict(r) for r in cur.fetchall()]
         finally:
             conn.close()
+
         ctx.record_effect(EffectDescriptor(
             effect_class=EffectClass.RECORDED_EFFECT,
             description=f"queried match_rag_docs for voyage {voyage!r}, k={cfg.k}",
@@ -257,10 +257,6 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
 
         top = float(rows[0]["similarity"]) if rows else 0.0
         now = ctx.now()
-
-        # Sources go in whole: for this project, what the chronicler read is
-        # the evidence. Similarity is rounded because a float's last digits
-        # are noise, not testimony.
         sources = [{
             "title": r["title"],
             "source_url": r["source_url"],
@@ -282,12 +278,6 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
         )
 
     def evaluate(state: State, ctx) -> State:
-        """The node the whole pipeline exists for, and now a pure one.
-
-        It reads two facts and writes one decision. The runtime routes on that
-        decision; this function does not know, and must not know, which node
-        runs next.
-        """
         top = state.fact("top_similarity") or 0.0
         n = state.fact("n_sources") or 0
         now = ctx.now()
@@ -296,11 +286,11 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
         state = state.with_decision(Decision(
             "answerable", "yes" if answerable else "no", now,
             reason=(f"top similarity {top:.3f} "
-                    f"{'≥' if answerable else '<'} threshold {RELEVANCE_THRESHOLD}")))
+                    f"{'≥' if answerable else '<'} threshold {RELEVANCE_THRESHOLD}"),
+        ))
 
         if answerable:
             return state.with_fact(Fact("grounding", "sources sufficient", "evaluate", now))
-        # A refusal is recorded as a refusal, not merely as an absence.
         return state.with_rejection(Rejection(
             "answer from sources",
             f"insufficient relevance (top {top:.3f} < {RELEVANCE_THRESHOLD})",
@@ -309,42 +299,24 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
         )).with_fact(Fact("grounding", "sources insufficient", "evaluate", now))
 
     def answer(state: State, ctx) -> State:
-        """The node that has to distinguish two silences.
-
-        A voyage whose sources do not cover the question, and a chronicler who
-        cannot write today, are not the same absence — and for a year this
-        graph only knew how to declare the first. The second arrived as a stack
-        trace: the model call raised, the exception left the run, and the one
-        failure with an external cause produced a 500 where a reader wanted the
-        passages. The reader was told "the chronicler is unavailable", which is
-        true and says nothing.
-
-        Both are declared now, in the atlas's own grammar: a Rejection carrying
-        the motive, a `failure` fact naming the exception class, and a sentence
-        that says WHICH silence this is. The sources travel with it — they were
-        retrieved successfully and are the same passages the answer would have
-        quoted, so a reader who came for the record still gets the record. This
-        is the Carta's rule about a burnt archive, applied to our own
-        machinery: an absence is stated, never disguised as an answer or as an
-        empty page.
-
-        It is a returned state rather than a raise on purpose. A raise under
-        STRICT aborts the run, and an aborted run discards the writes of the
-        attempt that failed — including the sources this reader is owed.
-        """
         sources = state.fact("sources") or []
         question = state.metadata("question")
         try:
-            text, payload = _anthropic(cfg, question, sources)
+            text, payload = _openrouter(cfg, question, sources)
         except Exception as exc:
             now = ctx.now()
-            # The class, not the text: a message can carry a key or a URL, and
-            # this string is persisted to chat_traces and shown to a reader.
             failure = type(exc).__name__
+            evidence = {"n_sources": len(sources), "model": cfg.model,
+                        "provider": "openrouter"}
+            if isinstance(exc, OpenRouterHTTPError):
+                failure = f"OpenRouterHTTP{exc.status}:{exc.error_type}"
+                evidence.update({"http_status": exc.status,
+                                 "error_type": exc.error_type})
+
             ctx.record_effect(EffectDescriptor(
                 effect_class=EffectClass.RECORDED_EFFECT,
-                description=(f"{cfg.model} was unreachable while composing from "
-                             f"{len(sources)} source(s): {failure}"),
+                description=(f"{cfg.model} via OpenRouter was unreachable while "
+                             f"composing from {len(sources)} source(s): {failure}"),
                 receipt=EffectReceipt(receipt_id=failure, status="unknown"),
             ))
             print(f"⚠ compose failed ({failure}): {exc}")
@@ -357,16 +329,16 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
                 .with_rejection(Rejection(
                     "compose an answer from sufficient sources",
                     f"the writing model was unreachable ({failure})", now,
-                    evidence={"n_sources": len(sources), "model": cfg.model},
+                    evidence=evidence,
                 ))
             )
-        now = ctx.now()
 
+        now = ctx.now()
         usage = payload.get("usage") or {}
         ctx.record_effect(EffectDescriptor(
             effect_class=EffectClass.RECORDED_EFFECT,
-            description=(f"{cfg.model} answered from {len(sources)} source(s) "
-                         f"({usage.get('input_tokens')} in / "
+            description=(f"{cfg.model} via OpenRouter answered from {len(sources)} "
+                         f"source(s) ({usage.get('input_tokens')} in / "
                          f"{usage.get('output_tokens')} out)"),
             receipt=EffectReceipt(
                 receipt_id=payload.get("id") or "unknown",
@@ -392,14 +364,12 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
             "answer": answer, "decline": decline}
 
 
-# ---------------------------------------------------------------- run it
-
 def config_from_env(pg: dict[str, Any]) -> ChatConfig:
     return ChatConfig(
         pg=pg,
         embed_url=os.getenv("EMBED_URL", "http://terraveler_embedding:8010"),
-        anthropic_key=os.getenv("ANTHROPIC_API_KEY", ""),
-        model=os.getenv("ANTHROPIC_MODEL", "claude-opus-5"),
+        openrouter_key=os.getenv("OPENROUTER_API_KEY", ""),
+        model=os.getenv("OPENROUTER_MODEL", "~anthropic/claude-opus-latest"),
         k=int(os.getenv("RAG_K", "6")),
     )
 
@@ -412,6 +382,8 @@ def run_chat_native(cfg: ChatConfig, question: str, voyage: str, *,
         State.empty(f"chat:{voyage}", metadata={"question": question, "voyage": voyage}),
         run_id=run_id,
     )
-    sources = [{k: d[k] for k in ("title", "source_url", "type", "media_url", "credit")}
-               for d in (result.state.fact("sources") or [])]
+    sources = [
+        {k: d[k] for k in ("title", "source_url", "type", "media_url", "credit")}
+        for d in (result.state.fact("sources") or [])
+    ]
     return result.state.fact("answer"), sources, result

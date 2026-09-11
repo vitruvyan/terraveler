@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: terraveler
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "127.0.0.1:6000:5432"   # localhost only; services talk via terraveler_net
+      - "127.0.0.1:6000:5432"
     volumes:
       - terraveler_pgdata:/var/lib/postgresql/data
       - ./db/init:/docker-entrypoint-initdb.d:ro
@@ -31,34 +31,15 @@ services:
       timeout: 5s
       retries: 5
 
-  # The mycelium's transport (docs/SHIPS_OFFICERS.md §5). Terraveler runs its
-  # own Redis rather than sharing Vitruvyan's: the streams carry this site's
-  # editorial causality, and they live inside terraveler_net like everything
-  # else that matters here. No host port at all — only the relay and the
-  # officers' dispatcher reach it, over the internal network. AOF persistence
-  # because a stream that forgets events breaks replay; noeviction because a
-  # bus that drops events under memory pressure is a bus quietly deciding
-  # which history to keep, and deciding is not its job.
-  # Before the relay goes live this container also needs an ACL (requirepass
-  # at minimum): terraveler_net carries services that run third-party model
-  # code, and the governance streams are not theirs to read or write.
   terraveler_redis:
-    image: redis:7.4-alpine    # pinned, like pgvector:pg16 and postgrest above
+    image: redis:7.4-alpine
     container_name: terraveler_redis
     restart: unless-stopped
-    # noeviction is inert without a maxmemory: with one, hitting the ceiling
-    # fails writes loudly instead of OOMing the VPS quietly. 256mb is years
-    # of editorial events; the relay's ack policy will trim before it matters.
-    # requirepass is the ACL this comment always promised: terraveler_net
-    # carries containers that run third-party model code, one of them
-    # internet-reachable — without auth, anything on the network could XADD
-    # a forged reviews.advanced and steer the Curator, or FLUSHALL the
-    # projection. Only this service and the officers receive the password.
     command: ["redis-server", "--appendonly", "yes",
               "--maxmemory", "256mb", "--maxmemory-policy", "noeviction",
               "--requirepass", "${REDIS_PASSWORD}"]
     environment:
-      REDISCLI_AUTH: ${REDIS_PASSWORD}   # healthcheck's redis-cli reads this
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
     volumes:
       - terraveler_redisdata:/data
     networks:
@@ -82,7 +63,7 @@ services:
       HF_HOME: /cache/hf
       PORT: 8010
     ports:
-      - "127.0.0.1:6002:8010"   # localhost only; rag/ingest reach it via terraveler_net
+      - "127.0.0.1:6002:8010"
     volumes:
       - terraveler_hf_cache:/cache/hf
     networks:
@@ -93,7 +74,7 @@ services:
       context: ./ingest
     image: terraveler-ingest
     container_name: terraveler_ingest
-    profiles: ["jobs"]          # not started by `up`; run on demand
+    profiles: ["jobs"]
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -107,14 +88,6 @@ services:
     volumes:
       - ./traces:/app/traces
       - ./out:/app/out
-      # The pipeline source is mounted, not baked in. The Dockerfile still
-      # COPYs it so the image runs standalone, but a bind mount means editing
-      # sources.py or extract.py takes effect on the next run without a
-      # rebuild. Forgetting that rebuild produced three silent zero-document
-      # runs in one session — the container simply did not know about the
-      # voyage it was asked for, and reported success with an empty corpus.
-      # (not :ro — a read-only /app blocks creating the nested
-      #  mountpoints for traces/ and out/ above it)
       - ./ingest:/app
     networks:
       - terraveler_net
@@ -128,13 +101,11 @@ services:
     environment:
       EMBED_URL: http://terraveler_embedding:8010
       RAG_TOKEN: ${RAG_TOKEN}
-      # The chronicler writes through Anthropic. OPENAI_* is gone rather than
-      # kept as a fallback: a second provider nobody exercises is a path that
-      # rots, and this one had already rotted in place — the key was passed in
-      # for weeks and read by nothing, while the account it named ran dry. The
-      # pair left for good with chat_graph.py; nothing in this service reads it.
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-5}
+      # The chat writer is routed through OpenRouter. The RAG service no longer
+      # reads ANTHROPIC_API_KEY directly; provider choice is expressed by the
+      # OpenRouter model slug instead.
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-~anthropic/claude-opus-latest}
       RAG_K: ${RAG_K:-6}
       PGHOST: terraveler_postgres
       PGPORT: 5432
@@ -142,18 +113,10 @@ services:
       PGUSER: terraveler
       PGPASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "6003:8000"             # PUBLIC — Vercel calls this (bearer-token gated)
+      - "6003:8000"
     networks:
       - terraveler_net
 
-  # The officers' watch (docs/SHIPS_OFFICERS.md §6): one container holding
-  # the relay (outbox -> wire) and one consumer group per standing-watch
-  # officer, the Curator first. The canonical pattern is one service per
-  # order (vitruvyan-core, SERVICE_PATTERN.md); at this scale the orders
-  # share a hull and keep their own consumer groups — extraction stays
-  # possible, the VPS stays light. The repo is mounted read-only: the
-  # Curator runs scripts/desk_review.py from it and writes only to the
-  # database, under its own name.
   terraveler_officers:
     build:
       context: ./officers
@@ -175,14 +138,11 @@ services:
       REPO: /repo
       OFFICERS_MOORED: ${OFFICERS_MOORED:-0}
     volumes:
-      # Narrow on purpose: the Curator needs the scripts, their ingest
-      # imports and the Carta — not the .env holding every key this
-      # deployment owns. What is not mounted cannot leak.
       - ./scripts:/repo/scripts:ro
       - ./ingest:/repo/ingest:ro
       - ./MAGNA_CARTA.md:/repo/MAGNA_CARTA.md:ro
     ports:
-      - "127.0.0.1:6005:8080"   # /health, localhost only
+      - "127.0.0.1:6005:8080"
     networks:
       - terraveler_net
     mem_limit: 768m
@@ -193,8 +153,6 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      # Strict: degraded (503) is unhealthy — a watch that never beat or a
-      # relay that stopped shipping must be visible from `docker ps`.
       test: ["CMD", "python", "-c",
              "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=5).status == 200 else 1)"]
       interval: 30s
@@ -202,10 +160,6 @@ services:
       retries: 5
       start_period: 30s
 
-  # Governance API: the same PostgREST dialect Supabase speaks, so the desk,
-  # /contribute and the MCP server move over by changing a base URL rather
-  # than their queries. Bound to localhost until nginx fronts it with TLS —
-  # it carries a service token that must never cross the wire in the clear.
   terraveler_postgrest:
     image: postgrest/postgrest:v12.2.3
     container_name: terraveler_postgrest
@@ -221,6 +175,6 @@ services:
       PGRST_DB_POOL: 10
       PGRST_SERVER_PORT: 3000
     ports:
-      - "127.0.0.1:6004:3000"   # localhost only — nginx will publish it over TLS
+      - "127.0.0.1:6004:3000"
     networks:
       - terraveler_net
