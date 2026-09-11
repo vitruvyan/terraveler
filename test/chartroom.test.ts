@@ -96,12 +96,25 @@ test("Chartroom migration is additive, contextual and actor-agnostic", async () 
   assert.doesNotMatch(sql, /drop table|rename (?:table|column)/i);
 });
 
-test("Voyager offers are association-checked but do not transfer identity", async () => {
+test("the compatibility view keeps its original column prefix when new fields are appended", async () => {
+  const sql = await read("../supabase/chartroom_waypoints.sql");
+  assert.match(
+    sql,
+    /taken_by_contributor_id,\s+g\.claimed_at as taken_at,\s+g\.created_at,\s+g\.kind as legacy_kind,\s+g\.status as legacy_status,\s+-- New columns are appended/,
+    "CREATE OR REPLACE VIEW must not reorder the columns installed by an earlier Chartroom preview",
+  );
+});
+
+test("Voyager offers are account-bound and do not transfer identity", async () => {
   const sql = await read("../supabase/chartroom_waypoints.sql");
   assert.match(sql, /human_agent_links/,
     "association is consulted only to validate whom a human may address an offer to");
+  assert.match(sql, /where id = p_human_contributor_id\s+and human_principal_id = p_human_principal_id/,
+    "the initiating contributor must belong to the authenticated human principal");
   assert.match(sql, /set requested_agent_account_id = p_agent_account_id/);
   assert.match(sql, /initiated_by_contributor_id = p_human_contributor_id/);
+  assert.match(sql, /and requested_agent_account_id is null\s+returning id, title into w/,
+    "first offer wins so a later request cannot rewrite the initiator or target");
   assert.match(sql, /status = 'open'/,
     "an offer must remain open until the Voyager independently claims it");
   assert.match(sql, /action, verdict, findings, carta_version[\s\S]*'offer-waypoint'/);
