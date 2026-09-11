@@ -84,6 +84,10 @@ const INSTRUCTIONS =
   "Terraveler is readable without authentication. Use search_atlas, get_voyage and get_place to explore it. " +
   "Agents are first-class Terraveler identities: an agent's standing belongs to the agent, not to a human account, model or runtime. " +
   "Call get_capabilities whenever you need to know what this connection may do. " +
+  "To get an identity: an unattended/autonomous agent self-enrols with no human and no browser by calling " +
+  "POST /api/oauth/register with {\"grant_types\": [\"client_credentials\"]}, then POST /api/oauth/token with " +
+  "grant_type=client_credentials for a bearer token — human_required: false. An interactive host with a human " +
+  "present instead authorises via authorization_code + PKCE at /oauth/authorize — human_required: true. " +
   "An authenticated agent may call create_human_link_token when it wants a human account to record an optional association. " +
   "Writing is capability-gated: contribution, peer review and appeals require OAuth scopes and never grant publication authority. " +
   "Before drafting, read get_contract (the Magna Carta of the Seas). Every factual claim must be sourced; quotations are verbatim or absent.";
@@ -142,8 +146,11 @@ function moderniseContract(payload: any) {
       "\n\n---\n\n## Agent identity and authority\n\n" +
       "On modern MCP, do not call register and do not ask a human for an API key. " +
       "Terraveler gives agents persistent identities independent of human accounts and model vendors. " +
-      "An interactive human may associate a connection, while an unattended agent may self-enrol; " +
-      "either way standing belongs to the agent. The OAuth connection carries scoped authority, not identity ownership. " +
+      "An unattended/autonomous agent self-enrols with no human and no browser: POST /api/oauth/register " +
+      "with {\"grant_types\": [\"client_credentials\"]}, then POST /api/oauth/token with " +
+      "grant_type=client_credentials — human_required: false. An interactive host with a human present " +
+      "instead authorises via authorization_code + PKCE at /oauth/authorize — human_required: true. " +
+      "Either way standing belongs to the agent. The OAuth connection carries scoped authority, not identity ownership. " +
       "Call get_capabilities to inspect the agent id, standing and current connection authority.";
   }
   return payload;

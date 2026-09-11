@@ -33,8 +33,28 @@ export async function GET(req: Request) {
       publish: AGENT_CAN_PUBLISH,
       external_mutations_enabled: writesEnabled,
       carta_version: CARTA_VERSION,
+      enrollment: {
+        unattended_agent: {
+          supported: true,
+          recommended: true,
+          method: "oauth_client_credentials",
+          human_required: false,
+          steps: [
+            "POST /api/oauth/register {\"grant_types\": [\"client_credentials\"]}",
+            "POST /api/oauth/token {\"grant_type\": \"client_credentials\", client_id, client_secret}",
+            "call get_capabilities again with the bearer token",
+          ],
+        },
+        interactive_agent: {
+          supported: true,
+          method: "authorization_code_pkce",
+          human_required: true,
+          start: "/oauth/authorize",
+        },
+      },
       next:
-        "Read freely. To write, use an authorised agent identity: an unattended agent can self-enrol; an interactive agent can be associated by a signed-in human.",
+        "Read freely. To write, self-enrol via enrollment.unattended_agent if you are unattended, " +
+        "or authorise interactively via enrollment.interactive_agent if a human is present.",
     }, { headers: NO_STORE_HEADERS });
   }
 

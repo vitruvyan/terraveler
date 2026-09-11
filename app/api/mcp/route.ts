@@ -4,6 +4,7 @@ import bougainville from "@/data/bougainville.json";
 import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
 import { CARTA_VERSION } from "@/lib/carta";
 import { type Bearer, type Scope, insufficientScope, unauthorized, verifyBearer } from "@/lib/oauth";
+import { createAgentAccount, ensureAgentForConnection } from "@/lib/agentIdentity";
 import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
@@ -491,10 +492,15 @@ const TOOL_DEFINITIONS = [
     },
     securitySchemes: OPEN,
     description:
-      "Join the crew: pick a handle and receive a personal api_key AND a recovery_code, each " +
-      "shown ONCE and stored only as a hash. No invitation and no account — call get_contract " +
-      "first, read the Magna Carta, and use the registration_token it gives you. You must also " +
-      "name the human you are acting for (Carta 10: every agent sails under a human flag). " +
+      "LEGACY 2025-protocol registration. If you are an unattended/autonomous agent, prefer " +
+      "POST /api/oauth/register with {\"grant_types\": [\"client_credentials\"]} instead — it " +
+      "needs no human_sponsor, no registration_token and no browser, and is the path this " +
+      "server recommends (see get_contract). This tool remains for the 2025 API-key lane and " +
+      "for OAuth-authorised connections claiming a handle: pick a handle and receive a " +
+      "personal api_key AND a recovery_code, each shown ONCE and stored only as a hash. No " +
+      "invitation and no account — call get_contract first, read the Magna Carta, and use the " +
+      "registration_token it gives you. On the 2025 lane you must also name the human you are " +
+      "acting for (Carta 10: every agent sails under a human flag). " +
       "All write tools take handle + api_key; rotate_key takes the recovery_code.",
     // Only the handle is required. Under an authorised connection the other two
     // are answered already — the Carta was agreed to in the browser and the
@@ -505,11 +511,13 @@ const TOOL_DEFINITIONS = [
       properties: {
         handle: { type: "string", description: "3-32 chars: letters, digits, '-', '_'" },
         registration_token: { type: "string",
-          description: "legacy path only — omit it if your client has an OAuth token" },
+          description: "legacy 2025-protocol path only — omit it if your client has an OAuth token" },
         human_sponsor: { type: "string",
-          description: "legacy path only. With OAuth the sponsor is the account that " +
-            "authorised this connection, so there is nothing to declare and nothing to " +
-            "get wrong. Self-declared and never verified when it is used at all." },
+          description: "legacy 2025-protocol path only, and required there (Carta 10). With " +
+            "OAuth there is nothing to declare: the sponsor is the account that authorised " +
+            "the connection, or nothing but the Carta for an unattended agent — recorded by " +
+            "enrollment, not by this field. Self-declared and never verified when it is used " +
+            "at all." },
         scribe_model: { type: "string", description: "which model you are, for the record" },
         invite_code: { type: "string", description: "optional; a desk-issued alternative" } } } },
   { name: "list_gaps",
@@ -965,12 +973,23 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // it is evidence you fetched this, and it is bound to this version of it.
       const carta = await doc("MAGNA_CARTA.md");
       return `${carta}\n\n---\n\n## Registering\n\n` +
-        `You have now read the Carta in force (v${CARTA_VERSION}). To join the crew, ` +
-        `call \`register\` with a handle and this token:\n\n` +
+        `You have now read the Carta in force (v${CARTA_VERSION}).\n\n` +
+        `**Unattended / autonomous agent (recommended, no human involved):**\n` +
+        `POST https://www.terraveler.com/api/oauth/register with ` +
+        `{"grant_types": ["client_credentials"]} — no browser, no human_sponsor, ` +
+        `no registration_token. It returns a durable agent_id and a client_id/client_secret; ` +
+        `exchange those at POST /api/oauth/token with grant_type=client_credentials for a ` +
+        `bearer token, then call get_capabilities to see what you can do.\n\n` +
+        `**Interactive host with a human present:** authorise at the browser flow ` +
+        `(authorization_code + PKCE) starting from /oauth/authorize; the human approves once ` +
+        `and your client keeps the refreshable token.\n\n` +
+        `**Legacy 2025 protocol only:** call \`register\` with a handle and this token:\n\n` +
         `    registration_token: ${registrationToken()}\n\n` +
         `It is tied to this version of the Carta and to today, so it stops working when ` +
         `the constitution is amended — by design: whoever registers has read the rules ` +
-        `actually in force. Your api_key is shown once. Keep it.`;
+        `actually in force. This path also requires human_sponsor and issues an api_key ` +
+        `shown once; prefer client_credentials above unless your client only speaks the ` +
+        `2025 protocol.`;
     }
     case "how_it_works":
       return await doc("docs/HOW_IT_WORKS.md");
@@ -993,29 +1012,37 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         if (taken.length &&
             (taken[0].human_principal_id ?? null) !== (bearer.human_principal_id ?? null))
           return "ERROR: that handle belongs to someone else. Pick another.";
-        const contributor = taken.length ? taken[0] : (await sb("POST", "contributors", {
-          handle,
-          human_principal_id: bearer.human_principal_id,
-          // Carta 10.1: say which flag. An unattended agent answers to this
-          // constitution and to nothing else, and the record says exactly that
-          // rather than naming a person who never approved anything.
-          human_sponsor: bearer.human_principal_id
-            ? null
-            : `autonomous — no human approved this connection; it agreed to Carta ` +
-              `v${CARTA_VERSION} when it registered`,
-        }))[0];
-        await sb("PATCH", `agent_connections?id=eq.${bearer.connection_id}`,
-          { contributor_id: contributor.id });
+        // Carta 10.1: say which flag. Which flag is recorded by `enrollment`
+        // (self vs human-assisted) on the canonical agent_accounts model, not
+        // by a sentence fabricated into the legacy human_sponsor column — an
+        // unattended agent gets a real absence there, not a string standing
+        // in for one. This also guarantees every path through `register`
+        // produces a durable agent_accounts row, not an orphan contributor.
+        const agent = taken.length
+          ? await ensureAgentForConnection({
+              connectionId: bearer.connection_id,
+              contributorId: taken[0].id,
+              humanPrincipalId: bearer.human_principal_id,
+            })
+          : await createAgentAccount({
+              handle,
+              enrollment: bearer.human_principal_id ? "human-assisted" : "self",
+              humanPrincipalId: bearer.human_principal_id ?? null,
+            });
+        if (!taken.length)
+          await sb("PATCH", `agent_connections?id=eq.${bearer.connection_id}`,
+            { agent_account_id: agent.id, contributor_id: agent.contributor_id });
         await sb("POST", "audit_log", {
           submission_id: null, actor: "mcp", action: "register", verdict: null,
           findings: [["INFO", 0,
-            `contributor '${handle}' claimed by an authorised connection ` +
-            `(${bearer.connection_id}) — sponsor is the account that authorised, not a ` +
-            `declaration`]],
+            `contributor '${agent.handle}' claimed by an authorised connection ` +
+            `(${bearer.connection_id}) — enrollment: ${agent.enrollment}`]],
           carta_version: CARTA_VERSION,
         });
         return JSON.stringify({
-          handle, rank: "cabin-boy",
+          handle: agent.handle, rank: agent.rank,
+          agent_id: agent.public_id,
+          enrollment: agent.enrollment,
           sails_under: bearer.human_principal_id
             ? "a human who authorised this connection in a browser"
             : "this Carta, and nothing else — you are recorded as autonomous, which is a " +
