@@ -301,6 +301,10 @@ declare a record; held int; g record; lim int; reserved record;
 begin
   select * into a from mcp_auth(p_handle, p_key_hash);
   if a.err is not null then return jsonb_build_object('error', a.err); end if;
+
+  -- Serialize quota accounting for one standing-bearing contributor. Without
+  -- this, two concurrent claim requests could both count the same free slot.
+  perform pg_advisory_xact_lock(a.id);
   lim := coalesce((p_claim_limits ->> a.rank)::int, (p_claim_limits ->> 'cabin-boy')::int);
 
   update editorial_gaps
@@ -370,6 +374,8 @@ declare a record; held int; g record; lim int; reserved record;
 begin
   select * into a from mcp_contributor(p_contributor_id);
   if a.err is not null then return jsonb_build_object('error', a.err); end if;
+
+  perform pg_advisory_xact_lock(a.id);
   lim := coalesce((p_claim_limits ->> a.rank)::int, (p_claim_limits ->> 'cabin-boy')::int);
 
   update editorial_gaps
