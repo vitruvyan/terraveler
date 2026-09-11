@@ -3,8 +3,8 @@ import { sb } from "@/lib/deskAuth";
 import { ensureAgentForBearer } from "@/lib/agentIdentity";
 import { MCP_RESOURCE, secret, sha256, verifyBearer } from "@/lib/oauth";
 import {
-  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationGuardReason,
-  mutationsEnabled, readLimitedJson, requestSource, securityAudit,
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, enrollmentGuardReason,
+  externalAgentEnrollmentEnabled, readLimitedJson, requestSource, securityAudit,
 } from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
@@ -16,10 +16,14 @@ type Purpose = "runtime-binding" | "human-association";
 
 export async function POST(req: Request) {
   const source = requestSource(req);
-  if (!mutationsEnabled()) {
+  // A link token exists to bring a new party (runtime or human) into this
+  // agent's identity graph, so it follows the enrollment gate rather than
+  // the content one — even though minting it requires an already-enrolled
+  // agent to be calling.
+  if (!externalAgentEnrollmentEnabled()) {
     await securityAudit({ source, action: "link-token", outcome: "rejected", status: 503,
-      reason: mutationGuardReason() ?? "external mutation guard unavailable" });
-    return NextResponse.json({ error: "temporarily_disabled", message: "External agent mutations are paused." },
+      reason: enrollmentGuardReason() ?? "external enrollment guard unavailable" });
+    return NextResponse.json({ error: "temporarily_disabled", message: "Autonomous enrollment is currently disabled." },
       { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
   }
 

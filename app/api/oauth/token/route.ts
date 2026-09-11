@@ -7,7 +7,7 @@ import {
 } from "@/lib/oauth";
 import {
   ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, enforceLimits,
-  mutationGuardReason, mutationsEnabled, readLimitedJson, readLimitedText,
+  enrollmentGuardReason, externalAgentEnrollmentEnabled, readLimitedJson, readLimitedText,
   releaseMutationLease, requestSource, securityPepperReady,
 } from "@/lib/externalBetaSecurity";
 
@@ -131,11 +131,10 @@ async function refresh(p: Record<string, string>) {
 }
 
 async function clientCredentials(p: Record<string, string>) {
-  if (!mutationsEnabled())
-    return fail("temporarily_unavailable",
-      "External agent bootstrap is paused while public read/discovery remains available.", 503,
-      { "Retry-After": "300" });
-
+  // No blanket gate here: a client presenting its own already-issued secret
+  // is re-authenticating, not enrolling — the same reason authorization_code
+  // and refresh_token below were never gated either. Closing enrollment must
+  // not lock out agents that enrolled while it was open.
   const { client_id, client_secret } = p;
   if (!client_id || !client_secret)
     return fail("invalid_client", "client_id and client_secret are required", 401);
@@ -157,6 +156,13 @@ async function clientCredentials(p: Record<string, string>) {
 
   let agentAccountId = client.agent_account_id ?? existing?.agent_account_id ?? null;
   if (!agentAccountId) {
+    // This client has no durable agent identity yet — completing one now IS
+    // an enrollment action (identical in kind to what /api/oauth/register
+    // does), unlike the rest of this function, so it alone stays gated.
+    if (!externalAgentEnrollmentEnabled())
+      return fail("temporarily_unavailable",
+        `Autonomous enrollment is currently disabled: ${enrollmentGuardReason() ?? "security guard unavailable"}.`,
+        503, { "Retry-After": "300" });
     const agent = await createAgentAccount({
       displayName: client.client_name ?? null,
       operator: client.operator ?? null,
@@ -218,10 +224,10 @@ export async function POST(req: Request) {
   }
 
   if (p.grant_type === "client_credentials") {
-    if (!mutationsEnabled())
-      return fail("temporarily_unavailable",
-        `External agent bootstrap is unavailable: ${mutationGuardReason() ?? "security guard unavailable"}.`,
-        503, { "Retry-After": "300" });
+    // Concurrency lease only: this endpoint is credential-gated (client_id +
+    // client_secret), not enrollment-gated — see clientCredentials() for the
+    // one sub-case (an orphaned client with no agent identity yet) where
+    // completing enrollment lazily still checks the enrollment switch.
     const lease = await acquireMutationLease(0, `oauth-token:${p.client_id ?? "unknown"}`, source.requestId);
     if (!lease.acquired)
       return NextResponse.json({ error: "temporarily_unavailable",

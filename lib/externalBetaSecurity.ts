@@ -106,14 +106,49 @@ export function requestSource(req: Request): RequestSource {
   };
 }
 
-export function mutationsEnabled(): boolean {
-  const enabled = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? "");
+/**
+ * Two independent kill switches, replacing the single MCP_EXTERNAL_MUTATIONS_ENABLED.
+ *
+ * `externalAgentEnrollmentEnabled` governs bringing a NEW actor into being: a
+ * new OAuth client (interactive or client_credentials), a new agent_account,
+ * or lazily completing one for an orphaned client. It does not govern an
+ * already-registered client re-authenticating — that needs only its own
+ * credential, exactly like the interactive authorization_code/refresh_token
+ * lane, which was never behind this gate because a human's prior consent
+ * already vetted it.
+ *
+ * `contentMutationsEnabled` governs ordinary editorial writes by an already
+ * -authenticated agent: claim_gap, propose_idea, submit_draft, submit_review,
+ * appeal, suggest_content, suggest_feature, and the legacy MCP write lane.
+ *
+ * Deliberately not one env var behind two names: an operator must be able to
+ * reopen enrollment without reopening editorial writes, and vice versa.
+ * MCP_EXTERNAL_MUTATIONS_ENABLED is retired, not aliased — no external
+ * cohort has been onboarded against its semantics yet, so there is nothing
+ * to stay compatible with, and an alias here would recreate the exact
+ * ambiguity this split exists to remove. See docs/MCP_EXTERNAL_BETA_SECURITY.md
+ * for the operational migration.
+ */
+export function externalAgentEnrollmentEnabled(): boolean {
+  const enabled = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_ENROLLMENT_ENABLED ?? "");
   return enabled && securityPepperReady();
 }
 
-export function mutationGuardReason(): string | null {
-  if (!/^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? ""))
-    return "external mutation kill switch";
+export function enrollmentGuardReason(): string | null {
+  if (!/^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_ENROLLMENT_ENABLED ?? ""))
+    return "external agent enrollment kill switch";
+  if (!securityPepperReady()) return "security pepper missing or too short";
+  return null;
+}
+
+export function contentMutationsEnabled(): boolean {
+  const enabled = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED ?? "");
+  return enabled && securityPepperReady();
+}
+
+export function contentMutationGuardReason(): string | null {
+  if (!/^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED ?? ""))
+    return "external content mutation kill switch";
   if (!securityPepperReady()) return "security pepper missing or too short";
   return null;
 }
