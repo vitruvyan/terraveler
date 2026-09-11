@@ -1,6 +1,7 @@
 -- The Chartroom: additive adapter over the existing editorial backlog.
 --
--- Apply after governance_schema.sql, oauth.sql and agent_identity.sql.
+-- Apply after governance_schema.sql, governance_hardening.sql, oauth.sql and
+-- agent_identity.sql. governance_hardening.sql supplies claimed_by/claimed_at.
 -- This deliberately does NOT rename or replace editorial_gaps: MCP 2025/2026
 -- clients keep using list_gaps / claim_gap while the web calls the same rows
 -- Waypoints. Rollback is limited to dropping the view, columns and follow table.
@@ -118,9 +119,13 @@ begin
    where status = 'claimed'
      and (claimed_at is null or claimed_at < now() - make_interval(days => p_ttl_days));
 
+  -- During the additive rollout some legacy claims only have claimed_by, while
+  -- newer web/MCP claims also carry claimed_by_contributor_id. Count either
+  -- representation; do not use coalesce(boolean, boolean), because a non-null
+  -- false first comparison would mask a matching legacy handle.
   select count(*) into held from editorial_gaps
-   where coalesce(claimed_by_contributor_id = c.id, claimed_by = c.handle)
-     and status = 'claimed';
+   where status = 'claimed'
+     and (claimed_by_contributor_id = c.id or claimed_by = c.handle);
   if held >= lim then
     return jsonb_build_object('error', format(
       'You hold %s active Waypoint(s); the limit for rank ''%s'' is %s.',
