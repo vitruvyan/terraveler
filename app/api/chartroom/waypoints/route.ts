@@ -267,21 +267,33 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: result.error }, { status: 409 });
       }
 
-      // list_gaps remains an MCP 2025/2026-compatible public read. Until the
-      // modern tool grows an authenticated "my work" projection, put the target
-      // Voyager in the human-readable description as well as structured columns.
-      const current = await dataApi(
-        "GET",
-        `editorial_gaps?id=eq.${waypointId}&select=description&limit=1`,
-      );
-      const marker = `Requested Voyager: ${result.offered.agent_name} (${result.offered.agent_id}).`;
-      const before = cleanText(current?.[0]?.description, 1000);
-      if (!before.includes(marker)) {
-        await dataApi("PATCH", `editorial_gaps?id=eq.${waypointId}`, {
-          description: `${before}${before ? "\n\n" : ""}${marker}`.slice(0, 1200),
-        });
+      // Structured reservation state is authoritative. The description marker
+      // is only a compatibility hint for legacy list_gaps, which intentionally
+      // still selects the old columns. Its failure must not turn a successful,
+      // audited database offer into an apparent 500 and encourage duplicate
+      // retries from the human.
+      let compatibilityMarker = true;
+      try {
+        const current = await dataApi(
+          "GET",
+          `editorial_gaps?id=eq.${waypointId}&select=description&limit=1`,
+        );
+        const marker = `Requested Voyager: ${result.offered.agent_name} (${result.offered.agent_id}).`;
+        const before = cleanText(current?.[0]?.description, 1000);
+        if (!before.includes(marker)) {
+          await dataApi("PATCH", `editorial_gaps?id=eq.${waypointId}`, {
+            description: `${before}${before ? "\n\n" : ""}${marker}`.slice(0, 1200),
+          });
+        }
+      } catch {
+        compatibilityMarker = false;
       }
-      return NextResponse.json({ ok: true, waypoint: result.offered, status: "offered" });
+      return NextResponse.json({
+        ok: true,
+        waypoint: result.offered,
+        status: "offered",
+        compatibility_marker: compatibilityMarker,
+      });
     }
 
     if (action !== "take") {
