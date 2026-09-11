@@ -77,14 +77,14 @@ export default function AccountWorkspace({
   recommended,
   contributions,
   followed,
-  offers,
+  offers = [],
   associatedCount,
 }: {
   mine: LegacyEditorialGap[];
   recommended: LegacyEditorialGap[];
   contributions: ContributionSummary[];
   followed: LegacyEditorialGap[];
-  offers: OfferedWaypoint[];
+  offers?: OfferedWaypoint[];
   associatedCount: number;
 }) {
   return (
