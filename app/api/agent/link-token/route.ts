@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { sb } from "@/lib/deskAuth";
 import { ensureAgentForBearer } from "@/lib/agentIdentity";
 import { MCP_RESOURCE, secret, sha256, verifyBearer } from "@/lib/oauth";
+import {
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationGuardReason,
+  mutationsEnabled, readLimitedJson, requestSource, securityAudit,
+} from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,13 +14,15 @@ const TTL_MS = 10 * 60 * 1000;
 const PER_HOUR = 10;
 type Purpose = "runtime-binding" | "human-association";
 
-/**
- * An authenticated agent can prove continuity of its own identity without
- * revealing a long-lived identity secret. The result is deliberately short
- * lived and one-use. It can be handed to a new runtime, or to a human who wants
- * to associate their independently registered account with this agent.
- */
 export async function POST(req: Request) {
+  const source = requestSource(req);
+  if (!mutationsEnabled()) {
+    await securityAudit({ source, action: "link-token", outcome: "rejected", status: 503,
+      reason: mutationGuardReason() ?? "external mutation guard unavailable" });
+    return NextResponse.json({ error: "temporarily_disabled", message: "External agent mutations are paused." },
+      { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
+  }
+
   const bearer = await verifyBearer(req);
   if (!bearer) {
     return NextResponse.json(
@@ -24,7 +30,7 @@ export async function POST(req: Request) {
       {
         status: 401,
         headers: {
-          "Cache-Control": "no-store",
+          ...NO_STORE_HEADERS,
           "WWW-Authenticate":
             `Bearer realm="Terraveler", resource="${MCP_RESOURCE}", ` +
             `resource_metadata="https://www.terraveler.com/.well-known/oauth-protected-resource"`,
@@ -33,23 +39,40 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json().catch(() => ({}));
+  const parsed = await readLimitedJson(req, ENROLLMENT_BODY_LIMIT, true);
+  if (!parsed.ok) return NextResponse.json({ error: "invalid_request", message: parsed.error },
+    { status: parsed.status, headers: NO_STORE_HEADERS });
+  const body = parsed.value;
   const purpose = String(body?.purpose ?? "runtime-binding") as Purpose;
   if (purpose !== "runtime-binding" && purpose !== "human-association") {
     return NextResponse.json(
       { error: "invalid_purpose", allowed: ["runtime-binding", "human-association"] },
-      { status: 400, headers: { "Cache-Control": "no-store" } },
+      { status: 400, headers: NO_STORE_HEADERS },
     );
   }
 
   const agent = await ensureAgentForBearer(bearer);
+  const admission = await enforceLimits("link-token", 3600, [
+    { dimension: "ip", subject: source.sourceHash, limit: 20 },
+    { dimension: "network", subject: source.networkHash, limit: 80 },
+    { dimension: "client", subject: bearer.client_id, limit: 15 },
+    { dimension: "agent", subject: agent.public_id, limit: PER_HOUR },
+  ]);
+  if (!admission.allowed) {
+    await securityAudit({ source, action: "link-token", outcome: "rejected", status: 429,
+      reason: `rate limit exceeded for ${admission.dimension}`, agentId: agent.public_id,
+      agentAccountId: agent.id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return NextResponse.json({ error: "rate_limited", message: "Too many link-token requests." },
+      { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(admission.retryAfter) } });
+  }
+
   const since = new Date(Date.now() - 3600_000).toISOString();
   const recent = await sb("GET",
     `agent_link_tokens?agent_account_id=eq.${agent.id}&created_at=gte.${since}&select=id&limit=${PER_HOUR + 1}`);
   if ((recent?.length ?? 0) >= PER_HOUR) {
     return NextResponse.json(
       { error: "rate_limited", message: "Too many link tokens were minted for this agent in the last hour." },
-      { status: 429, headers: { "Cache-Control": "no-store" } },
+      { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": "3600" } },
     );
   }
 
@@ -62,6 +85,8 @@ export async function POST(req: Request) {
     issued_by_connection_id: bearer.connection_id,
     expires_at: expiresAt,
   });
+  await securityAudit({ source, action: "link-token", outcome: "accepted", status: 200,
+    agentId: agent.public_id, agentAccountId: agent.id, connectionId: bearer.connection_id, clientId: bearer.client_id });
 
   return NextResponse.json({
     agent_id: agent.public_id,
@@ -73,5 +98,5 @@ export async function POST(req: Request) {
       purpose === "runtime-binding"
         ? "Give this one-time token only to the new runtime that should become another connection of this same agent."
         : "Give this one-time token to the human who wants to associate their Terraveler account with this agent.",
-  }, { headers: { "Cache-Control": "no-store", Pragma: "no-cache" } });
+  }, { headers: NO_STORE_HEADERS });
 }
