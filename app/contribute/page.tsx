@@ -3,120 +3,85 @@ import Link from "next/link";
 import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ChartroomBoard from "@/components/ChartroomBoard";
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
+import { adaptEditorialGap, type ChartroomWaypoint, type LegacyEditorialGap } from "@/lib/chartroom";
 
 export const metadata: Metadata = {
-  title: "Contribute",
+  title: "The Chartroom",
   description:
-    "What Terraveler is looking for right now: the open editorial roadmap. Bring an idea, connect your AI, and help the atlas grow.",
+    "The shared Terraveler workspace where humans and agents take on the same evidence-backed Waypoints.",
 };
-// The roadmap changes when the desk promotes or closes a gap — often enough to
-// keep fresh, rarely enough that every visitor need not pay for a query.
+
 export const revalidate = 120;
 
-type Gap = {
-  id: number;
-  title: string;
-  description: string | null;
-  kind: string;
-  priority: number;
-  status: string;
-};
-
-async function getGaps(): Promise<Gap[] | null> {
-  // The roadmap is public — it is the whole point that a Scribe can read it
-  // without an account. The canonical source is PostgreSQL on the VPS through
-  // PostgREST; Supabase is not a content database.
+async function getWaypoints(): Promise<ChartroomWaypoint[] | null> {
   if (!POSTGREST_URL) return null;
   try {
-    const r = await fetch(
-      `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)&order=priority.asc,id.asc&select=id,title,description,kind,priority,status`,
+    // Read legacy-safe columns so the web deploy may precede the additive SQL
+    // migration. The adapter and SQL view deliberately produce the same shape.
+    const response = await fetch(
+      `${POSTGREST_URL}/rest/v1/editorial_gaps?status=in.(open,claimed)` +
+        `&order=priority.asc,id.asc` +
+        `&select=id,title,description,kind,priority,status,claimed_by,claimed_at`,
       {
         headers: POSTGREST_SERVICE_KEY
           ? { apikey: POSTGREST_SERVICE_KEY, Authorization: `Bearer ${POSTGREST_SERVICE_KEY}` }
           : {},
         next: { revalidate: 120 },
-      }
+      },
     );
-    if (!r.ok) return null;
-    return (await r.json()) as Gap[];
+    if (!response.ok) return null;
+    const gaps = (await response.json()) as LegacyEditorialGap[];
+    return gaps.map(adaptEditorialGap);
   } catch {
     return null;
   }
 }
 
-const KIND_LABEL: Record<string, string> = {
-  voyage: "New voyage",
-  waypoint: "Waypoint",
-  media: "Imagery",
-  perspective: "Perspective",
-  translation: "Translation",
-  correction: "Correction",
-};
-
-export default async function Contribute() {
-  const gaps = await getGaps();
+export default async function Chartroom() {
+  const waypoints = await getWaypoints();
   return (
     <>
-    <SiteHeader />
-    <TitlePage
-      eyebrow="Contribute"
-      title="What the atlas is looking for"
-      dek="The live editorial roadmap: open voyages, missing media, uncertain landfalls and source gaps ready for a Scribe."
-      background="/login-backgrounds/carta-marina.png"
-      credit="Carta Marina · 1539 · Olaus Magnus"
-      actions={[
-        { href: "/how-it-works", label: "Connect your AI" },
-        { href: "/magna-carta", label: "Read the rules", variant: "secondary" },
-      ]}
-      meta={["Live roadmap", "Curator verified", "Human authorized"]}
-    >
-    <section className="ed-panel">
-      <p>
-        Terraveler grows through a simple tandem: <strong>you bring the idea, your AI does
-        the work, our Curator verifies everything</strong> against the{" "}
-        <Link href="/magna-carta">Magna Carta of the Seas</Link>. Below is the live
-        editorial roadmap — the desk&rsquo;s current priorities. Connect your assistant
-        and claim one: <Link href="/how-it-works">how it works</Link>.
-      </p>
-    </section>
+      <SiteHeader />
+      <TitlePage
+        eyebrow="Shared knowledge work"
+        title="The Chartroom"
+        dek="One workspace, one backlog: humans work here on the web; agents work through MCP. Both take on the same Waypoints."
+        background="/login-backgrounds/carta-marina.png"
+        credit="Carta Marina · 1539 · Olaus Magnus"
+        actions={[
+          { href: "/account", label: "Open my workspace" },
+          { href: "/how-it-works", label: "How it works", variant: "secondary" },
+        ]}
+        meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
+      >
+        <section className="ed-panel">
+          <p>
+            A <strong>Waypoint</strong> is one bounded unit of epistemic work: a source,
+            image, map, claim, transcription, translation, narrative, review or challenge.
+            Take one yourself, or let an independent agent take one through MCP. The work
+            meets in the same review trail, under the same{" "}
+            <Link href="/magna-carta">Magna Carta of the Seas</Link>.
+          </p>
+          <p>
+            Association with an agent does not authorise it, transfer identity or combine
+            standing. Publication remains a human editorial decision.
+          </p>
+        </section>
 
-      {gaps === null ? (
-        <p className="ed-muted">
-          The roadmap is momentarily unavailable — ask your AI to call{" "}
-          <code>list_gaps</code> on the Terraveler MCP server instead.
-        </p>
-      ) : (
-        <div className="ed-card-list">
-          {gaps.map((g) => (
-            <div
-              key={g.id}
-              className="ed-roadmap-card"
-              data-claimed={g.status === "claimed" ? "true" : "false"}
-            >
-              <div className="ed-card-head">
-                <strong>{g.title}</strong>
-                <span className="ed-badges">
-                  <span className="conf-badge">{KIND_LABEL[g.kind] ?? g.kind}</span>
-                  <span className="conf-badge">{g.status === "claimed" ? "claimed" : `priority ${g.priority}`}</span>
-                </span>
-              </div>
-              {g.description && (
-                <p>{g.description}</p>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <p className="ed-muted">
-        Beyond the list: our AI also computes, from the live data, which landfalls still
-        lack period imagery, journal excerpts or firm dates — ask it via{" "}
-        <code>list_gaps</code> once connected.
-      </p>
-
-    </TitlePage>
-    <SiteFooter />
+        {waypoints === null ? (
+          <p className="ed-muted">
+            The Chartroom is momentarily unavailable. Agents can retry <code>list_gaps</code>
+            through the Terraveler MCP endpoint.
+          </p>
+        ) : waypoints.length ? (
+          <ChartroomBoard initial={waypoints} />
+        ) : (
+          <p className="ed-muted">There are no open Waypoints at present.</p>
+        )}
+      </TitlePage>
+      <SiteFooter />
     </>
   );
 }

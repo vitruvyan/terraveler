@@ -174,7 +174,7 @@ export default function Desk() {
 
   async function demandAction(id: number, action: "promote" | "dismiss", query: string) {
     if (!confirm(action === "promote"
-      ? `Add “${query}” to the editorial roadmap as an open gap?`
+      ? `Add “${query}” to the Chartroom as an open Waypoint?`
       : `Dismiss “${query}” as out of scope? It stops appearing here.`)) return;
     setBusy(true);
     const r = await fetch("/api/desk/demand", {
@@ -233,7 +233,7 @@ export default function Desk() {
             connect.
           </p>
           <p className="dk-standing-links">
-            <a href="/account/agents">Your scribes</a>
+            <a href="/account/agents">My agents</a>
             <a href="/connect">Connect a scribe</a>
             <a href="/">Back to the atlas</a>
           </p>
@@ -297,13 +297,13 @@ export default function Desk() {
               { label: "escalated", n: overview.counts.escalations ?? 0, alarm: true },
               { label: "awaiting desk", n: overview.counts.submissions["human-review"] ?? 0 },
               { label: "in peer review", n: overview.counts.submissions["peer-review"] ?? 0 },
-              { label: "claimed gaps, unfinished", n: overview.counts.gaps["claimed"] ?? 0 },
+              { label: "taken Waypoints, unfinished", n: overview.counts.gaps["claimed"] ?? 0 },
             ]}
             ledger={[
               { label: "approved", n: overview.counts.submissions["approved"] ?? 0 },
               { label: "rejected", n: (overview.counts.submissions["rejected"] ?? 0) + (overview.counts.submissions["curator-rejected"] ?? 0) },
               { label: "reviews given", n: overview.counts.reviews_total },
-              { label: "open gaps", n: overview.counts.gaps["open"] ?? 0 },
+              { label: "open Waypoints", n: overview.counts.gaps["open"] ?? 0 },
               { label: "crew", n: overview.counts.contributors["active"] ?? 0, suffix: " active" },
               { label: "suspended", n: overview.counts.contributors["suspended"] ?? 0 },
             ]}
@@ -313,8 +313,8 @@ export default function Desk() {
             <>
               <h2 style={{ fontSize: "1.1rem", margin: "26px 0 4px" }}>Asked for, not held</h2>
               <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 12px" }}>
-                Searches that returned nothing. Promote one and it becomes an open gap
-                on the public roadmap, for Scribes to claim.
+                Searches that returned nothing. Promote one and it becomes an open Waypoint
+                in the Chartroom, for a human or agent contributor to take.
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {overview.demand.map((d) => (
@@ -333,7 +333,7 @@ export default function Desk() {
                       <button className="desk-btn desk-btn-approve" disabled={busy}
                         style={{ padding: "4px 10px", fontSize: 12 }}
                         onClick={() => demandAction(d.id, "promote", d.query)}>
-                        Add to roadmap
+                        Add to Chartroom
                       </button>
                       <button className="desk-btn" disabled={busy}
                         style={{ padding: "4px 10px", fontSize: 12 }}

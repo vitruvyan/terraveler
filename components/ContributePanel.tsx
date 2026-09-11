@@ -84,10 +84,9 @@ Then give me a short suggestion I can paste back, in this form:
 }
 
 /**
- * The contextual contribution panel: scoped to one waypoint (and optionally
- * one image). Centerpiece is "Hand to your AI" — it builds a ready-made task
- * prompt (no secrets — the MCP invite code lives in the user's own connector
- * config) and opens Claude / ChatGPT / Gemini with it pre-filled.
+ * A human's contextual Chartroom submission panel, scoped to one published
+ * voyage stop. The human can research and write directly or optionally hand a
+ * bounded prompt to an assistant; the submitted contribution remains theirs.
  */
 /* Named assistants are shortcuts, not the list of what works. Anything that
    reads a pasted prompt works — Copilot, Perplexity, a local model, or a
@@ -233,7 +232,7 @@ export default function ContributePanel({
        are looking at a stop and proposing something for that stop. The log is
        360 wide at right:16, so this clears it by twelve. */
     <DraggableWindow
-      title="Contribute"
+      title="Chartroom contribution"
       onClose={onClose}
       width={340}
       /* Beside the log while there is room for both, and back to the right
@@ -299,7 +298,7 @@ export default function ContributePanel({
             exists; the named three are a convenience for the ones that take a
             link. It used to be the other way round, which read as "these are
             your options" — and one of the three did not even carry the prompt. */}
-        <div className="contrib-step">Hand it to your AI</div>
+        <div className="contrib-step">Optional: ask an assistant</div>
 
         <div className="contrib-copy-row">
           <button type="button" className="contrib-copy-btn is-primary" onClick={copyPrompt}>
@@ -308,8 +307,8 @@ export default function ContributePanel({
           {copyMsg && <span className="contrib-toast">{copyMsg}</span>}
         </div>
         <p className="contrib-hint">
-          Paste it into any assistant — including one already open. It asks for a
-          public-domain source; bring its answer back below.
+          Paste it into any assistant if useful. Check the result and its public-domain
+          source yourself, then submit your contribution below.
         </p>
 
         <div className="contrib-or">or open it in</div>
@@ -334,7 +333,7 @@ export default function ContributePanel({
       {/* Seamless submit — no MCP needed */}
       <div style={{ marginTop: 12 }}>
         <div style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brass)" }}>
-          Then paste it back
+          Submit your finding
         </div>
         {sent ? (
           <div style={{ fontSize: 12.5, color: "var(--ink)", marginTop: 6, lineHeight: 1.45 }}>
@@ -352,7 +351,7 @@ export default function ContributePanel({
             <textarea
               value={idea}
               onChange={(e) => setIdea(e.target.value)}
-              placeholder="Paste your AI's finding here (or write your own) — include a PD/CC source URL."
+              placeholder="Write your finding — or paste research you have checked — and include a PD/CC source URL."
               rows={3}
               style={{
                 width: "100%", marginTop: 6, boxSizing: "border-box", resize: "vertical",

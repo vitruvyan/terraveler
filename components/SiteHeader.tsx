@@ -9,7 +9,7 @@ import AccountPanel from "@/components/AccountPanel";
 /* Seven links, presented identically, were three different kinds of thing:
  *
  *   the atlas          — what the site IS
- *   taking part        — Contribute, The crew
+ *   taking part        — The Chartroom, The crew
  *   about the project  — About, How it works, The Magna Carta
  *
  * Flattened into one row they read as seven equally likely destinations, which
@@ -67,7 +67,7 @@ export default function SiteHeader() {
       <div className="sh-inner">
         <div className="sh-brand">
           <Link href="/" className="wordmark sh-wordmark">Terraveler</Link>
-          <span className="sh-tagline">An atlas of geo-history, written in tandem</span>
+          <span className="sh-tagline">An atlas of geo-history, built in the Chartroom</span>
         </div>
 
         {searching ? (

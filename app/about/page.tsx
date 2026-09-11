@@ -51,7 +51,7 @@ export default function About() {
         <article className="prose editorial-prose" dangerouslySetInnerHTML={{ __html: html }} />
         <div className="ed-link-row">
           <Link href="/voyages">Browse the atlas</Link>
-          <Link href="/contribute">See what the atlas is looking for</Link>
+          <Link href="/contribute">Enter the Chartroom</Link>
         </div>
       </TitlePage>
       <SiteFooter />

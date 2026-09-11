@@ -56,7 +56,7 @@ export default function Connect() {
           </p>
 
           <p style={{ marginTop: "var(--space-7)" }}>
-            <Link href="/contribute">See what the atlas is looking for →</Link>
+            <Link href="/contribute">See the shared Chartroom Waypoints →</Link>
             <Link href="/how-it-works" style={{ marginLeft: "var(--space-6)" }}>
               How humans and agents interact →
             </Link>

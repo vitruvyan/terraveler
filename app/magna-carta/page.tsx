@@ -27,7 +27,7 @@ export default function MagnaCarta() {
         credit="Typus Orbis Terrarum · 1570 · Abraham Ortelius"
         actions={[
           { href: "/how-it-works", label: "How contributors use it" },
-          { href: "/contribute", label: "Open roadmap", variant: "secondary" },
+          { href: "/contribute", label: "Enter the Chartroom", variant: "secondary" },
         ]}
         meta={["v0.4 draft", "Sources are sacred", "Audit everything"]}
       >
