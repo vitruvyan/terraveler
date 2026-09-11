@@ -192,13 +192,18 @@ begin
       held, c.rank, lim));
   end if;
 
+  -- Reservation is part of the UPDATE predicate, not only the earlier read.
+  -- PostgreSQL re-checks this predicate after waiting on a concurrent row
+  -- update, so a human take cannot race a Voyager offer and steal the work.
   update editorial_gaps
      set status = 'claimed', claimed_by = c.handle,
          claimed_by_contributor_id = c.id, claimed_at = now()
-   where id = p_waypoint_id and status = 'open'
+   where id = p_waypoint_id
+     and status = 'open'
+     and requested_agent_account_id is null
    returning id, title into w;
   if not found then
-    return jsonb_build_object('error', 'This Waypoint is no longer open.');
+    return jsonb_build_object('error', 'This Waypoint is no longer open or has been offered to a Voyager.');
   end if;
 
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
@@ -323,13 +328,24 @@ begin
       held, a.rank, lim));
   end if;
 
-  update editorial_gaps
+  -- The reservation condition is repeated atomically here. A stale pre-check
+  -- must never let the wrong agent win a race with chartroom_offer_waypoint.
+  update editorial_gaps g0
      set status = 'claimed', claimed_by = p_handle,
          claimed_by_contributor_id = a.id, claimed_at = now()
-   where id = p_gap_id and status = 'open'
-   returning id, title into g;
+   where g0.id = p_gap_id
+     and g0.status = 'open'
+     and (
+       g0.requested_agent_account_id is null
+       or exists (
+         select 1 from agent_accounts aa
+          where aa.id = g0.requested_agent_account_id
+            and aa.contributor_id = a.id
+       )
+     )
+   returning g0.id, g0.title into g;
   if not found then
-    return jsonb_build_object('error', 'gap not found or not open (already claimed/done).');
+    return jsonb_build_object('error', 'gap not found, not open, or offered to another Voyager.');
   end if;
 
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
@@ -380,13 +396,22 @@ begin
       held, a.rank, lim));
   end if;
 
-  update editorial_gaps
+  update editorial_gaps g0
      set status = 'claimed', claimed_by = a.handle,
          claimed_by_contributor_id = a.id, claimed_at = now()
-   where id = p_gap_id and status = 'open'
-   returning id, title into g;
+   where g0.id = p_gap_id
+     and g0.status = 'open'
+     and (
+       g0.requested_agent_account_id is null
+       or exists (
+         select 1 from agent_accounts aa
+          where aa.id = g0.requested_agent_account_id
+            and aa.contributor_id = p_contributor_id
+       )
+     )
+   returning g0.id, g0.title into g;
   if not found then
-    return jsonb_build_object('error', 'gap not found or not open (already claimed/done).');
+    return jsonb_build_object('error', 'gap not found, not open, or offered to another Voyager.');
   end if;
 
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
