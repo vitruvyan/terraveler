@@ -45,50 +45,75 @@ export default function ChartroomBoard({ initial }: { initial: ChartroomWaypoint
     <>
       {message && <p className="chartroom-message" role="status">{message}</p>}
       <div className="ed-card-list">
-        {waypoints.map((waypoint) => (
-          <article
-            key={waypoint.id}
-            className="ed-roadmap-card chartroom-waypoint"
-            data-claimed={waypoint.status === "taken" ? "true" : "false"}
-          >
-            <div className="ed-card-head">
-              <strong>{waypoint.title}</strong>
-              <span className="ed-badges">
-                <span className="conf-badge">{waypointTypeLabel(waypoint.type)}</span>
-                <span className="conf-badge">
-                  {waypoint.status === "taken" ? "taken" : `priority ${waypoint.priority}`}
+        {waypoints.map((waypoint) => {
+          const requested = waypoint.requestedVoyager?.name
+            || waypoint.requestedVoyager?.handle
+            || waypoint.requestedVoyager?.agentId;
+          const context = waypoint.context.voyage
+            ? `${waypoint.context.voyage}${waypoint.context.waypointSeq ? ` · stop ${waypoint.context.waypointSeq}` : ""}`
+            : null;
+
+          return (
+            <article
+              key={waypoint.id}
+              className="ed-roadmap-card chartroom-waypoint"
+              data-claimed={waypoint.status === "taken" ? "true" : "false"}
+            >
+              <div className="ed-card-head">
+                <strong>{waypoint.title}</strong>
+                <span className="ed-badges">
+                  <span className="conf-badge">{waypointTypeLabel(waypoint.type)}</span>
+                  <span className="conf-badge">
+                    {waypoint.status === "taken"
+                      ? "taken"
+                      : requested
+                        ? "offered"
+                        : `priority ${waypoint.priority}`}
+                  </span>
                 </span>
-              </span>
-            </div>
-            {waypoint.description && <p>{waypoint.description}</p>}
-            <div className="chartroom-actions">
-              {waypoint.status === "open" ? (
-                <button
-                  type="button"
-                  className="welcome-btn primary"
-                  disabled={busy?.id === waypoint.id}
-                  onClick={() => act(waypoint.id, "take")}
-                >
-                  {busy?.id === waypoint.id && busy.action === "take" ? "Taking…" : "Take part"}
-                </button>
-              ) : (
-                <span className="ed-muted">
-                  {waypoint.takenBy === "you" ? "In your workspace" : "Already being worked"}
-                </span>
+              </div>
+              {context && (
+                <p className="ed-muted" style={{ marginBottom: 4 }}>
+                  {waypoint.context.place ? `${waypoint.context.place} · ` : ""}{context}
+                </p>
               )}
-              {!following.has(waypoint.id) && (
-                <button
-                  type="button"
-                  className="welcome-btn chartroom-follow"
-                  disabled={busy?.id === waypoint.id}
-                  onClick={() => act(waypoint.id, "follow")}
-                >
-                  Follow
-                </button>
+              {waypoint.description && <p>{waypoint.description}</p>}
+              {requested && waypoint.status === "open" && (
+                <p className="ed-muted">
+                  Offered to Voyager <strong>{requested}</strong>. The agent must claim it through MCP under its own identity before the work becomes theirs.
+                </p>
               )}
-            </div>
-          </article>
-        ))}
+              <div className="chartroom-actions">
+                {waypoint.status === "open" && !requested ? (
+                  <button
+                    type="button"
+                    className="welcome-btn primary"
+                    disabled={busy?.id === waypoint.id}
+                    onClick={() => act(waypoint.id, "take")}
+                  >
+                    {busy?.id === waypoint.id && busy.action === "take" ? "Taking…" : "Work on this"}
+                  </button>
+                ) : waypoint.status === "taken" ? (
+                  <span className="ed-muted">
+                    {waypoint.takenBy === "you" ? "In your workspace" : "Already being worked"}
+                  </span>
+                ) : (
+                  <span className="ed-muted">Waiting for the requested Voyager to claim it</span>
+                )}
+                {!following.has(waypoint.id) && (
+                  <button
+                    type="button"
+                    className="welcome-btn chartroom-follow"
+                    disabled={busy?.id === waypoint.id}
+                    onClick={() => act(waypoint.id, "follow")}
+                  >
+                    Follow
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </>
   );
