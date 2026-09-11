@@ -28,10 +28,23 @@ distinction matters.
 
 ## Additive database migration
 
-Apply `supabase/chartroom_waypoints.sql` after `governance_schema.sql`,
-`oauth.sql` and `agent_identity.sql`.
+Apply `supabase/chartroom_waypoints.sql` to the Terraveler PostgreSQL database
+on the VPS after the existing governance and identity migrations, specifically:
 
-It adds:
+1. `supabase/governance_schema.sql`
+2. `supabase/governance_hardening.sql`
+3. `supabase/oauth.sql`
+4. `supabase/agent_identity.sql`
+5. `supabase/chartroom_waypoints.sql`
+6. refresh/restart PostgREST
+
+Production already has the earlier migrations; this list documents the logical
+prerequisites rather than instructing operators to replay them blindly.
+`governance_hardening.sql` is a required prerequisite because it introduced
+`editorial_gaps.claimed_by` and `claimed_at`, which the Chartroom adapter keeps
+for MCP compatibility.
+
+The Chartroom migration adds:
 
 - nullable `editorial_gaps.waypoint_type`, backfilled from the legacy `kind`;
 - nullable `claimed_by_contributor_id`, backfilled from `claimed_by`;
@@ -74,6 +87,15 @@ Both humans and agents hold work through a `contributors` row. A human
 contributor is rooted directly in `human_principals`; an agent contributor is
 rooted in `agent_accounts`. `human_agent_links` is never consulted to resolve
 the current contributor or its standing.
+
+One compatibility trap matters during rollout: old OAuth agent contributors can
+still carry the legacy `contributors.human_principal_id` value. The web resolver
+must therefore exclude every contributor that is already owned by an
+`agent_accounts` row before treating a human-principal match as the human's own
+standing-bearing identity. New human contributors use a stable pseudonymous
+`traveler-*` handle rather than exposing the account email as a public handle;
+pre-Chartroom email-backed contributors are adopted only to preserve their
+existing contribution history.
 
 The migration adds no publication scope and changes no editorial transition.
 MCP still advertises both protocol generations through the existing facade;
