@@ -40,6 +40,8 @@ declare a record; used int; sid bigint; lim int;
 begin
   select * into a from mcp_contributor(p_contributor_id);
   if a.err is not null then return jsonb_build_object('error', a.err); end if;
+  -- Serialize quota admission per contributor across serverless instances.
+  perform pg_advisory_xact_lock(hashtextextended('mcp-author:' || a.id::text, 0));
 
   lim := coalesce((p_quotas ->> a.rank)::int, (p_quotas ->> 'cabin-boy')::int);
   select count(*) into used from submissions
@@ -71,6 +73,7 @@ declare a record; held int; g record; lim int;
 begin
   select * into a from mcp_contributor(p_contributor_id);
   if a.err is not null then return jsonb_build_object('error', a.err); end if;
+  perform pg_advisory_xact_lock(hashtextextended('mcp-claim:' || a.id::text, 0));
   lim := coalesce((p_claim_limits ->> a.rank)::int, (p_claim_limits ->> 'cabin-boy')::int);
 
   update editorial_gaps set status = 'open', claimed_by = null, claimed_at = null
@@ -114,6 +117,7 @@ declare a record; s record; used int; total int; advanced boolean := false; f js
 begin
   select * into a from mcp_contributor(p_contributor_id);
   if a.err is not null then return jsonb_build_object('error', a.err); end if;
+  perform pg_advisory_xact_lock(hashtextextended('mcp-review:' || a.id::text, 0));
 
   select id, status, contributor_id into s
     from submissions where id = p_submission_id for update;
