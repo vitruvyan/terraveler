@@ -22,7 +22,6 @@ export type RequestSource = {
 type LimitedText = { ok: true; value: string } | { ok: false; status: 413; error: string };
 type LimitedJson = { ok: true; value: any } | { ok: false; status: 400 | 413; error: string };
 
-/** Read a request body while enforcing the byte ceiling before buffering it. */
 export async function readLimitedText(req: Request, maxBytes: number): Promise<LimitedText> {
   const declared = Number(req.headers.get("content-length") ?? 0);
   if (Number.isFinite(declared) && declared > maxBytes)
@@ -52,7 +51,6 @@ export async function readLimitedText(req: Request, maxBytes: number): Promise<L
   return { ok: true, value: Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8") };
 }
 
-/** Parse JSON on top of the streaming body ceiling. */
 export async function readLimitedJson(req: Request, maxBytes: number, allowEmpty = false): Promise<LimitedJson> {
   const read = await readLimitedText(req, maxBytes);
   if (!read.ok) return read;
@@ -82,6 +80,10 @@ function pepper(): string | null {
   return value.length >= 32 ? value : null;
 }
 
+export function securityPepperReady(): boolean {
+  return pepper() !== null;
+}
+
 function protectedHash(value: string): string {
   const key = pepper();
   if (!key) throw new Error("MCP_SECURITY_PEPPER is missing or too short");
@@ -104,16 +106,15 @@ export function requestSource(req: Request): RequestSource {
   };
 }
 
-/** External mutations are opt-in and fail closed. */
 export function mutationsEnabled(): boolean {
   const enabled = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? "");
-  return enabled && pepper() !== null;
+  return enabled && securityPepperReady();
 }
 
 export function mutationGuardReason(): string | null {
   if (!/^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? ""))
     return "external mutation kill switch";
-  if (!pepper()) return "security pepper missing or too short";
+  if (!securityPepperReady()) return "security pepper missing or too short";
   return null;
 }
 
