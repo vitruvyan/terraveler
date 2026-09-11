@@ -116,12 +116,26 @@ async function associatedVoyagers(humanPrincipalId: number) {
     );
     const c = contributors?.[0];
     if (!c) return null;
+
+    // "Ask a Voyager" should address an agent that actually has at least one
+    // authorised runtime connection capable of coming back through MCP. An
+    // association alone is provenance/relationship, not evidence that the
+    // agent can currently receive work.
+    const connections = await dataApi(
+      "GET",
+      `agent_connections?agent_account_id=eq.${Number(account.id)}` +
+        `&revoked_at=is.null&order=last_used_at.desc.nullslast` +
+        `&select=id,last_used_at&limit=1`,
+    );
+    if (!connections.length) return null;
+
     return {
       accountId: Number(account.id),
       agentId: String(account.public_id),
       name: account.display_name || c.handle,
       handle: c.handle,
       rank: c.rank,
+      lastUsedAt: connections[0].last_used_at ?? null,
     };
   }));
 
@@ -189,7 +203,7 @@ export async function POST(req: Request) {
       const eligible = await associatedVoyagers(contributor.humanPrincipalId);
       if (!eligible.some((agent: any) => agent.accountId === agentAccountId)) {
         return NextResponse.json(
-          { error: "That Voyager is not an active association with this account." },
+          { error: "That Voyager is not associated with an active MCP connection on this account." },
           { status: 403 },
         );
       }
