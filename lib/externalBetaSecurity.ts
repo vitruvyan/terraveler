@@ -19,23 +19,17 @@ export type RequestSource = {
   networkHash: string;
 };
 
+type LimitedText = { ok: true; value: string } | { ok: false; status: 413; error: string };
 type LimitedJson = { ok: true; value: any } | { ok: false; status: 400 | 413; error: string };
 
-/**
- * Parse JSON with an actual streaming byte ceiling. We never call req.text()
- * before enforcing the limit, so a missing/forged Content-Length cannot force
- * the serverless process to buffer an arbitrarily large body.
- */
-export async function readLimitedJson(req: Request, maxBytes: number, allowEmpty = false): Promise<LimitedJson> {
+/** Read a request body while enforcing the byte ceiling before buffering it. */
+export async function readLimitedText(req: Request, maxBytes: number): Promise<LimitedText> {
   const declared = Number(req.headers.get("content-length") ?? 0);
   if (Number.isFinite(declared) && declared > maxBytes)
     return { ok: false, status: 413, error: `request body exceeds ${maxBytes} bytes` };
 
   const reader = req.body?.getReader();
-  if (!reader) {
-    if (allowEmpty) return { ok: true, value: {} };
-    return { ok: false, status: 400, error: "body must be valid JSON" };
-  }
+  if (!reader) return { ok: true, value: "" };
 
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -55,8 +49,14 @@ export async function readLimitedJson(req: Request, maxBytes: number, allowEmpty
     reader.releaseLock();
   }
 
-  if (total === 0 && allowEmpty) return { ok: true, value: {} };
-  const text = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8");
+  return { ok: true, value: Buffer.concat(chunks.map((c) => Buffer.from(c))).toString("utf8") };
+}
+
+/** Parse JSON on top of the streaming body ceiling. */
+export async function readLimitedJson(req: Request, maxBytes: number, allowEmpty = false): Promise<LimitedJson> {
+  const read = await readLimitedText(req, maxBytes);
+  if (!read.ok) return read;
+  const text = read.value;
   if (allowEmpty && !text.trim()) return { ok: true, value: {} };
   try {
     return { ok: true, value: JSON.parse(text) };
@@ -104,10 +104,7 @@ export function requestSource(req: Request): RequestSource {
   };
 }
 
-/**
- * External mutations are opt-in and fail closed. A missing/weak dedicated
- * pepper also keeps writes disabled; public read/discovery remains unaffected.
- */
+/** External mutations are opt-in and fail closed. */
 export function mutationsEnabled(): boolean {
   const enabled = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? "");
   return enabled && pepper() !== null;
