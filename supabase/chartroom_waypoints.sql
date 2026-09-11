@@ -94,6 +94,10 @@ comment on column editorial_gaps.initiated_by_contributor_id is
 comment on column editorial_gaps.requested_agent_account_id is
   'Optional Voyager to whom an open Waypoint was offered. The work remains open until that independent agent claims it through MCP.';
 
+-- Preserve the original compatibility-view prefix exactly. PostgreSQL permits
+-- CREATE OR REPLACE VIEW to append columns but not to rename/reorder existing
+-- ones. This makes the migration safely re-runnable even on a preview database
+-- that saw an earlier Chartroom draft.
 create or replace view chartroom_waypoints as
 select
   g.id,
@@ -115,8 +119,12 @@ select
     when 'done' then 'accepted'
   end as status,
   coalesce(g.claimed_by_contributor_id, c.id) as taken_by_contributor_id,
-  coalesce(c.handle, g.claimed_by) as taken_by_handle,
   g.claimed_at as taken_at,
+  g.created_at,
+  g.kind as legacy_kind,
+  g.status as legacy_status,
+  -- New columns are appended after the original view contract.
+  coalesce(c.handle, g.claimed_by) as taken_by_handle,
   g.context_type,
   g.context_voyage,
   g.context_waypoint_seq,
@@ -126,10 +134,7 @@ select
   g.requested_agent_account_id,
   ra.public_id as requested_agent_id,
   coalesce(ra.display_name, rc.handle) as requested_agent_name,
-  rc.handle as requested_agent_handle,
-  g.created_at,
-  g.kind as legacy_kind,
-  g.status as legacy_status
+  rc.handle as requested_agent_handle
 from editorial_gaps g
 left join contributors c on c.handle = g.claimed_by
 left join agent_accounts ra on ra.id = g.requested_agent_account_id
@@ -217,9 +222,8 @@ end;
 $$;
 
 -- Human -> Voyager is an offer, not identity transfer and not publication
--- authority. The relationship is checked here, not trusted from the browser.
--- The Waypoint stays `open`, so list_gaps remains compatible; the claim
--- functions below enforce that only the requested Voyager can take it.
+-- authority. The human contributor must belong to the same authenticated human
+-- principal that owns the association used to address the Voyager.
 create or replace function chartroom_offer_waypoint(
   p_human_principal_id bigint,
   p_human_contributor_id bigint,
@@ -231,9 +235,12 @@ language plpgsql
 as $$
 declare h record; aa record; ac record; w record;
 begin
-  select id, handle, status into h from contributors where id = p_human_contributor_id;
+  select id, handle, status into h
+    from contributors
+   where id = p_human_contributor_id
+     and human_principal_id = p_human_principal_id;
   if not found or h.status <> 'active' then
-    return jsonb_build_object('error', 'The initiating human contributor is not active.');
+    return jsonb_build_object('error', 'The initiating human contributor is not active or does not belong to this account.');
   end if;
 
   if not exists (
@@ -257,15 +264,17 @@ begin
     return jsonb_build_object('error', 'That Voyager contributor is not active.');
   end if;
 
+  -- First offer wins. A later request cannot silently replace the initiator or
+  -- retarget work already addressed to another (or the same) independent agent.
   update editorial_gaps
      set requested_agent_account_id = p_agent_account_id,
          initiated_by_contributor_id = p_human_contributor_id
    where id = p_waypoint_id
      and status = 'open'
-     and (requested_agent_account_id is null or requested_agent_account_id = p_agent_account_id)
+     and requested_agent_account_id is null
    returning id, title into w;
   if not found then
-    return jsonb_build_object('error', 'This Waypoint is no longer open or is already offered to another Voyager.');
+    return jsonb_build_object('error', 'This Waypoint is no longer open or has already been offered to a Voyager.');
   end if;
 
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
