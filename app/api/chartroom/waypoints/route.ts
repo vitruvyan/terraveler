@@ -47,13 +47,34 @@ function parseContext(input: any) {
   return { voyage, waypointSeq, place };
 }
 
-async function createContextWaypoint(contributor: any, body: any): Promise<LegacyEditorialGap> {
+async function materializeContextWaypoint(
+  contributor: any,
+  body: any,
+  reuseExisting: boolean,
+): Promise<{ row: LegacyEditorialGap; created: boolean }> {
   const type = body?.type;
   if (!isWaypointType(type)) throw new Error("A valid Waypoint type is required.");
   const { voyage, waypointSeq, place } = parseContext(body?.context);
   const title = cleanText(body?.title, 180);
   const description = cleanText(body?.description, 1200);
   if (title.length < 4) throw new Error("Give the Waypoint a short, concrete title.");
+
+  // Atlas-derived gaps can be materialised by retrying a click or by opening
+  // the same stop in another tab. Reuse the same active row instead of turning
+  // one missing image/source into duplicate Chartroom work. User-authored
+  // `raise` questions deliberately skip this: two distinct questions can share
+  // a type and title while asking different things.
+  if (reuseExisting) {
+    const existing = await dataApi(
+      "GET",
+      `editorial_gaps?context_voyage=eq.${encodeURIComponent(voyage)}` +
+        `&context_waypoint_seq=eq.${waypointSeq}` +
+        `&waypoint_type=eq.${encodeURIComponent(type)}` +
+        `&title=eq.${encodeURIComponent(title)}` +
+        `&status=in.(open,claimed)&order=id.asc&limit=1&select=${CONTEXT_SELECT}`,
+    );
+    if (existing.length) return { row: existing[0] as LegacyEditorialGap, created: false };
+  }
 
   const rows = await dataApi("POST", "editorial_gaps", {
     title,
@@ -69,7 +90,7 @@ async function createContextWaypoint(contributor: any, body: any): Promise<Legac
     created_by_contributor_id: contributor.id,
     initiated_by_contributor_id: contributor.id,
   });
-  return rows[0] as LegacyEditorialGap;
+  return { row: rows[0] as LegacyEditorialGap, created: true };
 }
 
 async function associatedVoyagers(humanPrincipalId: number) {
@@ -156,13 +177,40 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => ({}));
     const action = String(body.action ?? "");
     let waypointId = Number(body.waypoint_id);
+    const agentAccountId = action === "offer" ? Number(body.agent_account_id) : null;
 
+    // Validate the delegation target before materialising a derived gap. An
+    // invalid/made-up Voyager must not be able to leave orphaned open work in
+    // the shared backlog merely by hitting the offer route.
+    if (action === "offer") {
+      if (!Number.isInteger(agentAccountId) || Number(agentAccountId) <= 0) {
+        return NextResponse.json({ error: "Choose a Voyager first." }, { status: 400 });
+      }
+      const eligible = await associatedVoyagers(contributor.humanPrincipalId);
+      if (!eligible.some((agent: any) => agent.accountId === agentAccountId)) {
+        return NextResponse.json(
+          { error: "That Voyager is not an active association with this account." },
+          { status: 403 },
+        );
+      }
+    }
+
+    let createdForAction = false;
     if (action === "raise" || ((action === "take" || action === "offer") && !Number.isInteger(waypointId))) {
       try {
-        const created = await createContextWaypoint(contributor, body);
-        waypointId = Number(created.id);
+        const materialized = await materializeContextWaypoint(
+          contributor,
+          body,
+          action !== "raise",
+        );
+        waypointId = Number(materialized.row.id);
+        createdForAction = materialized.created;
         if (action === "raise") {
-          return NextResponse.json({ ok: true, waypoint: adaptEditorialGap(created), status: "open" });
+          return NextResponse.json({
+            ok: true,
+            waypoint: adaptEditorialGap(materialized.row),
+            status: "open",
+          });
         }
       } catch (error: any) {
         return NextResponse.json({ error: String(error?.message || error) }, { status: 400 });
@@ -197,10 +245,6 @@ export async function POST(req: Request) {
     }
 
     if (action === "offer") {
-      const agentAccountId = Number(body.agent_account_id);
-      if (!Number.isInteger(agentAccountId) || agentAccountId <= 0) {
-        return NextResponse.json({ error: "Choose a Voyager first." }, { status: 400 });
-      }
       const result = await dataRpc("chartroom_offer_waypoint", {
         p_human_principal_id: contributor.humanPrincipalId,
         p_human_contributor_id: contributor.id,
@@ -209,6 +253,17 @@ export async function POST(req: Request) {
         p_carta: CARTA_VERSION,
       });
       if (result?.error) {
+        // If this request alone materialised an Atlas-derived gap and the offer
+        // failed before anyone claimed/reserved it, remove only that pristine
+        // row. Reused or concurrently-taken work is never deleted.
+        if (createdForAction) {
+          await dataApi(
+            "DELETE",
+            `editorial_gaps?id=eq.${waypointId}&status=eq.open` +
+              `&created_by_contributor_id=eq.${contributor.id}` +
+              `&requested_agent_account_id=is.null`,
+          ).catch(() => null);
+        }
         return NextResponse.json({ error: result.error }, { status: 409 });
       }
 
