@@ -64,11 +64,16 @@ const LEGACY_MUTATIONS = new Set([
   "appeal",
 ]);
 
+// The 2025 legacy write lane is editorial content (claim_gap, submit_draft,
+// etc.), so it rides on the content-mutation switch, not the enrollment one
+// — kept as a local, dependency-free check because middleware runs on the
+// Edge runtime, where lib/externalBetaSecurity.ts's node:crypto import
+// isn't available.
 function legacyMutationsEnabled() {
   const legacy = /^(1|true|on|enabled)$/i.test(process.env.MCP_LEGACY_MUTATIONS_ENABLED ?? "");
-  const external = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_MUTATIONS_ENABLED ?? "");
+  const content = /^(1|true|on|enabled)$/i.test(process.env.MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED ?? "");
   const pepper = (process.env.MCP_SECURITY_PEPPER ?? "").trim();
-  return legacy && external && pepper.length >= 32;
+  return legacy && content && pepper.length >= 32;
 }
 
 const SERVER_INFO = {

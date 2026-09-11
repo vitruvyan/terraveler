@@ -3,7 +3,20 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { isPublicIp } from "../lib/cimd";
 import { domainOk } from "../lib/gate";
-import { mutationsEnabled, readLimitedJson } from "../lib/externalBetaSecurity";
+import {
+  contentMutationsEnabled, externalAgentEnrollmentEnabled, readLimitedJson,
+} from "../lib/externalBetaSecurity";
+
+function withEnv(vars: Record<string, string | undefined>, fn: () => void) {
+  const prior: Record<string, string | undefined> = {};
+  for (const k of Object.keys(vars)) prior[k] = process.env[k];
+  try {
+    for (const [k, v] of Object.entries(vars)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+    fn();
+  } finally {
+    for (const [k, v] of Object.entries(prior)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+  }
+}
 
 const read = (p: string) => readFile(new URL(p, import.meta.url), "utf8");
 
@@ -32,25 +45,73 @@ test("body limit checks actual streamed bytes even without Content-Length", asyn
   if (!result.ok) assert.equal(result.status, 413);
 });
 
-test("external mutations fail closed unless explicitly enabled with a dedicated pepper", () => {
-  const oldEnabled = process.env.MCP_EXTERNAL_MUTATIONS_ENABLED;
-  const oldPepper = process.env.MCP_SECURITY_PEPPER;
-  try {
-    delete process.env.MCP_EXTERNAL_MUTATIONS_ENABLED;
-    delete process.env.MCP_SECURITY_PEPPER;
-    assert.equal(mutationsEnabled(), false);
+test("enrollment and content-mutation gates both fail closed absent their own env var", () => {
+  withEnv({ MCP_EXTERNAL_ENROLLMENT_ENABLED: undefined, MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED: undefined,
+    MCP_SECURITY_PEPPER: "x".repeat(32) }, () => {
+    assert.equal(externalAgentEnrollmentEnabled(), false);
+    assert.equal(contentMutationsEnabled(), false);
+  });
+});
 
-    process.env.MCP_EXTERNAL_MUTATIONS_ENABLED = "true";
-    assert.equal(mutationsEnabled(), false, "missing pepper must keep writes disabled");
+test("both gates fail closed without a dedicated pepper, even when their own switch is on", () => {
+  withEnv({ MCP_EXTERNAL_ENROLLMENT_ENABLED: "true", MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED: "true",
+    MCP_SECURITY_PEPPER: undefined }, () => {
+    assert.equal(externalAgentEnrollmentEnabled(), false, "missing pepper must keep enrollment disabled");
+    assert.equal(contentMutationsEnabled(), false, "missing pepper must keep content mutations disabled");
+  });
+});
 
-    process.env.MCP_SECURITY_PEPPER = "x".repeat(32);
-    assert.equal(mutationsEnabled(), true);
-  } finally {
-    if (oldEnabled === undefined) delete process.env.MCP_EXTERNAL_MUTATIONS_ENABLED;
-    else process.env.MCP_EXTERNAL_MUTATIONS_ENABLED = oldEnabled;
-    if (oldPepper === undefined) delete process.env.MCP_SECURITY_PEPPER;
-    else process.env.MCP_SECURITY_PEPPER = oldPepper;
-  }
+test("enrollment can be enabled independently of content mutations, and vice versa", () => {
+  withEnv({ MCP_EXTERNAL_ENROLLMENT_ENABLED: "true", MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED: undefined,
+    MCP_SECURITY_PEPPER: "x".repeat(32) }, () => {
+    assert.equal(externalAgentEnrollmentEnabled(), true, "STATE B: enrollment on, content off");
+    assert.equal(contentMutationsEnabled(), false);
+  });
+  withEnv({ MCP_EXTERNAL_ENROLLMENT_ENABLED: undefined, MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED: "true",
+    MCP_SECURITY_PEPPER: "x".repeat(32) }, () => {
+    assert.equal(externalAgentEnrollmentEnabled(), false, "one switch enabling the other would defeat the split");
+    assert.equal(contentMutationsEnabled(), true);
+  });
+  withEnv({ MCP_EXTERNAL_ENROLLMENT_ENABLED: "true", MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED: "true",
+    MCP_SECURITY_PEPPER: "x".repeat(32) }, () => {
+    assert.equal(externalAgentEnrollmentEnabled(), true, "STATE C: both on");
+    assert.equal(contentMutationsEnabled(), true);
+  });
+});
+
+test("the gate split is not one env var behind two names", async () => {
+  const security = await read("../lib/externalBetaSecurity.ts");
+  assert.match(security, /MCP_EXTERNAL_ENROLLMENT_ENABLED/);
+  assert.match(security, /MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED/);
+  assert.equal(security.includes("process.env.MCP_EXTERNAL_MUTATIONS_ENABLED"), false,
+    "the retired single switch must not linger as a silent alias for either gate — mentioning it in prose explaining the migration is fine");
+});
+
+test("token issuance for an already-registered client is not gated by enrollment or content state", async () => {
+  const token = await read("../app/api/oauth/token/route.ts");
+  const fnStart = token.indexOf("async function clientCredentials");
+  const fnBody = token.slice(fnStart, token.indexOf("\nasync function POST"));
+  // The gate must appear only inside the orphaned-client (no agent_account_id
+  // yet) branch — never as an unconditional check at the top of the function
+  // or in the POST dispatcher, or every routine re-auth would be blocked
+  // whenever enrollment is closed.
+  const dispatcher = token.slice(token.indexOf("export async function POST"));
+  assert.equal(/externalAgentEnrollmentEnabled\(\)/.test(dispatcher.slice(0, dispatcher.indexOf("clientCredentials(p)"))), false,
+    "the POST dispatcher must not gate client_credentials before calling clientCredentials()");
+  assert.match(fnBody, /if \(!agentAccountId\) \{[\s\S]*?externalAgentEnrollmentEnabled\(\)/,
+    "enrollment gate must be scoped to completing a missing agent identity, not the whole grant");
+});
+
+test("enrollment endpoints do not import the content-mutation gate, and vice versa", async () => {
+  const register = await read("../app/api/oauth/register/route.ts");
+  const linkToken = await read("../app/api/agent/link-token/route.ts");
+  const write = await read("../app/api/agent/write/route.ts");
+  assert.match(register, /externalAgentEnrollmentEnabled/);
+  assert.equal(register.includes("contentMutationsEnabled"), false);
+  assert.match(linkToken, /externalAgentEnrollmentEnabled/);
+  assert.equal(linkToken.includes("contentMutationsEnabled"), false);
+  assert.match(write, /contentMutationsEnabled/);
+  assert.equal(write.includes("externalAgentEnrollmentEnabled"), false);
 });
 
 test("database hardening serializes first-use idempotency reservations", async () => {
@@ -66,12 +127,17 @@ test("security defaults, middleware and runbook are fail closed", async () => {
     read("../lib/externalBetaSecurity.ts"), read("../.env.example"),
     read("../docs/MCP_EXTERNAL_BETA_SECURITY.md"), read("../middleware.ts"),
   ]);
-  assert.match(security, /return enabled && securityPepperReady\(\)/);
-  assert.match(env, /MCP_EXTERNAL_MUTATIONS_ENABLED=false/);
+  const enabledChecks = security.match(/return enabled && securityPepperReady\(\);/g) ?? [];
+  assert.equal(enabledChecks.length, 2, "both externalAgentEnrollmentEnabled and contentMutationsEnabled must fail closed");
+  assert.match(env, /MCP_EXTERNAL_ENROLLMENT_ENABLED=false/);
+  assert.match(env, /MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED=false/);
   assert.match(env, /MCP_LEGACY_MUTATIONS_ENABLED=false/);
   assert.match(middleware, /LEGACY_MUTATIONS/);
   assert.match(middleware, /MCP_LEGACY_MUTATIONS_ENABLED/);
-  assert.match(runbook, /Keep both `MCP_EXTERNAL_MUTATIONS_ENABLED=false` and/);
+  assert.match(middleware, /MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED/,
+    "the legacy write lane is content, and must ride on the content gate, not enrollment");
+  assert.match(runbook, /MCP_EXTERNAL_ENROLLMENT_ENABLED=false/);
+  assert.match(runbook, /MCP_EXTERNAL_CONTENT_MUTATIONS_ENABLED=false/);
 });
 
 test("modern agent writes require DB guards and carry replay/concurrency controls", async () => {

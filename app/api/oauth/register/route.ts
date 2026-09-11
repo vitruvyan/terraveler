@@ -5,8 +5,8 @@ import { createAgentAccount, getAgentAccount } from "@/lib/agentIdentity";
 import { sha256 } from "@/lib/oauth";
 import { CARTA_VERSION } from "@/lib/carta";
 import {
-  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationGuardReason,
-  mutationsEnabled, readLimitedJson, requestSource, securityAudit,
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, enrollmentGuardReason,
+  externalAgentEnrollmentEnabled, readLimitedJson, requestSource, securityAudit,
 } from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
@@ -29,11 +29,11 @@ export async function POST(req: Request) {
   if (!body || typeof body !== "object" || Array.isArray(body))
     return badRequest("invalid_client_metadata", "body must be a JSON object");
 
-  if (!mutationsEnabled()) {
-    const reason = mutationGuardReason() ?? "external mutation guard unavailable";
+  if (!externalAgentEnrollmentEnabled()) {
+    const reason = enrollmentGuardReason() ?? "external enrollment guard unavailable";
     await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 503, reason });
     return NextResponse.json({ error: "temporarily_unavailable",
-      error_description: "External agent enrollment is temporarily disabled; public MCP reading remains available." },
+      error_description: "Autonomous enrollment is currently disabled; public MCP reading remains available." },
       { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
   }
 

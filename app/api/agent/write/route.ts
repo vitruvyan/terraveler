@@ -6,8 +6,8 @@ import { RANK_QUOTA, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
 import {
   AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
-  completeIdempotent, enforceLimits, idempotencyKey, mutationGuardReason,
-  mutationsEnabled, readLimitedJson, releaseMutationLease, requestSource, securityAudit,
+  completeIdempotent, contentMutationGuardReason, contentMutationsEnabled,
+  enforceLimits, idempotencyKey, readLimitedJson, releaseMutationLease, requestSource, securityAudit,
 } from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
@@ -367,11 +367,11 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!mutationsEnabled()) {
-    const reason = mutationGuardReason() ?? "external mutation guard unavailable";
+  if (!contentMutationsEnabled()) {
+    const reason = contentMutationGuardReason() ?? "external content mutation guard unavailable";
     await securityAudit({ source, action: name, outcome: "rejected", status: 503, reason,
       agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
-    return response("ERROR: external agent mutations are temporarily disabled; public reading remains available.",
+    return response("ERROR: external content mutations are currently disabled; public reading remains available.",
       503, { "Retry-After": "300" });
   }
   if (!bearer.scopes.includes(need)) {

@@ -3,7 +3,7 @@ import { CARTA_VERSION } from "@/lib/carta";
 import { sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
 import { ensureAgentForBearer } from "@/lib/agentIdentity";
-import { NO_STORE_HEADERS, mutationsEnabled } from "@/lib/externalBetaSecurity";
+import { NO_STORE_HEADERS, contentMutationsEnabled, externalAgentEnrollmentEnabled } from "@/lib/externalBetaSecurity";
 import {
   AGENT_CAN_PUBLISH,
   allowedCapabilities,
@@ -20,7 +20,8 @@ export const dynamic = "force-dynamic";
  * identity root and their account does not own the agent's standing.
  */
 export async function GET(req: Request) {
-  const writesEnabled = mutationsEnabled();
+  const enrollmentEnabled = externalAgentEnrollmentEnabled();
+  const writesEnabled = contentMutationsEnabled();
   const bearer = await verifyBearer(req);
   if (!bearer) {
     return NextResponse.json({
@@ -32,6 +33,7 @@ export async function GET(req: Request) {
       not_allowed: ["contribute", "review", "appeal", "publish"],
       publish: AGENT_CAN_PUBLISH,
       external_mutations_enabled: writesEnabled,
+      enrollment_enabled: enrollmentEnabled,
       carta_version: CARTA_VERSION,
       enrollment: {
         unattended_agent: {
@@ -58,7 +60,10 @@ export async function GET(req: Request) {
     }, { headers: NO_STORE_HEADERS });
   }
 
-  if (!bearer.agent_account_id && !writesEnabled) {
+  // A bearer with no agent_account_id yet has nothing ensureAgentForBearer
+  // can wrap — it would have to CREATE one, which is enrollment, not a
+  // content write. Gated on enrollment, not on content-mutation state.
+  if (!bearer.agent_account_id && !enrollmentEnabled) {
     return NextResponse.json({
       mode: "agent-bootstrap-paused",
       agent_id: null,
@@ -67,7 +72,8 @@ export async function GET(req: Request) {
       not_allowed: ["contribute", "review", "appeal", "publish"],
       publish: AGENT_CAN_PUBLISH,
       external_mutations_enabled: false,
-      next: "External mutations and identity bootstrap are temporarily disabled; public reading remains available.",
+      enrollment_enabled: false,
+      next: "Autonomous enrollment is currently disabled, and this connection has no durable agent identity yet; public reading remains available.",
     }, { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
   }
 
@@ -96,6 +102,7 @@ export async function GET(req: Request) {
     not_allowed: writesEnabled ? deniedCapabilities(scopes) : ["contribute", "review", "appeal", "publish"],
     publish: AGENT_CAN_PUBLISH,
     external_mutations_enabled: writesEnabled,
+    enrollment_enabled: enrollmentEnabled,
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
