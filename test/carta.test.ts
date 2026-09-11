@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { readFile, readdir } from "node:fs/promises";
 
 /**
  * The Magna Carta's version number lives in three places that must agree, and
@@ -20,6 +19,35 @@ import { fileURLToPath } from "node:url";
  */
 
 const read = (p: string) => readFile(new URL(p, import.meta.url), "utf8");
+
+type SourceFile = { path: string; text: string };
+
+/** Cross-platform source walk: the test suite must not depend on grep/rg being
+ * installed on either GitHub's Linux runner or a Windows development machine. */
+async function sourceFiles(
+  roots: Array<{ dir: string; label: string }>,
+  extensions: readonly string[],
+): Promise<SourceFile[]> {
+  const out: SourceFile[] = [];
+
+  async function walk(url: URL, prefix: string) {
+    const entries = await readdir(url, { withFileTypes: true });
+    for (const entry of entries) {
+      const rel = `${prefix}/${entry.name}`.replaceAll("\\", "/");
+      const child = new URL(entry.name + (entry.isDirectory() ? "/" : ""), url);
+      if (entry.isDirectory()) {
+        await walk(child, rel);
+      } else if (extensions.some((ext) => entry.name.endsWith(ext))) {
+        out.push({ path: rel, text: await readFile(child, "utf8") });
+      }
+    }
+  }
+
+  for (const root of roots) {
+    await walk(new URL(`../${root.dir}/`, import.meta.url), root.label);
+  }
+  return out;
+}
 
 async function cartaDocVersion(): Promise<string> {
   const md = await read("../MAGNA_CARTA.md");
@@ -49,14 +77,18 @@ test("no TypeScript file declares a Carta version of its own", async () => {
    * unreadable. An external Scribe auditing its own approved submission found
    * it; nothing in this repository would have.
    */
-  const { execFileSync } = await import("node:child_process");
-  const root = fileURLToPath(new URL("..", import.meta.url));
-  const out = execFileSync(
-    "rg",
-    ["-n", "--glob", "*.ts", "--glob", "*.tsx", "CARTA_VERSION *= *\"", "app", "lib", "components"],
-    { cwd: root, encoding: "utf8" },
-  ).trim().replaceAll("\\", "/");
-  const offenders = out.split("\n").filter((l) => !l.startsWith("lib/carta.ts:"));
+  const files = await sourceFiles(
+    [
+      { dir: "app", label: "app" },
+      { dir: "lib", label: "lib" },
+      { dir: "components", label: "components" },
+    ],
+    [".ts", ".tsx"],
+  );
+  const offenders = files
+    .filter(({ path, text }) => path !== "lib/carta.ts" && /CARTA_VERSION\s*=\s*"/.test(text))
+    .map(({ path }) => path)
+    .sort();
   assert.deepEqual(
     offenders,
     [],
@@ -81,26 +113,21 @@ test("the ingestion pipeline stamps drafts with the version the gate will accept
 
 test("no Python file declares a Carta version of its own either", async () => {
   /**
-   * The TypeScript check shipped first and the claim made for it — "no file
-   * can declare its own" — was not true: scripts/curator.py still held
-   * CARTA_VERSION = "0.1" and *enforced* it, so the gate that re-checks a
-   * draft would have rejected every draft the pipeline could build. Nothing
-   * failed loudly, because no draft had reached that gate since the Carta
-   * moved. Found by the same external Scribe, reading the branch rather than
-   * trusting the claim.
-   *
    * extract_core.py is the one permitted Python literal: it is the shared
    * graph-agnostic core that stamps submissions, and the test above pins that
    * literal to the version declared by MAGNA_CARTA.md.
    */
-  const { execFileSync } = await import("node:child_process");
-  const root = fileURLToPath(new URL("..", import.meta.url));
-  const out = execFileSync(
-    "rg",
-    ["-n", "--glob", "*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
-    { cwd: root, encoding: "utf8" },
-  ).trim().replaceAll("\\", "/");
-  const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract_core.py:")) : [];
+  const files = await sourceFiles(
+    [
+      { dir: "ingest", label: "ingest" },
+      { dir: "scripts", label: "scripts" },
+    ],
+    [".py"],
+  );
+  const offenders = files
+    .filter(({ path, text }) => path !== "ingest/extract_core.py" && /^CARTA_VERSION\s*=\s*"/m.test(text))
+    .map(({ path }) => path)
+    .sort();
   assert.deepEqual(
     offenders,
     [],
