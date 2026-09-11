@@ -4,6 +4,11 @@ import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
 import { RANK_QUOTA, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
+import {
+  AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
+  completeIdempotent, enforceLimits, idempotencyKey, mutationsEnabled, readLimitedJson,
+  releaseMutationLease, requestSource, securityAudit,
+} from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +27,7 @@ type Contributor = { id: number; handle: string; rank: string; status: string };
 function response(text: string, status = 200, headers?: Record<string, string>) {
   return NextResponse.json({ text, isError: text.startsWith("ERROR:") }, {
     status,
-    headers: { "Cache-Control": "no-store", ...(headers ?? {}) },
+    headers: { ...NO_STORE_HEADERS, ...(headers ?? {}) },
   });
 }
 
@@ -33,7 +38,8 @@ async function optionalRpc(name: string, args: Record<string, unknown>) {
     // During the deploy→migration window the new function is unknown to
     // PostgREST. Preserve availability with the old multi-call fallback; once
     // the migration lands, the atomic path is selected automatically.
-    if (/rpc\s+[^:]+:\s+404\b/i.test(String(e))) return null;
+    if (/rpc\s+[^:]+:\s+404\b/i.test(String(e)) &&
+        process.env.MCP_EXTERNAL_BETA_REQUIRE_DB_GUARDS !== "true") return null;
     throw e;
   }
 }
@@ -291,21 +297,84 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
     case "submit_review":
       return submitReview(c, args);
 
+    case "appeal": {
+      const id = Number(args?.id);
+      const grounds = typeof args?.grounds === "string" ? args.grounds.trim() : "";
+      if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
+      if (grounds.length < 40 || grounds.length > 4000)
+        return "ERROR: grounds must be between 40 and 4000 characters.";
+      const bad = badText({ grounds }, ["grounds"]);
+      if (bad) return `ERROR: ${bad}`;
+      const rows = await sb("GET", `submissions?id=eq.${id}&select=id,status,contributor_id`);
+      if (!rows.length) return "ERROR: unknown submission id.";
+      if (rows[0].contributor_id !== c.id) return "ERROR: policy forbids appealing another contributor's submission.";
+      if (!["curator-rejected", "rejected"].includes(rows[0].status))
+        return `ERROR: submission ${id} is '${rows[0].status}'; only a refused verdict can be appealed.`;
+      const prior = await sb("GET", `audit_log?submission_id=eq.${id}&action=eq.appeal&select=id&limit=1`);
+      if (prior.length) return "ERROR: this submission has already been appealed.";
+      await sb("POST", "audit_log", {
+        submission_id: id, actor: `contributor:${c.handle}`, action: "appeal", verdict: null,
+        findings: [["APPEAL", 0, grounds]], carta_version: CARTA_VERSION,
+      });
+      await sb("PATCH", `submissions?id=eq.${id}`, { status: "appealed" });
+      return JSON.stringify({ submission_id: id, status: "appealed", note: "Recorded for the Editor-in-chief." }, null, 2);
+    }
+
     default:
       return `ERROR: '${name}' is not handled by the OAuth-native write surface.`;
   }
 }
 
+function validateEnvelope(name: string, args: any): string | null {
+  if (!args || typeof args !== "object" || Array.isArray(args)) return "arguments must be a JSON object.";
+  let nodes = 0;
+  const visit = (v: any, depth: number): boolean => {
+    if (++nodes > 12_000 || depth > 24) return false;
+    if (!v || typeof v !== "object") return true;
+    for (const [k, child] of Object.entries(v)) {
+      if (["__proto__", "prototype", "constructor"].includes(k)) return false;
+      if (!visit(child, depth + 1)) return false;
+    }
+    return true;
+  };
+  if (!visit(args, 0)) return "arguments are too deeply nested, too numerous, or contain unsafe keys.";
+  if (name === "claim_gap" && !Number.isInteger(Number(args.gap_id))) return "gap_id must be an integer.";
+  return null;
+}
+
+function statusFor(text: string): number {
+  if (!text.startsWith("ERROR:")) return 200;
+  if (/quota|too many|rate/i.test(text)) return 429;
+  if (/already|not open|conflict/i.test(text)) return 409;
+  if (/policy|another contributor|own draft|suspended|forbid/i.test(text)) return 403;
+  return 400;
+}
+
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
+  const source = requestSource(req);
+  const parsed = await readLimitedJson(req, AGENT_WRITE_BODY_LIMIT);
+  if (!parsed.ok) return response(`ERROR: ${parsed.error}`, parsed.status);
+  const body = parsed.value;
   const name = String(body?.name ?? "");
   const args = body?.arguments ?? {};
   const need = TOOL_SCOPE[name];
   if (!need) return response(`ERROR: '${name}' is not a governed write tool.`, 400);
 
+  if (!mutationsEnabled()) {
+    await securityAudit({ source, action: name, outcome: "rejected", status: 503, reason: "external mutation kill switch" });
+    return response("ERROR: external agent mutations are temporarily disabled; public reading remains available.", 503, { "Retry-After": "300" });
+  }
+
   const bearer = await verifyBearer(req);
-  if (!bearer) return response("ERROR: missing or expired OAuth bearer token.", 401);
+  if (!bearer) {
+    await securityAudit({ source, action: name, outcome: "rejected", status: 401, reason: "missing or expired bearer" });
+    return response("ERROR: missing or expired OAuth bearer token.", 401, {
+      "WWW-Authenticate": `Bearer realm="Terraveler", resource_metadata="https://www.terraveler.com/.well-known/oauth-protected-resource"`,
+    });
+  }
   if (!bearer.scopes.includes(need)) {
+    await securityAudit({ source, action: name, outcome: "rejected", status: 403, reason: `missing scope ${need}`,
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
     return response(
       `ERROR: this connection has scopes [${bearer.scopes.join(", ")}] and '${name}' needs '${need}'.`,
       403,
@@ -313,13 +382,72 @@ export async function POST(req: Request) {
     );
   }
   if (!bearer.contributor_id) return response("ERROR: OAuth connection has no contributor identity yet.", 409);
+  if (!bearer.agent_account_id || !bearer.agent_id)
+    return response("ERROR: OAuth connection has no durable agent identity yet.", 409);
   const c = await contributor(bearer.contributor_id);
   if (!c) return response("ERROR: contributor no longer exists.", 403);
   if (c.status !== "active") return response("ERROR: contributor is suspended.", 403);
 
+  const invalid = validateEnvelope(name, args);
+  if (invalid) {
+    await securityAudit({ source, action: name, outcome: "rejected", status: 400, reason: invalid,
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return response(`ERROR: ${invalid}`, 400);
+  }
+
+  const limit = await enforceLimits(name, 60, [
+    { dimension: "ip", subject: source.sourceHash, limit: 60 },
+    { dimension: "network", subject: source.networkHash, limit: 240 },
+    { dimension: "client", subject: bearer.client_id, limit: 45 },
+    { dimension: "agent", subject: bearer.agent_id, limit: 30 },
+    { dimension: "tool", subject: `${bearer.agent_id}:${name}`, limit: 15 },
+  ]);
+  if (!limit.allowed) {
+    const reason = `rate limit exceeded for ${limit.dimension}`;
+    await securityAudit({ source, action: name, outcome: "rejected", status: 429, reason,
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return response(`ERROR: ${reason}.`, 429, { "Retry-After": String(limit.retryAfter) });
+  }
+
+  const key = idempotencyKey(req, body);
+  if (key) {
+    const raw = await beginIdempotent(bearer.agent_account_id, name, key, { name, arguments: args });
+    const idem = raw?.[0] ?? raw;
+    if (idem?.state === "conflict" || idem?.state === "in_progress") {
+      const reason = idem.state === "conflict" ? "idempotency key reused with different payload" : "identical request still in progress";
+      await securityAudit({ source, action: name, outcome: "rejected", status: 409, reason,
+        agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+      return response(`ERROR: ${reason}.`, 409, { "Retry-After": "2" });
+    }
+    if (idem?.state === "replay") {
+      await securityAudit({ source, action: name, outcome: "replayed", status: Number(idem.status ?? 200),
+        agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+      return NextResponse.json(idem.body, { status: Number(idem.status ?? 200), headers: NO_STORE_HEADERS });
+    }
+  }
+
+  const lease = await acquireMutationLease(bearer.agent_account_id, name, source.requestId);
+  if (!lease.acquired) {
+    await securityAudit({ source, action: name, outcome: "rejected", status: 503, reason: "concurrent mutation lock",
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return response("ERROR: another mutation of this kind is already active for the agent.", 503, { "Retry-After": "2" });
+  }
+
   try {
-    return response(await callModern(c, name, args));
+    const text = await callModern(c, name, args);
+    const status = statusFor(text);
+    const result = { text, isError: text.startsWith("ERROR:") };
+    if (key) await completeIdempotent(bearer.agent_account_id, name, key, status, result);
+    await securityAudit({ source, action: name, outcome: status < 400 ? "accepted" : "rejected", status,
+      reason: status < 400 ? null : text, agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id,
+      connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return NextResponse.json(result, { status, headers: NO_STORE_HEADERS });
   } catch (e: any) {
-    return response(`ERROR: ${String(e?.message ?? e)}`, 500);
+    const reason = String(e?.message ?? e).slice(0, 500);
+    await securityAudit({ source, action: name, outcome: "failed", status: 500, reason,
+      agentId: bearer.agent_id, agentAccountId: bearer.agent_account_id, connectionId: bearer.connection_id, clientId: bearer.client_id });
+    return response("ERROR: protected mutation failed.", 500);
+  } finally {
+    await releaseMutationLease(lease.leaseKey, source.requestId);
   }
 }

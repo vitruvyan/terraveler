@@ -19,7 +19,8 @@ With --persist (and SUPABASE_URL + SUPABASE_SERVICE_KEY set), the submission
 and the verdict are recorded in the governance backend (submissions/audit_log).
 Exit code: 0 = human-review, 1 = reject, 2 = error.
 """
-import json, math, os, pathlib, re, sys, unicodedata, urllib.request, urllib.error
+import ipaddress, json, math, os, pathlib, re, socket, sys, unicodedata
+import urllib.error, urllib.parse, urllib.request
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "ingest"))
 from verbatim import locate_in_source, norm, readable_text  # noqa: E402
@@ -41,6 +42,8 @@ def _carta_version() -> str:
 
 CARTA_VERSION = _carta_version()
 UA = "terraveler-curator/0.1 (contact: dbaldoni@gmail.com)"
+MAX_FETCH_BYTES = 30 * 1024 * 1024
+FETCH_TIMEOUT_SECONDS = 20
 
 DOMAIN_WHITELIST = (
     "gutenberg.org", "wikisource.org", "wikipedia.org", "wikimedia.org",
@@ -79,19 +82,65 @@ def rejoin_line_breaks(s):
 
 
 _cache = {}
+def domain_ok(url):
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        host = (parsed.hostname or "").rstrip(".").lower()
+        port = parsed.port
+    except (TypeError, ValueError):
+        return False
+    if parsed.scheme not in {"http", "https"} or not host:
+        return False
+    if parsed.username is not None or parsed.password is not None:
+        return False
+    if port is not None and port not in {80, 443}:
+        return False
+    return any(host == d or host.endswith("." + d) for d in DOMAIN_WHITELIST)
+
+
+def _assert_public_source(url):
+    """Reject non-public destinations before every request and redirect."""
+    if not domain_ok(url):
+        raise ValueError("source URL is outside the institutional allowlist")
+    host = urllib.parse.urlsplit(url).hostname
+    try:
+        answers = socket.getaddrinfo(host, None, type=socket.SOCK_STREAM)
+    except socket.gaierror as exc:
+        raise ValueError("source hostname did not resolve") from exc
+    if not answers:
+        raise ValueError("source hostname did not resolve")
+    for answer in answers:
+        address = ipaddress.ip_address(answer[4][0].split("%", 1)[0])
+        if not address.is_global:
+            raise ValueError("source resolves to a non-public address")
+
+
+class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    max_redirections = 5
+    max_repeats = 2
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _assert_public_source(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_safe_opener = urllib.request.build_opener(_SafeRedirectHandler())
+
+
 def fetch(url):
     if url in _cache:
         return _cache[url]
+    _assert_public_source(url)
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        body = r.read().decode("utf-8", "replace")
+    with _safe_opener.open(req, timeout=FETCH_TIMEOUT_SECONDS) as r:
+        _assert_public_source(r.geturl())
+        raw = r.read(MAX_FETCH_BYTES + 1)
+        if len(raw) > MAX_FETCH_BYTES:
+            raise ValueError(f"source exceeds {MAX_FETCH_BYTES >> 20} MiB")
+        body = raw.decode("utf-8", "replace")
         ctype = r.headers.get("Content-Type", "")
     _cache[url] = readable_text(body, ctype)
     return _cache[url]
-
-def domain_ok(url):
-    host = urllib.parse.urlparse(url).netloc.lower()
-    return any(host == d or host.endswith("." + d) for d in DOMAIN_WHITELIST)
 
 def haversine_nm(a_lat, a_lng, b_lat, b_lng):
     R = 6371.0
@@ -304,5 +353,4 @@ def main():
     return 1 if fails else 0
 
 if __name__ == "__main__":
-    import urllib.parse  # noqa: E402  (used in domain_ok)
     sys.exit(main())

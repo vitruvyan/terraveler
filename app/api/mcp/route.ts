@@ -8,6 +8,10 @@ import { getVoyageBundle } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
 import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
+import {
+  MCP_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationsEnabled,
+  readLimitedJson, requestSource, securityAudit,
+} from "@/lib/externalBetaSecurity";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -242,6 +246,10 @@ const RESOURCE_METADATA =
   "https://www.terraveler.com/.well-known/oauth-protected-resource";
 
 const REGISTRATIONS_PER_DAY = 40;
+const LEGACY_MUTATIONS = new Set([
+  "register", "rotate_key", "claim_gap", "propose_idea", "submit_draft",
+  "suggest_feature", "suggest_content", "submit_review", "appeal",
+]);
 
 async function registrationsToday(): Promise<number> {
   const since = new Date(Date.now() - 86_400_000).toISOString();
@@ -1694,19 +1702,18 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
 
 // ------------------------------------------------------------------ JSON-RPC
 function rpcResult(id: any, result: any, headers?: Record<string, string>) {
-  return NextResponse.json({ jsonrpc: "2.0", id, result }, headers ? { headers } : undefined);
+  return NextResponse.json({ jsonrpc: "2.0", id, result }, { headers: { ...NO_STORE_HEADERS, ...(headers ?? {}) } });
 }
 function rpcError(id: any, code: number, message: string) {
-  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } });
+  return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } }, { headers: NO_STORE_HEADERS });
 }
 
 export async function POST(req: Request) {
-  let msg: any;
-  try {
-    msg = await req.json();
-  } catch {
-    return rpcError(null, -32700, "Parse error");
-  }
+  const parsed = await readLimitedJson(req, MCP_BODY_LIMIT);
+  if (!parsed.ok)
+    return NextResponse.json({ jsonrpc: "2.0", id: null, error: { code: parsed.status === 413 ? -32013 : -32700, message: parsed.error } },
+      { status: parsed.status, headers: NO_STORE_HEADERS });
+  const msg: any = parsed.value;
   if (Array.isArray(msg)) return rpcError(null, -32600, "Batch requests not supported");
   const { id, method, params } = msg ?? {};
 
@@ -1775,11 +1782,34 @@ export async function POST(req: Request) {
   if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
   if (method === "tools/call") {
     try {
+      const toolName = String(params?.name ?? "");
+      const source = requestSource(req);
+      if (LEGACY_MUTATIONS.has(toolName)) {
+        if (!mutationsEnabled()) {
+          await securityAudit({ source, action: `legacy:${toolName}`, outcome: "rejected", status: 503,
+            reason: "external mutation kill switch" });
+          return NextResponse.json({ jsonrpc: "2.0", id, error: { code: -32053,
+            message: "External agent mutations are temporarily disabled; public reading remains available." } },
+            { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
+        }
+        const limit = await enforceLimits(`legacy:${toolName}`, 60, [
+          { dimension: "ip", subject: source.sourceHash, limit: 30 },
+          { dimension: "network", subject: source.networkHash, limit: 120 },
+          { dimension: "legacy-identity", subject: String(params?.arguments?.handle ?? "anonymous"), limit: 20 },
+          { dimension: "tool", subject: toolName, limit: 90 },
+        ]);
+        if (!limit.allowed) {
+          await securityAudit({ source, action: `legacy:${toolName}`, outcome: "rejected", status: 429,
+            reason: `rate limit exceeded for ${limit.dimension}` });
+          return NextResponse.json({ jsonrpc: "2.0", id, error: { code: -32029, message: "Rate limit exceeded." } },
+            { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(limit.retryAfter) } });
+        }
+      }
       // Progressive: reading the atlas needs nothing, and demanding a login to
       // see it would be the opposite of the point. Authorisation appears at
       // the first tool that writes, which is the moment it means something.
       const bearer = await verifyBearer(req);
-      const need = SCOPE_FOR[String(params?.name)];
+      const need = SCOPE_FOR[toolName];
       if (need && !bearer && !params?.arguments?.api_key) {
         // The HTTP header alone is not enough for every host. OpenAI's linking
         // UI reads the challenge out of the JSON-RPC result's `_meta`, so a
@@ -1811,6 +1841,11 @@ export async function POST(req: Request) {
       if (need && bearer && !bearer.scopes.includes(need))
         return insufficientScope(need, bearer.scopes);
       const text = await callTool(params?.name, params?.arguments ?? {}, bearer);
+      if (LEGACY_MUTATIONS.has(toolName))
+        await securityAudit({ source, action: `legacy:${toolName}`,
+          outcome: text.startsWith("ERROR:") ? "rejected" : "accepted", status: text.startsWith("ERROR:") ? 400 : 200,
+          reason: text.startsWith("ERROR:") ? text : null, agentId: bearer?.agent_id,
+          agentAccountId: bearer?.agent_account_id, connectionId: bearer?.connection_id, clientId: bearer?.client_id });
       return rpcResult(id, { content: [{ type: "text", text }], isError: text.startsWith("ERROR:") });
     } catch (e: any) {
       return rpcResult(id, { content: [{ type: "text", text: `ERROR: ${String(e?.message || e)}` }], isError: true });

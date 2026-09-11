@@ -108,7 +108,9 @@ export const INJECTION = [
 
 // Free-text bounds for the lightweight write tools. The injection screen is a
 // tripwire, not the defence: the desk always treats payloads as data.
-export const TEXT_LIMITS: Record<string, number> = { title: 200, description: 4000, idea: 4000, area: 100, voyage: 100 };
+export const TEXT_LIMITS: Record<string, number> = {
+  title: 200, description: 4000, idea: 4000, grounds: 4000, area: 100, voyage: 100,
+};
 
 /** A review's shape is a Carta matter, not a database one, so it is checked
  *  here whichever write path runs: a refutation must cite whitelist evidence
@@ -158,7 +160,12 @@ export const MAX_PLATES_PER_WAYPOINT = 12;
 
 export function domainOk(url: string): boolean {
   try {
-    const host = new URL(url).hostname.toLowerCase();
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password)
+      return false;
+    if (parsed.port && !((parsed.protocol === "https:" && parsed.port === "443") ||
+                         (parsed.protocol === "http:" && parsed.port === "80"))) return false;
+    const host = parsed.hostname.toLowerCase();
     return DOMAINS.some((d) => host === d || host.endsWith("." + d));
   } catch {
     return false;

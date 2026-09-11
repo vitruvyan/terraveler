@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { rpc, sb } from "@/lib/deskAuth";
-import { createAgentAccount, getAgentAccount } from "@/lib/agentIdentity";
+import {
+  VoyagerNameTakenError,
+  createAgentAccount,
+  getAgentAccount,
+} from "@/lib/agentIdentity";
 import { sha256 } from "@/lib/oauth";
 import { CARTA_VERSION } from "@/lib/carta";
+import { availableVoyagerNames } from "@/lib/voyagerNameAvailability";
+import { resolveVoyagerName } from "@/lib/voyagerNames";
+import {
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationsEnabled,
+  readLimitedJson, requestSource, securityAudit,
+} from "@/lib/externalBetaSecurity";
 
 /**
  * RFC 7591 compatibility registration.
@@ -25,12 +35,37 @@ const PER_SOURCE_PER_HOUR = 10;
 const GLOBAL_PER_HOUR = 2000;
 
 function badRequest(error: string, description: string) {
-  return NextResponse.json({ error, error_description: description }, { status: 400 });
+  return NextResponse.json({ error, error_description: description }, { status: 400, headers: NO_STORE_HEADERS });
+}
+
+async function nameTaken(voyagerName: string) {
+  const suggestions = await availableVoyagerNames(`taken:${voyagerName}`, 5);
+  return NextResponse.json({
+    error: "voyager_name_taken",
+    error_description:
+      `Voyager Name '${voyagerName}' has already been claimed. Choose one of the suggested names or request another public sample.`,
+    voyager_name: voyagerName,
+    suggestions: suggestions.map((entry) => entry.slug),
+    catalogue: "https://www.terraveler.com/api/voyager-names",
+  }, { status: 409, headers: NO_STORE_HEADERS });
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
-  if (!body) return badRequest("invalid_client_metadata", "body must be JSON");
+  const request = requestSource(req);
+  const parsedBody = await readLimitedJson(req, ENROLLMENT_BODY_LIMIT);
+  if (!parsedBody.ok)
+    return NextResponse.json({ error: "invalid_client_metadata", error_description: parsedBody.error },
+      { status: parsedBody.status, headers: NO_STORE_HEADERS });
+  const body = parsedBody.value;
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    return badRequest("invalid_client_metadata", "body must be a JSON object");
+  if (!mutationsEnabled()) {
+    await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 503,
+      reason: "external mutation kill switch" });
+    return NextResponse.json({ error: "temporarily_unavailable",
+      error_description: "External agent enrollment is temporarily disabled; public MCP reading remains available." },
+      { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
+  }
 
   const wantsCC = Array.isArray(body.grant_types)
     && body.grant_types.map(String).includes("client_credentials");
@@ -55,27 +90,18 @@ export async function POST(req: Request) {
     clean.push(parsed.toString());
   }
 
-  const since = new Date(Date.now() - 3600_000).toISOString();
-  const source = sha256(
-    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown",
-  ).slice(0, 32);
-  const [mine, all] = await Promise.all([
-    sb("GET", `oauth_clients?created_at=gte.${since}&source_hash=eq.${source}&select=id`),
-    sb("GET", `oauth_clients?created_at=gte.${since}&select=id`),
+  const admission = await enforceLimits("oauth-register", 3600, [
+    { dimension: "ip", subject: request.sourceHash, limit: PER_SOURCE_PER_HOUR },
+    { dimension: "network", subject: request.networkHash, limit: 40 },
+    { dimension: "global", subject: "all", limit: GLOBAL_PER_HOUR },
   ]);
-  if ((mine?.length ?? 0) >= PER_SOURCE_PER_HOUR)
-    return NextResponse.json(
-      { error: "temporarily_unavailable",
-        error_description: `you have registered ${mine.length} clients this hour, which is ` +
-          `the limit for one source. Nobody else is affected by this.` },
-      { status: 429 },
-    );
-  if ((all?.length ?? 0) >= GLOBAL_PER_HOUR)
-    return NextResponse.json(
-      { error: "temporarily_unavailable",
-        error_description: "registrations are paused site-wide for this hour — an emergency ceiling." },
-      { status: 429 },
-    );
+  if (!admission.allowed) {
+    await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 429,
+      reason: `rate limit exceeded for ${admission.dimension}` });
+    return NextResponse.json({ error: "temporarily_unavailable",
+      error_description: "Registration rate limit exceeded. Retry after the indicated delay." },
+      { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(admission.retryAfter) } });
+  }
 
   const grants: string[] = Array.isArray(body.grant_types)
     ? body.grant_types.map(String)
@@ -86,6 +112,15 @@ export async function POST(req: Request) {
     : "";
   if (runtimeLinkToken && !selfEnrollingAgent)
     return badRequest("invalid_agent_link", "agent_link_token is only valid for a client_credentials runtime");
+
+  const requestedVoyagerName = resolveVoyagerName(body.voyager_name);
+  if (selfEnrollingAgent && !runtimeLinkToken && !requestedVoyagerName) {
+    return badRequest(
+      "invalid_voyager_name",
+      "A new self-enrolled agent must choose a voyager_name from the curated catalogue. " +
+        "Fetch a limited public sample at https://www.terraveler.com/api/voyager-names.",
+    );
+  }
 
   const client_id = `tv_${randomBytes(16).toString("hex")}`;
   const client_secret = selfEnrollingAgent ? randomBytes(32).toString("base64url") : null;
@@ -110,11 +145,21 @@ export async function POST(req: Request) {
       return badRequest("invalid_agent_link", "the agent identity behind this token is not active");
     reboundExistingAgent = true;
   } else if (selfEnrollingAgent) {
-    agent = await createAgentAccount({
-      displayName: agentName,
-      operator,
-      enrollment: "self",
-    });
+    try {
+      agent = await createAgentAccount({
+        voyagerName: requestedVoyagerName!.slug,
+        displayName: agentName || requestedVoyagerName!.label,
+        operator,
+        enrollment: "self",
+      });
+    } catch (error) {
+      if (error instanceof VoyagerNameTakenError) {
+        await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 409,
+          reason: "voyager name taken" });
+        return nameTaken(error.voyagerName);
+      }
+      throw error;
+    }
     createdAgent = true;
   }
 
@@ -124,7 +169,7 @@ export async function POST(req: Request) {
       client_name: clientName,
       redirect_uris: clean,
       registered_via: selfEnrollingAgent ? "client_credentials" : "dcr",
-      source_hash: source,
+      source_hash: request.sourceHash,
       client_secret_hash: client_secret ? sha256(client_secret) : null,
       operator,
       carta_version: CARTA_VERSION,
@@ -138,6 +183,8 @@ export async function POST(req: Request) {
     throw error;
   }
 
+  await securityAudit({ source: request, action: "oauth-register", outcome: "accepted", status: 201,
+    agentId: agent?.public_id, agentAccountId: agent?.id, clientId: client_id });
   return NextResponse.json(
     {
       client_id,
@@ -146,6 +193,7 @@ export async function POST(req: Request) {
       ...(client_secret && agent
         ? {
             agent_id: agent.public_id,
+            voyager_name: agent.voyager_name,
             handle: agent.handle,
             client_secret,
             token_endpoint_auth_method: "client_secret_post",
@@ -166,6 +214,6 @@ export async function POST(req: Request) {
       carta: "https://www.terraveler.com/magna-carta",
       client_id_issued_at: Math.floor(Date.now() / 1000),
     },
-    { status: 201 },
+    { status: 201, headers: NO_STORE_HEADERS },
   );
 }

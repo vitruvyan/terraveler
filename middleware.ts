@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
+const MCP_BODY_LIMIT = 384 * 1024;
+const NO_STORE_HEADERS = { "Cache-Control": "no-store, max-age=0", Pragma: "no-cache", "X-Content-Type-Options": "nosniff" };
+
+async function readLimitedJson(req: Request, maxBytes: number) {
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declared) && declared > maxBytes)
+    return { ok: false as const, status: 413 as const, error: `request body exceeds ${maxBytes} bytes` };
+  const text = await req.text().catch(() => "");
+  if (new TextEncoder().encode(text).byteLength > maxBytes)
+    return { ok: false as const, status: 413 as const, error: `request body exceeds ${maxBytes} bytes` };
+  try { return { ok: true as const, value: JSON.parse(text) }; }
+  catch { return { ok: false as const, status: 400 as const, error: "body must be valid JSON" }; }
+}
+
 /**
  * MCP 2026-07-28 compatibility facade.
  *
@@ -23,6 +37,7 @@ const MODERN_NATIVE_WRITES = new Set([
   "suggest_feature",
   "suggest_content",
   "submit_review",
+  "appeal",
 ]);
 
 const SERVER_INFO = {
@@ -200,10 +215,15 @@ async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) 
 }
 
 async function modernWrite(req: NextRequest, msg: any, name: string) {
+  const forwarded = authHeaders(req);
+  for (const h of ["idempotency-key", "mcp-request-id", "x-request-id", "x-forwarded-for", "x-vercel-forwarded-for"]) {
+    const value = req.headers.get(h);
+    if (value) forwarded.set(h, value);
+  }
   const upstream = await fetch(new URL(WRITE_PATH, req.url), {
     method: "POST",
     headers: new Headers({
-      ...Object.fromEntries(authHeaders(req).entries()),
+      ...Object.fromEntries(forwarded.entries()),
       "Content-Type": "application/json",
     }),
     body: JSON.stringify({ name, arguments: msg?.params?.arguments ?? {} }),
@@ -275,7 +295,12 @@ export async function middleware(req: NextRequest) {
   const method = req.headers.get("mcp-method");
   if (!method) return NextResponse.next(); // 2025-era client: unchanged.
 
-  const msg = await req.clone().json().catch(() => null);
+  const parsed = await readLimitedJson(req.clone(), MCP_BODY_LIMIT);
+  if (!parsed.ok) return NextResponse.json(
+    { jsonrpc: "2.0", id: null, error: { code: parsed.status === 413 ? -32013 : -32700, message: parsed.error } },
+    { status: parsed.status, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } },
+  );
+  const msg = parsed.value;
   const envelopeError = modernEnvelopeError(req, msg);
   if (envelopeError) return jsonRpcError(msg?.id, -32020, envelopeError);
 

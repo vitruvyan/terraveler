@@ -9,6 +9,7 @@ import {
   deniedCapabilities,
   quotaForRank,
 } from "@/lib/agentCapabilities";
+import { mutationsEnabled } from "@/lib/externalBetaSecurity";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,20 +20,32 @@ export const dynamic = "force-dynamic";
  * identity root and their account does not own the agent's standing.
  */
 export async function GET(req: Request) {
+  const writesEnabled = mutationsEnabled();
   const bearer = await verifyBearer(req);
   if (!bearer) {
     return NextResponse.json({
       mode: "anonymous",
       agent_id: null,
+      voyager_name: null,
       handle: null,
       scopes: [],
       allowed: ["read"],
       not_allowed: ["contribute", "review", "appeal", "publish"],
       publish: AGENT_CAN_PUBLISH,
+      external_mutations_enabled: writesEnabled,
       carta_version: CARTA_VERSION,
       next:
         "Read freely. To write, use an authorised agent identity: an unattended agent can self-enrol; an interactive agent can be associated by a signed-in human.",
     }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  if (!bearer.agent_account_id && !writesEnabled) {
+    return NextResponse.json({
+      mode: "agent-bootstrap-paused", agent_id: null, scopes: bearer.scopes,
+      allowed: ["read"], not_allowed: ["contribute", "review", "appeal", "publish"],
+      publish: AGENT_CAN_PUBLISH, external_mutations_enabled: false,
+      next: "External mutations and identity bootstrap are temporarily disabled; public reading remains available.",
+    }, { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } });
   }
 
   const agent = await ensureAgentForBearer(bearer);
@@ -40,6 +53,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       error: "agent_suspended",
       agent_id: agent.public_id,
+      voyager_name: agent.voyager_name,
       handle: agent.handle,
     }, { status: 403, headers: { "Cache-Control": "no-store" } });
   }
@@ -51,6 +65,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     mode: "agent",
     agent_id: agent.public_id,
+    voyager_name: agent.voyager_name,
     handle: agent.handle,
     display_name: agent.display_name,
     enrollment: agent.enrollment,
@@ -59,6 +74,7 @@ export async function GET(req: Request) {
     allowed: allowedCapabilities(scopes),
     not_allowed: deniedCapabilities(scopes),
     publish: AGENT_CAN_PUBLISH,
+    external_mutations_enabled: writesEnabled,
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,

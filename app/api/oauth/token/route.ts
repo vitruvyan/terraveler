@@ -5,6 +5,10 @@ import {
   ACCESS_TTL_S, MCP_RESOURCE, REUSE_GRACE_MS, constantTimeEqual, issueTokens, parseScopes,
   pkceMatches, redirectAllowed, secret, sha256,
 } from "@/lib/oauth";
+import {
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, enforceLimits,
+  readLimitedJson, releaseMutationLease, requestSource,
+} from "@/lib/externalBetaSecurity";
 
 /**
  * OAuth token endpoint. Interactive authorization and self-enrolled agents use
@@ -15,7 +19,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const noStore = { "Cache-Control": "no-store", Pragma: "no-cache" };
+const noStore = NO_STORE_HEADERS;
 
 function fail(error: string, description: string, status = 400) {
   return NextResponse.json({ error, error_description: description }, { status, headers: noStore });
@@ -24,12 +28,18 @@ function fail(error: string, description: string, status = 400) {
 async function readParams(req: Request): Promise<Record<string, string>> {
   const ct = req.headers.get("content-type") ?? "";
   if (ct.includes("application/json")) {
-    const j = await req.json().catch(() => ({}));
+    const parsed = await readLimitedJson(req, ENROLLMENT_BODY_LIMIT);
+    if (!parsed.ok) throw Object.assign(new Error(parsed.error), { status: parsed.status });
+    const j = parsed.value;
     return Object.fromEntries(Object.entries(j).map(([k, v]) => [k, String(v ?? "")]));
   }
-  const form = await req.formData().catch(() => null);
-  if (!form) return {};
-  return Object.fromEntries([...form.entries()].map(([k, v]) => [k, String(v)]));
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(declared) && declared > ENROLLMENT_BODY_LIMIT)
+    throw Object.assign(new Error("request body too large"), { status: 413 });
+  const raw = await req.text();
+  if (Buffer.byteLength(raw, "utf8") > ENROLLMENT_BODY_LIMIT)
+    throw Object.assign(new Error("request body too large"), { status: 413 });
+  return Object.fromEntries(new URLSearchParams(raw));
 }
 
 async function detonate(connectionId: number, why: string) {
@@ -177,10 +187,12 @@ async function clientCredentials(p: Record<string, string>) {
 
   let agentAccountId = client.agent_account_id ?? existing?.agent_account_id ?? null;
   if (!agentAccountId) {
+    // Only pre-Voyager clients can reach this compatibility repair. New
+    // self-enrolment creates and binds the named identity at registration.
     const agent = await createAgentAccount({
       displayName: client.client_name ?? null,
       operator: client.operator ?? null,
-      enrollment: "self",
+      enrollment: "legacy-import",
     });
     agentAccountId = agent.id;
     await sb("PATCH", `oauth_clients?client_id=eq.${encodeURIComponent(client_id)}`, {
@@ -238,8 +250,33 @@ async function clientCredentials(p: Record<string, string>) {
 }
 
 export async function POST(req: Request) {
-  const p = await readParams(req);
-  if (p.grant_type === "client_credentials") return clientCredentials(p);
+  let p: Record<string, string>;
+  try { p = await readParams(req); }
+  catch (e: any) { return fail("invalid_request", String(e?.message ?? "invalid body"), e?.status ?? 400); }
+  const source = requestSource(req);
+  const admission = await enforceLimits("oauth-token", 60, [
+    { dimension: "ip", subject: source.sourceHash, limit: 90 },
+    { dimension: "network", subject: source.networkHash, limit: 360 },
+    { dimension: "client", subject: p.client_id ?? "unknown", limit: 60 },
+  ]);
+  if (!admission.allowed)
+    return NextResponse.json({ error: "temporarily_unavailable", error_description: "Token endpoint rate limit exceeded." },
+      { status: 429, headers: { ...noStore, "Retry-After": String(admission.retryAfter) } });
+  if (p.grant_type === "client_credentials") {
+    // Two serverless invocations presenting the same valid client credential
+    // must not race into two legacy identity repairs or two autonomous
+    // connections. The database lease is shared across instances.
+    const lease = await acquireMutationLease(0, `oauth-token:${p.client_id ?? "unknown"}`, source.requestId);
+    if (!lease.acquired)
+      return NextResponse.json({ error: "temporarily_unavailable",
+        error_description: "Another token request for this client is still active." },
+        { status: 503, headers: { ...noStore, "Retry-After": "2" } });
+    try {
+      return await clientCredentials(p);
+    } finally {
+      await releaseMutationLease(lease.leaseKey, source.requestId);
+    }
+  }
   if (p.grant_type === "authorization_code") return authorizationCode(p);
   if (p.grant_type === "refresh_token") return refresh(p);
   return fail("unsupported_grant_type",

@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * The Magna Carta's version number lives in three places that must agree, and
@@ -19,6 +21,25 @@ import { readFile } from "node:fs/promises";
  */
 
 const read = (p: string) => readFile(new URL(p, import.meta.url), "utf8");
+
+async function findVersionLiterals(dirs: string[], extension: RegExp, declaration: RegExp) {
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const found: string[] = [];
+  async function walk(dir: string) {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await walk(path);
+      else if (extension.test(entry.name)) {
+        const text = await readFile(path, "utf8");
+        text.split(/\r?\n/).forEach((line, i) => {
+          if (declaration.test(line)) found.push(`${relative(root, path).replaceAll("\\", "/")}:${i + 1}:${line}`);
+        });
+      }
+    }
+  }
+  for (const dir of dirs) await walk(join(root, dir));
+  return found;
+}
 
 async function cartaDocVersion(): Promise<string> {
   const md = await read("../MAGNA_CARTA.md");
@@ -48,14 +69,8 @@ test("no TypeScript file declares a Carta version of its own", async () => {
    * unreadable. An external Scribe auditing its own approved submission found
    * it; nothing in this repository would have.
    */
-  const { execFileSync } = await import("node:child_process");
-  const root = new URL("..", import.meta.url).pathname;
-  const out = execFileSync(
-    "grep",
-    ["-rn", "--include=*.ts", "--include=*.tsx", "CARTA_VERSION *= *\"", "app", "lib", "components"],
-    { cwd: root, encoding: "utf8" },
-  ).trim();
-  const offenders = out.split("\n").filter((l) => !l.startsWith("lib/carta.ts:"));
+  const out = await findVersionLiterals(["app", "lib", "components"], /\.tsx?$/, /CARTA_VERSION\s*=\s*"/);
+  const offenders = out.filter((l) => !l.startsWith("lib/carta.ts:"));
   assert.deepEqual(
     offenders,
     [],
@@ -92,14 +107,8 @@ test("no Python file declares a Carta version of its own either", async () => {
    * graph-agnostic core that stamps submissions, and the test above pins that
    * literal to the version declared by MAGNA_CARTA.md.
    */
-  const { execFileSync } = await import("node:child_process");
-  const root = new URL("..", import.meta.url).pathname;
-  const out = execFileSync(
-    "grep",
-    ["-rn", "--include=*.py", "^CARTA_VERSION *= *\"", "ingest", "scripts"],
-    { cwd: root, encoding: "utf8" },
-  ).trim();
-  const offenders = out ? out.split("\n").filter((l) => !l.startsWith("ingest/extract_core.py:")) : [];
+  const out = await findVersionLiterals(["ingest", "scripts"], /\.py$/, /^CARTA_VERSION\s*=\s*"/);
+  const offenders = out.filter((l) => !l.startsWith("ingest/extract_core.py:"));
   assert.deepEqual(
     offenders,
     [],

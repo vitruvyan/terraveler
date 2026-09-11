@@ -81,6 +81,12 @@ export function isPublicIp(ip: string): boolean {
   if (net.isIP(ip) === 6) {
     const mapped = ip.toLowerCase().match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
     if (mapped) return isPublicIp(mapped[1]);
+    const n = ipv6BigInt(ip);
+    const mappedBase = ipv6BigInt("::ffff:0:0");
+    if (n != null && mappedBase != null && (n >> 32n) === (mappedBase >> 32n)) {
+      const low = Number(n & 0xffffffffn) >>> 0;
+      return isPublicIp(`${low >>> 24}.${(low >>> 16) & 255}.${(low >>> 8) & 255}.${low & 255}`);
+    }
     const blocked: Array<[string, number]> = [
       ["::", 128], ["::1", 128], ["fc00::", 7], ["fe80::", 10],
       ["ff00::", 8], ["2001:db8::", 32],
@@ -91,7 +97,12 @@ export function isPublicIp(ip: string): boolean {
 }
 
 async function pinnedJson(url: URL): Promise<any> {
-  const records = await lookup(url.hostname, { all: true, verbatim: true });
+  if (url.port && url.port !== "443") throw new Error("CIMD requires the standard HTTPS port");
+  const started = Date.now();
+  const records = await Promise.race([
+    lookup(url.hostname, { all: true, verbatim: true }),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("CIMD DNS lookup timed out")), TIMEOUT_MS)),
+  ]);
   if (!records.length || records.some((r) => !isPublicIp(r.address)))
     throw new Error("CIMD host resolves to a non-public address");
   const pinned = records[0];
@@ -115,6 +126,11 @@ async function pinnedJson(url: URL): Promise<any> {
         res.resume();
         return reject(new Error(`CIMD returned HTTP ${res.statusCode}`));
       }
+      const contentType = String(res.headers["content-type"] ?? "").toLowerCase();
+      if (!contentType.includes("application/json") && !contentType.includes("+json")) {
+        res.resume();
+        return reject(new Error("CIMD response is not JSON"));
+      }
       const length = Number(res.headers["content-length"] ?? 0);
       if (length > MAX_BYTES) {
         res.resume();
@@ -135,7 +151,10 @@ async function pinnedJson(url: URL): Promise<any> {
         catch { reject(new Error("CIMD is not valid JSON")); }
       });
     });
-    req.setTimeout(TIMEOUT_MS, () => req.destroy(new Error("CIMD fetch timed out")));
+    const remaining = Math.max(1, TIMEOUT_MS - (Date.now() - started));
+    const deadline = setTimeout(() => req.destroy(new Error("CIMD fetch timed out")), remaining);
+    req.setTimeout(remaining, () => req.destroy(new Error("CIMD fetch timed out")));
+    req.on("close", () => clearTimeout(deadline));
     req.on("error", reject);
     req.end();
   });
