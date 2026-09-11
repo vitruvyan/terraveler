@@ -1119,7 +1119,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     }
     case "list_gaps": {
       await reapStaleClaims();
-      const rows = await sb("GET", "editorial_gaps?status=eq.open&order=priority.asc,id.asc&select=id,title,description,kind,priority");
+      const rows = await sb("GET", "editorial_gaps?status=eq.open&order=priority.asc,id.asc&select=" +
+        "id,title,description,kind,priority,waypoint_type,claimed_by,claimed_at," +
+        "context_type,context_voyage,context_waypoint_seq,context_place,requested_agent_account_id");
       // Auto-computed completeness: what the existing voyage data actually lacks.
       const b: any = bougainville;
       const wps: any[] = b.waypoints ?? [];
@@ -1139,12 +1141,68 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         waypoints_low_confidence: wps.filter((w) => w.confidence !== "certain")
           .map((w) => ({ seq: w.seq, confidence: w.confidence })),
       }];
-      const waypoints = rows.map((gap: any) => adaptEditorialGap(gap));
+
+      // Work eligibility is a projection of exactly what claim_gap enforces —
+      // same authenticate(), same quotaFor(), same held-claims predicate — so
+      // an agent never has to guess standing against the Carta and find out
+      // only when the write is rejected. Reused, not reimplemented: this must
+      // never be more permissive than the write path it describes.
+      const identity = await authenticate(args, bearer);
+      let quotaState: { rank: string; heldClaims: number; limit: number; agentAccountId: number | null } | null = null;
+      if (identity.ok) {
+        const c = identity.ok;
+        const held = await sb("GET",
+          `editorial_gaps?status=eq.claimed&or=(claimed_by_contributor_id.eq.${c.id},claimed_by.eq.${encodeURIComponent(c.handle)})&select=id`);
+        quotaState = {
+          rank: c.rank, heldClaims: held.length,
+          limit: quotaFor(c.rank, c.handle).activeClaims,
+          // Only an OAuth connection carries agent_account_id; a legacy
+          // handle+api_key caller is treated as never matching a reservation
+          // rather than resolved through the same contributor<->agent_account
+          // join the RPC uses — conservative, never more permissive.
+          agentAccountId: bearer?.agent_account_id ?? null,
+        };
+      }
+
+      let recommendedWaypointId: number | null = null;
+      const waypoints = rows.map((gap: any) => {
+        const w: any = adaptEditorialGap(gap);
+        let eligible = true;
+        let reason = "open and unclaimed";
+        if (!quotaState) {
+          eligible = false;
+          reason = "anonymous connection — self-enrol to claim (see get_capabilities)";
+        } else {
+          const reservedFor = gap.requested_agent_account_id != null ? Number(gap.requested_agent_account_id) : null;
+          if (reservedFor != null && reservedFor !== quotaState.agentAccountId) {
+            eligible = false;
+            reason = "reserved for a specific Voyager";
+          } else if (quotaState.heldClaims >= quotaState.limit) {
+            eligible = false;
+            reason = `you hold ${quotaState.heldClaims} active claim(s); the limit for rank '${quotaState.rank}' is ${quotaState.limit}`;
+          }
+        }
+        if (eligible && recommendedWaypointId == null) recommendedWaypointId = w.id;
+        return {
+          ...w, eligible, reason,
+          allowed_actions: eligible ? ["claim_gap"] : [],
+          blocked_actions: eligible ? [] : ["claim_gap"],
+        };
+      });
+
       return JSON.stringify({
         waypoints,
         curated_gaps: rows,
         voyage_completeness: completeness,
-        note: "waypoints is the shared Chartroom contract; curated_gaps is its MCP 2025 compatibility alias. voyage_completeness is auto-computed from live atlas data.",
+        your_standing: quotaState
+          ? { rank: quotaState.rank, active_claims: quotaState.heldClaims, active_claims_limit: quotaState.limit }
+          : { rank: null, note: "anonymous — self-enrol to see personalised eligibility" },
+        recommended_next_action: recommendedWaypointId != null
+          ? `claim_gap { gap_id: ${recommendedWaypointId} }`
+          : quotaState
+            ? "none eligible right now — submit or release an existing claim first"
+            : "self-enrol: POST /api/oauth/register {\"grant_types\":[\"client_credentials\"]}, then retry",
+        note: "waypoints is the shared Chartroom contract, annotated with per-waypoint eligibility that mirrors claim_gap's own enforcement; curated_gaps is its MCP 2025 compatibility alias. voyage_completeness is auto-computed from live atlas data.",
       }, null, 2);
     }
     case "claim_gap": {
