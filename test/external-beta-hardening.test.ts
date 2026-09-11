@@ -61,12 +61,41 @@ test("database hardening serializes first-use idempotency reservations", async (
   assert.match(migration, /revoke all on mcp_security_rate_limits/);
 });
 
-test("security defaults and runbook are fail closed", async () => {
-  const [security, env, runbook] = await Promise.all([
+test("security defaults, middleware and runbook are fail closed", async () => {
+  const [security, env, runbook, middleware] = await Promise.all([
     read("../lib/externalBetaSecurity.ts"), read("../.env.example"),
-    read("../docs/MCP_EXTERNAL_BETA_SECURITY.md"),
+    read("../docs/MCP_EXTERNAL_BETA_SECURITY.md"), read("../middleware.ts"),
   ]);
-  assert.match(security, /return enabled && pepper\(\) !== null/);
+  assert.match(security, /return enabled && securityPepperReady\(\)/);
   assert.match(env, /MCP_EXTERNAL_MUTATIONS_ENABLED=false/);
-  assert.match(runbook, /Keep `MCP_EXTERNAL_MUTATIONS_ENABLED=false` in production/);
+  assert.match(env, /MCP_LEGACY_MUTATIONS_ENABLED=false/);
+  assert.match(middleware, /LEGACY_MUTATIONS/);
+  assert.match(middleware, /MCP_LEGACY_MUTATIONS_ENABLED/);
+  assert.match(runbook, /Keep both `MCP_EXTERNAL_MUTATIONS_ENABLED=false` and/);
+});
+
+test("modern agent writes require DB guards and carry replay/concurrency controls", async () => {
+  const writer = await read("../app/api/agent/write/route.ts");
+  assert.match(writer, /MCP_EXTERNAL_BETA_REQUIRE_DB_GUARDS/);
+  assert.match(writer, /beginIdempotent/);
+  assert.match(writer, /acquireMutationLease/);
+  assert.match(writer, /securityAudit/);
+  assert.match(writer, /case "appeal"/);
+});
+
+test("standing quota admission is serialized per durable contributor", async () => {
+  const sql = await read("../supabase/mcp_oauth_write_functions.sql");
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\('mcp-author:' \|\| a\.id/);
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\('mcp-claim:' \|\| a\.id/);
+  assert.match(sql, /pg_advisory_xact_lock\(hashtextextended\('mcp-review:' \|\| a\.id/);
+});
+
+test("the unattended Curator bounds and revalidates agent-supplied source URLs", async () => {
+  const curator = await read("../scripts/curator.py");
+  assert.match(curator, /MAX_FETCH_BYTES = 30 \* 1024 \* 1024/);
+  assert.match(curator, /parsed\.scheme not in \{"http", "https"\}/);
+  assert.match(curator, /address\.is_global/);
+  assert.match(curator, /class _SafeRedirectHandler/);
+  assert.match(curator, /r\.read\(MAX_FETCH_BYTES \+ 1\)/);
+  assert.match(curator, /_assert_public_source\(r\.geturl\(\)\)/);
 });
