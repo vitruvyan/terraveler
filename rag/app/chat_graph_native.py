@@ -38,6 +38,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
@@ -58,6 +60,24 @@ from vitruvyan_motus import (
 from vitruvyan_motus.effects import EffectClass
 
 RELEVANCE_THRESHOLD = 0.35  # cosine similarity below which we decline to answer
+_TRANSIENT_ANTHROPIC_STATUSES = frozenset({408, 409, 429, 500, 502, 503, 504, 529})
+
+
+class AnthropicHTTPError(RuntimeError):
+    """A safe, classified Claude API failure.
+
+    The API response body is consumed at the adapter boundary so callers do not
+    lose the useful provider error type behind urllib's generic ``HTTPError``.
+    The message is kept for operator logs only; the trace persists only status
+    and type, never arbitrary provider text.
+    """
+
+    def __init__(self, status: int, error_type: str, message: str) -> None:
+        self.status = status
+        self.error_type = error_type
+        self.provider_message = message
+        super().__init__(f"Anthropic HTTP {status} ({error_type}): {message}")
+
 
 # Two clauses here are not stylistic and were both written after watching the
 # answer land in the actual bubble.
@@ -181,8 +201,38 @@ def _embed(embed_url: str, text: str) -> list[float]:
         return json.load(r)["embedding"]
 
 
+def _anthropic_error(exc: urllib.error.HTTPError) -> tuple[str, str]:
+    """Extract Anthropic's public error type/message from one failed response."""
+    try:
+        raw = exc.read().decode("utf-8", "replace")
+        payload = json.loads(raw)
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return "http_error", exc.reason or "request failed"
+    error = payload.get("error") if isinstance(payload, dict) else None
+    if not isinstance(error, dict):
+        return "http_error", exc.reason or "request failed"
+    error_type = str(error.get("type") or "http_error")
+    message = str(error.get("message") or exc.reason or "request failed")
+    return error_type, message
+
+
+def _retry_delay(exc: urllib.error.HTTPError, attempt: int) -> float:
+    retry_after = exc.headers.get("retry-after") if exc.headers else None
+    if retry_after:
+        try:
+            return min(max(float(retry_after), 0.0), 10.0)
+        except ValueError:
+            pass
+    return float(2 ** attempt)
+
+
 def _anthropic(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str, dict]:
     """Write the answer from the retrieved passages.
+
+    Transient provider failures are retried locally. Permanent API failures are
+    classified before leaving the adapter so the trace can distinguish auth,
+    billing/model errors and overload without persisting arbitrary response
+    bodies.
 
     THE LANGUAGE RULE IS REPEATED HERE, LAST, AND THAT IS THE POINT. Stated
     only in the system prompt it lost twice to the passages: an English
@@ -208,18 +258,49 @@ def _anthropic(cfg: ChatConfig, question: str, sources: list[dict]) -> tuple[str
         "system": SYSTEM_PROMPT,
         "messages": [{"role": "user", "content": prompt}],
     }
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(body).encode(),
-        headers={
-            "content-type": "application/json",
-            "x-api-key": cfg.anthropic_key,
-            "anthropic-version": "2023-06-01",
-        })
-    with urllib.request.urlopen(req, timeout=120) as r:
-        payload = json.load(r)
-    text = "".join(part.get("text", "") for part in payload.get("content", []))
-    return text, payload
+
+    for attempt in range(3):
+        req = urllib.request.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=json.dumps(body).encode(),
+            headers={
+                "content-type": "application/json",
+                "x-api-key": cfg.anthropic_key,
+                "anthropic-version": "2023-06-01",
+            })
+        try:
+            with urllib.request.urlopen(req, timeout=120) as r:
+                payload = json.load(r)
+            text = "".join(
+                part.get("text", "") for part in payload.get("content", [])
+                if isinstance(part, dict)
+            )
+            if not text.strip():
+                raise RuntimeError("Anthropic returned no text content")
+            return text, payload
+        except urllib.error.HTTPError as exc:
+            error_type, message = _anthropic_error(exc)
+            if exc.code in _TRANSIENT_ANTHROPIC_STATUSES and attempt < 2:
+                delay = _retry_delay(exc, attempt)
+                print(
+                    f"⚠ Anthropic transient HTTP {exc.code} ({error_type}); "
+                    f"retry {attempt + 2}/3 in {delay:g}s"
+                )
+                time.sleep(delay)
+                continue
+            raise AnthropicHTTPError(exc.code, error_type, message) from exc
+        except urllib.error.URLError as exc:
+            if attempt < 2:
+                delay = float(2 ** attempt)
+                print(
+                    f"⚠ Anthropic network failure ({type(exc.reason).__name__}); "
+                    f"retry {attempt + 2}/3 in {delay:g}s"
+                )
+                time.sleep(delay)
+                continue
+            raise
+
+    raise RuntimeError("Anthropic retry loop exhausted")
 
 
 def _fingerprint(text: str) -> str:
@@ -338,9 +419,11 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
             text, payload = _anthropic(cfg, question, sources)
         except Exception as exc:
             now = ctx.now()
-            # The class, not the text: a message can carry a key or a URL, and
-            # this string is persisted to chat_traces and shown to a reader.
             failure = type(exc).__name__
+            evidence = {"n_sources": len(sources), "model": cfg.model}
+            if isinstance(exc, AnthropicHTTPError):
+                failure = f"AnthropicHTTP{exc.status}:{exc.error_type}"
+                evidence.update({"http_status": exc.status, "error_type": exc.error_type})
             ctx.record_effect(EffectDescriptor(
                 effect_class=EffectClass.RECORDED_EFFECT,
                 description=(f"{cfg.model} was unreachable while composing from "
@@ -357,7 +440,7 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
                 .with_rejection(Rejection(
                     "compose an answer from sufficient sources",
                     f"the writing model was unreachable ({failure})", now,
-                    evidence={"n_sources": len(sources), "model": cfg.model},
+                    evidence=evidence,
                 ))
             )
         now = ctx.now()
