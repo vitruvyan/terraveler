@@ -107,6 +107,16 @@ test("Voyager offers are association-checked but do not transfer identity", asyn
   assert.match(sql, /action, verdict, findings, carta_version[\s\S]*'offer-waypoint'/);
 });
 
+test("reservation ownership is enforced in the atomic claim updates", async () => {
+  const sql = await read("../supabase/chartroom_waypoints.sql");
+  assert.match(sql, /and requested_agent_account_id is null\s+returning id, title into w/,
+    "human take must re-check the reservation in the row update itself");
+  assert.match(sql, /aa\.id = g0\.requested_agent_account_id\s+and aa\.contributor_id = a\.id/,
+    "legacy MCP claim must atomically bind a reservation to the authenticated contributor");
+  assert.match(sql, /aa\.id = g0\.requested_agent_account_id\s+and aa\.contributor_id = p_contributor_id/,
+    "OAuth MCP claim must atomically bind a reservation to the bearer contributor");
+});
+
 test("both MCP claim lanes enforce a requested Voyager without changing tool signatures", async () => {
   const sql = await read("../supabase/chartroom_waypoints.sql");
   assert.match(sql, /create or replace function mcp_claim_gap\(\s*p_handle text, p_key_hash text, p_gap_id bigint/);
@@ -121,8 +131,29 @@ test("web actors take Waypoints atomically under their own audit identity", asyn
   assert.match(route, /dataRpc\("chartroom_take_waypoint"/);
   assert.match(route, /p_actor: `contributor:\$\{contributor\.handle\}`/);
   assert.match(route, /dataRpc\("chartroom_offer_waypoint"/);
-  assert.match(route, /createContextWaypoint/);
+  assert.match(route, /materializeContextWaypoint/);
   assert.match(route, /context_type: "voyage_waypoint"/);
+});
+
+test("an invalid Voyager cannot materialise orphan work", async () => {
+  const route = await read("../app/api/chartroom/waypoints/route.ts");
+  const validateAt = route.indexOf('const agentAccountId = action === "offer"');
+  const materializeAt = route.indexOf("const materialized = await materializeContextWaypoint");
+  assert.ok(validateAt >= 0 && materializeAt >= 0 && validateAt < materializeAt,
+    "offer target must be parsed/validated before contextual work is materialised");
+  assert.match(route, /eligible\.some\(\(agent: any\) => agent\.accountId === agentAccountId\)/,
+    "the target must also be an active association before materialisation");
+  assert.match(route, /createdForAction[\s\S]*requested_agent_account_id=is\.null/,
+    "a newly materialised row is cleaned up when an offer fails before reservation");
+});
+
+test("Atlas-derived gaps reuse active contextual rows rather than duplicating work", async () => {
+  const route = await read("../app/api/chartroom/waypoints/route.ts");
+  assert.match(route, /reuseExisting: boolean/);
+  assert.match(route, /waypoint_type=eq\.\$\{encodeURIComponent\(type\)\}/);
+  assert.match(route, /title=eq\.\$\{encodeURIComponent\(title\)\}/);
+  assert.match(route, /action !== "raise"/,
+    "human-raised questions remain allowed to be distinct even if their types overlap");
 });
 
 test("contextual Contribute is a local entrance to the shared Chartroom", async () => {
