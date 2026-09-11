@@ -4,20 +4,11 @@ import { rpc, sb } from "@/lib/deskAuth";
 import { createAgentAccount, getAgentAccount } from "@/lib/agentIdentity";
 import { sha256 } from "@/lib/oauth";
 import { CARTA_VERSION } from "@/lib/carta";
+import {
+  ENROLLMENT_BODY_LIMIT, NO_STORE_HEADERS, enforceLimits, mutationGuardReason,
+  mutationsEnabled, readLimitedJson, requestSource, securityAudit,
+} from "@/lib/externalBetaSecurity";
 
-/**
- * RFC 7591 compatibility registration.
- *
- * There are two distinct things here and they must not be conflated:
- * - an interactive MCP host registers a public OAuth client, then a signed-in
- *   human may choose to associate an independently identified Terraveler agent;
- * - an unattended actor asking for client_credentials self-enrols an AGENT
- *   ACCOUNT immediately and receives a software credential for that identity.
- *
- * An already-authenticated agent may also mint a short-lived runtime-binding
- * token and hand it to a new runtime. Registration then binds the new OAuth
- * client to the SAME agent account instead of creating a new identity.
- */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -25,12 +16,26 @@ const PER_SOURCE_PER_HOUR = 10;
 const GLOBAL_PER_HOUR = 2000;
 
 function badRequest(error: string, description: string) {
-  return NextResponse.json({ error, error_description: description }, { status: 400 });
+  return NextResponse.json({ error, error_description: description }, { status: 400, headers: NO_STORE_HEADERS });
 }
 
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => null);
-  if (!body) return badRequest("invalid_client_metadata", "body must be JSON");
+  const request = requestSource(req);
+  const parsedBody = await readLimitedJson(req, ENROLLMENT_BODY_LIMIT);
+  if (!parsedBody.ok)
+    return NextResponse.json({ error: "invalid_client_metadata", error_description: parsedBody.error },
+      { status: parsedBody.status, headers: NO_STORE_HEADERS });
+  const body = parsedBody.value;
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    return badRequest("invalid_client_metadata", "body must be a JSON object");
+
+  if (!mutationsEnabled()) {
+    const reason = mutationGuardReason() ?? "external mutation guard unavailable";
+    await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 503, reason });
+    return NextResponse.json({ error: "temporarily_unavailable",
+      error_description: "External agent enrollment is temporarily disabled; public MCP reading remains available." },
+      { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
+  }
 
   const wantsCC = Array.isArray(body.grant_types)
     && body.grant_types.map(String).includes("client_credentials");
@@ -55,27 +60,18 @@ export async function POST(req: Request) {
     clean.push(parsed.toString());
   }
 
-  const since = new Date(Date.now() - 3600_000).toISOString();
-  const source = sha256(
-    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || "unknown",
-  ).slice(0, 32);
-  const [mine, all] = await Promise.all([
-    sb("GET", `oauth_clients?created_at=gte.${since}&source_hash=eq.${source}&select=id`),
-    sb("GET", `oauth_clients?created_at=gte.${since}&select=id`),
+  const admission = await enforceLimits("oauth-register", 3600, [
+    { dimension: "ip", subject: request.sourceHash, limit: PER_SOURCE_PER_HOUR },
+    { dimension: "network", subject: request.networkHash, limit: 40 },
+    { dimension: "global", subject: "all", limit: GLOBAL_PER_HOUR },
   ]);
-  if ((mine?.length ?? 0) >= PER_SOURCE_PER_HOUR)
-    return NextResponse.json(
-      { error: "temporarily_unavailable",
-        error_description: `you have registered ${mine.length} clients this hour, which is ` +
-          `the limit for one source. Nobody else is affected by this.` },
-      { status: 429 },
-    );
-  if ((all?.length ?? 0) >= GLOBAL_PER_HOUR)
-    return NextResponse.json(
-      { error: "temporarily_unavailable",
-        error_description: "registrations are paused site-wide for this hour — an emergency ceiling." },
-      { status: 429 },
-    );
+  if (!admission.allowed) {
+    await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 429,
+      reason: `rate limit exceeded for ${admission.dimension}` });
+    return NextResponse.json({ error: "temporarily_unavailable",
+      error_description: "Registration rate limit exceeded. Retry after the indicated delay." },
+      { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(admission.retryAfter) } });
+  }
 
   const grants: string[] = Array.isArray(body.grant_types)
     ? body.grant_types.map(String)
@@ -124,7 +120,7 @@ export async function POST(req: Request) {
       client_name: clientName,
       redirect_uris: clean,
       registered_via: selfEnrollingAgent ? "client_credentials" : "dcr",
-      source_hash: source,
+      source_hash: request.sourceHash,
       client_secret_hash: client_secret ? sha256(client_secret) : null,
       operator,
       carta_version: CARTA_VERSION,
@@ -137,6 +133,9 @@ export async function POST(req: Request) {
     }
     throw error;
   }
+
+  await securityAudit({ source: request, action: "oauth-register", outcome: "accepted", status: 201,
+    agentId: agent?.public_id, agentAccountId: agent?.id, clientId: client_id });
 
   return NextResponse.json(
     {
@@ -166,6 +165,6 @@ export async function POST(req: Request) {
       carta: "https://www.terraveler.com/magna-carta",
       client_id_issued_at: Math.floor(Date.now() / 1000),
     },
-    { status: 201 },
+    { status: 201, headers: NO_STORE_HEADERS },
   );
 }

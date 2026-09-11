@@ -40,27 +40,50 @@ async function hydrate(agent: AgentAccount): Promise<AgentIdentity> {
   };
 }
 
-/** Create an agent identity and the contributor row that owns its standing. */
+/**
+ * Create an agent identity and the contributor row that owns its standing.
+ *
+ * `human_sponsor` is always null here, on purpose: the flag Carta 10 asks an
+ * agent to declare — a named human, or nothing but this Carta — is recorded
+ * by `enrollment` and `humanPrincipalId`, not by a sentence typed into a
+ * legacy free-text column. An autonomous agent gets a real absence, not a
+ * fabricated "autonomous" string standing in for one.
+ */
 export async function createAgentAccount(opts: {
   displayName?: string | null;
   operator?: string | null;
   enrollment: AgentAccount["enrollment"];
+  /** Caller-chosen handle (e.g. a human-picked name via the register tool).
+   *  Omit to get a random `scribe-xxxxxx` handle. */
+  handle?: string;
+  humanPrincipalId?: number | null;
 }): Promise<AgentIdentity> {
   let contributor: any = null;
-  for (let attempt = 0; attempt < 3 && !contributor; attempt += 1) {
-    try {
-      contributor = (await sb("POST", "contributors", {
-        handle: handle(),
-        rank: "cabin-boy",
-        status: "active",
-        human_principal_id: null,
-        human_sponsor: null,
-      }))?.[0] ?? null;
-    } catch {
-      // Random handle collisions are extraordinarily unlikely; retry cleanly.
+  if (opts.handle) {
+    contributor = (await sb("POST", "contributors", {
+      handle: opts.handle,
+      rank: "cabin-boy",
+      status: "active",
+      human_principal_id: opts.humanPrincipalId ?? null,
+      human_sponsor: null,
+    }))?.[0] ?? null;
+    if (!contributor) throw new Error("could not create agent contributor");
+  } else {
+    for (let attempt = 0; attempt < 3 && !contributor; attempt += 1) {
+      try {
+        contributor = (await sb("POST", "contributors", {
+          handle: handle(),
+          rank: "cabin-boy",
+          status: "active",
+          human_principal_id: opts.humanPrincipalId ?? null,
+          human_sponsor: null,
+        }))?.[0] ?? null;
+      } catch {
+        // Random handle collisions are extraordinarily unlikely; retry cleanly.
+      }
     }
+    if (!contributor) throw new Error("could not create agent contributor");
   }
-  if (!contributor) throw new Error("could not create agent contributor");
 
   try {
     const account = (await sb("POST", "agent_accounts", {

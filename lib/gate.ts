@@ -35,66 +35,23 @@ import { CARTA_VERSION } from "@/lib/carta";
  * answered by ingest/whitelist.py, which is a different list for a reason.
  */
 export const DOMAINS = [
-  // Wherever the wiki projects run, in every language they run in.
   "wikisource.org", "wikipedia.org", "wikimedia.org", "wikidata.org",
-  // Anglophone and general
   "gutenberg.org", "gutendex.com", "archive.org", "hathitrust.org", "loc.gov",
   "davidrumsey.com", "biodiversitylibrary.org", "europeana.eu",
-  // French
   "gallica.bnf.fr", "persee.fr", "manioc.org",
-  // Spanish. PARES is two hosts and the difference matters to a machine:
-  // pares.cultura.gob.es is the portal, and it serves an FNMT certificate
-  // without the intermediate, so every client that does not chase the AIA
-  // extension — curl, Python, anything server-side — fails to verify it. The
-  // catalogue itself answers on pares.mcu.es, which sends a complete chain and
-  // validates, and which is where /catalogo/description/<id> and the
-  // parameterless image endpoint /catalogo/showimgud/<id> actually live. Cite
-  // the portal for a reader; fetch mcu.es for a verifier. Both are listed
-  // because a citation should survive the migration between them.
   "bne.es", "cervantesvirtual.com", "pares.cultura.gob.es", "pares.mcu.es",
   "memoriachilena.gob.cl",
-  // Portuguese
   "purl.pt", "arquivos.pt", "bn.gov.br",
-  // Italian
   "internetculturale.it", "liberliber.it",
-  // German-speaking
   "digitale-sammlungen.de", "deutsche-digitale-bibliothek.de",
   "staatsbibliothek-berlin.de", "e-rara.ch", "onb.ac.at",
-  // Dutch, Nordic, Polish
   "delpher.nl", "kb.nl", "rijksmuseum.nl", "runeberg.org", "nb.no", "polona.pl",
-  // East Asia
   "ctext.org", "nlc.cn", "ndl.go.jp", "nijl.ac.jp", "nich.go.jp", "history.go.kr",
-  // Gulf
   "qdl.qa",
-  // Open-access museum collections, for plates
   "metmuseum.org", "si.edu", "getty.edu", "nga.gov",
 ];
-// Two wordings this refused that are not in doubt, both found the first time it
-// was pointed at images rather than books.
-//
-// "No known copyright restrictions" is the Flickr Commons statement, and every
-// Internet Archive book scan on Wikimedia carries it — including the plates of
-// the 1772 English edition this atlas already quotes from.
-//
-// And `^cc[ -]` wanted a separator, so CC0 never matched: the most permissive
-// licence there is was the one licence the gate would not take, which cost us
-// the Rijksmuseum, whose entire donation to Commons is CC0.
-export const LICENSE_OK = /public domain|no known copyright restrictions|^cc(0|[ -])/i;
 
-/**
- * Not every Creative Commons licence can be published under CC BY-SA.
- *
- * Carta §3.2 admits "public domain or openly licensed (CC)" and §8 publishes
- * the result under CC BY-SA. NonCommercial and NoDerivatives satisfy the first
- * and make the second impossible: an NC source cannot be relicensed by us, and
- * an ND source cannot be built on at all. LICENSE_OK took them, because it
- * asked whether a string began with "cc" and not what the letters said.
- *
- * This mattered little while the whitelist was nine Anglo-American archives of
- * public-domain books. It matters now that it reaches European museums, where
- * BY-NC-SA is the house style. §3.2's own second sentence is the answer for
- * that material: it may be linked and briefly quoted, never ingested.
- */
+export const LICENSE_OK = /public domain|no known copyright restrictions|^cc(0|[ -])/i;
 export const LICENSE_CLOSED = /\bnc\b|\bnd\b|non-?commercial|no-?deriv/i;
 export const licenceUsable = (lic: string) =>
   LICENSE_OK.test(lic ?? "") && !LICENSE_CLOSED.test(lic ?? "");
@@ -106,13 +63,10 @@ export const INJECTION = [
   /editor[- ]in[- ]chief (has )?(approved|authorised|authorized)/i,
 ];
 
-// Free-text bounds for the lightweight write tools. The injection screen is a
-// tripwire, not the defence: the desk always treats payloads as data.
-export const TEXT_LIMITS: Record<string, number> = { title: 200, description: 4000, idea: 4000, area: 100, voyage: 100 };
+export const TEXT_LIMITS: Record<string, number> = {
+  title: 200, description: 4000, idea: 4000, grounds: 4000, area: 100, voyage: 100,
+};
 
-/** A review's shape is a Carta matter, not a database one, so it is checked
- *  here whichever write path runs: a refutation must cite whitelist evidence
- *  (10.4) and a review is data, never instructions (10.5). */
 export function reviewShapeError(args: any): string | null {
   if (!["confirm", "refute", "unclear"].includes(args?.verdict)) return "invalid verdict.";
   const findings = args?.findings;
@@ -158,7 +112,12 @@ export const MAX_PLATES_PER_WAYPOINT = 12;
 
 export function domainOk(url: string): boolean {
   try {
-    const host = new URL(url).hostname.toLowerCase();
+    const parsed = new URL(url);
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password)
+      return false;
+    if (parsed.port && !((parsed.protocol === "https:" && parsed.port === "443") ||
+                         (parsed.protocol === "http:" && parsed.port === "80"))) return false;
+    const host = parsed.hostname.toLowerCase();
     return DOMAINS.some((d) => host === d || host.endsWith("." + d));
   } catch {
     return false;
@@ -172,7 +131,6 @@ function* strings(obj: any, path = ""): Generator<[string, string]> {
     for (const k of Object.keys(obj)) yield* strings(obj[k], path ? `${path}.${k}` : k);
 }
 
-/** Instant deterministic gate (subset of the full Curator: no source fetching). */
 export function stage0(sub: any): string[] {
   const fails: string[] = [];
   if (JSON.stringify(sub ?? {}).length > MAX_DRAFT_BYTES)
@@ -202,10 +160,6 @@ export function stage0(sub: any): string[] {
       if (c.evidence.source_url && !domainOk(c.evidence.source_url))
         fails.push(`${ctag}: source domain not whitelisted`);
     }
-    // A plate is held to the standard of a quotation, because it is the thing
-    // on a page easiest to lift and hardest to attribute. Two URLs are checked
-    // rather than one: the pixels and the record page can sit on different
-    // hosts, and only the record page can be read by a verifier.
     if ((w?.plates ?? []).length > MAX_PLATES_PER_WAYPOINT)
       fails.push(`${tag}: too many plates (max ${MAX_PLATES_PER_WAYPOINT})`);
     for (let pi = 0; pi < (w?.plates ?? []).length; pi++) {
@@ -217,11 +171,6 @@ export function stage0(sub: any): string[] {
         fails.push(`${ptag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
       if (p?.url && !domainOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
       if (p?.source_url && !domainOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
-      // Not a formality. The plate that fits a stage best is often drawn later
-      // than it — Hodges saw Cape Town eighteen years after the Boudeuse moored
-      // there — and a page that prints an image beside a date silently asserts
-      // they are the same date. Undeclared, nobody catches it; declared, the
-      // renderer can say so without depending on the caption being honest.
       if (!p?.date) fails.push(`${ptag}: field 'date' missing — say when the image was MADE, which is not always when the stage happened`);
     }
   }

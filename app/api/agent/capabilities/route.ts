@@ -3,6 +3,7 @@ import { CARTA_VERSION } from "@/lib/carta";
 import { sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
 import { ensureAgentForBearer } from "@/lib/agentIdentity";
+import { NO_STORE_HEADERS, mutationsEnabled } from "@/lib/externalBetaSecurity";
 import {
   AGENT_CAN_PUBLISH,
   allowedCapabilities,
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
  * identity root and their account does not own the agent's standing.
  */
 export async function GET(req: Request) {
+  const writesEnabled = mutationsEnabled();
   const bearer = await verifyBearer(req);
   if (!bearer) {
     return NextResponse.json({
@@ -29,10 +31,44 @@ export async function GET(req: Request) {
       allowed: ["read"],
       not_allowed: ["contribute", "review", "appeal", "publish"],
       publish: AGENT_CAN_PUBLISH,
+      external_mutations_enabled: writesEnabled,
       carta_version: CARTA_VERSION,
+      enrollment: {
+        unattended_agent: {
+          supported: true,
+          recommended: true,
+          method: "oauth_client_credentials",
+          human_required: false,
+          steps: [
+            "POST /api/oauth/register {\"grant_types\": [\"client_credentials\"]}",
+            "POST /api/oauth/token {\"grant_type\": \"client_credentials\", client_id, client_secret}",
+            "call get_capabilities again with the bearer token",
+          ],
+        },
+        interactive_agent: {
+          supported: true,
+          method: "authorization_code_pkce",
+          human_required: true,
+          start: "/oauth/authorize",
+        },
+      },
       next:
-        "Read freely. To write, use an authorised agent identity: an unattended agent can self-enrol; an interactive agent can be associated by a signed-in human.",
-    }, { headers: { "Cache-Control": "no-store" } });
+        "Read freely. To write, self-enrol via enrollment.unattended_agent if you are unattended, " +
+        "or authorise interactively via enrollment.interactive_agent if a human is present.",
+    }, { headers: NO_STORE_HEADERS });
+  }
+
+  if (!bearer.agent_account_id && !writesEnabled) {
+    return NextResponse.json({
+      mode: "agent-bootstrap-paused",
+      agent_id: null,
+      scopes: bearer.scopes,
+      allowed: ["read"],
+      not_allowed: ["contribute", "review", "appeal", "publish"],
+      publish: AGENT_CAN_PUBLISH,
+      external_mutations_enabled: false,
+      next: "External mutations and identity bootstrap are temporarily disabled; public reading remains available.",
+    }, { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
   }
 
   const agent = await ensureAgentForBearer(bearer);
@@ -41,7 +77,7 @@ export async function GET(req: Request) {
       error: "agent_suspended",
       agent_id: agent.public_id,
       handle: agent.handle,
-    }, { status: 403, headers: { "Cache-Control": "no-store" } });
+    }, { status: 403, headers: NO_STORE_HEADERS });
   }
 
   const standing = await sb("GET",
@@ -56,12 +92,13 @@ export async function GET(req: Request) {
     enrollment: agent.enrollment,
     human_linked: bearer.human_principal_id != null,
     scopes,
-    allowed: allowedCapabilities(scopes),
-    not_allowed: deniedCapabilities(scopes),
+    allowed: writesEnabled ? allowedCapabilities(scopes) : ["read"],
+    not_allowed: writesEnabled ? deniedCapabilities(scopes) : ["contribute", "review", "appeal", "publish"],
     publish: AGENT_CAN_PUBLISH,
+    external_mutations_enabled: writesEnabled,
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
     connection_id: bearer.connection_id,
-  }, { headers: { "Cache-Control": "no-store" } });
+  }, { headers: NO_STORE_HEADERS });
 }
