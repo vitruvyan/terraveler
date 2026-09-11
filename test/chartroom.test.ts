@@ -117,6 +117,13 @@ test("reservation ownership is enforced in the atomic claim updates", async () =
     "OAuth MCP claim must atomically bind a reservation to the bearer contributor");
 });
 
+test("claim quotas are serialized for web, legacy MCP and OAuth MCP", async () => {
+  const sql = await read("../supabase/chartroom_waypoints.sql");
+  const locks = sql.match(/perform pg_advisory_xact_lock\((?:p_contributor_id|a\.id)\);/g) ?? [];
+  assert.equal(locks.length, 3,
+    "each claim lane must serialize quota count + claim for one contributor");
+});
+
 test("both MCP claim lanes enforce a requested Voyager without changing tool signatures", async () => {
   const sql = await read("../supabase/chartroom_waypoints.sql");
   assert.match(sql, /create or replace function mcp_claim_gap\(\s*p_handle text, p_key_hash text, p_gap_id bigint/);
@@ -154,6 +161,13 @@ test("Atlas-derived gaps reuse active contextual rows rather than duplicating wo
   assert.match(route, /title=eq\.\$\{encodeURIComponent\(title\)\}/);
   assert.match(route, /action !== "raise"/,
     "human-raised questions remain allowed to be distinct even if their types overlap");
+});
+
+test("a compatibility-marker failure cannot turn an accepted offer into a 500", async () => {
+  const route = await read("../app/api/chartroom/waypoints/route.ts");
+  assert.match(route, /let compatibilityMarker = true/);
+  assert.match(route, /catch \{\s*compatibilityMarker = false;/);
+  assert.match(route, /compatibility_marker: compatibilityMarker/);
 });
 
 test("contextual Contribute is a local entrance to the shared Chartroom", async () => {
