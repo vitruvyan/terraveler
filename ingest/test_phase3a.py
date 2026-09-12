@@ -10,6 +10,7 @@ Run with:
 import unittest
 import os
 import sys
+import socket
 from urllib.parse import urlparse
 
 # Add parent directory and current directory to Python path
@@ -64,6 +65,27 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         # Blocks non-standard ports (e.g. 8080, 22)
         with self.assertRaises(PermissionError):
             discovery_fetch.validate_url("https://gutenberg.org:8080/ebooks")
+
+    def test_untrusted_fetch_userinfo_rejection(self):
+        # Explicitly reject userinfo credentials (username/password) embedded in URLs
+        with self.assertRaises(PermissionError):
+            discovery_fetch.validate_url("https://user:password@gutenberg.org/ebooks")
+
+    def test_untrusted_fetch_dns_rebinding_prevention(self):
+        # Verifies that resolving a host checks all resolved IPs.
+        # If any IP in the resolved set is unsafe (e.g., DNS rebinding returning 127.0.0.1 alongside a public IP),
+        # it is blocked instantly.
+        original_getaddrinfo = socket.getaddrinfo
+        try:
+            # Mock getaddrinfo to return a mix of public and loopback IPs (DNS rebinding signature)
+            socket.getaddrinfo = lambda host, port, *args: [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("8.8.8.8", 80)),
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 80))
+            ]
+            with self.assertRaises(PermissionError):
+                discovery_fetch.resolve_and_verify_ips("gutenberg.org")
+        finally:
+            socket.getaddrinfo = original_getaddrinfo
 
     # -------------------------------------------------------------------------
     # 2. Archivist Multilingual Evidence Contracts
@@ -142,6 +164,19 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         rights_class, spdx, uri, excerpt = archivist.detect_rights_class(html_content)
         self.assertEqual(rights_class, "in_copyright")
         self.assertEqual(spdx, "copyright_restricted")
+
+    def test_mixed_rights_adversarial_fixture_does_not_yield_domain_trusted(self):
+        # Adversarial mixed-rights warning: must never yield DOMAIN_TRUSTED!
+        html_content = (
+            "<html><body>"
+            "This repository contains both copyrighted works and works in the public domain."
+            "Please check each item separately."
+            "</body></html>"
+        )
+        
+        rights_class, spdx, uri, excerpt = archivist.detect_rights_class(html_content)
+        self.assertEqual(rights_class, "mixed")
+        self.assertEqual(spdx, "mixed_repository_warning")
 
 
 if __name__ == "__main__":

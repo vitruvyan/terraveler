@@ -61,3 +61,15 @@ on conflict (id) do update set
   decided_by_actor_type = excluded.decided_by_actor_type,
   decided_by_actor_id = excluded.decided_by_actor_id,
   reason = excluded.reason;
+
+-- 5. Seed the durable specialist Archivist agent identity (Phase 3A)
+insert into contributors (id, handle, rank, status, human_sponsor) values
+  (888, 'archivist', 'navigator', 'active', 'System')
+on conflict (id) do update set
+  status = excluded.status;
+
+insert into agent_accounts (id, contributor_id, public_id, status) values
+  (888, 888, 'system-archivist', 'active')
+on conflict (id) do update set
+  contributor_id = excluded.contributor_id,
+  status = excluded.status;

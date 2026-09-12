@@ -9,7 +9,7 @@ from discovery_fetch import untrusted_discovery_fetch
 sys.path.append(os.path.dirname(__file__))
 import source_governance_shadow
 
-ARCHIVIST_AGENT_ID = 888  # Durable specialist agent ID
+ARCHIVIST_PUBLIC_ID = "system-archivist"
 
 def calculate_hash(text: str) -> str:
     """Calculates SHA256 of the fetched text."""
@@ -17,11 +17,16 @@ def calculate_hash(text: str) -> str:
 
 def detect_rights_class(text: str) -> tuple[str, str, str, str]:
     """
-    Simulates the AI Archivist's analysis of a license page.
-    Translates and classifies based on keywords, preserving multilingual constraints.
-    Returns (rights_class, rights_identifier, rights_uri, original_excerpt).
+    Expert deterministic evidence extractor (Phase 3A scaffolding).
+    Parses and extracts observable factual evidence from the text.
     """
     text_lower = text.lower()
+    
+    # Adversarial check: Mixed rights repositories must be flagged as mixed/unresolved
+    if ("both copyrighted works and works in the public domain" in text_lower or 
+        "mixed rights" in text_lower or 
+        "contains copyrighted" in text_lower):
+        return "mixed", "mixed_repository_warning", "https://rightsstatements.org/vocab/MIXED/1.0/", text[:300]
     
     # 1. CC-BY-SA
     m_cc = re.search(r"(creative\s+commons\s+attribution-sharealike|cc\s+by-sa|by-sa\s+4\.0|by-sa/4\.0)", text_lower)
@@ -58,6 +63,18 @@ def detect_rights_class(text: str) -> tuple[str, str, str, str]:
     # Default to unknown/mixed
     return "unknown", "undetermined", "", "No explicit rights statement found in text."
 
+def get_archivist_agent_id(cur) -> int:
+    """Resolves the real, durable agent_accounts PK from the database. Fails closed if missing/inactive."""
+    cur.execute(
+        "SELECT id FROM agent_accounts "
+        "WHERE public_id = %s AND status = 'active'",
+        (ARCHIVIST_PUBLIC_ID,)
+    )
+    row = cur.fetchone()
+    if not row:
+        raise PermissionError(f"Specialist Archivist identity '{ARCHIVIST_PUBLIC_ID}' is missing or inactive. Failing closed.")
+    return row["id"]
+
 def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
     """
     Archivist assessment runner.
@@ -68,7 +85,10 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
     try:
         conn = source_governance_shadow.get_db_connection()
         with conn.cursor() as cur:
-            # 1. Fetch proposal
+            # 1. Resolve real, durable Archivist agent identity (Fail closed if missing/inactive)
+            archivist_id = get_archivist_agent_id(cur)
+            
+            # 2. Fetch proposal
             cur.execute(
                 "SELECT id, target_url, proposed_by_actor_type, proposed_by_actor_id "
                 "FROM source_proposals "
@@ -83,27 +103,36 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
             parsed = urlparse(target_url)
             host = (parsed.hostname or "").lower()
 
-            # 2. Fetch terms page (either live or mock-fixture)
+            # 3. Fetch terms page (either live or mock-fixture)
             if mock_fetch_content is not None:
                 content = mock_fetch_content
             else:
                 content = untrusted_discovery_fetch(target_url)
             
-            # 3. Analyze content (LLM Archivist simulator)
+            # 4. Analyze content (deterministic evidence extractor)
             rights_class, rights_identifier, rights_uri, excerpt = detect_rights_class(content)
             statement_hash = calculate_hash(content)
             
             # Determine recommended trust mode (Advisory only)
+            # Rights scope and trust classification are decoupled:
             if rights_class == "public_domain":
-                rec_trust = "domain_trusted"
+                # Keyword matches alone do NOT imply endpoint-wide or collection scope!
+                # It is unresolved until verified.
+                rights_scope = "unresolved"
+                rec_trust = "needs_human_review"
             elif rights_class == "creative_commons":
                 if "collection" in target_url.lower():
+                    # Suffix/folder match requires explicit evidence.
+                    rights_scope = "collection"
                     rec_trust = "collection_trusted"
                 else:
-                    rec_trust = "domain_trusted"
+                    rights_scope = "unresolved"
+                    rec_trust = "needs_human_review"
             elif rights_class == "in_copyright":
+                rights_scope = "endpoint"
                 rec_trust = "link_only"
             else:
+                rights_scope = "unresolved"
                 rec_trust = "needs_human_review"
 
             # Detect language
@@ -128,17 +157,17 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
                 "original_language": lang,
                 "original_rights_text": excerpt,
                 "translated_interpretation": translation,
-                "rights_scope_type": "collection" if rec_trust == "collection_trusted" else "endpoint",
+                "rights_scope_type": rights_scope,
                 "rights_class": rights_class,
                 "rights_identifier": rights_identifier,
                 "rights_uri": rights_uri,
                 "rights_statement_url": target_url,
                 "rights_statement_hash": statement_hash,
                 "recommended_trust_mode": rec_trust,
-                "reasoning_summary": f"Detected rights class '{rights_class}' with identifier '{rights_identifier}' from original text."
+                "reasoning_summary": f"Detected rights class '{rights_class}' with scope '{rights_scope}' from original text."
             }
 
-            # 4. Insert SourceAssessment record
+            # 5. Insert SourceAssessment record
             cur.execute(
                 "INSERT INTO source_assessments "
                 "(proposal_id, assessed_by_agent_id, rights_scope_type, rights_scope_identifier, "
@@ -148,8 +177,8 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
                 "RETURNING id",
                 (
                     proposal["id"],
-                    ARCHIVIST_AGENT_ID,
-                    evidence_contract["rights_scope_type"],
+                    archivist_id,
+                    rights_scope,
                     host,
                     rights_class,
                     rights_identifier,
@@ -161,7 +190,7 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
             )
             assessment_id = cur.fetchone()["id"]
 
-            # 5. Update proposal status to 'needs_policy_review' (No auto-activation)
+            # 6. Update proposal status to 'needs_policy_review' (No auto-activation)
             cur.execute(
                 "UPDATE source_proposals "
                 "SET status = 'needs_policy_review' "
