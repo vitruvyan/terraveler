@@ -52,12 +52,25 @@ export default function MapImprint({
       <span className="map-here">{title}</span>
 
       {/* The door. All of it one dark pill, so there is no half of it that
-          could be mistaken for a caption. */}
+          could be mistaken for a caption. Keep a real touch target here: on
+          phones this control sits directly over the interactive map, so a
+          visually compact pill must still own at least the site's 44px tap
+          floor or near-edge taps can fall through to MapLibre instead. */}
       <button
         className="map-atlas-door"
         onClick={onTogglePicker}
         aria-expanded={pickerOpen}
+        aria-label={
+          atlasCount
+            ? `Explore the Atlas — ${atlasCount} voyages`
+            : "Explore the Atlas"
+        }
         title="Open the Atlas"
+        style={{
+          minHeight: "var(--tap-min)",
+          pointerEvents: "auto",
+          touchAction: "manipulation",
+        }}
       >
         <Icon name="globe" size={17} />
         {/* Split so a narrow phone can drop the word and keep the number.
