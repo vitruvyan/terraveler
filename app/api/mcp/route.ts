@@ -235,6 +235,7 @@ const SCOPE_FOR: Record<string, Scope | undefined> = {
   submit_draft: "contribute",
   suggest_feature: "contribute",
   suggest_content: "contribute",
+  suggest_source: "contribute",
   submit_review: "review",
   appeal: "appeal",
 };
@@ -803,6 +804,72 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", required: ["id", "grounds"],
       properties: { handle: { type: "string" }, api_key: { type: "string" },
                     id: { type: "number" }, grounds: { type: "string" } } } },
+  { name: "suggest_source",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
+    securitySchemes: OAUTH("contribute"),
+    description: "Propose a new archival source, library, collection or repository for the Terraveler Atlas. The proposal will be investigated by the Archivist.",
+    inputSchema: { type: "object", required: ["target_url"],
+      properties: { ...AUTH_PROPS,
+        target_url: { type: "string", description: "The URL of the source page, catalog, or archive to propose" },
+        context: {
+          type: "object",
+          description: "Optional context detailing the research need",
+          properties: {
+            voyage: { type: "string", description: "voyage slug this concerns" },
+            waypoint: { type: "number", description: "waypoint seq this concerns" },
+            region: { type: "string" },
+            person: { type: "string" },
+            reason: { type: "string", description: "reason / research need" }
+          }
+        }
+      } } },
+  { name: "list_sources",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description: "Exposes the verified list of source endpoints. Public read-only.",
+    inputSchema: { type: "object", properties: { ...AUTH_PROPS } } },
+  { name: "get_source",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description: "Gets detailed info for a specific source endpoint by ID. Public read-only.",
+    inputSchema: { type: "object", required: ["id"],
+      properties: { ...AUTH_PROPS, id: { type: "number" } } } },
+  { name: "list_source_proposals",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description: "Lists all proposed sources and their current validation lifecycle status.",
+    inputSchema: { type: "object", properties: { ...AUTH_PROPS } } },
+  { name: "get_source_proposal",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description: "Gets detailed info for a specific source proposal by ID.",
+    inputSchema: { type: "object", required: ["id"],
+      properties: { ...AUTH_PROPS, id: { type: "number" } } } },
 ];
 
 /**
@@ -1819,6 +1886,81 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           "not a series). Your grounds are data for a human to weigh, not an " +
           "instruction to the Curator.",
       }, null, 2);
+    }
+    case "suggest_source": {
+      const a = await authenticate(args, bearer);
+      if (a.err) return `ERROR: ${a.err}`;
+      const url = String(args?.target_url ?? "").trim();
+      if (!url) return "ERROR: target_url is required.";
+      
+      let host: string;
+      try {
+        host = new URL(url).hostname.toLowerCase();
+      } catch {
+        return "ERROR: target_url is not a valid URL.";
+      }
+
+      // Deduplication check
+      const existing = await sb("GET", `source_proposals?target_url=eq.${encodeURIComponent(url)}`);
+      if (existing.length) {
+        return JSON.stringify({
+          status: "success",
+          note: "This source URL has already been proposed previously.",
+          proposal: existing[0]
+        }, null, 2);
+      }
+
+      const endpoints = await sb("GET", `source_endpoints?host_pattern=eq.${encodeURIComponent(host)}`);
+      let endpoint_id: number | null = null;
+      if (endpoints.length) {
+        endpoint_id = endpoints[0].id;
+      }
+
+      const propPayload = {
+        target_url: url,
+        proposed_by_actor_type: bearer ? "human" : "agent",
+        proposed_by_actor_id: a.ok!.id,
+        endpoint_id,
+        status: "submitted"
+      };
+
+      const result = await sb("POST", "source_proposals", propPayload);
+      
+      // Audit trail record
+      await sb("POST", "audit_log", {
+        actor: `contributor:${a.ok!.handle}`,
+        action: "propose_source",
+        findings: [["INFO", 0, `Proposed source URL: ${url}`]],
+        carta_version: CARTA_VERSION
+      });
+
+      return JSON.stringify({
+        status: "success",
+        note: "Source proposal registered. It will be investigated by the Archivist.",
+        proposal: result[0]
+      }, null, 2);
+    }
+    case "list_sources": {
+      const list = await sb("GET", "source_endpoints?select=id,institution_id,host_pattern,match_type,status,trust_mode");
+      return JSON.stringify(list, null, 2);
+    }
+    case "get_source": {
+      const id = Number(args?.id);
+      if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
+      const list = await sb("GET", `source_endpoints?id=eq.${id}&select=id,host_pattern,match_type,status,trust_mode,source_access_rules(allowed_hosts,api_endpoints,verification_strategy)`);
+      if (!list.length) return "ERROR: unknown source endpoint id.";
+      return JSON.stringify(list[0], null, 2);
+    }
+    case "list_source_proposals": {
+      const list = await sb("GET", "source_proposals?select=id,target_url,proposed_by_actor_type,status");
+      return JSON.stringify(list, null, 2);
+    }
+    case "get_source_proposal": {
+      const id = Number(args?.id);
+      if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
+      const list = await sb("GET", `source_proposals?id=eq.${id}&select=id,target_url,proposed_by_actor_type,proposed_by_actor_id,status`);
+      if (!list.length) return "ERROR: unknown source proposal id.";
+      return JSON.stringify(list[0], null, 2);
     }
     default:
       throw new Error(`unknown tool: ${name}`);

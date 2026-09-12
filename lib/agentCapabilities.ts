@@ -15,6 +15,7 @@ export const TOOL_SCOPE: Readonly<Record<string, Scope>> = Object.freeze({
   submit_draft: "contribute",
   suggest_feature: "contribute",
   suggest_content: "contribute",
+  suggest_source: "contribute",
   submit_review: "review",
   appeal: "appeal",
 });
