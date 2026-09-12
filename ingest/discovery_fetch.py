@@ -2,6 +2,8 @@ import socket
 import ipaddress
 import urllib.request
 import urllib.error
+import http.client
+import ssl
 from urllib.parse import urlparse
 
 # Strict security boundaries for the Untrusted Discovery Fetch Zone
@@ -84,68 +86,91 @@ def validate_url(url: str) -> tuple[str, str]:
         
     return scheme, host
 
+# ----------------------------------------------------------------------------
+# Request-Local Pinned-IP Transport and Handlers (No Global Socket Monkeypatch)
+# ----------------------------------------------------------------------------
+
+class SecureHTTPConnection(http.client.HTTPConnection):
+    """HTTPConnection that binds to verified IP while keeping original host for headers."""
+    def connect(self):
+        ips = resolve_and_verify_ips(self.host)
+        # Always connect to the verified IP directly (preventing DNS-rebinding/TOCTOU)
+        self.sock = socket.create_connection((ips[0], self.port), self.timeout, self.source_address)
+
+class SecureHTTPSConnection(http.client.HTTPSConnection):
+    """HTTPSConnection that binds to verified IP while keeping original host for SNI and SSL."""
+    def connect(self):
+        ips = resolve_and_verify_ips(self.host)
+        # Always connect to the verified IP directly (preventing DNS-rebinding/TOCTOU)
+        self.sock = socket.create_connection((ips[0], self.port), self.timeout, self.source_address)
+        
+        if self._tunnel_host:
+            self._tunnel()
+            server_hostname = self._tunnel_host
+        else:
+            server_hostname = self.host
+            
+        context = self._context or ssl.create_default_context()
+        # Perform TLS handshake using verified socket and original server_hostname for SNI / cert validation
+        self.sock = context.wrap_socket(self.sock, server_hostname=server_hostname)
+
+class SecureHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(SecureHTTPConnection, req)
+
+class SecureHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(SecureHTTPSConnection, req)
+
 def untrusted_discovery_fetch(url: str) -> str:
     """
     Highly secure, constrained fetch boundary for untrusted source assessment.
     Guarantees VERIFIED DESTINATION IP == CONNECTED DESTINATION IP, completely
-    preventing DNS rebinding and TOCTOU attacks while preserving Host and SNI cert validation.
+    preventing DNS rebinding and TOCTOU attacks via request-local transport classes.
     """
     current_url = url
     redirect_count = 0
     
-    # Configure custom opener with redirect-following disabled
-    opener = urllib.request.build_opener(BlockRedirectHandler())
+    # Configure custom opener with local, secure transport handlers (no global side-effects)
+    opener = urllib.request.build_opener(
+        BlockRedirectHandler(),
+        SecureHTTPHandler(),
+        SecureHTTPSHandler()
+    )
     opener.addheaders = [("User-Agent", USER_AGENT)]
     
-    # Keep reference to original socket creation method
-    original_create_connection = socket.create_connection
-
-    def secure_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
-        host, port = address
-        # Perform DNS pre-flight and SSRF validation right at socket-creation time.
-        # This binds the connection directly to a verified public IP address!
-        ips = resolve_and_verify_ips(host)
-        target_ip = ips[0]
-        return original_create_connection((target_ip, port), timeout, source_address)
-
-    # Monkeypatch socket.create_connection during discovery fetch
-    socket.create_connection = secure_create_connection
-    try:
-        while redirect_count <= MAX_REDIRECTS:
-            scheme, host = validate_url(current_url)
+    while redirect_count <= MAX_REDIRECTS:
+        scheme, host = validate_url(current_url)
+        
+        req = urllib.request.Request(current_url)
+        try:
+            # Execute fetch with strict timeout
+            with opener.open(req, timeout=TIMEOUT_SECONDS) as response:
+                # Enforce Content-Type restrictions
+                content_type = response.headers.get("Content-Type", "").split(";")[0].strip().lower()
+                if content_type and content_type not in ALLOWED_CONTENT_TYPES:
+                    raise PermissionError(f"Blocked content type: {content_type}")
+                
+                # Read stream with strict size bounds (preventing OOM zip bombs)
+                body_bytes = response.read(MAX_RESPONSE_SIZE + 1)
+                if len(body_bytes) > MAX_RESPONSE_SIZE:
+                    raise PermissionError(f"Response size exceeded the limit of {MAX_RESPONSE_SIZE} bytes.")
+                    
+                return body_bytes.decode("utf-8", "replace")
+                
+        except RedirectException as re:
+            redirect_count += 1
+            if redirect_count > MAX_REDIRECTS:
+                raise PermissionError("Max redirect count exceeded.")
+                
+            if not re.location:
+                raise ValueError("Redirect response missing Location header.")
+                
+            # Resolve relative redirect URLs and re-evaluate on next loop iteration
+            current_url = urllib.parse.urljoin(current_url, re.location)
+            continue
             
-            req = urllib.request.Request(current_url)
-            try:
-                # Execute fetch with strict timeout
-                with opener.open(req, timeout=TIMEOUT_SECONDS) as response:
-                    # Enforce Content-Type restrictions
-                    content_type = response.headers.get("Content-Type", "").split(";")[0].strip().lower()
-                    if content_type and content_type not in ALLOWED_CONTENT_TYPES:
-                        raise PermissionError(f"Blocked content type: {content_type}")
-                    
-                    # Read stream with strict size bounds (preventing OOM zip bombs)
-                    body_bytes = response.read(MAX_RESPONSE_SIZE + 1)
-                    if len(body_bytes) > MAX_RESPONSE_SIZE:
-                        raise PermissionError(f"Response size exceeded the limit of {MAX_RESPONSE_SIZE} bytes.")
-                        
-                    return body_bytes.decode("utf-8", "replace")
-                    
-            except RedirectException as re:
-                redirect_count += 1
-                if redirect_count > MAX_REDIRECTS:
-                    raise PermissionError("Max redirect count exceeded.")
-                    
-                if not re.location:
-                    raise ValueError("Redirect response missing Location header.")
-                    
-                # Resolve relative redirect URLs and re-evaluate on next loop iteration
-                current_url = urllib.parse.urljoin(current_url, re.location)
-                continue
-                
-            except urllib.error.URLError as e:
-                raise IOError(f"Network error during fetch: {e.reason}")
-                
-        raise PermissionError("Redirect boundary violated.")
-    finally:
-        # Always restore original socket connection method
-        socket.create_connection = original_create_connection
+        except urllib.error.URLError as e:
+            raise IOError(f"Network error during fetch: {e.reason}")
+            
+    raise PermissionError("Redirect boundary violated.")

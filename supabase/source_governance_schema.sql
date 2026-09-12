@@ -1,6 +1,6 @@
--- Phase 2A/2B: Source Governance Architectural Schema (Revised)
--- This establishes the relational footprint for domain discovery, verifiable 
--- evidence collection, immutable policy decisions, and reverification tracking.
+-- Phase 2A/2B/3A: Source Governance Architectural Schema (Revised)
+-- This establishes the footprint for domain discovery, evidence collection,
+-- immutable policy decisions, and reverification tracking.
 
 create table if not exists source_institutions (
   id bigint generated always as identity primary key,
@@ -70,7 +70,8 @@ create table if not exists source_assessments (
   proposal_id bigint not null references source_proposals(id) on delete cascade,
   assessed_by_agent_id bigint not null, -- references agent_accounts.id
   
-  rights_scope_type text not null check (rights_scope_type in ('endpoint', 'collection', 'item')),
+  -- unresolved scope added as a valid assessment scope (Assessment state only, decisions require endpoint/collection)
+  rights_scope_type text not null check (rights_scope_type in ('endpoint', 'collection', 'item', 'unresolved')),
   rights_scope_identifier text,
   
   rights_class text not null check (rights_class in ('public_domain', 'creative_commons', 'mixed', 'in_copyright', 'unknown')),
@@ -143,6 +144,51 @@ create table if not exists source_governance_comparisons (
   ))
 );
 
--- Grants SELECT on all tables to anon, and full read/write to service role
-grant select on source_institutions, source_endpoints, source_collections, source_access_rules, source_proposals, source_assessments, source_policy_decisions, source_reverifications, source_governance_comparisons to terraveler_anon;
-grant select, insert, update, delete on source_institutions, source_endpoints, source_collections, source_access_rules, source_proposals, source_assessments, source_policy_decisions, source_reverifications, source_governance_comparisons to terraveler_service;
+-- ----------------------------------------------------------------------------
+-- Public views for secure REST exposure (replaces direct table access for anon)
+-- ----------------------------------------------------------------------------
+
+create or replace view public_source_endpoints as
+  select id, host_pattern, match_type, status, trust_mode
+  from source_endpoints;
+
+create or replace view public_source_policy_decisions as
+  select id, endpoint_id, collection_id, trust_mode, rights_class, rights_identifier, rights_uri, carta_version, reason, timestamp
+  from source_policy_decisions;
+
+create or replace view public_source_proposals as
+  select id, target_url, status
+  from source_proposals;
+
+-- ----------------------------------------------------------------------------
+-- Privileges and Access Control
+-- ----------------------------------------------------------------------------
+
+-- Revoke direct select on internal schema tables from anonymous clients to prevent PII leakage
+revoke select on
+  source_institutions,
+  source_endpoints,
+  source_collections,
+  source_access_rules,
+  source_proposals,
+  source_assessments,
+  source_policy_decisions,
+  source_reverifications,
+  source_governance_comparisons
+from public, terraveler_anon;
+
+-- Grant select only on safe, public-sanitized views to anonymous clients
+grant select on public_source_endpoints, public_source_policy_decisions, public_source_proposals to terraveler_anon;
+
+-- Service role retains full administrative privileges
+grant select, insert, update, delete on
+  source_institutions,
+  source_endpoints,
+  source_collections,
+  source_access_rules,
+  source_proposals,
+  source_assessments,
+  source_policy_decisions,
+  source_reverifications,
+  source_governance_comparisons
+to terraveler_service;

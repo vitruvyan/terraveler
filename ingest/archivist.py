@@ -113,27 +113,11 @@ def assess_source_proposal(proposal_id: int, mock_fetch_content=None) -> dict:
             rights_class, rights_identifier, rights_uri, excerpt = detect_rights_class(content)
             statement_hash = calculate_hash(content)
             
-            # Determine recommended trust mode (Advisory only)
-            # Rights scope and trust classification are decoupled:
-            if rights_class == "public_domain":
-                # Keyword matches alone do NOT imply endpoint-wide or collection scope!
-                # It is unresolved until verified.
-                rights_scope = "unresolved"
-                rec_trust = "needs_human_review"
-            elif rights_class == "creative_commons":
-                if "collection" in target_url.lower():
-                    # Suffix/folder match requires explicit evidence.
-                    rights_scope = "collection"
-                    rec_trust = "collection_trusted"
-                else:
-                    rights_scope = "unresolved"
-                    rec_trust = "needs_human_review"
-            elif rights_class == "in_copyright":
-                rights_scope = "endpoint"
-                rec_trust = "link_only"
-            else:
-                rights_scope = "unresolved"
-                rec_trust = "needs_human_review"
+            # Determine recommended trust mode & scope (Advisory only)
+            # Normal-language keyword matches never imply endpoint-wide or collection scope.
+            # Default scope to 'unresolved' and recommended trust mode to 'needs_human_review'.
+            rights_scope = "unresolved"
+            rec_trust = "needs_human_review"
 
             # Detect language
             lang = "en"

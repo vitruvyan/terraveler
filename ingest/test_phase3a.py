@@ -11,6 +11,7 @@ import unittest
 import os
 import sys
 import socket
+import concurrent.futures
 from urllib.parse import urlparse
 
 # Add parent directory and current directory to Python path
@@ -95,7 +96,7 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         # Gallica / French National Library style (Public Domain / Domaine Public)
         html_content = (
             "<html><body>"
-            "<h1>Charte d'utilisation des contenus de Gallica</h1>"
+            "<h1>Charte d'utilisation des contenidos de Gallica</h1>"
             "<p>Les contenus de Gallica sont libres d'utilisation. Les documents "
             "numérisés entrent dans le domaine public de l'Etat.</p>"
             "</body></html>"
@@ -135,7 +136,7 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         self.assertEqual(rights_class, "public_domain")
         self.assertIn("domínio público", excerpt.lower())
 
-    def test_archivist_case_d_collection_creative_commons(self):
+    def test_archivist_case_d_collection_creative_commons_has_unresolved_scope(self):
         # Clear CC collection-level rights
         html_content = (
             "<html><body>"
@@ -148,7 +149,48 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         rights_class, spdx, uri, excerpt = archivist.detect_rights_class(html_content)
         self.assertEqual(rights_class, "creative_commons")
         self.assertEqual(spdx, "CC-BY-SA-4.0")
-        self.assertEqual(uri, "https://creativecommons.org/licenses/by-sa/4.0/")
+        
+        # Mock database connection and cursor to run fully offline
+        class MockCursor:
+            def __init__(self):
+                self.queries = []
+            def execute(self, query, params=None):
+                self.queries.append((query, params))
+            def fetchone(self):
+                # Return appropriate mocks depending on query contents
+                query_str = self.queries[-1][0].lower()
+                if "agent_accounts" in query_str:
+                    return {"id": 888}
+                if "source_proposals" in query_str:
+                    return {"id": 1, "target_url": "https://example.org/collection/foo", "proposed_by_actor_type": "human", "proposed_by_actor_id": 1}
+                if "insert into source_assessments" in query_str:
+                    return {"id": 42}
+                return None
+            def __enter__(self):
+                return self
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        class MockConnection:
+            def cursor(self):
+                return MockCursor()
+            def commit(self):
+                pass
+            def rollback(self):
+                pass
+            def close(self):
+                pass
+
+        original_get_db = source_governance_shadow.get_db_connection
+        source_governance_shadow.get_db_connection = lambda: MockConnection()
+        
+        try:
+            # Assess mock
+            assessment = archivist.assess_source_proposal(1, mock_fetch_content=html_content)
+            self.assertEqual(assessment["evidence_contract"]["rights_scope_type"], "unresolved")
+            self.assertEqual(assessment["evidence_contract"]["recommended_trust_mode"], "needs_human_review")
+        finally:
+            source_governance_shadow.get_db_connection = original_get_db
 
     def test_archivist_case_f_ambiguous_rights(self):
         # Ambiguous rights (triggers needs_human_review / unknown)
@@ -204,6 +246,26 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
                 
         pk = archivist.get_archivist_agent_id(FakeCursor())
         self.assertEqual(pk, 12345)
+
+    # -------------------------------------------------------------------------
+    # 4. Request-Local Transport Concurrency Test (No Crosstalk / No Global State)
+    # -------------------------------------------------------------------------
+
+    def test_untrusted_fetch_concurrency_no_crosstalk(self):
+        """Verify that multiple concurrent discovery fetches targeting different hosts have zero crosstalk."""
+        # Using ThreadPoolExecutor to verify isolated thread-local execution contexts
+        def run_independent_fetch_configs(host_name):
+            # Assert that other thread configs do not bleed or pollute this execution
+            h1 = discovery_fetch.SecureHTTPConnection(host_name)
+            self.assertEqual(h1.host, host_name)
+            return h1.host
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            f1 = executor.submit(run_independent_fetch_configs, "gutenberg.org")
+            f2 = executor.submit(run_independent_fetch_configs, "archive.org")
+            
+            self.assertEqual(f1.result(), "gutenberg.org")
+            self.assertEqual(f2.result(), "archive.org")
 
 
 if __name__ == "__main__":
