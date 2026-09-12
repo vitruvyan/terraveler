@@ -181,7 +181,7 @@ create table if not exists source_verified_evidence (
   evidence_sources text[],
   
   evidence_snapshot jsonb not null,
-  evidence_hash text not null unique,
+  evidence_hash text not null,
   
   created_at timestamptz not null default now()
 );
@@ -271,6 +271,7 @@ revoke select on
   source_assessments,
   source_policy_decisions,
   source_verified_evidence,
+  source_policy_evaluations,
   source_reverifications,
   source_governance_comparisons
 from public, terraveler_anon;
@@ -278,7 +279,7 @@ from public, terraveler_anon;
 -- Grant select only on safe, public-sanitized views to anonymous clients (exposing resource IDs as safe public identifiers)
 grant select on public_source_endpoints, public_source_policy_decisions, public_source_proposals to terraveler_anon;
 
--- Service role retains full administrative privileges
+-- generic terraveler_service only has SELECT/INSERT on evidence, and SELECT-only on evaluations (No UPDATE/DELETE/TRUNCATE!)
 grant select, insert, update, delete on
   source_institutions,
   source_endpoints,
@@ -288,7 +289,13 @@ grant select, insert, update, delete on
   source_proposal_intents,
   source_assessments,
   source_policy_decisions,
-  source_verified_evidence,
   source_reverifications,
   source_governance_comparisons
 to terraveler_service;
+
+grant select, insert on source_verified_evidence to terraveler_service;
+grant select on source_policy_evaluations to terraveler_service;
+
+-- dedicated trusted evaluator writer role has full select/insert capability
+grant select, insert on source_verified_evidence to terraveler_evaluator;
+grant select, insert on source_policy_evaluations to terraveler_evaluator;

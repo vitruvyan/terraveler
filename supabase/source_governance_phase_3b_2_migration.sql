@@ -1,7 +1,7 @@
--- Migration for Source Governance Phase 3B.2 (Hardened)
+-- Migration for Source Governance Phase 3B.2 (Hardened Sealing)
 -- Safe, idempotent, and backwards-compatible migration.
 
--- 1. Create source_verified_evidence table
+-- 1. Create source_verified_evidence table (evidence_hash is content digest, NOT unique)
 create table if not exists source_verified_evidence (
   id bigint generated always as identity primary key,
   assessment_id bigint not null references source_assessments(id) on delete cascade,
@@ -37,10 +37,13 @@ create table if not exists source_verified_evidence (
   evidence_sources text[],
   
   evidence_snapshot jsonb not null,
-  evidence_hash text not null unique,
+  evidence_hash text not null, -- Content digest, NOT globally unique (Option A)
   
   created_at timestamptz not null default now()
 );
+
+-- Safely remove UNIQUE constraint on evidence_hash if it exists from previous incomplete migrations
+alter table source_verified_evidence drop constraint if exists source_verified_evidence_evidence_hash_key;
 
 -- 2. Create source_policy_evaluations table
 create table if not exists source_policy_evaluations (
@@ -94,6 +97,21 @@ create or replace view public_source_policy_decisions as
   select id, endpoint_id, collection_id, proposal_id, decision_outcome, trust_mode, rights_class, rights_identifier, rights_uri, policy_version, verification_version, supersedes_decision_id, carta_version, reason, timestamp
   from source_policy_decisions;
 
--- 6. Privileges and Access Control
-revoke select on source_verified_evidence, source_policy_evaluations from public, terraveler_anon;
-grant select, insert, update, delete on source_verified_evidence, source_policy_evaluations to terraveler_service;
+-- 6. Create evaluator and trusted writer roles (PostgreSQL Role Separation)
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'terraveler_evaluator') then
+    create role terraveler_evaluator;
+  end if;
+end $$;
+
+-- 7. Privileges and Access Control (No UPDATE, DELETE, TRUNCATE for anyone!)
+revoke all on source_verified_evidence, source_policy_evaluations from public, terraveler_anon;
+
+-- generic terraveler_service only has SELECT/INSERT on evidence, and SELECT-only on evaluations
+grant select, insert on source_verified_evidence to terraveler_service;
+grant select on source_policy_evaluations to terraveler_service;
+
+-- dedicated trusted evaluator writer has full select/insert capability
+grant select, insert on source_verified_evidence to terraveler_evaluator;
+grant select, insert on source_policy_evaluations to terraveler_evaluator;
