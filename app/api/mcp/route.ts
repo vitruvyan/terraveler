@@ -1890,6 +1890,12 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     case "suggest_source": {
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
+      
+      // Fail closed on OAuth without active agent account
+      if (bearer && !bearer.agent_account_id) {
+        return "ERROR: This connection has no active agent account. Only authorized agent accounts may propose sources via OAuth.";
+      }
+
       const url = String(args?.target_url ?? "").trim();
       if (!url) return "ERROR: target_url is required.";
       
@@ -1899,6 +1905,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       } catch {
         return "ERROR: target_url is not a valid URL.";
       }
+
+      const proposed_by_actor_type = bearer ? "agent" : "human";
+      const proposed_by_actor_id = bearer ? bearer.agent_account_id : a.ok!.id;
 
       // Suffix/Exact matching deduplication for pending/unresolved proposals on the same host
       const proposals = await sb("GET", "source_proposals?select=id,target_url,status");
@@ -1912,6 +1921,19 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       });
 
       if (existingProposal) {
+        // Persist the secondary intent structurally in source_proposal_intents
+        await sb("POST", "source_proposal_intents", {
+          proposal_id: existingProposal.id,
+          proposed_by_actor_type,
+          proposed_by_actor_id,
+          voyage: args?.context?.voyage || null,
+          waypoint: args?.context?.waypoint || null,
+          region: args?.context?.region || null,
+          person: args?.context?.person || null,
+          reason: args?.context?.reason || null,
+          original_target_url: url
+        });
+
         // Log additional proposal intent to the audit trail
         await sb("POST", "audit_log", {
           actor: `contributor:${a.ok!.handle}`,
@@ -1935,13 +1957,27 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
 
       const propPayload = {
         target_url: url,
-        proposed_by_actor_type: bearer ? "agent" : "human",
-        proposed_by_actor_id: bearer ? bearer.agent_account_id : a.ok!.id,
+        proposed_by_actor_type,
+        proposed_by_actor_id,
         endpoint_id,
         status: "submitted"
       };
 
       const result = await sb("POST", "source_proposals", propPayload);
+      const proposal_id = result[0].id;
+
+      // Persist the primary intent structurally in source_proposal_intents
+      await sb("POST", "source_proposal_intents", {
+        proposal_id,
+        proposed_by_actor_type,
+        proposed_by_actor_id,
+        voyage: args?.context?.voyage || null,
+        waypoint: args?.context?.waypoint || null,
+        region: args?.context?.region || null,
+        person: args?.context?.person || null,
+        reason: args?.context?.reason || null,
+        original_target_url: url
+      });
       
       // Audit trail record
       await sb("POST", "audit_log", {

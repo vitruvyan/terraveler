@@ -64,6 +64,21 @@ create table if not exists source_proposals (
   status text not null default 'submitted'
 );
 
+-- Phase 3A: Source Proposal Intents (Preserves distinct user citation intents, context, and research needs)
+create table if not exists source_proposal_intents (
+  id bigint generated always as identity primary key,
+  proposal_id bigint not null references source_proposals(id) on delete cascade,
+  proposed_by_actor_type text not null check (proposed_by_actor_type in ('human', 'agent')),
+  proposed_by_actor_id bigint not null, -- references contributors.id or agent_accounts.id polymorphically
+  voyage text,
+  waypoint bigint,
+  region text,
+  person text,
+  reason text,
+  original_target_url text not null,
+  timestamp timestamptz default now()
+);
+
 -- The Evidence Contract (Authored by LLM Archivist, Verified by Deterministic Engine)
 create table if not exists source_assessments (
   id bigint generated always as identity primary key,
@@ -171,13 +186,14 @@ revoke select on
   source_collections,
   source_access_rules,
   source_proposals,
+  source_proposal_intents,
   source_assessments,
   source_policy_decisions,
   source_reverifications,
   source_governance_comparisons
 from public, terraveler_anon;
 
--- Grant select only on safe, public-sanitized views to anonymous clients
+-- Grant select only on safe, public-sanitized views to anonymous clients (exposing resource IDs as safe public identifiers)
 grant select on public_source_endpoints, public_source_policy_decisions, public_source_proposals to terraveler_anon;
 
 -- Service role retains full administrative privileges
@@ -187,6 +203,7 @@ grant select, insert, update, delete on
   source_collections,
   source_access_rules,
   source_proposals,
+  source_proposal_intents,
   source_assessments,
   source_policy_decisions,
   source_reverifications,

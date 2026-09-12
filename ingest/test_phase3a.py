@@ -20,6 +20,10 @@ import discovery_fetch
 import archivist
 import source_governance_shadow
 
+def stub(**meta):
+    """A fake archive.org metadata endpoint returning one item's fields."""
+    return lambda _url: {"metadata": meta}
+
 class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
     def setUp(self):
         # Override DB logging/connections for tests
@@ -266,6 +270,42 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
             
             self.assertEqual(f1.result(), "gutenberg.org")
             self.assertEqual(f2.result(), "archive.org")
+
+    def test_untrusted_fetch_proxy_isolation(self):
+        # Set proxy env vars to a fake/invalid local port (which would crash/fail the fetch if inherited!)
+        os.environ["HTTP_PROXY"] = "http://127.0.0.1:9999"
+        os.environ["HTTPS_PROXY"] = "http://127.0.0.1:9999"
+        try:
+            # Under a custom fetch opener, standard urllib would attempt to route through this bad proxy.
+            # But our Secure HTTP opener explicitly sets an empty ProxyHandler, so it bypasses these variables entirely!
+            # We mock the connection inside to verify it goes straight to the IP, not the proxy.
+            original_create_connection = socket.create_connection
+            connection_called_on_target_ip = False
+            
+            def mock_create_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+                nonlocal connection_called_on_target_ip
+                if discovery_fetch.is_safe_ip(address[0]): # Any resolved safe public IP!
+                    connection_called_on_target_ip = True
+                # Return a dummy socket to prevent actual network fetch
+                class DummySocket:
+                    def sendall(self, *args): pass
+                    def setsockopt(self, *args): pass
+                    def close(self): pass
+                    def makefile(self, *args, **kwargs):
+                        import io
+                        return io.BytesIO(b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nCC-BY")
+                return DummySocket()
+                
+            socket.create_connection = mock_create_connection
+            try:
+                content = discovery_fetch.untrusted_discovery_fetch("http://gutenberg.org/ebooks/1")
+                self.assertEqual(content, "CC-BY")
+                self.assertTrue(connection_called_on_target_ip, "Secure connect should bypass proxy env vars!")
+            finally:
+                socket.create_connection = original_create_connection
+        finally:
+            if "HTTP_PROXY" in os.environ: del os.environ["HTTP_PROXY"]
+            if "HTTPS_PROXY" in os.environ: del os.environ["HTTPS_PROXY"]
 
 
 if __name__ == "__main__":

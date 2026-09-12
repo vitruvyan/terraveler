@@ -132,7 +132,9 @@ def untrusted_discovery_fetch(url: str) -> str:
     redirect_count = 0
     
     # Configure custom opener with local, secure transport handlers (no global side-effects)
+    # Exclude system/ambient proxies to guarantee verified target IP == connected target IP
     opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}),
         BlockRedirectHandler(),
         SecureHTTPHandler(),
         SecureHTTPSHandler()
