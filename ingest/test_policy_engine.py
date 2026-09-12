@@ -1,5 +1,5 @@
 """
-Phase 3B.1: Deterministic Policy Activation Engine Tests.
+Phase 3B.1: Deterministic Policy Activation Engine Tests (Hardened).
 Tests pure function invariants for evaluating verified evidence without LLM/Network.
 
 Run with:
@@ -31,7 +31,9 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
             access_verified=True,
             verification_strategy="none",
             conflicts=[],
-            evidence_sources=["https://example.org/terms"]
+            evidence_sources=["https://example.org/terms"],
+            policy_incompatible=False,
+            incompatibility_codes=[]
         )
 
     def test_a_verified_endpoint_public_domain(self):
@@ -149,10 +151,11 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(result.decision_outcome, "needs_human_review")
         self.assertIsNone(result.trust_mode)
 
-    def test_l_explicit_policy_incompatibility(self):
-        # L. Explicit verified policy incompatibility => REJECT
+    def test_l_explicit_policy_incompatibility_reject(self):
+        # L. Explicit verified policy incompatibility => REJECT (Driven by policy_incompatible fact)
         evidence = self._base_evidence()
-        evidence.rights_class = "malicious"
+        evidence.policy_incompatible = True
+        evidence.incompatibility_codes = ["TERRAVELER_PROHIBITED_ARCHIVE"]
         
         result = evaluate_source_policy(evidence)
         self.assertEqual(result.decision_outcome, "reject")
@@ -160,7 +163,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(result.rule_id, "SG-P1-099_POLICY_INCOMPATIBLE")
 
     def test_m_unsupported_item_verifier(self):
-        # M. Unsupported item verification strategy => NEEDS_HUMAN_REVIEW (Handled in test_e, but let's confirm again)
+        # M. Unsupported item verification strategy => NEEDS_HUMAN_REVIEW
         evidence = self._base_evidence()
         evidence.rights_class = "mixed"
         evidence.verification_strategy = "non_existent"
@@ -182,21 +185,66 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
 
     def test_o_archivist_confidence_change(self):
         # O. Changing only Archivist confidence/recommendation => MUST NOT change deterministic result
-        # Our VerifiedEvidence contract doesn't even hold LLM confidence/recommendations. 
-        # This structurally guarantees LLM opinions cannot influence the pure function.
         self.assertFalse(hasattr(VerifiedEvidence, "llm_confidence"))
         self.assertFalse(hasattr(VerifiedEvidence, "recommended_trust_mode"))
 
-    def test_snapshot_includes_all_required_fields(self):
+    # -------------------------------------------------------------------------
+    # Hardening & Regression Tests
+    # -------------------------------------------------------------------------
+
+    def test_item_verified_blocker_bypass_prevention_rights_unverified(self):
+        # Mixed + archive_org_metadata + rights_verified=false => NEEDS_HUMAN_REVIEW (No bypass!)
         evidence = self._base_evidence()
+        evidence.rights_class = "mixed"
+        evidence.verification_strategy = "archive_org_metadata"
+        evidence.rights_verified = False
+        
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review")
+        self.assertIsNone(result.trust_mode)
+
+    def test_item_verified_blocker_bypass_prevention_conflicts(self):
+        # Mixed + archive_org_metadata + conflicts => NEEDS_HUMAN_REVIEW (No bypass!)
+        evidence = self._base_evidence()
+        evidence.rights_class = "mixed"
+        evidence.verification_strategy = "archive_org_metadata"
+        evidence.conflicts = ["Terms say Public Domain but also Restricted"]
+        
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review")
+        self.assertIsNone(result.trust_mode)
+
+    def test_item_verified_blocker_bypass_prevention_identity_unverified(self):
+        # Mixed + archive_org_metadata + identity unverified => NEEDS_HUMAN_REVIEW (No bypass!)
+        evidence = self._base_evidence()
+        evidence.rights_class = "mixed"
+        evidence.verification_strategy = "archive_org_metadata"
+        evidence.endpoint_identity_verified = False
+        
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review")
+        self.assertIsNone(result.trust_mode)
+
+    def test_unsupported_policy_version_raises_error(self):
+        evidence = self._base_evidence()
+        with self.assertRaises(ValueError):
+            evaluate_source_policy(evidence, policy_version="SOME_UNSUPPORTED_VERSION")
+
+    def test_complete_evidence_snapshot(self):
+        evidence = self._base_evidence()
+        evidence.policy_incompatible = True
+        evidence.incompatibility_codes = ["TEST"]
         result = evaluate_source_policy(evidence)
         
         snap = result.evidence_snapshot
-        self.assertIn("assessment_id", snap)
-        self.assertIn("verified_at", snap)
-        self.assertIn("rights_verified", snap)
-        self.assertIn("scope_verified", snap)
-        self.assertIn("conflicts", snap)
+        self.assertEqual(snap["assessment_id"], evidence.assessment_id)
+        self.assertEqual(snap["verifier_version"], evidence.verifier_version)
+        self.assertEqual(snap["policy_version"], "SG-P1")
+        self.assertEqual(snap["rights_verified"], evidence.rights_verified)
+        self.assertEqual(snap["scope_verified"], evidence.scope_verified)
+        self.assertEqual(snap["access_verified"], evidence.access_verified)
+        self.assertEqual(snap["policy_incompatible"], True)
+        self.assertEqual(snap["incompatibility_codes"], ["TEST"])
 
 
 if __name__ == "__main__":

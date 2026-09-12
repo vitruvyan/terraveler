@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 import datetime
 
@@ -32,6 +32,10 @@ class VerifiedEvidence:
     
     conflicts: List[str]
     evidence_sources: List[str]
+    
+    # Explicit deterministic policy facts for REJECT/incompatibility
+    policy_incompatible: bool = False
+    incompatibility_codes: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -49,6 +53,7 @@ class PolicyEvaluation:
     evidence_snapshot: Dict
 
 POLICY_VERSION = "SG-P1"
+SUPPORTED_POLICY_VERSIONS = {POLICY_VERSION}
 
 def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POLICY_VERSION) -> PolicyEvaluation:
     """
@@ -56,7 +61,10 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     No database writes, no network calls, no LLM inference.
     Maps verified evidence to an authoritative policy decision.
     """
-    
+    # Strict policy version validation (fail-closed on unknown/unsupported policy version)
+    if policy_version not in SUPPORTED_POLICY_VERSIONS:
+        raise ValueError(f"Unsupported policy version: {policy_version}")
+        
     blocking_conditions = []
     reason_codes = []
     
@@ -76,8 +84,17 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     if not evidence.institution_identity_verified or not evidence.endpoint_identity_verified:
         blocking_conditions.append("IDENTITY_UNVERIFIED")
         
+    if evidence.policy_incompatible:
+        blocking_conditions.append("POLICY_INCOMPATIBLE")
+        
     # Evaluate Rules
     
+    # 0. REJECT (SG-P1-099_POLICY_INCOMPATIBLE)
+    # Triggered strictly by verified deterministic policy incompatibility facts
+    if "POLICY_INCOMPATIBLE" in blocking_conditions or evidence.policy_incompatible:
+        rule = "SG-P1-099_POLICY_INCOMPATIBLE"
+        return _build_eval("reject", None, rule, reason_codes, blocking_conditions, evidence, policy_version)
+        
     # 1. DOMAIN_TRUSTED (SG-P1-010_ENDPOINT_SCOPE_AND_RIGHTS_VERIFIED)
     if not blocking_conditions and evidence.scope_type == "endpoint" and evidence.scope_verified:
         if evidence.rights_class in ("public_domain", "creative_commons"):
@@ -95,22 +112,23 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     # 3. ITEM_VERIFIED (SG-P1-020_SUPPORTED_ITEM_VERIFIER / SG-P1-021_MIXED_WITHOUT_SUPPORTED_VERIFIER)
     # Allows mixed rights if we have a supported item-level verifier.
     if evidence.rights_class == "mixed" and evidence.institution_identity_verified and evidence.endpoint_identity_verified:
-        if evidence.verification_strategy == "archive_org_metadata":
-             reason_codes.append("SUPPORTED_VERIFIER_FOUND")
-             return _build_eval("approve", "item_verified", "SG-P1-020_SUPPORTED_ITEM_VERIFIER", 
-                               reason_codes, blocking_conditions, evidence, policy_version)
+        if not blocking_conditions:
+            if evidence.verification_strategy == "archive_org_metadata":
+                 reason_codes.append("SUPPORTED_VERIFIER_FOUND")
+                 return _build_eval("approve", "item_verified", "SG-P1-020_SUPPORTED_ITEM_VERIFIER", 
+                                   reason_codes, blocking_conditions, evidence, policy_version)
+            else:
+                 blocking_conditions.append("UNSUPPORTED_VERIFIER")
+                 return _build_eval("needs_human_review", None, "SG-P1-021_MIXED_WITHOUT_SUPPORTED_VERIFIER", 
+                                   reason_codes, blocking_conditions, evidence, policy_version)
         else:
-             blocking_conditions.append("UNSUPPORTED_VERIFIER")
-             return _build_eval("needs_human_review", None, "SG-P1-021_MIXED_WITHOUT_SUPPORTED_VERIFIER", 
-                               reason_codes, blocking_conditions, evidence, policy_version)
+            # Fall through if blockers exist; mixed-repository item-verification must never bypass blockers!
+            pass
 
     # 4. LINK_ONLY (SG-P1-030_LINK_ONLY_ALLOWED)
     # For legitimately verified institutions that don't grant full ingestion rights,
     # but we can link/reference them safely.
     if not blocking_conditions and evidence.institution_identity_verified and evidence.access_verified and evidence.rights_class in ("in_copyright", "mixed", "unknown"):
-        # For Phase 3B.1 we keep it conservative: Link_Only requires verified identity and access.
-        # However, if rights are unknown/conflicting, we might want HUMAN_REVIEW instead.
-        # If there are no severe blockers like conflicts:
         reason_codes.append("LINK_ONLY_PERMITTED")
         return _build_eval("approve", "link_only", "SG-P1-030_LINK_ONLY_ALLOWED", 
                            reason_codes, blocking_conditions, evidence, policy_version)
@@ -124,9 +142,6 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
         rule = "SG-P1-003_IDENTITY_UNVERIFIED"
     elif "CONFLICTING_EVIDENCE" in blocking_conditions:
         rule = "SG-P1-090_CONFLICTING_EVIDENCE"
-    elif evidence.rights_class == "malicious": # Example Reject condition
-        rule = "SG-P1-099_POLICY_INCOMPATIBLE"
-        return _build_eval("reject", None, rule, reason_codes, blocking_conditions, evidence, policy_version)
     else:
         rule = "SG-P1-000_DEFAULT_NEEDS_REVIEW"
 
@@ -138,20 +153,36 @@ def _build_eval(decision_outcome: str, trust_mode: Optional[str], rule_id: str,
                 reason_codes: List[str], blocking_conditions: List[str], 
                 evidence: VerifiedEvidence, policy_version: str) -> PolicyEvaluation:
     
+    # Fully complete and self-contained evidence snapshot
     snapshot = {
         "assessment_id": evidence.assessment_id,
         "verified_at": evidence.verified_at.isoformat(),
+        "verifier_version": evidence.verifier_version,
+        "policy_version": policy_version,
+        "rule_id": rule_id,
+        
         "institution_identity_verified": evidence.institution_identity_verified,
         "endpoint_identity_verified": evidence.endpoint_identity_verified,
+        
+        "rights_statement_retrieved": evidence.rights_statement_retrieved,
+        "rights_statement_hash_matches": evidence.rights_statement_hash_matches,
         "rights_verified": evidence.rights_verified,
         "rights_class": evidence.rights_class,
         "rights_identifier": evidence.rights_identifier,
+        "rights_uri": evidence.rights_uri,
+        
         "scope_verified": evidence.scope_verified,
         "scope_type": evidence.scope_type,
+        "scope_identifier": evidence.scope_identifier,
+        
+        "access_verified": evidence.access_verified,
         "verification_strategy": evidence.verification_strategy,
+        
         "conflicts": evidence.conflicts,
         "evidence_sources": evidence.evidence_sources,
-        "rights_statement_hash_matches": evidence.rights_statement_hash_matches
+        
+        "policy_incompatible": evidence.policy_incompatible,
+        "incompatibility_codes": evidence.incompatibility_codes
     }
     
     return PolicyEvaluation(

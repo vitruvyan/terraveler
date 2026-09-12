@@ -51,19 +51,7 @@ insert into source_policy_decisions (id, endpoint_id, decision_outcome, trust_mo
   (7, 7, 'approve', 'domain_trusted', 'mixed', 'per-file (PD/CC, verified)', '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Wikimedia Commons is per-file PD/CC.'),
   (8, 8, 'approve', 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.'),
   (9, 9, 'approve', 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.')
-on conflict (id) do update set
-  endpoint_id = excluded.endpoint_id,
-  decision_outcome = excluded.decision_outcome,
-  trust_mode = excluded.trust_mode,
-  rights_class = excluded.rights_class,
-  rights_identifier = excluded.rights_identifier,
-  evidence_snapshot = excluded.evidence_snapshot,
-  policy_version = excluded.policy_version,
-  verification_version = excluded.verification_version,
-  carta_version = excluded.carta_version,
-  decided_by_actor_type = excluded.decided_by_actor_type,
-  decided_by_actor_id = excluded.decided_by_actor_id,
-  reason = excluded.reason;
+on conflict (id) do nothing;
 
 -- 5. Seed the durable specialist Archivist agent identity (Phase 3A)
 -- Let PostgreSQL generate the IDs dynamically, upserting via unique constraints.
