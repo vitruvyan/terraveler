@@ -1716,6 +1716,7 @@ button.vt-seg:focus-visible { outline: 2px solid var(--brass); outline-offset: 2
   align-items: flex-start;
   gap: var(--space-2);
   min-width: 0;
+  pointer-events: auto !important;
 }
 
 /* The imprint. No plate, because it is not a control — and in --ink rather
@@ -1773,6 +1774,7 @@ button.vt-seg:focus-visible { outline: 2px solid var(--brass); outline-offset: 2
   text-transform: uppercase;
   box-shadow: 0 4px 14px rgba(43, 33, 23, 0.34);
   transition: background var(--dur-1) var(--ease);
+  pointer-events: auto !important;
 }
 @media (hover: hover) {
   .map-atlas-door:hover { background: var(--accent-deep); }
