@@ -1,9 +1,19 @@
 export type MatchType = "exact" | "suffix";
 export type LifecycleStatus = "discovered" | "proposed" | "triaging" | "assessing" | "policy_check" | "active" | "needs_human_review" | "quarantined" | "rejected" | "retired";
-export type TrustMode = "pending" | "domain_trusted" | "collection_trusted" | "item_verified" | "link_only" | "rejected";
+export type TrustMode = "domain_trusted" | "collection_trusted" | "item_verified" | "link_only";
 export type RightsScopeType = "endpoint" | "collection" | "item";
 export type RightsClass = "public_domain" | "creative_commons" | "mixed" | "in_copyright" | "unknown";
 export type VerificationStrategy = "none" | "archive_org_metadata" | "wikimedia_api";
+
+export interface EvidenceSnapshot {
+  rights_scope_type: RightsScopeType;
+  rights_scope_identifier?: string;
+  rights_class: RightsClass;
+  rights_identifier?: string;
+  rights_uri?: string;
+  rights_statement_url?: string;
+  rights_statement_hash: string;
+}
 
 export interface SourceInstitution {
   id: number;
@@ -19,7 +29,7 @@ export interface SourceEndpoint {
   host_pattern: string;
   match_type: MatchType;
   status: LifecycleStatus;
-  trust_mode: TrustMode;
+  trust_mode: TrustMode | null; // Nullable for records without active trust decisions
 }
 
 export interface SourceCollection {
@@ -28,7 +38,7 @@ export interface SourceCollection {
   name: string;
   path_prefix?: string;
   status: LifecycleStatus;
-  trust_mode: TrustMode;
+  trust_mode: TrustMode | null; // Nullable
 }
 
 export interface SourceAccessRule {
@@ -51,10 +61,10 @@ export interface SourcePolicyDecision {
   rights_class: RightsClass;
   rights_identifier?: string;
   rights_uri?: string;
-  evidence_snapshot: any;
+  evidence_snapshot: EvidenceSnapshot; // Strongly typed
   carta_version: string;
   decided_by_actor_type: "system" | "human";
-  decided_by_actor_id: string;
+  decided_by_actor_id: number | null; // Nullable bigint (0/null when system)
   reason: string;
 }
 
@@ -77,19 +87,20 @@ export const SEED_ENDPOINTS: SourceEndpoint[] = [
   { id: 4, institution_id: 2, host_pattern: "runeberg.org", match_type: "exact", status: "active", trust_mode: "domain_trusted" },
   { id: 5, institution_id: 3, host_pattern: ".wikisource.org", match_type: "suffix", status: "active", trust_mode: "domain_trusted" },
   { id: 6, institution_id: 3, host_pattern: ".wikipedia.org", match_type: "suffix", status: "active", trust_mode: "domain_trusted" },
-  { id: 7, institution_id: 3, host_pattern: ".wikimedia.org", match_type: "suffix", status: "active", trust_mode: "item_verified" },
+  // Exact legacy semantics: .wikimedia.org is a pure ALLOWED_SUFFIXES domain_trusted with mixed licensing,
+  // without any custom api access rules or item verification requirement.
+  { id: 7, institution_id: 3, host_pattern: ".wikimedia.org", match_type: "suffix", status: "active", trust_mode: "domain_trusted" },
   { id: 8, institution_id: 4, host_pattern: "archive.org", match_type: "exact", status: "active", trust_mode: "item_verified" },
   { id: 9, institution_id: 4, host_pattern: "www.archive.org", match_type: "exact", status: "active", trust_mode: "item_verified" }
 ];
 
 export const SEED_ACCESS_RULES: SourceAccessRule[] = [
   { id: 1, endpoint_id: 8, allowed_hosts: ["archive.org"], path_patterns: [], collection_identifiers: [], api_endpoints: ["https://archive.org/metadata/"], verification_strategy: "archive_org_metadata", expected_redirect_hosts: [] },
-  { id: 2, endpoint_id: 9, allowed_hosts: ["www.archive.org"], path_patterns: [], collection_identifiers: [], api_endpoints: ["https://archive.org/metadata/"], verification_strategy: "archive_org_metadata", expected_redirect_hosts: [] },
-  { id: 3, endpoint_id: 7, allowed_hosts: ["upload.wikimedia.org", "commons.wikimedia.org"], path_patterns: [], collection_identifiers: [], api_endpoints: [], verification_strategy: "wikimedia_api", expected_redirect_hosts: [] }
+  { id: 2, endpoint_id: 9, allowed_hosts: ["www.archive.org"], path_patterns: [], collection_identifiers: [], api_endpoints: ["https://archive.org/metadata/"], verification_strategy: "archive_org_metadata", expected_redirect_hosts: [] }
 ];
 
-const mock_evidence = { rights_scope_type: "endpoint", rights_statement_hash: "mock", rights_class: "public_domain" };
-const decided_by = { decided_by_actor_type: "system" as const, decided_by_actor_id: "deterministic_engine_v1" };
+const mock_evidence: EvidenceSnapshot = { rights_scope_type: "endpoint", rights_statement_hash: "mock", rights_class: "public_domain" };
+const decided_by = { decided_by_actor_type: "system" as const, decided_by_actor_id: null };
 
 export const SEED_DECISIONS: SourcePolicyDecision[] = [
   { id: 1, endpoint_id: 1, trust_mode: "domain_trusted", rights_class: "public_domain", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Gutenberg is entirely PD.", evidence_snapshot: mock_evidence },
@@ -98,7 +109,7 @@ export const SEED_DECISIONS: SourcePolicyDecision[] = [
   { id: 4, endpoint_id: 4, trust_mode: "domain_trusted", rights_class: "public_domain", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Runeberg is entirely PD.", evidence_snapshot: mock_evidence },
   { id: 5, endpoint_id: 5, trust_mode: "domain_trusted", rights_class: "public_domain", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Wikisource suffix is PD.", evidence_snapshot: mock_evidence },
   { id: 6, endpoint_id: 6, trust_mode: "domain_trusted", rights_class: "creative_commons", rights_identifier: "CC-BY-SA-4.0", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Wikipedia suffix is CC-BY-SA-4.0.", evidence_snapshot: { ...mock_evidence, rights_class: "creative_commons" } },
-  { id: 7, endpoint_id: 7, trust_mode: "item_verified", rights_class: "mixed", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Wikimedia Commons is per-file PD/CC.", evidence_snapshot: { ...mock_evidence, rights_class: "mixed" } },
+  { id: 7, endpoint_id: 7, trust_mode: "domain_trusted", rights_class: "mixed", rights_identifier: "per-file (PD/CC, verified)", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Wikimedia Commons is per-file PD/CC.", evidence_snapshot: { ...mock_evidence, rights_class: "mixed" } },
   { id: 8, endpoint_id: 8, trust_mode: "item_verified", rights_class: "mixed", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Internet Archive requires per-item metadata validation.", evidence_snapshot: { ...mock_evidence, rights_class: "mixed" } },
   { id: 9, endpoint_id: 9, trust_mode: "item_verified", rights_class: "mixed", carta_version: "0.7", ...decided_by, reason: "Legacy whitelist: Internet Archive requires per-item metadata validation.", evidence_snapshot: { ...mock_evidence, rights_class: "mixed" } }
 ];
