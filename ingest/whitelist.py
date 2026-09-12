@@ -239,7 +239,7 @@ def verify_source(url: str, fetch_json=None):
         token = _in_shadow_mode.set(True)
         try:
             from source_governance_shadow import compare_shadow
-            return compare_shadow(url)
+            return compare_shadow(url, fetch_json=fetch_json)
         except Exception:
             pass # Fall back to legacy below
         finally:

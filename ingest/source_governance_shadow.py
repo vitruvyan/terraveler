@@ -163,13 +163,13 @@ def record_comparison(canonical_url: str, legacy: dict, registry: dict, equivale
         if conn:
             conn.close()
 
-def compare_shadow(url: str) -> tuple[bool, str]:
+def compare_shadow(url: str, fetch_json=None) -> tuple[bool, str]:
     """
     Compares legacy verify_source with registry-backed resolve_trust_from_db.
     Maintains Shadow Mode contract. Returns (legacy_ok, legacy_why).
     """
     # 1. Run legacy verifier
-    legacy_ok, legacy_why = whitelist.verify_source(url)
+    legacy_ok, legacy_why = whitelist.verify_source(url, fetch_json=fetch_json)
     
     # 2. Check if Shadow Mode is enabled
     shadow_enabled = os.environ.get("SOURCE_GOVERNANCE_SHADOW_ENABLED", "").lower() == "true"
@@ -189,7 +189,7 @@ def compare_shadow(url: str) -> tuple[bool, str]:
     elif reg["decision"] == "requires_item_verification":
         # True behavioral equivalence: run the configured verifier on the item
         if reg["verification_strategy"] == "archive_org_metadata":
-            registry_allowed, registry_reason = whitelist.verify_archive_item(url)
+            registry_allowed, registry_reason = whitelist.verify_archive_item(url, fetch_json=fetch_json)
         else:
             registry_allowed = False
             registry_reason = f"unknown verification strategy: {reg['verification_strategy']}"
