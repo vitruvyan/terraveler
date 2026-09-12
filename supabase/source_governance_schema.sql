@@ -168,6 +168,7 @@ create table if not exists source_verified_evidence (
   
   verified_at timestamptz not null default now(),
   verifier_version text not null,
+  reverification_generation integer not null default 0, -- Explicit Staleness Generation
   
   institution_identity_verified boolean not null,
   endpoint_identity_verified boolean not null,
@@ -185,6 +186,9 @@ create table if not exists source_verified_evidence (
   
   access_verified boolean not null,
   verification_strategy text not null,
+  
+  canonical_host text,
+  collection_identifier text,
   
   policy_incompatible boolean not null default false,
   incompatibility_codes text[],
@@ -204,6 +208,7 @@ create table if not exists source_policy_evaluations (
   verified_evidence_id bigint not null references source_verified_evidence(id) on delete cascade,
   subject_type text not null check (subject_type in ('endpoint', 'collection', 'proposal')),
   subject_id bigint not null,
+  reverification_generation integer not null default 0, -- Explicit Staleness Generation
   
   decision_outcome text not null check (decision_outcome in ('approve', 'reject', 'needs_human_review')),
   trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
