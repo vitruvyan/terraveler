@@ -5,6 +5,20 @@ import hashlib
 import json
 
 @dataclass
+class VerifierAssertion:
+    """
+    Formal, typed verifier assertion representing a verified fact or incompatibility.
+    A plain caller boolean is never sufficient authority.
+    """
+    code: str
+    verifier_id_version: str
+    basis: str
+    source_evidence: str
+    timestamp: datetime.datetime
+    artifact_hash: Optional[str] = None
+
+
+@dataclass
 class VerifiedEvidence:
     """
     VerifiedEvidence contract.
@@ -13,6 +27,9 @@ class VerifiedEvidence:
     assessment_id: int
     verified_at: datetime.datetime
     verifier_version: str
+    
+    subject_type: str
+    subject_id: int
     
     institution_identity_verified: bool
     endpoint_identity_verified: bool
@@ -64,6 +81,8 @@ def canonicalize_evidence(evidence: VerifiedEvidence) -> str:
     to guarantee absolute reproducibility of the hash.
     """
     stable_dict = {
+        "subject_type": str(evidence.subject_type),
+        "subject_id": int(evidence.subject_id),
         "institution_identity_verified": bool(evidence.institution_identity_verified),
         "endpoint_identity_verified": bool(evidence.endpoint_identity_verified),
         "rights_statement_retrieved": bool(evidence.rights_statement_retrieved),
@@ -89,39 +108,77 @@ def compute_evidence_hash(evidence: VerifiedEvidence) -> str:
     canonical = canonicalize_evidence(evidence)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
-def produce_verified_evidence(assessment_dict: dict, additional_data: dict = None) -> VerifiedEvidence:
+def canonicalize_policy_evaluation(evaluation: PolicyEvaluation, subject_type: str, subject_id: int, verified_evidence_id: int) -> str:
     """
-    Deterministic verifier boundary converting an assessment and retrieved terms content
+    Produces a deterministic, stable, and platform-independent JSON string representation
+    of PolicyEvaluation. Timestamps and dynamic fields are omitted to guarantee absolute reproducibility.
+    """
+    stable_dict = {
+        "verified_evidence_id": int(verified_evidence_id),
+        "subject_type": str(subject_type),
+        "subject_id": int(subject_id),
+        "decision_outcome": str(evaluation.decision_outcome),
+        "trust_mode": str(evaluation.trust_mode) if evaluation.trust_mode is not None else None,
+        "rule_id": str(evaluation.rule_id),
+        "reason_codes": sorted(list(evaluation.reason_codes)) if evaluation.reason_codes else [],
+        "blocking_conditions": sorted(list(evaluation.blocking_conditions)) if evaluation.blocking_conditions else [],
+        "policy_version": str(evaluation.policy_version),
+        "verification_version": str(evaluation.verification_version),
+        "evidence_snapshot": evaluation.evidence_snapshot
+    }
+    if isinstance(stable_dict["evidence_snapshot"], dict):
+        stable_dict["evidence_snapshot"] = json.loads(json.dumps(stable_dict["evidence_snapshot"], sort_keys=True))
+        
+    return json.dumps(stable_dict, sort_keys=True, separators=(",", ":"))
+
+def compute_policy_evaluation_hash(evaluation: PolicyEvaluation, subject_type: str, subject_id: int, verified_evidence_id: int) -> str:
+    """Computes SHA256 of canonicalized policy evaluation."""
+    canonical = canonicalize_policy_evaluation(evaluation, subject_type, subject_id, verified_evidence_id)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+def produce_verified_evidence(assessment_dict: dict, assertions: List[VerifierAssertion] = None) -> VerifiedEvidence:
+    """
+    Deterministic verifier boundary converting an assessment and formal verifier assertions
     into VerifiedEvidence. Combines independent facts and enforces incompatibility rules.
     """
     rights_class = assessment_dict.get("rights_class", "unknown")
-    rights_verified = assessment_dict.get("rights_verified", False) # Default to FALSE for safety (fail-closed)
+    rights_verified = assessment_dict.get("rights_verified", False) # Default to FALSE for fail-closed security
     scope_type = assessment_dict.get("rights_scope_type", "unresolved")
     
     conflicts = list(assessment_dict.get("conflicts", []))
     incompatibility_codes = []
     policy_incompatible = False
     
-    # Explicit verifier-enforced policy incompatibility checks (no AI/LLM influence)
+    # Process formal, typed verifier assertions
+    if assertions:
+        for ast in assertions:
+            if not isinstance(ast, VerifierAssertion):
+                continue
+            if ast.code == "SG-INC-001_EXPLICIT_USE_PROHIBITION":
+                policy_incompatible = True
+                incompatibility_codes.append(ast.code)
+            elif ast.code == "SG-INC-002_FORBIDDEN_ACCESS_MODE":
+                policy_incompatible = True
+                incompatibility_codes.append(ast.code)
+            elif ast.code == "SG-INC-003_INVALID_SOURCE_IDENTITY":
+                policy_incompatible = True
+                incompatibility_codes.append(ast.code)
+                
+    # Explicit verifier-enforced policy incompatibility checks (fallback on assessment fields)
     strategy = assessment_dict.get("verification_strategy", "none")
-    if strategy == "prohibited":
+    if strategy == "prohibited" and "SG-INC-001_EXPLICIT_USE_PROHIBITION" not in incompatibility_codes:
         policy_incompatible = True
         incompatibility_codes.append("SG-INC-001_EXPLICIT_USE_PROHIBITION")
         
     host = assessment_dict.get("rights_scope_identifier", "")
     
-    if additional_data and additional_data.get("forbidden_access"):
-        policy_incompatible = True
-        incompatibility_codes.append("SG-INC-002_FORBIDDEN_ACCESS_MODE")
-        
-    if additional_data and additional_data.get("identity_failure"):
-        policy_incompatible = True
-        incompatibility_codes.append("SG-INC-003_INVALID_SOURCE_IDENTITY")
-        
     evidence = VerifiedEvidence(
         assessment_id=assessment_dict.get("id", 0),
         verified_at=datetime.datetime.now(datetime.timezone.utc),
         verifier_version="1.0",
+        
+        subject_type=assessment_dict.get("subject_type", "proposal"),
+        subject_id=assessment_dict.get("subject_id", 0),
         
         # All independent verification facts default to FALSE for fail-closed security
         institution_identity_verified=assessment_dict.get("institution_identity_verified", False),
@@ -154,7 +211,6 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     No database writes, no network calls, no LLM inference.
     Maps verified evidence to an authoritative policy decision.
     """
-    # Strict policy version validation (fail-closed on unknown/unsupported policy version)
     if policy_version not in SUPPORTED_POLICY_VERSIONS:
         raise ValueError(f"Unsupported policy version: {policy_version}")
         
@@ -183,7 +239,6 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     # Evaluate Rules
     
     # 0. REJECT (SG-P1-099_POLICY_INCOMPATIBLE)
-    # Triggered strictly by verified deterministic policy incompatibility facts
     if "POLICY_INCOMPATIBLE" in blocking_conditions or evidence.policy_incompatible:
         rule = "SG-P1-099_POLICY_INCOMPATIBLE"
         return _build_eval("reject", None, rule, reason_codes, blocking_conditions, evidence, policy_version)
@@ -203,7 +258,6 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
                                reason_codes, blocking_conditions, evidence, policy_version)
                                
     # 3. ITEM_VERIFIED (SG-P1-020_SUPPORTED_ITEM_VERIFIER / SG-P1-021_MIXED_WITHOUT_SUPPORTED_VERIFIER)
-    # Allows mixed rights if we have a supported item-level verifier.
     if evidence.rights_class == "mixed" and evidence.institution_identity_verified and evidence.endpoint_identity_verified:
         if not blocking_conditions:
             if evidence.verification_strategy == "archive_org_metadata":
@@ -215,12 +269,9 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
                  return _build_eval("needs_human_review", None, "SG-P1-021_MIXED_WITHOUT_SUPPORTED_VERIFIER", 
                                    reason_codes, blocking_conditions, evidence, policy_version)
         else:
-            # Fall through if blockers exist; mixed-repository item-verification must never bypass blockers!
             pass
 
     # 4. LINK_ONLY (SG-P1-030_LINK_ONLY_ALLOWED)
-    # For legitimately verified institutions that don't grant full ingestion rights,
-    # but we can link/reference them safely.
     if not blocking_conditions and evidence.institution_identity_verified and evidence.access_verified and evidence.rights_class in ("in_copyright", "mixed", "unknown"):
         reason_codes.append("LINK_ONLY_PERMITTED")
         return _build_eval("approve", "link_only", "SG-P1-030_LINK_ONLY_ALLOWED", 
@@ -238,7 +289,6 @@ def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POL
     else:
         rule = "SG-P1-000_DEFAULT_NEEDS_REVIEW"
 
-    # Default behaviour is NEEDS_HUMAN_REVIEW
     return _build_eval("needs_human_review", None, rule, reason_codes, blocking_conditions, evidence, policy_version)
 
 
@@ -246,7 +296,6 @@ def _build_eval(decision_outcome: str, trust_mode: Optional[str], rule_id: str,
                 reason_codes: List[str], blocking_conditions: List[str], 
                 evidence: VerifiedEvidence, policy_version: str) -> PolicyEvaluation:
     
-    # Fully complete and self-contained evidence snapshot
     snapshot = {
         "assessment_id": evidence.assessment_id,
         "verified_at": evidence.verified_at.isoformat(),
@@ -288,3 +337,85 @@ def _build_eval(decision_outcome: str, trust_mode: Optional[str], rule_id: str,
         verification_version=evidence.verifier_version,
         evidence_snapshot=snapshot
     )
+
+
+def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
+    """
+    Dedicated trusted evaluation writer boundary.
+    Reconstructs VerifiedEvidence from base tables, runs the deterministic policy engine,
+    canonicalizes the result, computes the evaluation hash, and inserts the immutable record.
+    """
+    # 1. Fetch verified evidence facts
+    cur.execute(
+        "SELECT id, assessment_id, proposal_id, subject_type, subject_id, "
+        "       verifier_version, institution_identity_verified, endpoint_identity_verified, "
+        "       rights_statement_retrieved, rights_statement_hash_matches, rights_verified, "
+        "       rights_class, rights_identifier, rights_uri, scope_verified, scope_type, "
+        "       scope_identifier, access_verified, verification_strategy, policy_incompatible, "
+        "       incompatibility_codes, conflicts, evidence_sources "
+        "FROM source_verified_evidence "
+        "WHERE id = %s",
+        (verified_evidence_id,)
+    )
+    row = cur.fetchone()
+    if not row:
+        raise ValueError(f"VerifiedEvidence record {verified_evidence_id} not found.")
+        
+    evidence = VerifiedEvidence(
+        assessment_id=row["assessment_id"],
+        verified_at=datetime.datetime.now(datetime.timezone.utc),
+        verifier_version=row["verifier_version"],
+        subject_type=row["subject_type"],
+        subject_id=row["subject_id"],
+        institution_identity_verified=row["institution_identity_verified"],
+        endpoint_identity_verified=row["endpoint_identity_verified"],
+        rights_statement_retrieved=row["rights_statement_retrieved"],
+        rights_statement_hash_matches=row["rights_statement_hash_matches"],
+        rights_verified=row["rights_verified"],
+        rights_class=row["rights_class"],
+        rights_identifier=row["rights_identifier"],
+        rights_uri=row["rights_uri"],
+        scope_verified=row["scope_verified"],
+        scope_type=row["scope_type"],
+        scope_identifier=row["scope_identifier"],
+        access_verified=row["access_verified"],
+        verification_strategy=row["verification_strategy"],
+        conflicts=row["conflicts"] if row["conflicts"] else [],
+        evidence_sources=row["evidence_sources"] if row["evidence_sources"] else [],
+        policy_incompatible=row["policy_incompatible"],
+        incompatibility_codes=row["incompatibility_codes"] if row["incompatibility_codes"] else []
+    )
+    
+    # 2. Run deterministic policy engine
+    evaluation = evaluate_source_policy(evidence, POLICY_VERSION)
+    
+    # 3. Compute deterministic evaluation hash
+    eval_hash = compute_policy_evaluation_hash(evaluation, evidence.subject_type, evidence.subject_id, verified_evidence_id)
+    evidence_hash = compute_evidence_hash(evidence)
+    
+    # 4. Insert into immutable evaluations table
+    cur.execute(
+        "INSERT INTO source_policy_evaluations "
+        "(verified_evidence_id, subject_type, subject_id, "
+        " decision_outcome, trust_mode, rule_id, reason_codes, blocking_conditions, "
+        " policy_version, verification_version, evidence_hash, "
+        " evaluation_snapshot, evaluation_hash) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+        "RETURNING id",
+        (
+            verified_evidence_id,
+            evidence.subject_type,
+            evidence.subject_id,
+            evaluation.decision_outcome,
+            evaluation.trust_mode,
+            evaluation.rule_id,
+            evaluation.reason_codes,
+            evaluation.blocking_conditions,
+            evaluation.policy_version,
+            evaluation.verification_version,
+            evidence_hash,
+            json.dumps(evaluation.evidence_snapshot),
+            eval_hash
+        )
+    )
+    return cur.fetchone()["id"]

@@ -17,6 +17,8 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
             assessment_id=1,
             verified_at=datetime.datetime.now(datetime.timezone.utc),
             verifier_version="1.0",
+            subject_type="endpoint",
+            subject_id=42,
             institution_identity_verified=True,
             endpoint_identity_verified=True,
             rights_statement_retrieved=True,
@@ -261,7 +263,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(compute_evidence_hash(e1), compute_evidence_hash(e2))
 
     def test_produce_verified_evidence_boundary(self):
-        from policy_engine import produce_verified_evidence
+        from policy_engine import produce_verified_evidence, VerifierAssertion
         assessment = {
             "id": 42,
             "rights_class": "mixed",
@@ -274,7 +276,17 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
             "evidence_sources": ["https://malicious-attacker.org/terms"]
         }
         
-        evidence = produce_verified_evidence(assessment, additional_data={"identity_failure": True})
+        assertions = [
+            VerifierAssertion(
+                code="SG-INC-003_INVALID_SOURCE_IDENTITY",
+                verifier_id_version="identity_scanner/1.0",
+                basis="Resolved IP is unverified.",
+                source_evidence="Forbidden range",
+                timestamp=datetime.datetime.now(datetime.timezone.utc)
+            )
+        ]
+        
+        evidence = produce_verified_evidence(assessment, assertions)
         self.assertEqual(evidence.assessment_id, 42)
         self.assertEqual(evidence.rights_class, "mixed")
         self.assertEqual(evidence.scope_type, "endpoint")
@@ -332,6 +344,73 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         
         result = evaluate_source_policy(evidence)
         self.assertEqual(result.decision_outcome, "reject")
+
+    def test_canonicalize_policy_evaluation_and_hash_reproducibility(self):
+        from policy_engine import canonicalize_policy_evaluation, compute_policy_evaluation_hash
+        evidence = self._base_evidence()
+        result = evaluate_source_policy(evidence)
+        
+        # Hash must be perfectly stable and identical for same parameters
+        h1 = compute_policy_evaluation_hash(result, "endpoint", 42, 100)
+        h2 = compute_policy_evaluation_hash(result, "endpoint", 42, 100)
+        self.assertEqual(h1, h2)
+
+    def test_policy_evaluation_hash_changes_with_rule_or_trust_mode(self):
+        from policy_engine import compute_policy_evaluation_hash
+        evidence = self._base_evidence()
+        r1 = evaluate_source_policy(evidence)
+        
+        h1 = compute_policy_evaluation_hash(r1, "endpoint", 42, 100)
+        
+        # Change rule_id
+        r2 = evaluate_source_policy(evidence)
+        r2.rule_id = "SG-P1-SOME_OTHER_RULE"
+        h2 = compute_policy_evaluation_hash(r2, "endpoint", 42, 100)
+        
+        # Change trust_mode
+        r3 = evaluate_source_policy(evidence)
+        r3.trust_mode = "item_verified"
+        h3 = compute_policy_evaluation_hash(r3, "endpoint", 42, 100)
+        
+        self.assertNotEqual(h1, h2)
+        self.assertNotEqual(h1, h3)
+
+    def test_coexistence_of_identical_evidence_on_different_subjects(self):
+        from policy_engine import compute_evidence_hash
+        # Option A: same evidence facts, different subjects must have distinct row contexts (coexist correctly)
+        e1 = self._base_evidence()
+        e1.subject_type = "endpoint"
+        e1.subject_id = 1
+        
+        e2 = self._base_evidence()
+        e2.subject_type = "endpoint"
+        e2.subject_id = 2
+        
+        h1 = compute_evidence_hash(e1)
+        h2 = compute_evidence_hash(e2)
+        
+        # They coexist safely because subject properties make their canonical forms (and hashes) distinct
+        self.assertNotEqual(h1, h2)
+
+    def test_assertion_type_verification(self):
+        from policy_engine import produce_verified_evidence, VerifierAssertion
+        
+        # Authorized verifier assertion is accepted
+        assertion = VerifierAssertion(
+            code="SG-INC-001_EXPLICIT_USE_PROHIBITION",
+            verifier_id_version="licence_scanner/1.0",
+            basis="Explicit prohibition phrasing found in terms page.",
+            source_evidence="No commercial use permitted",
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        
+        evidence = produce_verified_evidence({"id": 103}, [assertion])
+        self.assertTrue(evidence.policy_incompatible)
+        self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
+        
+        # Arbitrary dictionary is ignored
+        evidence_ignored = produce_verified_evidence({"id": 104}, ["not-an-assertion-class"])
+        self.assertFalse(evidence_ignored.policy_incompatible)
 
 
 if __name__ == "__main__":
