@@ -41,22 +41,25 @@ on conflict (id) do update set
   verification_strategy = excluded.verification_strategy;
 
 -- 4. Insert policy decisions
-insert into source_policy_decisions (id, endpoint_id, trust_mode, rights_class, rights_identifier, evidence_snapshot, carta_version, decided_by_actor_type, decided_by_actor_id, reason) values
-  (1, 1, 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
-  (2, 2, 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
-  (3, 3, 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
-  (4, 4, 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Runeberg is entirely PD.'),
-  (5, 5, 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Wikisource suffix is PD.'),
-  (6, 6, 'domain_trusted', 'creative_commons', 'CC-BY-SA-4.0', '{"rights_class": "creative_commons", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Wikipedia suffix is CC-BY-SA-4.0.'),
-  (7, 7, 'domain_trusted', 'mixed', 'per-file (PD/CC, verified)', '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Wikimedia Commons is per-file PD/CC.'),
-  (8, 8, 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.'),
-  (9, 9, 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.')
+insert into source_policy_decisions (id, endpoint_id, decision_outcome, trust_mode, rights_class, rights_identifier, evidence_snapshot, policy_version, verification_version, carta_version, decided_by_actor_type, decided_by_actor_id, reason) values
+  (1, 1, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
+  (2, 2, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
+  (3, 3, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
+  (4, 4, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Runeberg is entirely PD.'),
+  (5, 5, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Wikisource suffix is PD.'),
+  (6, 6, 'approve', 'domain_trusted', 'creative_commons', 'CC-BY-SA-4.0', '{"rights_class": "creative_commons", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Wikipedia suffix is CC-BY-SA-4.0.'),
+  (7, 7, 'approve', 'domain_trusted', 'mixed', 'per-file (PD/CC, verified)', '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Wikimedia Commons is per-file PD/CC.'),
+  (8, 8, 'approve', 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.'),
+  (9, 9, 'approve', 'item_verified', 'mixed', null, '{"rights_class": "mixed", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Internet Archive requires per-item metadata validation.')
 on conflict (id) do update set
   endpoint_id = excluded.endpoint_id,
+  decision_outcome = excluded.decision_outcome,
   trust_mode = excluded.trust_mode,
   rights_class = excluded.rights_class,
   rights_identifier = excluded.rights_identifier,
   evidence_snapshot = excluded.evidence_snapshot,
+  policy_version = excluded.policy_version,
+  verification_version = excluded.verification_version,
   carta_version = excluded.carta_version,
   decided_by_actor_type = excluded.decided_by_actor_type,
   decided_by_actor_id = excluded.decided_by_actor_id,

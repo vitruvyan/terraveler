@@ -107,13 +107,18 @@ create table if not exists source_policy_decisions (
   endpoint_id bigint references source_endpoints(id) on delete restrict,
   collection_id bigint references source_collections(id) on delete restrict,
   
-  trust_mode text not null check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
+  decision_outcome text not null check (decision_outcome in ('approve', 'reject', 'needs_human_review')),
+  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
   rights_class text not null check (rights_class in ('public_domain', 'creative_commons', 'mixed', 'in_copyright', 'unknown')),
   rights_identifier text,
   rights_uri text,
   
   -- Captures the EXACT verified state of the assessment to survive future parent removal/quarantine
   evidence_snapshot jsonb not null,
+  
+  policy_version text not null,
+  verification_version text not null,
+  supersedes_decision_id bigint references source_policy_decisions(id) on delete restrict,
   
   carta_version text not null,
   decided_by_actor_type text not null check (decided_by_actor_type in ('human', 'system')),
@@ -130,6 +135,11 @@ create table if not exists source_policy_decisions (
   check (
     (decided_by_actor_type = 'system' and decided_by_actor_id is null) or
     (decided_by_actor_type = 'human' and decided_by_actor_id is not null)
+  ),
+
+  check (
+    (decision_outcome = 'approve' and trust_mode is not null) or
+    (decision_outcome != 'approve' and trust_mode is null)
   )
 );
 
@@ -168,7 +178,7 @@ create or replace view public_source_endpoints as
   from source_endpoints;
 
 create or replace view public_source_policy_decisions as
-  select id, endpoint_id, collection_id, trust_mode, rights_class, rights_identifier, rights_uri, carta_version, reason, timestamp
+  select id, endpoint_id, collection_id, decision_outcome, trust_mode, rights_class, rights_identifier, rights_uri, policy_version, verification_version, supersedes_decision_id, carta_version, reason, timestamp
   from source_policy_decisions;
 
 create or replace view public_source_proposals as
