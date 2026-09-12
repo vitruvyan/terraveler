@@ -250,6 +250,31 @@ class ShadowModeParityTests(unittest.TestCase):
         self.assertIn("not an archive.org item URL", shadow_why)
 
     # -------------------------------------------------------------------------
+    # Recursion Elimination by Construction
+    # Proves compare_shadow executes exactly one legacy and one registry evaluation.
+    # -------------------------------------------------------------------------
+
+    def test_compare_shadow_direct_call_no_recursion(self):
+        """Proves that calling compare_shadow directly evaluates legacy exactly once and does not recurse."""
+        call_count = 0
+        original_legacy = whitelist._verify_source_legacy
+        
+        def spy_legacy(url, fetch_json=None):
+            nonlocal call_count
+            call_count += 1
+            return original_legacy(url, fetch_json=fetch_json)
+            
+        whitelist._verify_source_legacy = spy_legacy
+        try:
+            url = "https://gutenberg.org/ebooks/123"
+            ok, why = source_governance_shadow.compare_shadow(url)
+            self.assertTrue(ok)
+            # Must call legacy exactly once and registry exactly once, with zero recursion!
+            self.assertEqual(call_count, 1, "Legacy verifier was not called exactly once or recurse occurred!")
+        finally:
+            whitelist._verify_source_legacy = original_legacy
+
+    # -------------------------------------------------------------------------
     # Concurrency and ContextVar Safety
     # Proves thread/request-local recursion guard does not cause cross-suppression
     # -------------------------------------------------------------------------

@@ -168,8 +168,8 @@ def compare_shadow(url: str, fetch_json=None) -> tuple[bool, str]:
     Compares legacy verify_source with registry-backed resolve_trust_from_db.
     Maintains Shadow Mode contract. Returns (legacy_ok, legacy_why).
     """
-    # 1. Run legacy verifier
-    legacy_ok, legacy_why = whitelist.verify_source(url, fetch_json=fetch_json)
+    # 1. Run legacy verifier (calling the pure legacy implementation directly to eliminate recursion by construction)
+    legacy_ok, legacy_why = whitelist._verify_source_legacy(url, fetch_json=fetch_json)
     
     # 2. Check if Shadow Mode is enabled
     shadow_enabled = os.environ.get("SOURCE_GOVERNANCE_SHADOW_ENABLED", "").lower() == "true"

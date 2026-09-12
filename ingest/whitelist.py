@@ -225,6 +225,17 @@ def canonical_license(lic: str) -> str:
     return l
 
 
+def _verify_source_legacy(url: str, fetch_json=None):
+    """The pure legacy, deterministic verification logic."""
+    host = domain_of(url)
+    guaranteed = _guaranteed(host)
+    if guaranteed is not None:
+        return True, guaranteed
+    if host in VERIFIED_DOMAINS:
+        return verify_archive_item(url, fetch_json=fetch_json)
+    return False, f"off-whitelist domain: {host or url!r}"
+
+
 def verify_source(url: str, fetch_json=None):
     """The single gate every text passes through — curated as well as discovered.
 
@@ -245,10 +256,4 @@ def verify_source(url: str, fetch_json=None):
         finally:
             _in_shadow_mode.reset(token)
 
-    host = domain_of(url)
-    guaranteed = _guaranteed(host)
-    if guaranteed is not None:
-        return True, guaranteed
-    if host in VERIFIED_DOMAINS:
-        return verify_archive_item(url, fetch_json=fetch_json)
-    return False, f"off-whitelist domain: {host or url!r}"
+    return _verify_source_legacy(url, fetch_json=fetch_json)
