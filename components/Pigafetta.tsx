@@ -186,8 +186,13 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
         {/* A door, so: a pill where it carries its label, round where it does
             not. On a phone it does not — a 183px pill lay across the middle of
             the route, which is the one thing the map exists to show. */}
-        <button className="pig-pill" onClick={() => setOpen(true)} aria-label="Ask Pigafetta">
-          <Icon name="mariner" size={19} />
+        <button
+          className="pig-pill"
+          onClick={() => setOpen(true)}
+          aria-label="Ask Pigafetta"
+          title="Ask Pigafetta"
+        >
+          <span aria-hidden="true" style={{ fontSize: "19px", lineHeight: 1 }}>🧭</span>
           <span className="pig-pill-word">Ask Pigafetta</span>
         </button>
       </div>
