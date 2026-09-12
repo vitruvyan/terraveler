@@ -28,6 +28,9 @@ import json
 import re
 import urllib.request
 from urllib.parse import urlparse
+import contextvars
+
+_in_shadow_mode = contextvars.ContextVar("in_shadow_mode", default=False)
 
 # domain → licence guarantee for the whole domain
 ALLOWED_DOMAINS = {
@@ -83,14 +86,22 @@ EARLIEST_PLAUSIBLE_PUBLICATION = 1450
 UNVETTED_COLLECTIONS = {"community", "opensource"}
 
 
+def normalize_host(url: str) -> str:
+    """Canonical host normalization helper. Strips default scheme ports only."""
+    try:
+        parsed = urlparse(url)
+        host = (parsed.netloc or "").lower()
+        if parsed.scheme == "https" and host.endswith(":443"):
+            return host[:-4]
+        if parsed.scheme == "http" and host.endswith(":80"):
+            return host[:-3]
+        return host
+    except Exception:
+        return ""
+
+
 def domain_of(url: str) -> str:
-    host = (urlparse(url).netloc or "").lower()
-    # Normalize default ports to match standard URL parser semantics
-    if urlparse(url).scheme == "https" and host.endswith(":443"):
-        return host[:-4]
-    if urlparse(url).scheme == "http" and host.endswith(":80"):
-        return host[:-3]
-    return host
+    return normalize_host(url)
 
 
 def _guaranteed(host: str):
@@ -224,16 +235,15 @@ def verify_source(url: str, fetch_json=None):
     """
     # Shadow Mode Comparison Integration (Phase 2B)
     import os
-    if os.environ.get("SOURCE_GOVERNANCE_SHADOW_ENABLED", "").lower() == "true" and not os.environ.get("_IN_SHADOW_MODE"):
-        os.environ["_IN_SHADOW_MODE"] = "true"
+    if os.environ.get("SOURCE_GOVERNANCE_SHADOW_ENABLED", "").lower() == "true" and not _in_shadow_mode.get():
+        token = _in_shadow_mode.set(True)
         try:
             from source_governance_shadow import compare_shadow
             return compare_shadow(url)
         except Exception:
             pass # Fall back to legacy below
         finally:
-            if "_IN_SHADOW_MODE" in os.environ:
-                del os.environ["_IN_SHADOW_MODE"]
+            _in_shadow_mode.reset(token)
 
     host = domain_of(url)
     guaranteed = _guaranteed(host)

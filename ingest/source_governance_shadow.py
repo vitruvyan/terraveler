@@ -29,13 +29,19 @@ def get_db_connection():
 def resolve_trust_from_db(url: str):
     """
     Registry-backed resolver reading the Source Governance registry.
-    Returns a structured policy result. Unknown/inactive sources fail closed.
+    Returns a structured policy result. Unknown/inactive/quarantined sources fail closed.
     """
-    try:
-        parsed = urlparse(url)
-        host = (parsed.netloc or "").lower()
-    except Exception:
-        return {"matched": False, "allowed": False, "trust_mode": "rejected", "verification_strategy": "none", "rights_class": "unknown"}
+    # Use canonical host-normalization helper imported from whitelist
+    host = whitelist.normalize_host(url)
+    if not host:
+        return {
+            "matched": False,
+            "decision": "deny",
+            "trust_mode": "rejected",
+            "verification_strategy": "none",
+            "rights_class": "unknown",
+            "policy_decision_id": None
+        }
 
     conn = None
     try:
@@ -65,7 +71,7 @@ def resolve_trust_from_db(url: str):
             if not endpoint:
                 return {
                     "matched": False,
-                    "allowed": False,
+                    "decision": "deny",
                     "trust_mode": "rejected",
                     "verification_strategy": "none",
                     "rights_class": "unknown",
@@ -88,12 +94,17 @@ def resolve_trust_from_db(url: str):
             rights_class = decision["rights_class"] if decision else "unknown"
             policy_decision_id = decision["id"] if decision else None
 
-            # Determine semantic allowance
-            allowed = endpoint["trust_mode"] in ("domain_trusted", "item_verified")
+            # Resolve decision state (ITEM_VERIFIED is never automatically allowed)
+            if endpoint["trust_mode"] == "domain_trusted":
+                decision_outcome = "allow"
+            elif endpoint["trust_mode"] == "item_verified":
+                decision_outcome = "requires_item_verification"
+            else:
+                decision_outcome = "deny"
 
             return {
                 "matched": True,
-                "allowed": allowed,
+                "decision": decision_outcome,
                 "endpoint_id": endpoint["id"],
                 "host_pattern": endpoint["host_pattern"],
                 "trust_mode": endpoint["trust_mode"],
@@ -106,7 +117,7 @@ def resolve_trust_from_db(url: str):
         # Fail closed on database connection errors
         return {
             "matched": False,
-            "allowed": False,
+            "decision": "deny",
             "trust_mode": "rejected",
             "verification_strategy": "none",
             "rights_class": "unknown",
@@ -168,49 +179,53 @@ def compare_shadow(url: str) -> tuple[bool, str]:
     # 3. Evaluate new Registry resolver
     reg = resolve_trust_from_db(url)
     
+    # 4. Resolve exact behavioral outcome
+    registry_allowed = False
+    registry_reason = "rejected"
+
+    if reg["decision"] == "allow":
+        registry_allowed = True
+        registry_reason = reg["rights_class"]
+    elif reg["decision"] == "requires_item_verification":
+        # True behavioral equivalence: run the configured verifier on the item
+        if reg["verification_strategy"] == "archive_org_metadata":
+            registry_allowed, registry_reason = whitelist.verify_archive_item(url)
+        else:
+            registry_allowed = False
+            registry_reason = f"unknown verification strategy: {reg['verification_strategy']}"
+
     # Normalize outcomes for comparison
     legacy_outcome = {
         "allowed": legacy_ok,
         "why": legacy_why,
-        "is_archive_org": "archive.org" in (urlparse(url).netloc or "").lower()
     }
     
     registry_outcome = {
-        "allowed": reg["allowed"],
+        "allowed": registry_allowed,
+        "why": registry_reason,
         "trust_mode": reg["trust_mode"],
-        "verification_strategy": reg["verification_strategy"],
-        "rights_class": reg["rights_class"]
+        "verification_strategy": reg["verification_strategy"]
     }
 
     # Evaluate semantic equivalence
     equivalent = True
     diff_class = None
 
-    if legacy_outcome["is_archive_org"]:
-        # Special treatment for archive.org:
-        # Legacy does deep item checking; registry represents ITEM_VERIFIED.
-        # They are equivalent in gating (both require item-level strategy).
-        if reg["trust_mode"] != "item_verified" or reg["verification_strategy"] != "archive_org_metadata":
+    if legacy_outcome["allowed"] != registry_outcome["allowed"]:
+        equivalent = False
+        diff_class = "ALLOW_DENY_MISMATCH"
+    elif reg["matched"]:
+        # If both allow, check trust class/licence consistency
+        legacy_lic = whitelist.canonical_license(legacy_outcome["why"])
+        registry_lic = whitelist.canonical_license(registry_outcome["why"])
+        if legacy_lic != registry_lic:
             equivalent = False
-            diff_class = "VERIFIER_MISMATCH"
-    else:
-        # Standard domains
-        if legacy_outcome["allowed"] != registry_outcome["allowed"]:
-            equivalent = False
-            diff_class = "ALLOW_DENY_MISMATCH"
-        elif reg["matched"]:
-            # If both allow, check trust class consistency
-            if legacy_why == "Public domain" and reg["rights_class"] != "public_domain":
-                equivalent = False
-                diff_class = "LICENCE_CLASS_MISMATCH"
-            elif legacy_why == "CC BY-SA 4.0" and reg["rights_class"] != "creative_commons":
-                equivalent = False
-                diff_class = "LICENCE_CLASS_MISMATCH"
+            diff_class = "LICENCE_CLASS_MISMATCH"
 
-    # 4. Log disagreements
+    # 5. Log disagreements
     if not equivalent:
         redacted_url = canonicalize_url(url)
         record_comparison(redacted_url, legacy_outcome, registry_outcome, equivalent, diff_class)
 
-    # 5. Always return legacy answer (Registry NEVER alters behavior in this phase)
+    # 6. Always return legacy answer (Registry NEVER alters behavior in this phase)
     return legacy_ok, legacy_why
