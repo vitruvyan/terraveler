@@ -137,7 +137,7 @@ export function resolveTrust(url: string) {
     return null; // Invalid URL
   }
   
-  const host = parsed.hostname.toLowerCase();
+  const host = parsed.host.toLowerCase();
 
   // 1. Try exact matches first
   let endpoint = SEED_ENDPOINTS.find(e => e.match_type === "exact" && e.host_pattern === host);

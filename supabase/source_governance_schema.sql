@@ -1,4 +1,4 @@
--- Phase 2A: Source Governance Architectural Schema (Revised)
+-- Phase 2A/2B: Source Governance Architectural Schema (Revised)
 -- This establishes the relational footprint for domain discovery, verifiable 
 -- evidence collection, immutable policy decisions, and reverification tracking.
 
@@ -125,3 +125,24 @@ create table if not exists source_reverifications (
   drift_detected boolean not null default false,
   timestamp timestamptz default now()
 );
+
+-- Phase 2B: Shadow Mode Comparison Audit Table
+create table if not exists source_governance_comparisons (
+  id bigint generated always as identity primary key,
+  timestamp timestamptz not null default now(),
+  canonical_url text not null,
+  legacy_outcome jsonb not null,
+  registry_outcome jsonb not null,
+  equivalent boolean not null,
+  difference_class text check (difference_class in (
+    'HOST_MATCH_MISMATCH',
+    'TRUST_MODE_MISMATCH',
+    'VERIFIER_MISMATCH',
+    'ALLOW_DENY_MISMATCH',
+    'LICENCE_CLASS_MISMATCH'
+  ))
+);
+
+-- Grants SELECT on all tables to anon, and full read/write to service role
+grant select on source_institutions, source_endpoints, source_collections, source_access_rules, source_proposals, source_assessments, source_policy_decisions, source_reverifications, source_governance_comparisons to terraveler_anon;
+grant select, insert, update, delete on source_institutions, source_endpoints, source_collections, source_access_rules, source_proposals, source_assessments, source_policy_decisions, source_reverifications, source_governance_comparisons to terraveler_service;

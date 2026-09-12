@@ -84,7 +84,13 @@ UNVETTED_COLLECTIONS = {"community", "opensource"}
 
 
 def domain_of(url: str) -> str:
-    return (urlparse(url).netloc or "").lower()
+    host = (urlparse(url).netloc or "").lower()
+    # Normalize default ports to match standard URL parser semantics
+    if urlparse(url).scheme == "https" and host.endswith(":443"):
+        return host[:-4]
+    if urlparse(url).scheme == "http" and host.endswith(":80"):
+        return host[:-3]
+    return host
 
 
 def _guaranteed(host: str):
@@ -216,6 +222,19 @@ def verify_source(url: str, fetch_json=None):
     human proposed all three in-copyright editions above, so the curated config
     is precisely where the check was missing.
     """
+    # Shadow Mode Comparison Integration (Phase 2B)
+    import os
+    if os.environ.get("SOURCE_GOVERNANCE_SHADOW_ENABLED", "").lower() == "true" and not os.environ.get("_IN_SHADOW_MODE"):
+        os.environ["_IN_SHADOW_MODE"] = "true"
+        try:
+            from source_governance_shadow import compare_shadow
+            return compare_shadow(url)
+        except Exception:
+            pass # Fall back to legacy below
+        finally:
+            if "_IN_SHADOW_MODE" in os.environ:
+                del os.environ["_IN_SHADOW_MODE"]
+
     host = domain_of(url)
     guaranteed = _guaranteed(host)
     if guaranteed is not None:
