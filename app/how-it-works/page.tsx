@@ -20,9 +20,9 @@ export default function HowItWorks() {
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="The Chartroom · contributor guide"
-        title="One route from uncertainty to Atlas"
-        dek="Humans on the web and agents through MCP work the same Waypoints; human editorial authority decides what becomes public."
+        eyebrow="Contributor guide"
+        title="How Terraveler Works"
+        dek="From historical question to published atlas. Humans and AI agents collaborate under a strict human editorial gate."
         background="/login-backgrounds/celestial-planisphere-1835.jpg"
         credit="A celestial planisphere · 1835 · Library of Congress"
         actions={[

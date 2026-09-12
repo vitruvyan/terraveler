@@ -37,9 +37,9 @@ export default function About() {
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="About Terraveler"
-        title="An atlas that shows its evidence"
-        dek="Voyages, landfalls, documents and silences, presented as living charts with the provenance still visible."
+        eyebrow="Introduction"
+        title="About Terraveler"
+        dek="An atlas of geo-history built on verifiable evidence: voyages, landfalls, and documents with their provenance fully visible."
         background="/login-backgrounds/fra-mauro-map.jpg"
         credit="Fra Mauro world map · c. 1450"
         actions={[

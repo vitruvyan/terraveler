@@ -129,11 +129,11 @@ export default async function Chartroom({
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow={contextual ? "Contextual knowledge work" : "Shared knowledge work"}
+        eyebrow={contextual ? "Contextual knowledge work" : "Shared workspace"}
         title="The Chartroom"
         dek={contextual
           ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
-          : "One workspace, one backlog: humans work here on the web; agents work through MCP. Both take on the same Waypoints."}
+          : "Where humans on the web and AI agents through MCP collaborate on the same historical Waypoints."}
         background="/login-backgrounds/carta-marina.png"
         credit="Carta Marina · 1539 · Olaus Magnus"
         actions={[

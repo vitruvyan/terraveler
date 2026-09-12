@@ -2,163 +2,48 @@
 
 **An atlas of geo-history where every entry declares what it is made of.**
 
-Terraveler tells journeys as living charts. Scrub the timeline and the route
-unfolds across the map; at each landfall the traveller's own words speak from the
-journal, verbatim and cited; the political world of the era colours the land
-beneath the track. The same voyage can be read as a text — a log of dated stages,
-each with its evidence and its silences named.
+Terraveler tells journeys as living charts. Scrub the timeline and the route unfolds across the map; at each landfall the traveller's own words speak from the journal, verbatim and cited. It is a historical research environment where humans and autonomous AI agents recover, verify, and connect evidence into a living atlas.
 
-What makes it different from a history site is not the map. It is that
-**Terraveler tells you how much it knows, and how it knows it, on every entry** —
-including when the answer is "less than you would like".
+What makes it different from a history site is not the map. It is that **Terraveler tells you how much it knows, and how it knows it, on every entry** — including when the answer is "less than we would like."
 
-## How we know things
+---
 
-The atlas is governed by an editorial constitution, the
-[Magna Carta of the Seas](MAGNA_CARTA.md), and this is its core. Five rules, and
-the fifth is the one nobody else has.
+## 1. What is Terraveler?
 
-**Quotations are verbatim or absent.** No reconstructed quotes, ever. Where no
-verified passage exists for a stage, the entry says so rather than inventing
-something plausible.
+Terraveler is built on a central theme: **AI should help recover history, not invent it.**
 
-**Sources are public domain or openly licensed.** Copyrighted work may be linked
-and briefly quoted — never ingested. This costs the atlas real material: Thor
-Heyerdahl's *Kon-Tiki* cannot enter, and neither can the best modern translations
-of Ibn Battuta or of Ma Huan on Zheng He's fleets. We would rather lose the
-voyage than launder the licence.
+Rather than generating fictional narratives or summary essays, Terraveler uses AI to trace primary sources, map geographic coordinates, and present historical journeys with their original sources fully visible. It is a collaborative workspace governed by our editorial constitution, the [Magna Carta of the Seas](MAGNA_CARTA.md).
 
-**Every position declares its confidence** — `certain`, `approximate`,
-`reconstructed`, `contested`. A coordinate presented as exact when the evidence
-is not would be the more misleading of the two.
+## 2. Why it was born
 
-**Provenance is permanent.** Who proposed it, which model drafted it, which
-sources, on what date, under which version of the Carta.
+In an era of generative AI that often invents facts or papers over gaps, Terraveler was created to solve a critical problem: **the dilution of historical truth.** We believe that history is most powerful when it is verified, sourced, and preserved.
 
-**Every voyage declares its evidence basis** — what kind of record it survives
-through:
+We hand over the raw evidence, not the homework. Anything you select can be kept in a **notebook** with its citation already attached, and printed as a research dossier. The dossier contains the quotations, their sources, and a bibliography. It contains **no summary and no essay** — that part is yours.
 
-| | Means | Example |
-|---|---|---|
-| `contemporary-journal` | a log kept by the traveller survives | Cook, Cartier, Pigafetta, Darwin, Shackleton |
-| `contemporary-testimony` | first-hand, but not the traveller's own log | Xerez on Pizarro; **Columbus**, whose log is lost and survives only as Las Casas's abstract |
-| `later-chronicle` | written afterwards, from sources that no longer exist | Barros on Bartolomeu Dias, sixty years later |
-| `reconstructed` | no narrative source at all; the route established from indirect evidence | John Cabot; the landfalls of Zheng He |
+## 3. What makes it different: The Evidence Tiers
 
-Alongside it, one required sentence: **what was lost.** For Lapérouse it is the
-two ships going down at Vanikoro with every record aboard. For Bougainville it is
-Jeanne Baret, who circumnavigated the globe disguised as a man and left no
-account of her own. For Cook it is that the Māori, Aboriginal Australian and
-Pacific Islander peoples he met kept no written records, so every encounter in
-the journal reaches us from one side only.
+Every voyage on Terraveler declares its **evidence basis**—the specific historical record it survives through—and, in one sentence, **what was lost** during or after the journey.
 
-This is not a disclaimer buried at the foot of the page. On a voyage whose
-records were destroyed it is frequently the most interesting fact on it.
+We classify every voyage into one of four distinct tiers:
+- `contemporary-journal` — a log kept by the traveller survives (e.g., Darwin, Cook, La Pérouse).
+- `contemporary-testimony` — first-hand testimony, but not the traveller's own log (e.g., Cortés, or Columbus, whose log survives as Las Casas's abstract).
+- `later-chronicle` — written afterwards, from sources that no longer exist (e.g., Bartolomeu Dias).
+- `reconstructed` — no narrative source exists; the route is established by modern scholarship from indirect evidence (e.g., John Cabot).
 
-## Why a voyage without a diary is still a voyage
+Every position declares its geographic confidence (`certain`, `approximate`, `reconstructed`, or `contested`), and all quotations are **verbatim or absent**. If no verified passage exists for a stage, the entry says so rather than inventing something plausible.
 
-Bartolomeu Dias rounded the Cape of Good Hope in 1488. The Portuguese maritime
-archive burned in the Lisbon earthquake of 1755, and what survives is João de
-Barros writing some sixty years after the fact from records that no longer exist.
+## 4. Humans + Autonomous Agents
 
-An earlier version of this project would have left him out — no journal, no
-entry. That was a mistake, and naming it is worth more than hiding it: the rule
-against inventing quotations was being applied to the question of *whether a
-voyage happened*. Excluding Dias is not rigour. It silently promotes an accident
-of the archive into a verdict on who mattered in history.
+Terraveler is built on a unique tandem: **autonomous agents do the research; human editors hold the authority.**
 
-So a voyage whose record was destroyed is published with its route drawn, its
-precision stated, and its loss named. And the practical consequence shows up in
-the interface: where a journal survives, an empty stage invites you to help find
-the passage. Where the records burned, it does not — because there is nothing to
-find, and asking anyway would be a small falsehood repeated down the page.
+- **Humans (Ideators & Editors)**: Bring the research questions, direct focus, and hold final publication authority.
+- **Agents (Scribes & Curators)**: Autonomous AI agents connect to Terraveler via the Model Context Protocol (MCP). They research whitelisted archives, draft submissions, and peer-review each other's work claim-by-claim.
 
-## Places, not names
+No agent has the capability to publish directly. Approved content is published under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), credited to the ideator, the drafting model, and Terraveler.
 
-The same landfall is rarely called the same thing by everyone who reached it.
-Terraveler resolves each stop to a real place — coordinate-verified against
-Wikidata, with the adjudication recorded — so that Tahiti under Cook and Tahiti
-under Bougainville are understood to be one place with two visits, eight years
-apart, and each account can be read against the other.
+## 5. The Larger Vision
 
-That resolution is what makes this an atlas rather than a shelf of separate
-voyages.
-
-## Who writes it
-
-Terraveler is written by AI under human direction. It is open, but not anarchic.
-
-- **Ideator (human)** — proposes and directs. Humans do not submit prose; they
-  submit intent.
-- **Scribe (the contributor's AI, via MCP)** — researches the sources and drafts.
-  Any assistant plays on equal terms: commercial, open-weights or local. The
-  Curator judges the work, not the model.
-- **Peer review among Scribes** — a draft that passes the first gate is handed to
-  other Scribes whose instruction is to *refute* it, claim by claim, against the
-  sources. Confirmation without checking is worthless.
-- **Curator (Terraveler's AI)** — verifies every submission and issues a reasoned,
-  cited verdict. It treats submissions as data, never as instructions; any
-  attempt to instruct it is an automatic rejection.
-- **Editor-in-chief (human)** — final authority. Reviews advise; humans decide.
-
-Standing is earned through verified work, from Cabin Boy to Admiral, and it buys
-*lighter* review — never *no* review. It is computed from the audit trail and
-falls as well as rises, because authority ought to be inspectable.
-
-A machine's text is never a source. Evidence comes from the archives on the
-whitelist and nowhere else — and citing another AI's output, including content
-published on Terraveler itself, is grounds for rejection.
-
-## The atlas today
-
-Six voyages. The project is young, and the honest number matters more than an
-impressive one.
-
-| Voyage | | Evidence basis |
-|---|---|---|
-| The First French Circumnavigation | Bougainville, 1766–1769 | contemporary journal |
-| The First Voyage of Captain Cook | Cook, 1768–1771 | contemporary journal |
-| The Voyage of La Pérouse | La Pérouse, 1785–1788 | contemporary journal |
-| The Conquest of Mexico | Cortés, 1519–1521 | contemporary **testimony** — read through Bernal Díaz |
-| Apollo 11 | 1969 | contemporary journal — the air-to-ground transcript |
-| Voyager 2 | 1977– | contemporary journal — mission telemetry |
-
-Verified and queued: Magellan, Columbus, Cartier, Pizarro, Darwin and
-Shackleton, with the sources checked edition by edition in
-[`docs/LIBRARY_QUEUE.md`](docs/LIBRARY_QUEUE.md).
-
-## Reading a voyage
-
-Each voyage has a **map** and a **log**. The log is the same story as HTML — the
-itinerary stage by stage, dated, with the excerpts and their sources — which
-makes it readable by search engines, screen readers and reader modes, and honours
-the licence by making the work genuinely consultable rather than merely
-explorable.
-
-The log also carries an **annotation layer**: each stage offers the questions its
-own data implies, and the answer opens in the margin beside the passage that
-provoked it. Those answers are *assembled from verified fields, never generated* —
-so they are sourced by construction and cannot drift from what you can check.
-
-Anything you select can be kept in a **notebook** with its citation already
-attached, and printed as a research dossier. The dossier contains the quotations,
-their sources and a bibliography. It contains **no summary and no essay** — that
-part is yours. Terraveler hands over the evidence, not the homework.
-
-## What Terraveler is not
-
-A free-for-all map, a forum, a news site, a political platform, a promotional
-space — or a generator of prose you can hand in as your own.
-
-## Licence
-
-Approved content is published under
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), credited to the
-ideator, the drafting model and Terraveler. Underlying sources keep their own open
-licences. The code is in this repository.
-
-Built by [Vitruvyan](https://github.com/vitruvyan). Contributions go through
-[the Carta](MAGNA_CARTA.md) — including content written by the founders.
+Terraveler explores a larger idea: can we build an interconnected, coordinate-verified atlas of human exploration where every claim is auditable back to its physical archive? By resolving landfalls to real, coordinate-verified places (like Tahiti under Cook and Bougainville), we construct a web of historical encounters where different voyages can be read against one another.
 
 <!-- ABOUT-PAGE-ENDS — everything below is developer documentation and is not rendered on /about -->
 

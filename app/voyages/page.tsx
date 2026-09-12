@@ -70,9 +70,9 @@ export default async function Voyages({
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="The Atlas"
-        title="Choose a route through time"
-        dek="Every voyage is a verified sequence of places, dates, documents and confidence marks, from ocean crossings to journeys beyond Earth."
+        eyebrow="Published voyages"
+        title="The Atlas"
+        dek="Explore historical routes through time and evidence: coordinate-verified paths, verbatim logs, and cited sources."
         background="/login-backgrounds/cellarius-scenographia-copernicani.jpg"
         credit="Scenographia Systematis Copernicani · 1660 · Andreas Cellarius"
         actions={[

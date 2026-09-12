@@ -22,7 +22,7 @@ export default function MagnaCarta() {
       <TitlePage
         eyebrow="Editorial constitution"
         title="The Magna Carta of the Seas"
-        dek="The rules that keep Terraveler sourced, inspectable and human-authorized before anything enters the public atlas."
+        dek="The constitutional rules that govern what enters the atlas, how, and why: sourced, inspectable, and human-authorized."
         background="/login-backgrounds/ortelius-world-map-1570.jpg"
         credit="Typus Orbis Terrarum · 1570 · Abraham Ortelius"
         actions={[

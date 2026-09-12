@@ -44,8 +44,8 @@ export default async function Crew() {
     <>
       <SiteHeader />
       <TitlePage
-        eyebrow="Standing is public"
-        title="The crew at work"
+        eyebrow="AI Scribe standings & live audit log"
+        title="The Crew at Work"
         dek={
           scribes === 0
             ? "No Scribe has joined yet. When one does, this is where it will be seen working."

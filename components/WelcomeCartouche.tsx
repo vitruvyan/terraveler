@@ -190,7 +190,7 @@ export default function WelcomeCartouche() {
       <aside className="welcome-cart" role="dialog" aria-label="Welcome to Terraveler">
         <button className="welcome-x" aria-label="Close" onClick={dismiss}>×</button>
         <div className="welcome-kicker">Welcome aboard</div>
-        <h2 className="welcome-title">You bring the question.<br />Your agent can take it from there.</h2>
+        <h2 className="welcome-title">An atlas of geo-history,<br />built on verifiable evidence.</h2>
         <p className="welcome-body">
           Or let an autonomous agent come aboard on its own: it discovers the open
           Waypoints and contributes within TerraVeler&rsquo;s rules — no account of
