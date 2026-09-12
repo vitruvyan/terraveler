@@ -4,6 +4,22 @@ import datetime
 import hashlib
 import json
 
+APPROVED_VERIFIERS = {
+    "SG-INC-001_EXPLICIT_USE_PROHIBITION": {
+        "rights_scanner/1.0",
+        "license_scanner/1.0"
+    },
+    "SG-INC-002_FORBIDDEN_ACCESS_MODE": {
+        "network_analyzer/1.0",
+        "access_policy_verifier/1.0"
+    },
+    "SG-INC-003_INVALID_SOURCE_IDENTITY": {
+        "dns_resolver/1.0",
+        "identity_verifier/1.0"
+    }
+}
+
+
 @dataclass
 class VerifierAssertion:
     """
@@ -149,27 +165,18 @@ def produce_verified_evidence(assessment_dict: dict, assertions: List[VerifierAs
     incompatibility_codes = []
     policy_incompatible = False
     
-    # Process formal, typed verifier assertions
+    # Process and authorize formal, typed verifier assertions
     if assertions:
         for ast in assertions:
             if not isinstance(ast, VerifierAssertion):
                 continue
-            if ast.code == "SG-INC-001_EXPLICIT_USE_PROHIBITION":
-                policy_incompatible = True
-                incompatibility_codes.append(ast.code)
-            elif ast.code == "SG-INC-002_FORBIDDEN_ACCESS_MODE":
-                policy_incompatible = True
-                incompatibility_codes.append(ast.code)
-            elif ast.code == "SG-INC-003_INVALID_SOURCE_IDENTITY":
+            # Authorize assertion code and matching verifier version
+            allowed_verifiers = APPROVED_VERIFIERS.get(ast.code)
+            if allowed_verifiers and ast.verifier_id_version in allowed_verifiers:
                 policy_incompatible = True
                 incompatibility_codes.append(ast.code)
                 
-    # Explicit verifier-enforced policy incompatibility checks (fallback on assessment fields)
     strategy = assessment_dict.get("verification_strategy", "none")
-    if strategy == "prohibited" and "SG-INC-001_EXPLICIT_USE_PROHIBITION" not in incompatibility_codes:
-        policy_incompatible = True
-        incompatibility_codes.append("SG-INC-001_EXPLICIT_USE_PROHIBITION")
-        
     host = assessment_dict.get("rights_scope_identifier", "")
     
     evidence = VerifiedEvidence(
@@ -345,10 +352,10 @@ def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
     Reconstructs VerifiedEvidence from base tables, runs the deterministic policy engine,
     canonicalizes the result, computes the evaluation hash, and inserts the immutable record.
     """
-    # 1. Fetch verified evidence facts
+    # 1. Fetch verified evidence facts (including verified_at to guarantee absolute reproducibility!)
     cur.execute(
         "SELECT id, assessment_id, proposal_id, subject_type, subject_id, "
-        "       verifier_version, institution_identity_verified, endpoint_identity_verified, "
+        "       verified_at, verifier_version, institution_identity_verified, endpoint_identity_verified, "
         "       rights_statement_retrieved, rights_statement_hash_matches, rights_verified, "
         "       rights_class, rights_identifier, rights_uri, scope_verified, scope_type, "
         "       scope_identifier, access_verified, verification_strategy, policy_incompatible, "
@@ -361,9 +368,10 @@ def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
     if not row:
         raise ValueError(f"VerifiedEvidence record {verified_evidence_id} not found.")
         
+    # Reconstruct with the exact persisted timestamp, guaranteeing hash reproducibility!
     evidence = VerifiedEvidence(
         assessment_id=row["assessment_id"],
-        verified_at=datetime.datetime.now(datetime.timezone.utc),
+        verified_at=row["verified_at"],
         verifier_version=row["verifier_version"],
         subject_type=row["subject_type"],
         subject_id=row["subject_id"],

@@ -279,7 +279,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         assertions = [
             VerifierAssertion(
                 code="SG-INC-003_INVALID_SOURCE_IDENTITY",
-                verifier_id_version="identity_scanner/1.0",
+                verifier_id_version="identity_verifier/1.0", # Authorized!
                 basis="Resolved IP is unverified.",
                 source_evidence="Forbidden range",
                 timestamp=datetime.datetime.now(datetime.timezone.utc)
@@ -292,7 +292,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(evidence.scope_type, "endpoint")
         self.assertEqual(evidence.scope_identifier, "malicious-attacker.org")
         self.assertTrue(evidence.policy_incompatible)
-        self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
+        self.assertNotIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes) # No fallback!
         self.assertIn("SG-INC-003_INVALID_SOURCE_IDENTITY", evidence.incompatibility_codes)
 
     def test_produce_verified_evidence_fail_closed_on_incomplete_assessment(self):
@@ -332,13 +332,31 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         result = evaluate_source_policy(evidence)
         self.assertEqual(result.decision_outcome, "needs_human_review")
 
-    def test_verified_explicit_incompatibility(self):
+    def test_verification_strategy_prohibited_alone_does_not_reject(self):
         from policy_engine import produce_verified_evidence
+        # assessment strategy="prohibited" alone must NOT set policy_incompatible=True without assertion!
         assessment = {
             "id": 102,
             "verification_strategy": "prohibited"
         }
         evidence = produce_verified_evidence(assessment)
+        self.assertFalse(evidence.policy_incompatible)
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review") # Bypasses reject, goes to REVIEW!
+
+    def test_verified_explicit_incompatibility(self):
+        from policy_engine import produce_verified_evidence, VerifierAssertion
+        assessment = {
+            "id": 102
+        }
+        assertion = VerifierAssertion(
+            code="SG-INC-001_EXPLICIT_USE_PROHIBITION",
+            verifier_id_version="rights_scanner/1.0", # Authorized!
+            basis="Explicit use prohibition.",
+            source_evidence="No commercial harvesting",
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        evidence = produce_verified_evidence(assessment, [assertion])
         self.assertTrue(evidence.policy_incompatible)
         self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
         
@@ -398,7 +416,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         # Authorized verifier assertion is accepted
         assertion = VerifierAssertion(
             code="SG-INC-001_EXPLICIT_USE_PROHIBITION",
-            verifier_id_version="licence_scanner/1.0",
+            verifier_id_version="license_scanner/1.0", # Authorized!
             basis="Explicit prohibition phrasing found in terms page.",
             source_evidence="No commercial use permitted",
             timestamp=datetime.datetime.now(datetime.timezone.utc)
@@ -411,6 +429,65 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         # Arbitrary dictionary is ignored
         evidence_ignored = produce_verified_evidence({"id": 104}, ["not-an-assertion-class"])
         self.assertFalse(evidence_ignored.policy_incompatible)
+
+    def test_persist_source_policy_evaluation_reproducibility(self):
+        from policy_engine import persist_source_policy_evaluation
+        
+        # Mock database cursor to simulate retrieving a verified evidence row
+        class MockCursor:
+            def __init__(self):
+                self.writes = []
+                self.fixed_time = datetime.datetime(2026, 9, 12, 12, 0, 0, tzinfo=datetime.timezone.utc)
+            def execute(self, query, params=None):
+                self.writes.append((query, params))
+            def fetchone(self):
+                # Return static, identical data matching source_verified_evidence schema
+                query_str = self.writes[-1][0].lower()
+                if "select" in query_str:
+                    return {
+                        "id": 100,
+                        "assessment_id": 42,
+                        "proposal_id": None,
+                        "subject_type": "endpoint",
+                        "subject_id": 1,
+                        "verified_at": self.fixed_time,
+                        "verifier_version": "1.0",
+                        "institution_identity_verified": True,
+                        "endpoint_identity_verified": True,
+                        "rights_statement_retrieved": True,
+                        "rights_statement_hash_matches": True,
+                        "rights_verified": True,
+                        "rights_class": "public_domain",
+                        "rights_identifier": "PD",
+                        "rights_uri": None,
+                        "scope_verified": True,
+                        "scope_type": "endpoint",
+                        "scope_identifier": "example.org",
+                        "access_verified": True,
+                        "verification_strategy": "none",
+                        "conflicts": [],
+                        "evidence_sources": ["https://example.org/terms"],
+                        "policy_incompatible": False,
+                        "incompatibility_codes": []
+                    }
+                elif "insert" in query_str:
+                    return {"id": 1}
+                return None
+
+        # Execute once
+        cur1 = MockCursor()
+        persist_source_policy_evaluation(cur1, 100)
+        
+        # Execute twice
+        cur2 = MockCursor()
+        persist_source_policy_evaluation(cur2, 100)
+        
+        # Assert that the SQL inserts, parameter snapshots and calculated evaluation_hash are exactly identical and reproducible!
+        insert_query_1, params_1 = [w for w in cur1.writes if "INSERT" in w[0].upper()][0]
+        insert_query_2, params_2 = [w for w in cur2.writes if "INSERT" in w[0].upper()][0]
+        
+        self.assertEqual(params_1[-1], params_2[-1])
+        self.assertEqual(params_1, params_2)
 
 
 if __name__ == "__main__":
