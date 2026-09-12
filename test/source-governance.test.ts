@@ -239,6 +239,15 @@ test("Source Governance Domain Model", async (t) => {
       /revoke\s+update\s*,\s*delete\s*,\s*truncate\s+on\s+source_verified_evidence\s*,\s*source_policy_evaluations\s+from\s+terraveler_evaluator/i,
       "migration MUST explicitly revoke update/delete/truncate on evaluations and evidence from terraveler_evaluator"
     );
+
+    // 11. Assert 3B.3 migration preserves legacy source_reverifications data and has NO DROP TABLE CASCADE
+    const migration3b3SqlPath = join(__dirname, "../supabase/source_governance_phase_3b_3_migration.sql");
+    const migration3b3Sql = readFileSync(migration3b3SqlPath, "utf8");
+    assert.equal(
+      /drop\s+table\s+source_reverifications/i.test(migration3b3Sql),
+      false,
+      "Phase 3B.3 migration MUST NOT drop source_reverifications table"
+    );
   });
 
   await t.test("Seed equivalence and Archivist dynamic provisioning verification", () => {

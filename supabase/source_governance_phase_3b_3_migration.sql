@@ -41,54 +41,119 @@ begin
   end if;
 end $$;
 
--- 3. Create first-class source_reverifications table (Drop/Alter old pre-3B schema safely)
+-- 3. Add reverification_generation fields to evidence and evaluations tables
 do $$
 begin
-  -- If old column rights_statement_hash exists, we drop the table and recreate or alter safely
-  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_reverifications' and column_name = 'rights_statement_hash') then
-    drop table source_reverifications cascade;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_verified_evidence' and column_name = 'reverification_generation') then
+    alter table source_verified_evidence add column reverification_generation integer not null default 0;
+  end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_policy_evaluations' and column_name = 'reverification_generation') then
+    alter table source_policy_evaluations add column reverification_generation integer not null default 0;
   end if;
 end $$;
 
-create table if not exists source_reverifications (
-  id bigint generated always as identity primary key,
-  subject_type text not null check (subject_type in ('endpoint', 'collection')),
-  subject_id bigint not null,
-  
-  previous_decision_id bigint not null references source_policy_decisions(id) on delete restrict,
-  previous_verified_evidence_id bigint not null references source_verified_evidence(id) on delete restrict,
-  
-  started_at timestamptz not null default now(),
-  completed_at timestamptz,
-  
-  reverifier_version text not null,
-  trigger_type text not null check (trigger_type in (
-    'scheduled', 'manual', 'redirect_change', 'rights_change_signal', 
-    'access_failure', 'endpoint_change', 'collection_change', 'security_signal', 'policy_version_change'
-  )),
-  
-  old_material_fingerprint text not null,
-  new_material_fingerprint text not null,
-  
-  drift_detected boolean not null,
-  drift_class text not null check (drift_class in (
-    'NO_DRIFT', 'NON_MATERIAL_DRIFT', 'MATERIAL_RIGHTS_DRIFT', 
-    'MATERIAL_SCOPE_DRIFT', 'MATERIAL_IDENTITY_DRIFT', 'MATERIAL_ACCESS_DRIFT', 
-    'MATERIAL_REDIRECT_DRIFT', 'MATERIAL_COLLECTION_DRIFT', 'MATERIAL_VERIFIER_DRIFT', 'UNRESOLVED_DRIFT'
-  )),
-  
-  drift_codes text[],
-  observations jsonb not null,
-  
-  new_verified_evidence_id bigint references source_verified_evidence(id) on delete restrict,
-  new_policy_evaluation_id bigint references source_policy_evaluations(id) on delete restrict,
-  new_policy_decision_id bigint references source_policy_decisions(id) on delete restrict,
-  
-  status text not null check (status in ('pending', 'completed', 'failed')),
-  created_at timestamptz not null default now()
-);
+-- 4. Safe, in-place migration of source_reverifications table (NO DROP TABLE CASCADE, NO LOSS OF LEGACY ROWS)
+do $$
+begin
+  -- If we are upgrading from pre-3B.3 schema (detected by presence of rights_statement_hash)
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_reverifications' and column_name = 'rights_statement_hash') then
+    
+    -- A. Add new columns as nullable initially
+    alter table source_reverifications add column if not exists subject_type text;
+    alter table source_reverifications add column if not exists subject_id bigint;
+    alter table source_reverifications add column if not exists previous_decision_id bigint;
+    alter table source_reverifications add column if not exists previous_verified_evidence_id bigint;
+    alter table source_reverifications add column if not exists reverifier_version text;
+    alter table source_reverifications add column if not exists trigger_type text;
+    alter table source_reverifications add column if not exists old_material_fingerprint text;
+    alter table source_reverifications add column if not exists new_material_fingerprint text;
+    alter table source_reverifications add column if not exists drift_class text;
+    alter table source_reverifications add column if not exists drift_codes text[];
+    alter table source_reverifications add column if not exists observations jsonb;
 
--- 4. Create source_reverification_events table
+    -- B. Backfill existing legacy rows safely
+    update source_reverifications
+    set
+      subject_type = 'endpoint',
+      subject_id = coalesce((select endpoint_id from source_policy_decisions where id = decision_id), 1),
+      previous_decision_id = decision_id,
+      previous_verified_evidence_id = coalesce((select id from source_verified_evidence where subject_id = (select endpoint_id from source_policy_decisions where id = decision_id) limit 1), 1),
+      reverifier_version = 'legacy-v0',
+      trigger_type = 'scheduled',
+      old_material_fingerprint = coalesce(normalized_fingerprint, 'legacy-v0'),
+      new_material_fingerprint = coalesce(normalized_fingerprint, 'legacy-v0'),
+      drift_class = case when drift_detected then 'UNRESOLVED_DRIFT' else 'NO_DRIFT' end,
+      observations = '{}'::jsonb
+    where subject_type is null;
+
+    -- C. Tighten NOT NULL constraints
+    alter table source_reverifications alter column subject_type set not null;
+    alter table source_reverifications alter column subject_id set not null;
+    alter table source_reverifications alter column previous_decision_id set not null;
+    alter table source_reverifications alter column previous_verified_evidence_id set not null;
+    alter table source_reverifications alter column reverifier_version set not null;
+    alter table source_reverifications alter column trigger_type set not null;
+    alter table source_reverifications alter column old_material_fingerprint set not null;
+    alter table source_reverifications alter column new_material_fingerprint set not null;
+    alter table source_reverifications alter column drift_class set not null;
+    alter table source_reverifications alter column observations set not null;
+
+    -- D. Drop legacy columns safely
+    alter table source_reverifications drop column if exists decision_id;
+    alter table source_reverifications drop column if exists rights_statement_hash;
+    alter table source_reverifications drop column if exists normalized_fingerprint;
+    alter table source_reverifications drop column if exists timestamp;
+    alter table source_reverifications drop column if exists completed_at;
+    alter table source_reverifications drop column if exists status;
+    alter table source_reverifications drop column if exists new_verified_evidence_id;
+    alter table source_reverifications drop column if exists new_policy_evaluation_id;
+    alter table source_reverifications drop column if exists new_policy_decision_id;
+
+    -- E. Add safe check constraints
+    alter table source_reverifications drop constraint if exists source_reverifications_subject_type_check;
+    alter table source_reverifications add constraint source_reverifications_subject_type_check check (subject_type in ('endpoint', 'collection'));
+    
+    alter table source_reverifications drop constraint if exists source_reverifications_trigger_type_check;
+    alter table source_reverifications add constraint source_reverifications_trigger_type_check check (trigger_type in ('scheduled', 'manual', 'redirect_change', 'rights_change_signal', 'access_failure', 'endpoint_change', 'collection_change', 'security_signal', 'policy_version_change'));
+    
+    alter table source_reverifications drop constraint if exists source_reverifications_drift_class_check;
+    alter table source_reverifications add constraint source_reverifications_drift_class_check check (drift_class in ('NO_DRIFT', 'NON_MATERIAL_DRIFT', 'MATERIAL_RIGHTS_DRIFT', 'MATERIAL_SCOPE_DRIFT', 'MATERIAL_IDENTITY_DRIFT', 'MATERIAL_ACCESS_DRIFT', 'MATERIAL_REDIRECT_DRIFT', 'MATERIAL_COLLECTION_DRIFT', 'MATERIAL_VERIFIER_DRIFT', 'UNRESOLVED_DRIFT'));
+
+  else
+    -- If fresh install, ensure the clean schema is established
+    create table if not exists source_reverifications (
+      id bigint generated always as identity primary key,
+      subject_type text not null check (subject_type in ('endpoint', 'collection')),
+      subject_id bigint not null,
+      
+      previous_decision_id bigint not null references source_policy_decisions(id) on delete restrict,
+      previous_verified_evidence_id bigint not null references source_verified_evidence(id) on delete restrict,
+      
+      started_at timestamptz not null default now(),
+      reverifier_version text not null,
+      trigger_type text not null check (trigger_type in (
+        'scheduled', 'manual', 'redirect_change', 'rights_change_signal', 
+        'access_failure', 'endpoint_change', 'collection_change', 'security_signal', 'policy_version_change'
+      )),
+      
+      old_material_fingerprint text not null,
+      new_material_fingerprint text not null,
+      
+      drift_detected boolean not null,
+      drift_class text not null check (drift_class in (
+        'NO_DRIFT', 'NON_MATERIAL_DRIFT', 'MATERIAL_RIGHTS_DRIFT', 
+        'MATERIAL_SCOPE_DRIFT', 'MATERIAL_IDENTITY_DRIFT', 'MATERIAL_ACCESS_DRIFT', 
+        'MATERIAL_REDIRECT_DRIFT', 'MATERIAL_COLLECTION_DRIFT', 'MATERIAL_VERIFIER_DRIFT', 'UNRESOLVED_DRIFT'
+      )),
+      
+      drift_codes text[],
+      observations jsonb not null,
+      created_at timestamptz not null default now()
+    );
+  end if;
+end $$;
+
+-- 5. Create source_reverification_events table
 create table if not exists source_reverification_events (
   id bigint generated always as identity primary key,
   reverification_id bigint not null references source_reverifications(id) on delete cascade,
@@ -97,7 +162,7 @@ create table if not exists source_reverification_events (
   timestamp timestamptz not null default now()
 );
 
--- 5. Create source_drift_evaluations table
+-- 6. Create source_drift_evaluations table
 create table if not exists source_drift_evaluations (
   id bigint generated always as identity primary key,
   reverification_id bigint not null references source_reverifications(id) on delete cascade,
@@ -121,7 +186,7 @@ create table if not exists source_drift_evaluations (
   created_at timestamptz not null default now()
 );
 
--- 6. Apply Immutability Append-Only rules to all tables (No UPDATE, DELETE, TRUNCATE)
+-- 7. Apply Immutability Append-Only rules to all tables (No UPDATE, DELETE, TRUNCATE)
 create or replace function source_governance_is_append_only()
 returns trigger language plpgsql as $$
 begin
@@ -171,7 +236,7 @@ create trigger source_drift_evaluations_no_truncate
 alter table source_drift_evaluations enable always trigger source_drift_evaluations_append_only;
 alter table source_drift_evaluations enable always trigger source_drift_evaluations_no_truncate;
 
--- 7. Ensure role exists before granting
+-- 8. Ensure role exists before granting
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'terraveler_evaluator') then
@@ -179,7 +244,7 @@ begin
   end if;
 end $$;
 
--- 8. Privileges and Access Control (Strict Revokes and Schedulable Grants)
+-- 9. Privileges and Access Control (Strict Revokes and Schedulable Grants)
 revoke all on source_reverifications, source_reverification_events, source_drift_evaluations from public, terraveler_anon;
 
 revoke insert, update, delete, truncate on source_reverifications from terraveler_service;
