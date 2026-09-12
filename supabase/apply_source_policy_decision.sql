@@ -1,27 +1,31 @@
--- Phase 3B.2: Atomic Policy Application and Lifecycle Engine RPC
+-- Phase 3B.2: Atomic Policy Application and Lifecycle Engine RPC (Hardened)
 -- Enforces strict TOCTOU checks, database consistency checks,
--- and atomic database-side lifecycle mutations.
+-- and atomic database-side lifecycle mutations with a safe search_path.
 
 create or replace function apply_source_policy_decision(
-  p_subject_type text,
-  p_subject_id bigint,
-  p_verified_evidence_id bigint,
-  p_expected_evidence_hash text,
-  p_decision_outcome text,
-  p_trust_mode text,
-  p_rule_id text,
-  p_policy_version text,
-  p_verification_version text,
-  p_evidence_snapshot jsonb,
-  p_reason text,
+  p_evaluation_id bigint,
+  p_expected_evaluation_hash text,
   p_decider_type text,
   p_decider_id bigint,
-  p_supersedes_decision_id bigint default null
+  p_supersedes_decision_id bigint default null,
+  p_reason text default null
 )
-returns bigint language plpgsql security definer as $$
+returns bigint language plpgsql security definer set search_path = public, pg_catalog as $$
 declare
+  v_evaluation_hash text;
+  v_verified_evidence_id bigint;
+  v_subject_type text;
+  v_subject_id bigint;
+  v_decision_outcome text;
+  v_trust_mode text;
+  v_rule_id text;
+  v_policy_version text;
+  v_verification_version text;
+  v_evaluation_snapshot jsonb;
   v_evidence_hash text;
-  v_verifier_version text;
+  v_rights_class text;
+  v_rights_identifier text;
+  
   v_old_endpoint_id bigint := null;
   v_old_collection_id bigint := null;
   v_old_proposal_id bigint := null;
@@ -31,37 +35,71 @@ declare
   v_proposal_id bigint := null;
 begin
   -- --------------------------------------------------------------------------
-  -- 1. TOCTOU & Version Verification
+  -- 1. Read Persisted Policy Evaluation and Enforce TOCTOU Checks
   -- --------------------------------------------------------------------------
-  select evidence_hash, verifier_version into v_evidence_hash, v_verifier_version
-  from source_verified_evidence
-  where id = p_verified_evidence_id;
+  select 
+    evaluation_hash, verified_evidence_id, subject_type, subject_id,
+    decision_outcome, trust_mode, rule_id, policy_version, verification_version,
+    evaluation_snapshot, evidence_hash
+  into 
+    v_evaluation_hash, v_verified_evidence_id, v_subject_type, v_subject_id,
+    v_decision_outcome, v_trust_mode, v_rule_id, v_policy_version, v_verification_version,
+    v_evaluation_snapshot, v_evidence_hash
+  from source_policy_evaluations
+  where id = p_evaluation_id;
   
   if not found then
-    raise exception 'TOCTOU_VIOLATION: VerifiedEvidence % not found', p_verified_evidence_id;
+    raise exception 'TOCTOU_VIOLATION: PolicyEvaluation % not found', p_evaluation_id;
   end if;
   
-  if v_evidence_hash != p_expected_evidence_hash then
-    raise exception 'TOCTOU_VIOLATION: Evidence hash mismatch. Expected %, stored %', p_expected_evidence_hash, v_evidence_hash;
-  end if;
-  
-  if v_verifier_version != p_verification_version then
-    raise exception 'TOCTOU_VIOLATION: Verifier version mismatch. Expected %, stored %', p_verification_version, v_verifier_version;
-  end if;
-  
-  if p_policy_version != 'SG-P1' then
-    raise exception 'TOCTOU_VIOLATION: Unsupported policy version: %', p_policy_version;
+  if v_evaluation_hash != p_expected_evaluation_hash then
+    raise exception 'TOCTOU_VIOLATION: Evaluation hash mismatch. Expected %, stored %', p_expected_evaluation_hash, v_evaluation_hash;
   end if;
 
   -- --------------------------------------------------------------------------
-  -- 2. DB-level Consistency & Actor Checks
+  -- 2. Verify Subject Binding of Associated Evidence Fact
   -- --------------------------------------------------------------------------
-  if p_decision_outcome = 'approve' and p_trust_mode is null then
+  -- Re-read evidence record and ensure it binds to the exact same subject
+  declare
+    v_evidence_subject_type text;
+    v_evidence_subject_id bigint;
+    v_evidence_stored_hash text;
+  begin
+    select subject_type, subject_id, evidence_hash 
+    into v_evidence_subject_type, v_evidence_subject_id, v_evidence_stored_hash
+    from source_verified_evidence
+    where id = v_verified_evidence_id;
+    
+    if not found then
+      raise exception 'TOCTOU_VIOLATION: Associated VerifiedEvidence % not found', v_verified_evidence_id;
+    end if;
+    
+    if v_evidence_stored_hash != v_evidence_hash then
+      raise exception 'TOCTOU_VIOLATION: Evidence hash mismatch between evaluation and fact store';
+    end if;
+    
+    if v_evidence_subject_type != v_subject_type or v_evidence_subject_id != v_subject_id then
+      raise exception 'SUBJECT_BINDING_VIOLATION: Evidence subject (%, %) does not match evaluation subject (%, %)', 
+        v_evidence_subject_type, v_evidence_subject_id, v_subject_type, v_subject_id;
+    end if;
+  end;
+
+  -- --------------------------------------------------------------------------
+  -- 3. Proposal Ingestion Rule (No Proposal APPROVE)
+  -- --------------------------------------------------------------------------
+  if v_subject_type = 'proposal' and v_decision_outcome = 'approve' then
+    raise exception 'PROPOSAL_APPROVAL_VIOLATION: Proposal subjects may only receive REVIEW or REJECT decisions before materialization';
+  end if;
+
+  -- --------------------------------------------------------------------------
+  -- 4. DB-level Consistency & Actor Checks
+  -- --------------------------------------------------------------------------
+  if v_decision_outcome = 'approve' and v_trust_mode is null then
     raise exception 'CONSISTENCY_VIOLATION: APPROVE requires a non-null trust_mode';
   end if;
   
-  if p_decision_outcome != 'approve' and p_trust_mode is not null then
-    raise exception 'CONSISTENCY_VIOLATION: % outcome requires a NULL trust_mode', p_decision_outcome;
+  if v_decision_outcome != 'approve' and v_trust_mode is not null then
+    raise exception 'CONSISTENCY_VIOLATION: % outcome requires a NULL trust_mode', v_decision_outcome;
   end if;
   
   if p_decider_type = 'system' and p_decider_id is not null then
@@ -77,18 +115,16 @@ begin
   end if;
 
   -- Map subjects
-  if p_subject_type = 'endpoint' then
-    v_endpoint_id := p_subject_id;
-  elif p_subject_type = 'collection' then
-    v_collection_id := p_subject_id;
-  elif p_subject_type = 'proposal' then
-    v_proposal_id := p_subject_id;
-  else
-    raise exception 'CONSISTENCY_VIOLATION: Invalid subject type %', p_subject_type;
+  if v_subject_type = 'endpoint' then
+    v_endpoint_id := v_subject_id;
+  elif v_subject_type = 'collection' then
+    v_collection_id := v_subject_id;
+  elif v_subject_type = 'proposal' then
+    v_proposal_id := v_subject_id;
   end if;
 
   -- --------------------------------------------------------------------------
-  -- 3. Supersession Checks
+  -- 5. Supersession Checks
   -- --------------------------------------------------------------------------
   if p_supersedes_decision_id is not null then
     select endpoint_id, collection_id, proposal_id 
@@ -108,8 +144,12 @@ begin
     end if;
   end if;
 
+  -- Extract snapshot fields for decisions
+  v_rights_class := coalesce(v_evaluation_snapshot->'evidence_snapshot'->>'rights_class', 'unknown');
+  v_rights_identifier := coalesce(v_evaluation_snapshot->'evidence_snapshot'->>'rights_identifier', null);
+
   -- --------------------------------------------------------------------------
-  -- 4. Persist the New Immutable SourcePolicyDecision
+  -- 6. Persist the New Immutable SourcePolicyDecision
   -- --------------------------------------------------------------------------
   insert into source_policy_decisions (
     endpoint_id, collection_id, proposal_id,
@@ -119,60 +159,54 @@ begin
     decided_by_actor_id, reason
   ) values (
     v_endpoint_id, v_collection_id, v_proposal_id,
-    p_decision_outcome, p_trust_mode, 
-    coalesce(p_evidence_snapshot->>'rights_class', 'unknown'),
-    coalesce(p_evidence_snapshot->>'rights_identifier', null),
-    p_evidence_snapshot, p_policy_version, p_verification_version,
-    p_supersedes_decision_id, '0.7', p_decider_type, p_decider_id, p_reason
+    v_decision_outcome, v_trust_mode, v_rights_class, v_rights_identifier,
+    v_evaluation_snapshot, v_policy_version, v_verification_version,
+    p_supersedes_decision_id, '0.7', p_decider_type, p_decider_id, coalesce(p_reason, v_evaluation_snapshot->>'rule_id')
   ) returning id into v_decision_id;
 
   -- --------------------------------------------------------------------------
-  -- 5. Atomic Lifecycle State Mutations
+  -- 7. Atomic Lifecycle State Mutations & Trust Clearing Invariants
   -- --------------------------------------------------------------------------
-  if p_decision_outcome = 'approve' then
-    if p_subject_type = 'endpoint' then
+  if v_decision_outcome = 'approve' then
+    if v_subject_type = 'endpoint' then
       update source_endpoints 
-      set status = 'active', trust_mode = p_trust_mode
-      where id = p_subject_id;
-    elif p_subject_type = 'collection' then
+      set status = 'active', trust_mode = v_trust_mode
+      where id = v_subject_id;
+    elif v_subject_type = 'collection' then
       update source_collections 
-      set status = 'active', trust_mode = p_trust_mode
-      where id = p_subject_id;
-    elif p_subject_type = 'proposal' then
-      -- Explicit registry operation boundary: do NOT magically invent endpoint/collection
-      update source_proposals 
-      set status = 'resolved'
-      where id = p_subject_id;
+      set status = 'active', trust_mode = v_trust_mode
+      where id = v_subject_id;
     end if;
     
-  elif p_decision_outcome = 'needs_human_review' then
-    if p_subject_type = 'endpoint' then
+  elif v_decision_outcome = 'needs_human_review' then
+    if v_subject_type = 'endpoint' then
       update source_endpoints 
-      set status = 'needs_human_review'
-      where id = p_subject_id;
-    elif p_subject_type = 'collection' then
+      -- Clear stale trust_mode when status is set to review/rejected/quarantined
+      set status = 'needs_human_review', trust_mode = null
+      where id = v_subject_id;
+    elif v_subject_type = 'collection' then
       update source_collections 
-      set status = 'needs_human_review'
-      where id = p_subject_id;
-    elif p_subject_type = 'proposal' then
+      set status = 'needs_human_review', trust_mode = null
+      where id = v_subject_id;
+    elif v_subject_type = 'proposal' then
       update source_proposals 
       set status = 'needs_policy_review'
-      where id = p_subject_id;
+      where id = v_subject_id;
     end if;
     
-  elif p_decision_outcome = 'reject' then
-    if p_subject_type = 'endpoint' then
+  elif v_decision_outcome = 'reject' then
+    if v_subject_type = 'endpoint' then
       update source_endpoints 
-      set status = 'rejected'
-      where id = p_subject_id;
-    elif p_subject_type = 'collection' then
+      set status = 'rejected', trust_mode = null
+      where id = v_subject_id;
+    elif v_subject_type = 'collection' then
       update source_collections 
-      set status = 'rejected'
-      where id = p_subject_id;
-    elif p_subject_type = 'proposal' then
+      set status = 'rejected', trust_mode = null
+      where id = v_subject_id;
+    elif v_subject_type = 'proposal' then
       update source_proposals 
       set status = 'rejected'
-      where id = p_subject_id;
+      where id = v_subject_id;
     end if;
   end if;
 

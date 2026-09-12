@@ -95,7 +95,7 @@ def produce_verified_evidence(assessment_dict: dict, additional_data: dict = Non
     into VerifiedEvidence. Combines independent facts and enforces incompatibility rules.
     """
     rights_class = assessment_dict.get("rights_class", "unknown")
-    rights_verified = assessment_dict.get("rights_verified", True)
+    rights_verified = assessment_dict.get("rights_verified", False) # Default to FALSE for safety (fail-closed)
     scope_type = assessment_dict.get("rights_scope_type", "unresolved")
     
     conflicts = list(assessment_dict.get("conflicts", []))
@@ -109,34 +109,36 @@ def produce_verified_evidence(assessment_dict: dict, additional_data: dict = Non
         incompatibility_codes.append("SG-INC-001_EXPLICIT_USE_PROHIBITION")
         
     host = assessment_dict.get("rights_scope_identifier", "")
-    if host and ("malicious" in host or "attacker" in host):
-        policy_incompatible = True
-        incompatibility_codes.append("SG-INC-003_INVALID_SOURCE_IDENTITY")
-        
+    
     if additional_data and additional_data.get("forbidden_access"):
         policy_incompatible = True
         incompatibility_codes.append("SG-INC-002_FORBIDDEN_ACCESS_MODE")
         
+    if additional_data and additional_data.get("identity_failure"):
+        policy_incompatible = True
+        incompatibility_codes.append("SG-INC-003_INVALID_SOURCE_IDENTITY")
+        
     evidence = VerifiedEvidence(
-        assessment_id=assessment_dict["id"],
+        assessment_id=assessment_dict.get("id", 0),
         verified_at=datetime.datetime.now(datetime.timezone.utc),
         verifier_version="1.0",
         
-        institution_identity_verified=assessment_dict.get("institution_identity_verified", True),
-        endpoint_identity_verified=assessment_dict.get("endpoint_identity_verified", True),
+        # All independent verification facts default to FALSE for fail-closed security
+        institution_identity_verified=assessment_dict.get("institution_identity_verified", False),
+        endpoint_identity_verified=assessment_dict.get("endpoint_identity_verified", False),
         
-        rights_statement_retrieved=assessment_dict.get("rights_statement_retrieved", True),
-        rights_statement_hash_matches=assessment_dict.get("rights_statement_hash_matches", True),
+        rights_statement_retrieved=assessment_dict.get("rights_statement_retrieved", False),
+        rights_statement_hash_matches=assessment_dict.get("rights_statement_hash_matches", False),
         rights_verified=rights_verified,
         rights_class=rights_class,
         rights_identifier=assessment_dict.get("rights_identifier"),
         rights_uri=assessment_dict.get("rights_uri"),
         
-        scope_verified=assessment_dict.get("scope_verified", True),
+        scope_verified=assessment_dict.get("scope_verified", False),
         scope_type=scope_type,
         scope_identifier=host,
         
-        access_verified=assessment_dict.get("access_verified", True),
+        access_verified=assessment_dict.get("access_verified", False),
         verification_strategy=strategy,
         
         conflicts=conflicts,

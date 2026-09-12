@@ -151,6 +151,9 @@ create table if not exists source_verified_evidence (
   assessment_id bigint not null references source_assessments(id) on delete cascade,
   proposal_id bigint references source_proposals(id) on delete set null,
   
+  subject_type text not null check (subject_type in ('endpoint', 'collection', 'proposal')),
+  subject_id bigint not null,
+  
   verified_at timestamptz not null default now(),
   verifier_version text not null,
   
@@ -181,6 +184,34 @@ create table if not exists source_verified_evidence (
   evidence_hash text not null unique,
   
   created_at timestamptz not null default now()
+);
+
+-- Persisted Deterministic Policy Evaluations
+create table if not exists source_policy_evaluations (
+  id bigint generated always as identity primary key,
+  verified_evidence_id bigint not null references source_verified_evidence(id) on delete cascade,
+  subject_type text not null check (subject_type in ('endpoint', 'collection', 'proposal')),
+  subject_id bigint not null,
+  
+  decision_outcome text not null check (decision_outcome in ('approve', 'reject', 'needs_human_review')),
+  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
+  rule_id text not null,
+  reason_codes text[],
+  blocking_conditions text[],
+  
+  policy_version text not null,
+  verification_version text not null,
+  
+  evidence_hash text not null,
+  evaluation_snapshot jsonb not null,
+  evaluation_hash text not null unique,
+  
+  created_at timestamptz not null default now(),
+  
+  check (
+    (decision_outcome = 'approve' and trust_mode is not null) or
+    (decision_outcome != 'approve' and trust_mode is null)
+  )
 );
 
 create table if not exists source_reverifications (

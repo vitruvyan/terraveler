@@ -274,7 +274,7 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
             "evidence_sources": ["https://malicious-attacker.org/terms"]
         }
         
-        evidence = produce_verified_evidence(assessment)
+        evidence = produce_verified_evidence(assessment, additional_data={"identity_failure": True})
         self.assertEqual(evidence.assessment_id, 42)
         self.assertEqual(evidence.rights_class, "mixed")
         self.assertEqual(evidence.scope_type, "endpoint")
@@ -282,6 +282,56 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertTrue(evidence.policy_incompatible)
         self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
         self.assertIn("SG-INC-003_INVALID_SOURCE_IDENTITY", evidence.incompatibility_codes)
+
+    def test_produce_verified_evidence_fail_closed_on_incomplete_assessment(self):
+        from policy_engine import produce_verified_evidence
+        # An extremely bare assessment containing only id and rights_class
+        assessment = {
+            "id": 100
+        }
+        evidence = produce_verified_evidence(assessment)
+        
+        # Verify all verification metrics default to FALSE for safety (fail-closed!)
+        self.assertFalse(evidence.institution_identity_verified)
+        self.assertFalse(evidence.endpoint_identity_verified)
+        self.assertFalse(evidence.rights_statement_retrieved)
+        self.assertFalse(evidence.rights_statement_hash_matches)
+        self.assertFalse(evidence.rights_verified)
+        self.assertFalse(evidence.scope_verified)
+        self.assertFalse(evidence.access_verified)
+        
+        # Result of evaluation under fail-closed defaults must be REVIEW
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review")
+
+    def test_403_network_block_not_policy_incompatible(self):
+        from policy_engine import produce_verified_evidence
+        assessment = {
+            "id": 101,
+            "access_verified": False, # Mock network block
+            "rights_class": "unknown",
+            "conflicts": ["Forbidden Access"]
+        }
+        evidence = produce_verified_evidence(assessment)
+        
+        # A network block/forbidden access does NOT by itself produce policy_incompatible=True.
+        # It is categorized as needs_human_review / insufficient evidence
+        self.assertFalse(evidence.policy_incompatible)
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "needs_human_review")
+
+    def test_verified_explicit_incompatibility(self):
+        from policy_engine import produce_verified_evidence
+        assessment = {
+            "id": 102,
+            "verification_strategy": "prohibited"
+        }
+        evidence = produce_verified_evidence(assessment)
+        self.assertTrue(evidence.policy_incompatible)
+        self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
+        
+        result = evaluate_source_policy(evidence)
+        self.assertEqual(result.decision_outcome, "reject")
 
 
 if __name__ == "__main__":

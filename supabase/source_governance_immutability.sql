@@ -52,12 +52,53 @@ create trigger source_reverifications_no_truncate
 alter table source_reverifications enable always trigger source_reverifications_append_only;
 alter table source_reverifications enable always trigger source_reverifications_no_truncate;
 
+-- 4. Enforce on source_verified_evidence
+drop trigger if exists source_verified_evidence_append_only on source_verified_evidence;
+create trigger source_verified_evidence_append_only
+  before update or delete on source_verified_evidence
+  for each row execute function source_governance_is_append_only();
+
+drop trigger if exists source_verified_evidence_no_truncate on source_verified_evidence;
+create trigger source_verified_evidence_no_truncate
+  before truncate on source_verified_evidence
+  for each statement execute function source_governance_is_append_only();
+
+alter table source_verified_evidence enable always trigger source_verified_evidence_append_only;
+alter table source_verified_evidence enable always trigger source_verified_evidence_no_truncate;
+
+-- 5. Enforce on source_policy_evaluations
+drop trigger if exists source_policy_evaluations_append_only on source_policy_evaluations;
+create trigger source_policy_evaluations_append_only
+  before update or delete on source_policy_evaluations
+  for each row execute function source_governance_is_append_only();
+
+drop trigger if exists source_policy_evaluations_no_truncate on source_policy_evaluations;
+create trigger source_policy_evaluations_no_truncate
+  before truncate on source_policy_evaluations
+  for each statement execute function source_governance_is_append_only();
+
+alter table source_policy_evaluations enable always trigger source_policy_evaluations_append_only;
+alter table source_policy_evaluations enable always trigger source_policy_evaluations_no_truncate;
+
+
 -- Revoke update, delete, truncate privileges
 do $$ begin
   if exists (select 1 from pg_roles where rolname = 'terraveler_service') then
-    revoke update, delete, truncate on source_policy_decisions, source_assessments, source_reverifications from terraveler_service;
+    revoke update, delete, truncate on 
+      source_policy_decisions, 
+      source_assessments, 
+      source_reverifications, 
+      source_verified_evidence, 
+      source_policy_evaluations 
+    from terraveler_service;
   end if;
   if exists (select 1 from pg_roles where rolname = 'service_role') then
-    revoke update, delete, truncate on source_policy_decisions, source_assessments, source_reverifications from service_role;
+    revoke update, delete, truncate on 
+      source_policy_decisions, 
+      source_assessments, 
+      source_reverifications, 
+      source_verified_evidence, 
+      source_policy_evaluations 
+    from service_role;
   end if;
 end $$;
