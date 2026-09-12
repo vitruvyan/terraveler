@@ -106,12 +106,27 @@ begin
 end $$;
 
 -- 7. Privileges and Access Control (No UPDATE, DELETE, TRUNCATE for anyone!)
+-- Explicitly revoke old privileges to secure upgrade from any prior Phase 3B.2 state
 revoke all on source_verified_evidence, source_policy_evaluations from public, terraveler_anon;
 
--- generic terraveler_service only has SELECT/INSERT on evidence, and SELECT-only on evaluations
+revoke insert, update, delete, truncate
+on source_policy_evaluations
+from terraveler_service;
+
+revoke update, delete, truncate
+on source_verified_evidence
+from terraveler_service;
+
+revoke update, delete, truncate
+on source_verified_evidence, source_policy_evaluations
+from terraveler_evaluator;
+
+-- Grant only the intended, narrowest possible privileges
 grant select, insert on source_verified_evidence to terraveler_service;
 grant select on source_policy_evaluations to terraveler_service;
 
--- dedicated trusted evaluator writer has full select/insert capability
 grant select, insert on source_verified_evidence to terraveler_evaluator;
 grant select, insert on source_policy_evaluations to terraveler_evaluator;
+
+-- Grant minimal sequence usage safely
+grant usage, select on sequence source_verified_evidence_id_seq, source_policy_evaluations_id_seq to terraveler_evaluator, terraveler_service;

@@ -204,6 +204,41 @@ test("Source Governance Domain Model", async (t) => {
       /create\s+or\s+replace\s+function\s+mcp_propose_source/i,
       "mcp_propose_source SQL function MUST be defined"
     );
+
+    // 8. Assert apply_source_policy_decision uses exactly: set search_path = pg_catalog, public
+    const applyRpcSqlPath = join(__dirname, "../supabase/apply_source_policy_decision.sql");
+    const applyRpcSql = readFileSync(applyRpcSqlPath, "utf8");
+    assert.match(
+      applyRpcSql,
+      /set\s+search_path\s*=\s*pg_catalog\s*,\s*public/i,
+      "apply_source_policy_decision MUST set search_path exactly to 'pg_catalog, public'"
+    );
+
+    // 9. Assert fresh schema boots and grants terraveler_evaluator role
+    assert.match(
+      sql,
+      /create\s+role\s+terraveler_evaluator/i,
+      "source_governance_schema.sql MUST declare terraveler_evaluator role bootstrap"
+    );
+
+    // 10. Assert migration explicitly revokes generic insert/update/delete/truncate from evaluations and append-only tables
+    const migrationSqlPath = join(__dirname, "../supabase/source_governance_phase_3b_2_migration.sql");
+    const migrationSql = readFileSync(migrationSqlPath, "utf8");
+    assert.match(
+      migrationSql,
+      /revoke\s+insert\s*,\s*update\s*,\s*delete\s*,\s*truncate\s+on\s+source_policy_evaluations\s+from\s+terraveler_service/i,
+      "migration MUST explicitly revoke insert/update/delete/truncate on evaluations from terraveler_service"
+    );
+    assert.match(
+      migrationSql,
+      /revoke\s+update\s*,\s*delete\s*,\s*truncate\s+on\s+source_verified_evidence\s+from\s+terraveler_service/i,
+      "migration MUST explicitly revoke update/delete/truncate on evidence from terraveler_service"
+    );
+    assert.match(
+      migrationSql,
+      /revoke\s+update\s*,\s*delete\s*,\s*truncate\s+on\s+source_verified_evidence\s*,\s*source_policy_evaluations\s+from\s+terraveler_evaluator/i,
+      "migration MUST explicitly revoke update/delete/truncate on evaluations and evidence from terraveler_evaluator"
+    );
   });
 
   await t.test("Seed equivalence and Archivist dynamic provisioning verification", () => {

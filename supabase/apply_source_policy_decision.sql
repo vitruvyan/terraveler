@@ -10,7 +10,7 @@ create or replace function apply_source_policy_decision(
   p_supersedes_decision_id bigint default null,
   p_reason text default null
 )
-returns bigint language plpgsql security definer set search_path = public, pg_catalog as $$
+returns bigint language plpgsql security definer set search_path = pg_catalog, public as $$
 declare
   v_evaluation_hash text;
   v_verified_evidence_id bigint;

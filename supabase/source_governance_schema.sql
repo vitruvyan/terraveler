@@ -296,6 +296,17 @@ to terraveler_service;
 grant select, insert on source_verified_evidence to terraveler_service;
 grant select on source_policy_evaluations to terraveler_service;
 
+-- Create evaluator and trusted writer roles (PostgreSQL Role Separation)
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'terraveler_evaluator') then
+    create role terraveler_evaluator;
+  end if;
+end $$;
+
 -- dedicated trusted evaluator writer role has full select/insert capability
 grant select, insert on source_verified_evidence to terraveler_evaluator;
 grant select, insert on source_policy_evaluations to terraveler_evaluator;
+
+-- Grant minimal sequence usage safely after roles and tables exist
+grant usage, select on sequence source_verified_evidence_id_seq, source_policy_evaluations_id_seq to terraveler_evaluator, terraveler_service;
