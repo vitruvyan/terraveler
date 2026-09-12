@@ -246,6 +246,43 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(snap["policy_incompatible"], True)
         self.assertEqual(snap["incompatibility_codes"], ["TEST"])
 
+    def test_canonicalize_evidence_and_hash_reproducibility(self):
+        from policy_engine import canonicalize_evidence, compute_evidence_hash
+        e1 = self._base_evidence()
+        e2 = self._base_evidence()
+        
+        # Change dynamic metadata / timestamps on e2
+        e2.assessment_id = 9999
+        e2.verified_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        e2.verifier_version = "2.0-beta"
+        
+        # Assert that the canonical string and resulting SHA256 hashes are 100% identical and reproducible
+        self.assertEqual(canonicalize_evidence(e1), canonicalize_evidence(e2))
+        self.assertEqual(compute_evidence_hash(e1), compute_evidence_hash(e2))
+
+    def test_produce_verified_evidence_boundary(self):
+        from policy_engine import produce_verified_evidence
+        assessment = {
+            "id": 42,
+            "rights_class": "mixed",
+            "rights_verified": True,
+            "rights_scope_type": "endpoint",
+            "rights_scope_identifier": "malicious-attacker.org",
+            "access_verified": True,
+            "verification_strategy": "prohibited",
+            "conflicts": [],
+            "evidence_sources": ["https://malicious-attacker.org/terms"]
+        }
+        
+        evidence = produce_verified_evidence(assessment)
+        self.assertEqual(evidence.assessment_id, 42)
+        self.assertEqual(evidence.rights_class, "mixed")
+        self.assertEqual(evidence.scope_type, "endpoint")
+        self.assertEqual(evidence.scope_identifier, "malicious-attacker.org")
+        self.assertTrue(evidence.policy_incompatible)
+        self.assertIn("SG-INC-001_EXPLICIT_USE_PROHIBITION", evidence.incompatibility_codes)
+        self.assertIn("SG-INC-003_INVALID_SOURCE_IDENTITY", evidence.incompatibility_codes)
+
 
 if __name__ == "__main__":
     unittest.main()

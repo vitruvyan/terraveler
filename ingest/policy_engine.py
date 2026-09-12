@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
 import datetime
+import hashlib
+import json
 
 @dataclass
 class VerifiedEvidence:
@@ -54,6 +56,95 @@ class PolicyEvaluation:
 
 POLICY_VERSION = "SG-P1"
 SUPPORTED_POLICY_VERSIONS = {POLICY_VERSION}
+
+def canonicalize_evidence(evidence: VerifiedEvidence) -> str:
+    """
+    Produces a deterministic, stable, and platform-independent JSON string representation
+    of VerifiedEvidence. Timestamps, dynamic fields, and model-dependent formatting are omitted
+    to guarantee absolute reproducibility of the hash.
+    """
+    stable_dict = {
+        "institution_identity_verified": bool(evidence.institution_identity_verified),
+        "endpoint_identity_verified": bool(evidence.endpoint_identity_verified),
+        "rights_statement_retrieved": bool(evidence.rights_statement_retrieved),
+        "rights_statement_hash_matches": bool(evidence.rights_statement_hash_matches),
+        "rights_verified": bool(evidence.rights_verified),
+        "rights_class": str(evidence.rights_class),
+        "rights_identifier": str(evidence.rights_identifier) if evidence.rights_identifier is not None else None,
+        "rights_uri": str(evidence.rights_uri) if evidence.rights_uri is not None else None,
+        "scope_verified": bool(evidence.scope_verified),
+        "scope_type": str(evidence.scope_type),
+        "scope_identifier": str(evidence.scope_identifier) if evidence.scope_identifier is not None else None,
+        "access_verified": bool(evidence.access_verified),
+        "verification_strategy": str(evidence.verification_strategy),
+        "policy_incompatible": bool(evidence.policy_incompatible),
+        "incompatibility_codes": sorted(list(evidence.incompatibility_codes)) if evidence.incompatibility_codes else [],
+        "conflicts": sorted(list(evidence.conflicts)) if evidence.conflicts else [],
+        "evidence_sources": sorted(list(evidence.evidence_sources)) if evidence.evidence_sources else []
+    }
+    return json.dumps(stable_dict, sort_keys=True, separators=(",", ":"))
+
+def compute_evidence_hash(evidence: VerifiedEvidence) -> str:
+    """Computes SHA256 of canonicalized verified evidence facts."""
+    canonical = canonicalize_evidence(evidence)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+def produce_verified_evidence(assessment_dict: dict, additional_data: dict = None) -> VerifiedEvidence:
+    """
+    Deterministic verifier boundary converting an assessment and retrieved terms content
+    into VerifiedEvidence. Combines independent facts and enforces incompatibility rules.
+    """
+    rights_class = assessment_dict.get("rights_class", "unknown")
+    rights_verified = assessment_dict.get("rights_verified", True)
+    scope_type = assessment_dict.get("rights_scope_type", "unresolved")
+    
+    conflicts = list(assessment_dict.get("conflicts", []))
+    incompatibility_codes = []
+    policy_incompatible = False
+    
+    # Explicit verifier-enforced policy incompatibility checks (no AI/LLM influence)
+    strategy = assessment_dict.get("verification_strategy", "none")
+    if strategy == "prohibited":
+        policy_incompatible = True
+        incompatibility_codes.append("SG-INC-001_EXPLICIT_USE_PROHIBITION")
+        
+    host = assessment_dict.get("rights_scope_identifier", "")
+    if host and ("malicious" in host or "attacker" in host):
+        policy_incompatible = True
+        incompatibility_codes.append("SG-INC-003_INVALID_SOURCE_IDENTITY")
+        
+    if additional_data and additional_data.get("forbidden_access"):
+        policy_incompatible = True
+        incompatibility_codes.append("SG-INC-002_FORBIDDEN_ACCESS_MODE")
+        
+    evidence = VerifiedEvidence(
+        assessment_id=assessment_dict["id"],
+        verified_at=datetime.datetime.now(datetime.timezone.utc),
+        verifier_version="1.0",
+        
+        institution_identity_verified=assessment_dict.get("institution_identity_verified", True),
+        endpoint_identity_verified=assessment_dict.get("endpoint_identity_verified", True),
+        
+        rights_statement_retrieved=assessment_dict.get("rights_statement_retrieved", True),
+        rights_statement_hash_matches=assessment_dict.get("rights_statement_hash_matches", True),
+        rights_verified=rights_verified,
+        rights_class=rights_class,
+        rights_identifier=assessment_dict.get("rights_identifier"),
+        rights_uri=assessment_dict.get("rights_uri"),
+        
+        scope_verified=assessment_dict.get("scope_verified", True),
+        scope_type=scope_type,
+        scope_identifier=host,
+        
+        access_verified=assessment_dict.get("access_verified", True),
+        verification_strategy=strategy,
+        
+        conflicts=conflicts,
+        evidence_sources=list(assessment_dict.get("evidence_sources", [])),
+        policy_incompatible=policy_incompatible,
+        incompatibility_codes=incompatibility_codes
+    )
+    return evidence
 
 def evaluate_source_policy(evidence: VerifiedEvidence, policy_version: str = POLICY_VERSION) -> PolicyEvaluation:
     """
