@@ -181,9 +181,32 @@ test("Source Governance Domain Model", async (t) => {
       /before\s+update\s+or\s+delete\s+on\s+source_reverifications/i,
       "source_reverifications MUST trigger append-only checks before update or delete"
     );
+
+    // 5. Assert 'unresolved' scope CHECK constraint in source_assessments
+    assert.match(
+      sql,
+      /rights_scope_type\s+text\s+not\s+null\s+check\s+\(rights_scope_type\s+in\s+\('endpoint',\s*'collection',\s*'item',\s*'unresolved'\)\)/i,
+      "source_assessments.rights_scope_type check constraint MUST permit 'unresolved'"
+    );
+
+    // 6. Assert source_proposal_intents table exists
+    assert.match(
+      sql,
+      /create\s+table\s+if\s+not\s+exists\s+source_proposal_intents/i,
+      "source_proposal_intents table MUST be defined"
+    );
+
+    // 7. Assert atomic mcp_propose_source SQL function exists
+    const rpcSqlPath = join(__dirname, "../supabase/mcp_propose_source.sql");
+    const rpcSql = readFileSync(rpcSqlPath, "utf8");
+    assert.match(
+      rpcSql,
+      /create\s+or\s+replace\s+function\s+mcp_propose_source/i,
+      "mcp_propose_source SQL function MUST be defined"
+    );
   });
 
-  await t.test("Seed equivalence between SQL and TypeScript", () => {
+  await t.test("Seed equivalence and Archivist dynamic provisioning verification", () => {
     const seedPath = join(__dirname, "../supabase/source_governance_seed.sql");
     const seedSql = readFileSync(seedPath, "utf8");
 
@@ -194,6 +217,19 @@ test("Source Governance Domain Model", async (t) => {
         `SQL seed file does not contain endpoint host pattern: ${e.host_pattern}`
       );
     }
+
+    // Assert that the seed SQL doesn't hardcode any physical PKs like 888 for the Archivist,
+    // allowing the database to allocate them dynamically and securely.
+    assert.equal(
+      /id\s*=\s*888/i.test(seedSql),
+      false,
+      "The seed SQL MUST NOT contain hardcoded numeric 888 PK assignments for the Archivist"
+    );
+    assert.equal(
+      /888/i.test(seedSql),
+      false,
+      "The seed SQL MUST NOT contain any fixed/hardcoded numeric PKs for the Archivist"
+    );
   });
 
   await t.test("public source proposals tool does not leak internal database PKs", () => {

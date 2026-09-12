@@ -1900,8 +1900,17 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       if (!url) return "ERROR: target_url is required.";
       
       let host: string;
+      let canonicalUrl: string;
       try {
-        host = new URL(url).hostname.toLowerCase();
+        const parsed = new URL(url);
+        if (parsed.username || parsed.password) {
+          return "ERROR: UserInfo credentials in URL are blocked.";
+        }
+        host = parsed.hostname.toLowerCase();
+        const scheme = parsed.protocol.replace(/:$/, "");
+        const path = parsed.pathname;
+        // Redact any query secrets or private fragments for public-facing target_url
+        canonicalUrl = `${scheme}://${host}${path}`;
       } catch {
         return "ERROR: target_url is not a valid URL.";
       }
@@ -1909,88 +1918,38 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const proposed_by_actor_type = bearer ? "agent" : "human";
       const proposed_by_actor_id = bearer ? bearer.agent_account_id : a.ok!.id;
 
-      // Suffix/Exact matching deduplication for pending/unresolved proposals on the same host
-      const proposals = await sb("GET", "source_proposals?select=id,target_url,status");
-      const existingProposal = proposals.find((p: any) => {
-        try {
-          const pHost = new URL(p.target_url).hostname.toLowerCase();
-          return (pHost === host || host.endsWith("." + pHost) || pHost.endsWith("." + host)) && p.status !== "resolved";
-        } catch {
-          return false;
-        }
+      // Invoke atomic DB procedure (Proposal + Intent)
+      const result = await rpc("mcp_propose_source", {
+        p_target_url: canonicalUrl,
+        p_canonical_url: canonicalUrl,
+        p_proposed_by_actor_type,
+        p_proposed_by_actor_id,
+        p_voyage: args?.context?.voyage || null,
+        p_waypoint: args?.context?.waypoint != null ? Number(args.context.waypoint) : null,
+        p_region: args?.context?.region || null,
+        p_person: args?.context?.person || null,
+        p_reason: args?.context?.reason || null,
+        p_original_target_url: url
       });
 
-      if (existingProposal) {
-        // Persist the secondary intent structurally in source_proposal_intents
-        await sb("POST", "source_proposal_intents", {
-          proposal_id: existingProposal.id,
-          proposed_by_actor_type,
-          proposed_by_actor_id,
-          voyage: args?.context?.voyage || null,
-          waypoint: args?.context?.waypoint || null,
-          region: args?.context?.region || null,
-          person: args?.context?.person || null,
-          reason: args?.context?.reason || null,
-          original_target_url: url
-        });
-
-        // Log additional proposal intent to the audit trail
-        await sb("POST", "audit_log", {
-          actor: `contributor:${a.ok!.handle}`,
-          action: "propose_source_additional",
-          findings: [["INFO", 0, `Additional intent for existing pending proposal ${existingProposal.id} (URL: ${url})`]],
-          carta_version: CARTA_VERSION
-        });
-
-        return JSON.stringify({
-          status: "success",
-          note: "This source endpoint has already been proposed and is currently under pending assessment. Your intent has been associated.",
-          proposal: existingProposal
-        }, null, 2);
+      if (result === RPC_MISSING) {
+        return "ERROR: mcp_propose_source routine is not installed on database.";
       }
-
-      const endpoints = await sb("GET", `source_endpoints?host_pattern=eq.${encodeURIComponent(host)}`);
-      let endpoint_id: number | null = null;
-      if (endpoints.length) {
-        endpoint_id = endpoints[0].id;
-      }
-
-      const propPayload = {
-        target_url: url,
-        proposed_by_actor_type,
-        proposed_by_actor_id,
-        endpoint_id,
-        status: "submitted"
-      };
-
-      const result = await sb("POST", "source_proposals", propPayload);
-      const proposal_id = result[0].id;
-
-      // Persist the primary intent structurally in source_proposal_intents
-      await sb("POST", "source_proposal_intents", {
-        proposal_id,
-        proposed_by_actor_type,
-        proposed_by_actor_id,
-        voyage: args?.context?.voyage || null,
-        waypoint: args?.context?.waypoint || null,
-        region: args?.context?.region || null,
-        person: args?.context?.person || null,
-        reason: args?.context?.reason || null,
-        original_target_url: url
-      });
       
       // Audit trail record
       await sb("POST", "audit_log", {
         actor: `contributor:${a.ok!.handle}`,
-        action: "propose_source",
-        findings: [["INFO", 0, `Proposed source URL: ${url}`]],
+        action: result.is_new ? "propose_source" : "propose_source_additional",
+        findings: [["INFO", 0, result.is_new ? `Proposed source URL: ${url}` : `Additional intent for existing pending proposal ${result.id} (URL: ${url})`]],
         carta_version: CARTA_VERSION
       });
 
       return JSON.stringify({
         status: "success",
-        note: "Source proposal registered. It will be investigated by the Archivist.",
-        proposal: result[0]
+        note: result.is_new 
+          ? "Source proposal registered. It will be investigated by the Archivist."
+          : "This source endpoint has already been proposed and is currently under pending assessment. Your intent has been associated.",
+        proposal: result
       }, null, 2);
     }
     case "list_sources": {

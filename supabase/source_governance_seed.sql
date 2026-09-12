@@ -63,13 +63,13 @@ on conflict (id) do update set
   reason = excluded.reason;
 
 -- 5. Seed the durable specialist Archivist agent identity (Phase 3A)
-insert into contributors (id, handle, rank, status, human_sponsor) values
-  (888, 'archivist', 'navigator', 'active', 'System')
-on conflict (id) do update set
+-- Let PostgreSQL generate the IDs dynamically, upserting via unique constraints.
+insert into contributors (handle, rank, status, human_sponsor) values
+  ('archivist', 'navigator', 'active', 'System')
+on conflict (handle) do update set
   status = excluded.status;
 
-insert into agent_accounts (id, contributor_id, public_id, status) values
-  (888, 888, 'system-archivist', 'active')
-on conflict (id) do update set
-  contributor_id = excluded.contributor_id,
+insert into agent_accounts (contributor_id, public_id, status) values
+  ((select id from contributors where handle = 'archivist'), 'system-archivist', 'active')
+on conflict (public_id) do update set
   status = excluded.status;
