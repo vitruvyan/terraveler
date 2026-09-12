@@ -1,6 +1,6 @@
--- Phase 3B.2: Atomic Policy Application and Lifecycle Engine RPC (Hardened)
+-- Phase 3B.2/3B.3: Atomic Policy Application and Lifecycle Engine RPC (Hardened)
 -- Enforces strict TOCTOU checks, database consistency checks,
--- and atomic database-side lifecycle mutations with a safe search_path.
+-- stale-evaluation prevention, and atomic database-side lifecycle mutations.
 
 create or replace function apply_source_policy_decision(
   p_evaluation_id bigint,
@@ -45,7 +45,7 @@ begin
     v_evaluation_hash, v_verified_evidence_id, v_subject_type, v_subject_id,
     v_decision_outcome, v_trust_mode, v_rule_id, v_policy_version, v_verification_version,
     v_evaluation_snapshot, v_evidence_hash
-  from source_policy_evaluations
+  from public.source_policy_evaluations
   where id = p_evaluation_id;
   
   if not found then
@@ -57,9 +57,8 @@ begin
   end if;
 
   -- --------------------------------------------------------------------------
-  -- 2. Verify Subject Binding of Associated Evidence Fact
+  -- 2. Verify Subject Binding and Prevent Stale Evaluation Application
   -- --------------------------------------------------------------------------
-  -- Re-read evidence record and ensure it binds to the exact same subject
   declare
     v_evidence_subject_type text;
     v_evidence_subject_id bigint;
@@ -67,7 +66,7 @@ begin
   begin
     select subject_type, subject_id, evidence_hash 
     into v_evidence_subject_type, v_evidence_subject_id, v_evidence_stored_hash
-    from source_verified_evidence
+    from public.source_verified_evidence
     where id = v_verified_evidence_id;
     
     if not found then
@@ -81,6 +80,15 @@ begin
     if v_evidence_subject_type != v_subject_type or v_evidence_subject_id != v_subject_id then
       raise exception 'SUBJECT_BINDING_VIOLATION: Evidence subject (%, %) does not match evaluation subject (%, %)', 
         v_evidence_subject_type, v_evidence_subject_id, v_subject_type, v_subject_id;
+    end if;
+
+    -- Prevent applying stale evaluations if a newer verification artifact exists for this subject (Supersession Safety)
+    if exists (
+      select 1 from public.source_verified_evidence
+      where subject_type = v_subject_type and subject_id = v_subject_id
+        and id > v_verified_evidence_id
+    ) then
+      raise exception 'STALE_EVALUATION_VIOLATION: Associated VerifiedEvidence % has been superseded by a newer verification', v_verified_evidence_id;
     end if;
   end;
 
@@ -129,7 +137,7 @@ begin
   if p_supersedes_decision_id is not null then
     select endpoint_id, collection_id, proposal_id 
     into v_old_endpoint_id, v_old_collection_id, v_old_proposal_id
-    from source_policy_decisions
+    from public.source_policy_decisions
     where id = p_supersedes_decision_id;
     
     if not found then
@@ -151,7 +159,7 @@ begin
   -- --------------------------------------------------------------------------
   -- 6. Persist the New Immutable SourcePolicyDecision
   -- --------------------------------------------------------------------------
-  insert into source_policy_decisions (
+  insert into public.source_policy_decisions (
     endpoint_id, collection_id, proposal_id,
     decision_outcome, trust_mode, rights_class, rights_identifier,
     evidence_snapshot, policy_version, verification_version,
@@ -169,42 +177,42 @@ begin
   -- --------------------------------------------------------------------------
   if v_decision_outcome = 'approve' then
     if v_subject_type = 'endpoint' then
-      update source_endpoints 
+      update public.source_endpoints 
       set status = 'active', trust_mode = v_trust_mode
       where id = v_subject_id;
     elif v_subject_type = 'collection' then
-      update source_collections 
+      update public.source_collections 
       set status = 'active', trust_mode = v_trust_mode
       where id = v_subject_id;
     end if;
     
   elif v_decision_outcome = 'needs_human_review' then
     if v_subject_type = 'endpoint' then
-      update source_endpoints 
+      update public.source_endpoints 
       -- Clear stale trust_mode when status is set to review/rejected/quarantined
       set status = 'needs_human_review', trust_mode = null
       where id = v_subject_id;
     elif v_subject_type = 'collection' then
-      update source_collections 
+      update public.source_collections 
       set status = 'needs_human_review', trust_mode = null
       where id = v_subject_id;
     elif v_subject_type = 'proposal' then
-      update source_proposals 
+      update public.source_proposals 
       set status = 'needs_policy_review'
       where id = v_subject_id;
     end if;
     
   elif v_decision_outcome = 'reject' then
     if v_subject_type = 'endpoint' then
-      update source_endpoints 
+      update public.source_endpoints 
       set status = 'rejected', trust_mode = null
       where id = v_subject_id;
     elif v_subject_type = 'collection' then
-      update source_collections 
+      update public.source_collections 
       set status = 'rejected', trust_mode = null
       where id = v_subject_id;
     elif v_subject_type = 'proposal' then
-      update source_proposals 
+      update public.source_proposals 
       set status = 'rejected'
       where id = v_subject_id;
     end if;

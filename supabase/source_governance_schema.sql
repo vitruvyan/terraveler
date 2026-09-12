@@ -21,7 +21,13 @@ create table if not exists source_endpoints (
     check (status in ('discovered', 'proposed', 'triaging', 'assessing', 'policy_check', 'active', 'needs_human_review', 'quarantined', 'rejected', 'retired')),
   
   -- Trust Mode dictates how ingestion fetching interacts with this endpoint (decoupled from status, nullable)
-  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only'))
+  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
+
+  -- Phase 3B.3 Scheduling Metadata
+  last_verified_at timestamptz,
+  next_reverification_at timestamptz,
+  reverification_interval interval not null default interval '7 days',
+  reverification_policy text not null default 'normal' check (reverification_policy in ('high', 'normal', 'low'))
 );
 
 create table if not exists source_collections (
@@ -31,7 +37,13 @@ create table if not exists source_collections (
   path_prefix text,
   status text not null default 'discovered'
     check (status in ('discovered', 'proposed', 'triaging', 'assessing', 'policy_check', 'active', 'needs_human_review', 'quarantined', 'rejected', 'retired')),
-  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only'))
+  trust_mode text check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
+
+  -- Phase 3B.3 Scheduling Metadata
+  last_verified_at timestamptz,
+  next_reverification_at timestamptz,
+  reverification_interval interval not null default interval '30 days',
+  reverification_policy text not null default 'normal' check (reverification_policy in ('high', 'normal', 'low'))
 );
 
 create table if not exists source_access_rules (
@@ -216,11 +228,40 @@ create table if not exists source_policy_evaluations (
 
 create table if not exists source_reverifications (
   id bigint generated always as identity primary key,
-  decision_id bigint not null references source_policy_decisions(id) on delete cascade,
-  rights_statement_hash text not null,
-  normalized_fingerprint text not null,
-  drift_detected boolean not null default false,
-  timestamp timestamptz default now()
+  subject_type text not null check (subject_type in ('endpoint', 'collection')),
+  subject_id bigint not null,
+  
+  previous_decision_id bigint not null references source_policy_decisions(id) on delete restrict,
+  previous_verified_evidence_id bigint not null references source_verified_evidence(id) on delete restrict,
+  
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  
+  reverifier_version text not null,
+  trigger_type text not null check (trigger_type in (
+    'scheduled', 'manual', 'redirect_change', 'rights_change_signal', 
+    'access_failure', 'endpoint_change', 'collection_change', 'security_signal', 'policy_version_change'
+  )),
+  
+  old_material_fingerprint text not null,
+  new_material_fingerprint text not null,
+  
+  drift_detected boolean not null,
+  drift_class text not null check (drift_class in (
+    'NO_DRIFT', 'NON_MATERIAL_DRIFT', 'MATERIAL_RIGHTS_DRIFT', 
+    'MATERIAL_SCOPE_DRIFT', 'MATERIAL_IDENTITY_DRIFT', 'MATERIAL_ACCESS_DRIFT', 
+    'MATERIAL_REDIRECT_DRIFT', 'MATERIAL_COLLECTION_DRIFT', 'MATERIAL_VERIFIER_DRIFT', 'UNRESOLVED_DRIFT'
+  )),
+  
+  drift_codes text[],
+  observations jsonb not null,
+  
+  new_verified_evidence_id bigint references source_verified_evidence(id) on delete restrict,
+  new_policy_evaluation_id bigint references source_policy_evaluations(id) on delete restrict,
+  new_policy_decision_id bigint references source_policy_decisions(id) on delete restrict,
+  
+  status text not null check (status in ('pending', 'completed', 'failed')),
+  created_at timestamptz not null default now()
 );
 
 -- Phase 2B: Shadow Mode Comparison Audit Table
@@ -309,4 +350,4 @@ grant select, insert on source_verified_evidence to terraveler_evaluator;
 grant select, insert on source_policy_evaluations to terraveler_evaluator;
 
 -- Grant minimal sequence usage safely after roles and tables exist
-grant usage, select on sequence source_verified_evidence_id_seq, source_policy_evaluations_id_seq to terraveler_evaluator, terraveler_service;
+grant usage, select on sequence source_verified_evidence_id_seq, source_policy_evaluations_id_seq, source_reverifications_id_seq to terraveler_evaluator, terraveler_service;

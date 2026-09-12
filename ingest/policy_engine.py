@@ -87,6 +87,22 @@ class PolicyEvaluation:
     verification_version: str
     evidence_snapshot: Dict
 
+
+@dataclass
+class DriftEvaluation:
+    """
+    Deterministic output of classifying material drift.
+    """
+    drift_detected: bool
+    drift_class: str
+    drift_codes: List[str]
+    reason_codes: List[str]
+    blocking_conditions: List[str]
+    old_material_fingerprint: str
+    new_material_fingerprint: str
+    recommended_action: str # "KEEP_ACTIVE", "QUARANTINE_AND_REEVALUATE", "REVIEW_REQUIRED"
+
+
 POLICY_VERSION = "SG-P1"
 SUPPORTED_POLICY_VERSIONS = {POLICY_VERSION}
 
@@ -427,3 +443,119 @@ def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
         )
     )
     return cur.fetchone()["id"]
+
+
+def compute_material_fingerprint(evidence: VerifiedEvidence) -> str:
+    """
+    Computes a canonical, stable SHA256 material fingerprint hash.
+    Focuses strictly on trust-relevant facts, excluding retrieval timestamps, metadata,
+    and unrelated prose.
+    """
+    stable_dict = {
+        "subject_type": str(evidence.subject_type),
+        "subject_id": int(evidence.subject_id),
+        "institution_identity_verified": bool(evidence.institution_identity_verified),
+        "endpoint_identity_verified": bool(evidence.endpoint_identity_verified),
+        "canonical_host": str(evidence.scope_identifier) if evidence.scope_identifier else "",
+        "rights_class": str(evidence.rights_class),
+        "rights_identifier": str(evidence.rights_identifier) if evidence.rights_identifier else "",
+        "rights_uri": str(evidence.rights_uri) if evidence.rights_uri else "",
+        "scope_type": str(evidence.scope_type),
+        "scope_identifier": str(evidence.scope_identifier) if evidence.scope_identifier else "",
+        "access_mode": "ingest" if evidence.access_verified else "none",
+        "verification_strategy": str(evidence.verification_strategy),
+        "policy_incompatible": bool(evidence.policy_incompatible)
+    }
+    canonical = json.dumps(stable_dict, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def classify_material_drift(
+    previous_evidence: VerifiedEvidence,
+    new_evidence: VerifiedEvidence,
+    previous_decision: dict,
+    policy_context: dict = None
+) -> DriftEvaluation:
+    """
+    Pure deterministic drift classifier.
+    Compares previous and new verified evidence records to categorize change materiality.
+    Returns DriftEvaluation.
+    """
+    old_fingerprint = compute_material_fingerprint(previous_evidence)
+    new_fingerprint = compute_material_fingerprint(new_evidence)
+    
+    drift_detected = (old_fingerprint != new_fingerprint)
+    drift_class = "NO_DRIFT"
+    drift_codes = []
+    reason_codes = []
+    blocking_conditions = []
+    recommended_action = "KEEP_ACTIVE"
+    
+    if drift_detected:
+        if previous_evidence.rights_class != new_evidence.rights_class:
+            drift_class = "MATERIAL_RIGHTS_DRIFT"
+            drift_codes.append("SG-DRIFT-001_RIGHTS_IDENTIFIER_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif previous_evidence.rights_uri != new_evidence.rights_uri:
+            drift_class = "MATERIAL_RIGHTS_DRIFT"
+            drift_codes.append("SG-DRIFT-002_RIGHTS_URI_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif previous_evidence.scope_type != new_evidence.scope_type:
+            drift_class = "MATERIAL_SCOPE_DRIFT"
+            drift_codes.append("SG-DRIFT-003_RIGHTS_SCOPE_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif previous_evidence.endpoint_identity_verified != new_evidence.endpoint_identity_verified:
+            drift_class = "MATERIAL_IDENTITY_DRIFT"
+            drift_codes.append("SG-DRIFT-005_ENDPOINT_IDENTITY_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif previous_evidence.access_verified != new_evidence.access_verified:
+            drift_class = "MATERIAL_ACCESS_DRIFT"
+            drift_codes.append("SG-DRIFT-008_ACCESS_MODE_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif previous_evidence.verification_strategy != new_evidence.verification_strategy:
+            drift_class = "MATERIAL_VERIFIER_DRIFT"
+            drift_codes.append("SG-DRIFT-010_SUPPORTED_ITEM_VERIFIER_UNAVAILABLE")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        elif new_evidence.policy_incompatible:
+            drift_class = "MATERIAL_RIGHTS_DRIFT"
+            drift_codes.append("SG-DRIFT-013_TERMS_PROHIBITION_DETECTED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+            
+        else:
+            # Generic content/HTML changes are NON_MATERIAL
+            drift_class = "NON_MATERIAL_DRIFT"
+            drift_codes.append("SG-DRIFT-090_GENERIC_CONTENT_CHANGED")
+            recommended_action = "KEEP_ACTIVE"
+            
+    # Check transient failure window or persistent unreachability
+    if not new_evidence.access_verified and previous_evidence.access_verified:
+        retries = policy_context.get("access_failure_count", 0) if policy_context else 0
+        if retries >= 3:
+            drift_detected = True
+            drift_class = "UNRESOLVED_DRIFT"
+            drift_codes.append("SG-DRIFT-008_ACCESS_MODE_CHANGED")
+            recommended_action = "QUARANTINE_AND_REEVALUATE"
+        else:
+            # First failure is classified as non-material transient observation, remain active
+            drift_detected = True
+            drift_class = "NON_MATERIAL_DRIFT"
+            drift_codes.append("SG-DRIFT-099_UNRESOLVED_CHANGE")
+            reason_codes.append("TRANSIENT_OPERATIONAL_FAILURE_OBSERVED")
+            recommended_action = "KEEP_ACTIVE"
+            
+    return DriftEvaluation(
+        drift_detected=drift_detected,
+        drift_class=drift_class,
+        drift_codes=drift_codes,
+        reason_codes=reason_codes,
+        blocking_conditions=blocking_conditions,
+        old_material_fingerprint=old_fingerprint,
+        new_material_fingerprint=new_fingerprint,
+        recommended_action=recommended_action
+    )

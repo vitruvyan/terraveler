@@ -489,6 +489,106 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
         self.assertEqual(params_1[-1], params_2[-1])
         self.assertEqual(params_1, params_2)
 
+    # -------------------------------------------------------------------------
+    # Phase 3B.3 Drift & Reverification Tests
+    # -------------------------------------------------------------------------
+
+    def test_classify_material_drift_no_drift(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={})
+        self.assertFalse(res.drift_detected)
+        self.assertEqual(res.drift_class, "NO_DRIFT")
+        self.assertEqual(res.recommended_action, "KEEP_ACTIVE")
+
+    def test_classify_material_drift_non_material_change(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        # Change dynamic fields/prose that are non-material (e.g. verified_at, evidence_sources)
+        new_ev.verified_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
+        new_ev.evidence_sources = ["https://example.org/new_terms_page_but_same_license"]
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={})
+        self.assertFalse(res.drift_detected)
+        self.assertEqual(res.drift_class, "NO_DRIFT")
+        self.assertEqual(res.recommended_action, "KEEP_ACTIVE")
+
+    def test_classify_material_drift_material_rights_change(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        # Change trust-relevant licence URI (material rights drift)
+        new_ev.rights_uri = "https://creativecommons.org/licenses/by-nc/4.0/"
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={})
+        self.assertTrue(res.drift_detected)
+        self.assertEqual(res.drift_class, "MATERIAL_RIGHTS_DRIFT")
+        self.assertIn("SG-DRIFT-002_RIGHTS_URI_CHANGED", res.drift_codes)
+        self.assertEqual(res.recommended_action, "QUARANTINE_AND_REEVALUATE")
+
+    def test_classify_material_drift_material_prohibition(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        # Express explicit use prohibition (material rights drift)
+        new_ev.policy_incompatible = True
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={})
+        self.assertTrue(res.drift_detected)
+        self.assertEqual(res.drift_class, "MATERIAL_RIGHTS_DRIFT")
+        self.assertIn("SG-DRIFT-013_TERMS_PROHIBITION_DETECTED", res.drift_codes)
+        self.assertEqual(res.recommended_action, "QUARANTINE_AND_REEVALUATE")
+
+    def test_classify_material_drift_first_transient_failure(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        # Simulate one temporary access failure
+        new_ev.access_verified = False
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={}, policy_context={"access_failure_count": 1})
+        # Transient failure remains active (KEEP_ACTIVE), does not quarantine immediately
+        self.assertTrue(res.drift_detected)
+        self.assertEqual(res.drift_class, "NON_MATERIAL_DRIFT")
+        self.assertIn("SG-DRIFT-099_UNRESOLVED_CHANGE", res.drift_codes)
+        self.assertIn("TRANSIENT_OPERATIONAL_FAILURE_OBSERVED", res.reason_codes)
+        self.assertEqual(res.recommended_action, "KEEP_ACTIVE")
+
+    def test_classify_material_drift_persistent_failure_threshold(self):
+        from policy_engine import classify_material_drift
+        prev_ev = self._base_evidence()
+        new_ev = self._base_evidence()
+        
+        # Simulate repeated access failures crossing threshold (3 retries)
+        new_ev.access_verified = False
+        
+        res = classify_material_drift(prev_ev, new_ev, previous_decision={}, policy_context={"access_failure_count": 3})
+        # Over threshold triggers unresolved drift and QUARANTINE!
+        self.assertTrue(res.drift_detected)
+        self.assertEqual(res.drift_class, "UNRESOLVED_DRIFT")
+        self.assertEqual(res.recommended_action, "QUARANTINE_AND_REEVALUATE")
+
+    def test_material_fingerprint_is_deterministic(self):
+        from policy_engine import compute_material_fingerprint
+        e1 = self._base_evidence()
+        e2 = self._base_evidence()
+        
+        # Random IDs, timestamps, formatting do NOT affect fingerprint hash
+        e2.assessment_id = 98765
+        e2.verified_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=10)
+        e2.evidence_sources = ["https://different-source-evidence-sources"]
+        
+        h1 = compute_material_fingerprint(e1)
+        h2 = compute_material_fingerprint(e2)
+        self.assertEqual(h1, h2)
+
 
 if __name__ == "__main__":
     unittest.main()
