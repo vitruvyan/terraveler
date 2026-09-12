@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import VoyageExperience from "@/components/VoyageExperience";
-import { ATLAS } from "@/lib/voyages";
+import SpaceVoyageExperience from "@/components/SpaceVoyageExperience";
+import { ATLAS, resolveRender } from "@/lib/voyages";
 import Pigafetta from "@/components/Pigafetta";
 import WelcomeCartouche from "@/components/WelcomeCartouche";
 import { getVoyageBundle } from "@/lib/data";
 import { voyageJsonLd, voyageMetadata } from "@/lib/seo";
-import type { Waypoint } from "@/lib/types";
+import type { Waypoint, SpaceWaypoint } from "@/lib/types";
 
 // Editorial content: it changes when the desk publishes, not per request.
 // Served from Vercel's edge and regenerated in the background, which is also
@@ -27,11 +28,27 @@ export default async function Home() {
   const slug = randomVoyage.slug;
 
   const { navigator, voyage, waypoints } = await getVoyageBundle(slug);
+  const render = resolveRender(voyage);
+
   return (
     <>
-      <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]}
-        atlasCount={ATLAS.length} />
-      <Pigafetta />
+      {render === "orbital" ? (
+        <SpaceVoyageExperience
+          navigator={navigator}
+          voyage={voyage}
+          waypoints={waypoints as SpaceWaypoint[]}
+          atlasCount={ATLAS.length}
+        />
+      ) : (
+        <VoyageExperience
+          navigator={navigator}
+          voyage={voyage}
+          waypoints={waypoints as Waypoint[]}
+          atlasCount={ATLAS.length}
+          body={voyage.body ?? "earth"}
+        />
+      )}
+      <Pigafetta voyage={slug} />
       <WelcomeCartouche />
       <script
         type="application/ld+json"
