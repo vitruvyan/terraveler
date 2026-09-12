@@ -264,6 +264,39 @@ create table if not exists source_reverifications (
   created_at timestamptz not null default now()
 );
 
+-- Phase 3B.3: Reverification Events (Append-only operational progress)
+create table if not exists source_reverification_events (
+  id bigint generated always as identity primary key,
+  reverification_id bigint not null references source_reverifications(id) on delete cascade,
+  event_type text not null check (event_type in ('started', 'completed', 'failed', 'quarantined', 'reevaluated')),
+  metadata jsonb,
+  timestamp timestamptz not null default now()
+);
+
+-- Phase 3B.3: Immutable Drift Evaluations
+create table if not exists source_drift_evaluations (
+  id bigint generated always as identity primary key,
+  reverification_id bigint not null references source_reverifications(id) on delete cascade,
+  subject_type text not null check (subject_type in ('endpoint', 'collection')),
+  subject_id bigint not null,
+  
+  drift_detected boolean not null,
+  drift_class text not null,
+  drift_codes text[],
+  reason_codes text[],
+  blocking_conditions text[],
+  
+  old_material_fingerprint text not null,
+  new_material_fingerprint text not null,
+  recommended_action text not null check (recommended_action in ('KEEP_ACTIVE', 'QUARANTINE_AND_REEVALUATE', 'REVIEW_REQUIRED')),
+  
+  classifier_version text not null,
+  evaluation_snapshot jsonb not null,
+  evaluation_hash text not null unique,
+  
+  created_at timestamptz not null default now()
+);
+
 -- Phase 2B: Shadow Mode Comparison Audit Table
 create table if not exists source_governance_comparisons (
   id bigint generated always as identity primary key,
@@ -314,6 +347,8 @@ revoke select on
   source_verified_evidence,
   source_policy_evaluations,
   source_reverifications,
+  source_reverification_events,
+  source_drift_evaluations,
   source_governance_comparisons
 from public, terraveler_anon;
 
@@ -337,6 +372,10 @@ to terraveler_service;
 grant select, insert on source_verified_evidence to terraveler_service;
 grant select on source_policy_evaluations to terraveler_service;
 
+-- Grant selective append privileges to service role
+grant select, insert on source_reverification_events to terraveler_service;
+grant select on source_drift_evaluations to terraveler_service;
+
 -- Create evaluator and trusted writer roles (PostgreSQL Role Separation)
 do $$
 begin
@@ -348,6 +387,15 @@ end $$;
 -- dedicated trusted evaluator writer role has full select/insert capability
 grant select, insert on source_verified_evidence to terraveler_evaluator;
 grant select, insert on source_policy_evaluations to terraveler_evaluator;
+grant select, insert on source_reverifications to terraveler_evaluator;
+grant select, insert on source_reverification_events to terraveler_evaluator;
+grant select, insert on source_drift_evaluations to terraveler_evaluator;
 
 -- Grant minimal sequence usage safely after roles and tables exist
-grant usage, select on sequence source_verified_evidence_id_seq, source_policy_evaluations_id_seq, source_reverifications_id_seq to terraveler_evaluator, terraveler_service;
+grant usage, select on sequence 
+  source_verified_evidence_id_seq, 
+  source_policy_evaluations_id_seq, 
+  source_reverifications_id_seq,
+  source_reverification_events_id_seq,
+  source_drift_evaluations_id_seq
+to terraveler_evaluator, terraveler_service;

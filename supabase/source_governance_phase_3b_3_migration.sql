@@ -1,7 +1,7 @@
--- Migration for Source Governance Phase 3B.3
+-- Migration for Source Governance Phase 3B.3 (Hardened Sealing)
 -- Safe, idempotent, and backwards-compatible migration.
 
--- 1. Add scheduling fields to source_endpoints
+-- 1. Add scheduling and reverification generation fields to source_endpoints
 do $$
 begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_endpoints' and column_name = 'last_verified_at') then
@@ -16,9 +16,12 @@ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_endpoints' and column_name = 'reverification_policy') then
     alter table source_endpoints add column reverification_policy text not null default 'normal' check (reverification_policy in ('high', 'normal', 'low'));
   end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_endpoints' and column_name = 'reverification_generation') then
+    alter table source_endpoints add column reverification_generation integer not null default 0;
+  end if;
 end $$;
 
--- 2. Add scheduling fields to source_collections
+-- 2. Add scheduling and reverification generation fields to source_collections
 do $$
 begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_collections' and column_name = 'last_verified_at') then
@@ -33,9 +36,20 @@ begin
   if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_collections' and column_name = 'reverification_policy') then
     alter table source_collections add column reverification_policy text not null default 'normal' check (reverification_policy in ('high', 'normal', 'low'));
   end if;
+  if not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_collections' and column_name = 'reverification_generation') then
+    alter table source_collections add column reverification_generation integer not null default 0;
+  end if;
 end $$;
 
--- 3. Create first-class source_reverifications table
+-- 3. Create first-class source_reverifications table (Drop/Alter old pre-3B schema safely)
+do $$
+begin
+  -- If old column rights_statement_hash exists, we drop the table and recreate or alter safely
+  if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'source_reverifications' and column_name = 'rights_statement_hash') then
+    drop table source_reverifications cascade;
+  end if;
+end $$;
+
 create table if not exists source_reverifications (
   id bigint generated always as identity primary key,
   subject_type text not null check (subject_type in ('endpoint', 'collection')),
@@ -74,7 +88,40 @@ create table if not exists source_reverifications (
   created_at timestamptz not null default now()
 );
 
--- 4. Apply Immutability Append-Only rules to source_reverifications
+-- 4. Create source_reverification_events table
+create table if not exists source_reverification_events (
+  id bigint generated always as identity primary key,
+  reverification_id bigint not null references source_reverifications(id) on delete cascade,
+  event_type text not null check (event_type in ('started', 'completed', 'failed', 'quarantined', 'reevaluated')),
+  metadata jsonb,
+  timestamp timestamptz not null default now()
+);
+
+-- 5. Create source_drift_evaluations table
+create table if not exists source_drift_evaluations (
+  id bigint generated always as identity primary key,
+  reverification_id bigint not null references source_reverifications(id) on delete cascade,
+  subject_type text not null check (subject_type in ('endpoint', 'collection')),
+  subject_id bigint not null,
+  
+  drift_detected boolean not null,
+  drift_class text not null,
+  drift_codes text[],
+  reason_codes text[],
+  blocking_conditions text[],
+  
+  old_material_fingerprint text not null,
+  new_material_fingerprint text not null,
+  recommended_action text not null check (recommended_action in ('KEEP_ACTIVE', 'QUARANTINE_AND_REEVALUATE', 'REVIEW_REQUIRED')),
+  
+  classifier_version text not null,
+  evaluation_snapshot jsonb not null,
+  evaluation_hash text not null unique,
+  
+  created_at timestamptz not null default now()
+);
+
+-- 6. Apply Immutability Append-Only rules to all tables (No UPDATE, DELETE, TRUNCATE)
 create or replace function source_governance_is_append_only()
 returns trigger language plpgsql as $$
 begin
@@ -82,6 +129,7 @@ begin
     'source governance audit/policy table is append-only: % refused.', tg_op;
 end $$;
 
+-- Triggers for source_reverifications
 drop trigger if exists source_reverifications_append_only on source_reverifications;
 create trigger source_reverifications_append_only
   before update or delete on source_reverifications
@@ -95,8 +143,65 @@ create trigger source_reverifications_no_truncate
 alter table source_reverifications enable always trigger source_reverifications_append_only;
 alter table source_reverifications enable always trigger source_reverifications_no_truncate;
 
--- 5. Privileges and Access Control
-revoke all on source_reverifications from public, terraveler_anon;
+-- Triggers for source_reverification_events
+drop trigger if exists source_reverification_events_append_only on source_reverification_events;
+create trigger source_reverification_events_append_only
+  before update or delete on source_reverification_events
+  for each row execute function source_governance_is_append_only();
+
+drop trigger if exists source_reverification_events_no_truncate on source_reverification_events;
+create trigger source_reverification_events_no_truncate
+  before truncate on source_reverification_events
+  for each statement execute function source_governance_is_append_only();
+
+alter table source_reverification_events enable always trigger source_reverification_events_append_only;
+alter table source_reverification_events enable always trigger source_reverification_events_no_truncate;
+
+-- Triggers for source_drift_evaluations
+drop trigger if exists source_drift_evaluations_append_only on source_drift_evaluations;
+create trigger source_drift_evaluations_append_only
+  before update or delete on source_drift_evaluations
+  for each row execute function source_governance_is_append_only();
+
+drop trigger if exists source_drift_evaluations_no_truncate on source_drift_evaluations;
+create trigger source_drift_evaluations_no_truncate
+  before truncate on source_drift_evaluations
+  for each statement execute function source_governance_is_append_only();
+
+alter table source_drift_evaluations enable always trigger source_drift_evaluations_append_only;
+alter table source_drift_evaluations enable always trigger source_drift_evaluations_no_truncate;
+
+-- 7. Ensure role exists before granting
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'terraveler_evaluator') then
+    create role terraveler_evaluator;
+  end if;
+end $$;
+
+-- 8. Privileges and Access Control (Strict Revokes and Schedulable Grants)
+revoke all on source_reverifications, source_reverification_events, source_drift_evaluations from public, terraveler_anon;
+
+revoke insert, update, delete, truncate on source_reverifications from terraveler_service;
+revoke insert, update, delete, truncate on source_reverification_events from terraveler_service;
+revoke insert, update, delete, truncate on source_drift_evaluations from terraveler_service;
+
+revoke update, delete, truncate on source_reverifications from terraveler_evaluator;
+revoke update, delete, truncate on source_reverification_events from terraveler_evaluator;
+revoke update, delete, truncate on source_drift_evaluations from terraveler_evaluator;
+
+-- Grant SELECT + INSERT safely to matching roles
 grant select, insert on source_reverifications to terraveler_service;
+grant select, insert on source_reverification_events to terraveler_service;
+grant select on source_drift_evaluations to terraveler_service;
+
 grant select, insert on source_reverifications to terraveler_evaluator;
-grant usage, select on sequence source_reverifications_id_seq to terraveler_service, terraveler_evaluator;
+grant select, insert on source_reverification_events to terraveler_evaluator;
+grant select, insert on source_drift_evaluations to terraveler_evaluator;
+
+-- Grant sequence usage safely
+grant usage, select on sequence 
+  source_reverifications_id_seq, 
+  source_reverification_events_id_seq, 
+  source_drift_evaluations_id_seq 
+to terraveler_service, terraveler_evaluator;

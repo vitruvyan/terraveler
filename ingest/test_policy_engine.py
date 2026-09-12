@@ -467,6 +467,8 @@ class TestDeterministicPolicyEngine(unittest.TestCase):
                         "verification_strategy": "none",
                         "conflicts": [],
                         "evidence_sources": ["https://example.org/terms"],
+                        "canonical_host": "example.org",
+                        "collection_identifier": "",
                         "policy_incompatible": False,
                         "incompatibility_codes": []
                     }

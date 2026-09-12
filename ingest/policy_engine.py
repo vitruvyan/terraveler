@@ -68,6 +68,10 @@ class VerifiedEvidence:
     conflicts: List[str]
     evidence_sources: List[str]
     
+    # Phase 3B.3 Extended Fields for Redirect & Collection boundaries
+    canonical_host: str = ""
+    collection_identifier: str = ""
+    
     # Explicit deterministic policy facts for REJECT/incompatibility
     policy_incompatible: bool = False
     incompatibility_codes: List[str] = field(default_factory=list)
@@ -105,6 +109,7 @@ class DriftEvaluation:
 
 POLICY_VERSION = "SG-P1"
 SUPPORTED_POLICY_VERSIONS = {POLICY_VERSION}
+REVERIFIER_VERSION = "SGR-V1"
 
 def canonicalize_evidence(evidence: VerifiedEvidence) -> str:
     """
@@ -128,6 +133,8 @@ def canonicalize_evidence(evidence: VerifiedEvidence) -> str:
         "scope_identifier": str(evidence.scope_identifier) if evidence.scope_identifier is not None else None,
         "access_verified": bool(evidence.access_verified),
         "verification_strategy": str(evidence.verification_strategy),
+        "canonical_host": str(evidence.canonical_host),
+        "collection_identifier": str(evidence.collection_identifier),
         "policy_incompatible": bool(evidence.policy_incompatible),
         "incompatibility_codes": sorted(list(evidence.incompatibility_codes)) if evidence.incompatibility_codes else [],
         "conflicts": sorted(list(evidence.conflicts)) if evidence.conflicts else [],
@@ -166,6 +173,30 @@ def canonicalize_policy_evaluation(evaluation: PolicyEvaluation, subject_type: s
 def compute_policy_evaluation_hash(evaluation: PolicyEvaluation, subject_type: str, subject_id: int, verified_evidence_id: int) -> str:
     """Computes SHA256 of canonicalized policy evaluation."""
     canonical = canonicalize_policy_evaluation(evaluation, subject_type, subject_id, verified_evidence_id)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+def canonicalize_drift_evaluation(evaluation: DriftEvaluation, subject_type: str, subject_id: int, reverification_id: int) -> str:
+    """
+    Produces a deterministic, stable string representation of DriftEvaluation for hashing.
+    """
+    stable_dict = {
+        "reverification_id": int(reverification_id),
+        "subject_type": str(subject_type),
+        "subject_id": int(subject_id),
+        "drift_detected": bool(evaluation.drift_detected),
+        "drift_class": str(evaluation.drift_class),
+        "drift_codes": sorted(list(evaluation.drift_codes)) if evaluation.drift_codes else [],
+        "reason_codes": sorted(list(evaluation.reason_codes)) if evaluation.reason_codes else [],
+        "blocking_conditions": sorted(list(evaluation.blocking_conditions)) if evaluation.blocking_conditions else [],
+        "old_material_fingerprint": str(evaluation.old_material_fingerprint),
+        "new_material_fingerprint": str(evaluation.new_material_fingerprint),
+        "recommended_action": str(evaluation.recommended_action)
+    }
+    return json.dumps(stable_dict, sort_keys=True, separators=(",", ":"))
+
+def compute_drift_evaluation_hash(evaluation: DriftEvaluation, subject_type: str, subject_id: int, reverification_id: int) -> str:
+    """Computes SHA256 of canonicalized drift evaluation."""
+    canonical = canonicalize_drift_evaluation(evaluation, subject_type, subject_id, reverification_id)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 def produce_verified_evidence(assessment_dict: dict, assertions: List[VerifierAssertion] = None) -> VerifiedEvidence:
@@ -220,6 +251,9 @@ def produce_verified_evidence(assessment_dict: dict, assertions: List[VerifierAs
         
         access_verified=assessment_dict.get("access_verified", False),
         verification_strategy=strategy,
+        
+        canonical_host=assessment_dict.get("canonical_host", ""),
+        collection_identifier=assessment_dict.get("collection_identifier", ""),
         
         conflicts=conflicts,
         evidence_sources=list(assessment_dict.get("evidence_sources", [])),
@@ -343,6 +377,9 @@ def _build_eval(decision_outcome: str, trust_mode: Optional[str], rule_id: str,
         "access_verified": evidence.access_verified,
         "verification_strategy": evidence.verification_strategy,
         
+        "canonical_host": evidence.canonical_host,
+        "collection_identifier": evidence.collection_identifier,
+        
         "conflicts": evidence.conflicts,
         "evidence_sources": evidence.evidence_sources,
         
@@ -375,7 +412,7 @@ def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
         "       rights_statement_retrieved, rights_statement_hash_matches, rights_verified, "
         "       rights_class, rights_identifier, rights_uri, scope_verified, scope_type, "
         "       scope_identifier, access_verified, verification_strategy, policy_incompatible, "
-        "       incompatibility_codes, conflicts, evidence_sources "
+        "       incompatibility_codes, conflicts, evidence_sources, canonical_host, collection_identifier "
         "FROM source_verified_evidence "
         "WHERE id = %s",
         (verified_evidence_id,)
@@ -404,6 +441,8 @@ def persist_source_policy_evaluation(cur, verified_evidence_id: int) -> int:
         scope_identifier=row["scope_identifier"],
         access_verified=row["access_verified"],
         verification_strategy=row["verification_strategy"],
+        canonical_host=row["canonical_host"] if row["canonical_host"] else "",
+        collection_identifier=row["collection_identifier"] if row["collection_identifier"] else "",
         conflicts=row["conflicts"] if row["conflicts"] else [],
         evidence_sources=row["evidence_sources"] if row["evidence_sources"] else [],
         policy_incompatible=row["policy_incompatible"],
@@ -456,14 +495,17 @@ def compute_material_fingerprint(evidence: VerifiedEvidence) -> str:
         "subject_id": int(evidence.subject_id),
         "institution_identity_verified": bool(evidence.institution_identity_verified),
         "endpoint_identity_verified": bool(evidence.endpoint_identity_verified),
-        "canonical_host": str(evidence.scope_identifier) if evidence.scope_identifier else "",
+        "canonical_host": str(evidence.canonical_host),
         "rights_class": str(evidence.rights_class),
         "rights_identifier": str(evidence.rights_identifier) if evidence.rights_identifier else "",
         "rights_uri": str(evidence.rights_uri) if evidence.rights_uri else "",
+        "rights_statement_retrieved": bool(evidence.rights_statement_retrieved),
+        "rights_statement_hash_matches": bool(evidence.rights_statement_hash_matches),
         "scope_type": str(evidence.scope_type),
         "scope_identifier": str(evidence.scope_identifier) if evidence.scope_identifier else "",
-        "access_mode": "ingest" if evidence.access_verified else "none",
+        "access_verified": bool(evidence.access_verified),
         "verification_strategy": str(evidence.verification_strategy),
+        "collection_identifier": str(evidence.collection_identifier),
         "policy_incompatible": bool(evidence.policy_incompatible)
     }
     canonical = json.dumps(stable_dict, sort_keys=True, separators=(",", ":"))
@@ -477,9 +519,9 @@ def classify_material_drift(
     policy_context: dict = None
 ) -> DriftEvaluation:
     """
-    Pure deterministic drift classifier.
+    Pure deterministic drift classifier (Hardened).
     Compares previous and new verified evidence records to categorize change materiality.
-    Returns DriftEvaluation.
+    Returns DriftEvaluation. Accumulates ALL matched drift codes.
     """
     old_fingerprint = compute_material_fingerprint(previous_evidence)
     new_fingerprint = compute_material_fingerprint(new_evidence)
@@ -492,46 +534,66 @@ def classify_material_drift(
     recommended_action = "KEEP_ACTIVE"
     
     if drift_detected:
-        if previous_evidence.rights_class != new_evidence.rights_class:
-            drift_class = "MATERIAL_RIGHTS_DRIFT"
+        # Accumulate ALL deterministic drift codes
+        if previous_evidence.rights_class != new_evidence.rights_class or previous_evidence.rights_identifier != new_evidence.rights_identifier:
             drift_codes.append("SG-DRIFT-001_RIGHTS_IDENTIFIER_CHANGED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif previous_evidence.rights_uri != new_evidence.rights_uri:
-            drift_class = "MATERIAL_RIGHTS_DRIFT"
+        if previous_evidence.rights_uri != new_evidence.rights_uri:
             drift_codes.append("SG-DRIFT-002_RIGHTS_URI_CHANGED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif previous_evidence.scope_type != new_evidence.scope_type:
-            drift_class = "MATERIAL_SCOPE_DRIFT"
+        if previous_evidence.scope_type != new_evidence.scope_type:
             drift_codes.append("SG-DRIFT-003_RIGHTS_SCOPE_CHANGED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif previous_evidence.endpoint_identity_verified != new_evidence.endpoint_identity_verified:
-            drift_class = "MATERIAL_IDENTITY_DRIFT"
+        if previous_evidence.rights_statement_retrieved and not new_evidence.rights_statement_retrieved:
+            drift_codes.append("SG-DRIFT-004_RIGHTS_STATEMENT_DISAPPEARED")
+            
+        if previous_evidence.endpoint_identity_verified != new_evidence.endpoint_identity_verified or previous_evidence.institution_identity_verified != new_evidence.institution_identity_verified:
             drift_codes.append("SG-DRIFT-005_ENDPOINT_IDENTITY_CHANGED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif previous_evidence.access_verified != new_evidence.access_verified:
-            drift_class = "MATERIAL_ACCESS_DRIFT"
+        if previous_evidence.canonical_host != new_evidence.canonical_host:
+            drift_codes.append("SG-DRIFT-007_UNEXPECTED_REDIRECT_HOST")
+            
+        if previous_evidence.access_verified != new_evidence.access_verified:
             drift_codes.append("SG-DRIFT-008_ACCESS_MODE_CHANGED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif previous_evidence.verification_strategy != new_evidence.verification_strategy:
-            drift_class = "MATERIAL_VERIFIER_DRIFT"
+        if previous_evidence.collection_identifier != new_evidence.collection_identifier:
+            drift_codes.append("SG-DRIFT-009_COLLECTION_IDENTIFIER_CHANGED")
+            
+        if previous_evidence.verification_strategy != new_evidence.verification_strategy:
             drift_codes.append("SG-DRIFT-010_SUPPORTED_ITEM_VERIFIER_UNAVAILABLE")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        elif new_evidence.policy_incompatible:
-            drift_class = "MATERIAL_RIGHTS_DRIFT"
+        if new_evidence.policy_incompatible:
             drift_codes.append("SG-DRIFT-013_TERMS_PROHIBITION_DETECTED")
-            recommended_action = "QUARANTINE_AND_REEVALUATE"
             
-        else:
-            # Generic content/HTML changes are NON_MATERIAL
+        # If fingerprint changed but no specific matched branch, it's generic content change
+        if not drift_codes:
             drift_class = "NON_MATERIAL_DRIFT"
             drift_codes.append("SG-DRIFT-090_GENERIC_CONTENT_CHANGED")
             recommended_action = "KEEP_ACTIVE"
+        else:
+            # Map strongest drift class and action deterministically based on drift codes accumulated
+            # Prioritize Rights, Scope, and Identity as strongest drift classes
+            if "SG-DRIFT-001_RIGHTS_IDENTIFIER_CHANGED" in drift_codes or "SG-DRIFT-002_RIGHTS_URI_CHANGED" in drift_codes or "SG-DRIFT-004_RIGHTS_STATEMENT_DISAPPEARED" in drift_codes or "SG-DRIFT-013_TERMS_PROHIBITION_DETECTED" in drift_codes:
+                drift_class = "MATERIAL_RIGHTS_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            elif "SG-DRIFT-003_RIGHTS_SCOPE_CHANGED" in drift_codes:
+                drift_class = "MATERIAL_SCOPE_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            elif "SG-DRIFT-005_ENDPOINT_IDENTITY_CHANGED" in drift_codes:
+                drift_class = "MATERIAL_IDENTITY_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            elif "SG-DRIFT-007_UNEXPECTED_REDIRECT_HOST" in drift_codes:
+                drift_class = "MATERIAL_REDIRECT_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            elif "SG-DRIFT-009_COLLECTION_IDENTIFIER_CHANGED" in drift_codes:
+                drift_class = "MATERIAL_COLLECTION_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            elif "SG-DRIFT-008_ACCESS_MODE_CHANGED" in drift_codes:
+                drift_class = "MATERIAL_ACCESS_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
+            else:
+                drift_class = "MATERIAL_VERIFIER_DRIFT"
+                recommended_action = "QUARANTINE_AND_REEVALUATE"
             
     # Check transient failure window or persistent unreachability
     if not new_evidence.access_verified and previous_evidence.access_verified:
@@ -539,7 +601,8 @@ def classify_material_drift(
         if retries >= 3:
             drift_detected = True
             drift_class = "UNRESOLVED_DRIFT"
-            drift_codes.append("SG-DRIFT-008_ACCESS_MODE_CHANGED")
+            if "SG-DRIFT-008_ACCESS_MODE_CHANGED" not in drift_codes:
+                drift_codes.append("SG-DRIFT-008_ACCESS_MODE_CHANGED")
             recommended_action = "QUARANTINE_AND_REEVALUATE"
         else:
             # First failure is classified as non-material transient observation, remain active
@@ -559,3 +622,140 @@ def classify_material_drift(
         new_material_fingerprint=new_fingerprint,
         recommended_action=recommended_action
     )
+
+
+def persist_source_drift_evaluation(cur, reverification_id: int, prev_evidence_id: int, new_evidence_id: int) -> int:
+    """
+    Dedicated trusted drift evaluator writer boundary.
+    Reconstructs old and new VerifiedEvidence, runs classify_material_drift(),
+    canonicalizes the result, and inserts the immutable source_drift_evaluations record.
+    """
+    # 1. Fetch old verified evidence facts
+    cur.execute(
+        "SELECT id, assessment_id, proposal_id, subject_type, subject_id, "
+        "       verified_at, verifier_version, institution_identity_verified, endpoint_identity_verified, "
+        "       rights_statement_retrieved, rights_statement_hash_matches, rights_verified, "
+        "       rights_class, rights_identifier, rights_uri, scope_verified, scope_type, "
+        "       scope_identifier, access_verified, verification_strategy, policy_incompatible, "
+        "       incompatibility_codes, conflicts, evidence_sources, canonical_host, collection_identifier "
+        "FROM source_verified_evidence WHERE id = %s",
+        (prev_evidence_id,)
+    )
+    row_prev = cur.fetchone()
+    if not row_prev:
+        raise ValueError(f"Previous VerifiedEvidence record {prev_evidence_id} not found.")
+        
+    prev_ev = VerifiedEvidence(
+        assessment_id=row_prev["assessment_id"],
+        verified_at=row_prev["verified_at"],
+        verifier_version=row_prev["verifier_version"],
+        subject_type=row_prev["subject_type"],
+        subject_id=row_prev["subject_id"],
+        institution_identity_verified=row_prev["institution_identity_verified"],
+        endpoint_identity_verified=row_prev["endpoint_identity_verified"],
+        rights_statement_retrieved=row_prev["rights_statement_retrieved"],
+        rights_statement_hash_matches=row_prev["rights_statement_hash_matches"],
+        rights_verified=row_prev["rights_verified"],
+        rights_class=row_prev["rights_class"],
+        rights_identifier=row_prev["rights_identifier"],
+        rights_uri=row_prev["rights_uri"],
+        scope_verified=row_prev["scope_verified"],
+        scope_type=row_prev["scope_type"],
+        scope_identifier=row_prev["scope_identifier"],
+        access_verified=row_prev["access_verified"],
+        verification_strategy=row_prev["verification_strategy"],
+        canonical_host=row_prev["canonical_host"] if row_prev["canonical_host"] else "",
+        collection_identifier=row_prev["collection_identifier"] if row_prev["collection_identifier"] else "",
+        conflicts=row_prev["conflicts"] if row_prev["conflicts"] else [],
+        evidence_sources=row_prev["evidence_sources"] if row_prev["evidence_sources"] else [],
+        policy_incompatible=row_prev["policy_incompatible"],
+        incompatibility_codes=row_prev["incompatibility_codes"] if row_prev["incompatibility_codes"] else []
+    )
+    
+    # 2. Fetch new verified evidence facts
+    cur.execute(
+        "SELECT id, assessment_id, proposal_id, subject_type, subject_id, "
+        "       verified_at, verifier_version, institution_identity_verified, endpoint_identity_verified, "
+        "       rights_statement_retrieved, rights_statement_hash_matches, rights_verified, "
+        "       rights_class, rights_identifier, rights_uri, scope_verified, scope_type, "
+        "       scope_identifier, access_verified, verification_strategy, policy_incompatible, "
+        "       incompatibility_codes, conflicts, evidence_sources, canonical_host, collection_identifier "
+        "FROM source_verified_evidence WHERE id = %s",
+        (new_evidence_id,)
+    )
+    row_new = cur.fetchone()
+    if not row_new:
+        raise ValueError(f"New VerifiedEvidence record {new_evidence_id} not found.")
+        
+    new_ev = VerifiedEvidence(
+        assessment_id=row_new["assessment_id"],
+        verified_at=row_new["verified_at"],
+        verifier_version=row_new["verifier_version"],
+        subject_type=row_new["subject_type"],
+        subject_id=row_new["subject_id"],
+        institution_identity_verified=row_new["institution_identity_verified"],
+        endpoint_identity_verified=row_new["endpoint_identity_verified"],
+        rights_statement_retrieved=row_new["rights_statement_retrieved"],
+        rights_statement_hash_matches=row_new["rights_statement_hash_matches"],
+        rights_verified=row_new["rights_verified"],
+        rights_class=row_new["rights_class"],
+        rights_identifier=row_new["rights_identifier"],
+        rights_uri=row_new["rights_uri"],
+        scope_verified=row_new["scope_verified"],
+        scope_type=row_new["scope_type"],
+        scope_identifier=row_new["scope_identifier"],
+        access_verified=row_new["access_verified"],
+        verification_strategy=row_new["verification_strategy"],
+        canonical_host=row_new["canonical_host"] if row_new["canonical_host"] else "",
+        collection_identifier=row_new["collection_identifier"] if row_new["collection_identifier"] else "",
+        conflicts=row_new["conflicts"] if row_new["conflicts"] else [],
+        evidence_sources=row_new["evidence_sources"] if row_new["evidence_sources"] else [],
+        policy_incompatible=row_new["policy_incompatible"],
+        incompatibility_codes=row_new["incompatibility_codes"] if row_new["incompatibility_codes"] else []
+    )
+    
+    # 3. Classify drift
+    drift = classify_material_drift(prev_ev, new_ev, previous_decision={})
+    
+    # 4. Canonicalize and hash drift evaluation
+    snapshot = {
+        "reverification_id": reverification_id,
+        "prev_evidence_id": prev_evidence_id,
+        "new_evidence_id": new_evidence_id,
+        "drift_detected": drift.drift_detected,
+        "drift_class": drift.drift_class,
+        "drift_codes": drift.drift_codes,
+        "old_material_fingerprint": drift.old_material_fingerprint,
+        "new_material_fingerprint": drift.new_material_fingerprint,
+        "recommended_action": drift.recommended_action
+    }
+    
+    stable_canon = json.dumps(snapshot, sort_keys=True, separators=(",", ":"))
+    eval_hash = hashlib.sha256(stable_canon.encode("utf-8")).hexdigest()
+    
+    cur.execute(
+        "INSERT INTO source_drift_evaluations "
+        "(reverification_id, subject_type, subject_id, "
+        " drift_detected, drift_class, drift_codes, reason_codes, blocking_conditions, "
+        " old_material_fingerprint, new_material_fingerprint, recommended_action, "
+        " classifier_version, evaluation_snapshot, evaluation_hash) "
+        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+        "RETURNING id",
+        (
+            reverification_id,
+            prev_ev.subject_type,
+            prev_ev.subject_id,
+            drift.drift_detected,
+            drift.drift_class,
+            drift.drift_codes,
+            drift.reason_codes,
+            drift.blocking_conditions,
+            drift.old_material_fingerprint,
+            drift.new_material_fingerprint,
+            drift.recommended_action,
+            REVERIFIER_VERSION,
+            json.dumps(snapshot),
+            eval_hash
+        )
+    )
+    return cur.fetchone()["id"]
