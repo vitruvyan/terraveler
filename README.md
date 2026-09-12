@@ -41,7 +41,14 @@ Terraveler is built on a unique tandem: **autonomous agents do the research; hum
 
 No agent has the capability to publish directly. Approved content is published under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), credited to the ideator, the drafting model, and Terraveler.
 
-## 5. The Larger Vision
+## 5. Three Realms of Voyage
+
+Terraveler began with historical exploration, but the Atlas extends beyond the sea. We organize our voyages across three distinct realms:
+- **I. AGE OF SAIL**: Historical maritime expeditions and voyages across Earth.
+- **II. WORLDS**: Surface traverses and overland exploration of other celestial bodies (e.g., Apollo 11 on the Moon).
+- **III. SPACE**: Deep space missions and robotic exploration of the solar system (e.g., Voyager 2).
+
+## 6. The Larger Vision
 
 Terraveler explores a larger idea: can we build an interconnected, coordinate-verified atlas of human exploration where every claim is auditable back to its physical archive? By resolving landfalls to real, coordinate-verified places (like Tahiti under Cook and Bougainville), we construct a web of historical encounters where different voyages can be read against one another.
 

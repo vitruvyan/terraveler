@@ -13,7 +13,7 @@ import MapNote from "@/components/map/MapNote";
 import TransportBar from "@/components/map/TransportBar";
 import ContributePanel from "@/components/ContributePanel";
 import { voyageLogPath } from "@/lib/voyages";
-import AtlasSearch from "@/components/AtlasSearch";
+import AtlasBrowser from "@/components/AtlasBrowser";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
 import { basemapStyle, bodyBlurb, TILE_ATTRIBUTION, collapseAttributionOnPhone } from "@/lib/basemaps";
 import {
@@ -777,68 +777,13 @@ export default function VoyageExperience({
         )}
       </div>
 
-      {/* The Atlas panel: current voyage identity + ready voyages + search */}
+      {/* The Atlas panel */}
       {pickerOpen && (
-        <DraggableWindow
-          title="The Atlas"
+        <AtlasBrowser
           onClose={() => setPickerOpen(false)}
-          width={350}
-          /* Below the imprint and clear of the lens rail, which starts at 10.
-             It used to open at left:14/top:64 — straight over the door that
-             opened it and over the wordmark above that. */
-          initial={{ left: 72, top: 168 }}
-        >
-          <div className="atlas-id">
-            <span className="cart-kicker">Now sailing</span>
-            <div className="cart-title">{voyage.title}</div>
-            <div className="cart-nav">
-              <strong>{navigator.name}</strong>
-              {navigator.birth_year ? ` (${navigator.birth_year}–${navigator.death_year ?? ""})` : ""}
-            </div>
-            <div className="cart-ships">{voyage.ships}</div>
-            <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-              <Icon name="scroll" size={16} /> Read this voyage&rsquo;s log as text →
-            </a>
-          </div>
-          <div className="atlas-chips">
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "earth" ? "cur" : ""}`}
-              onClick={() => setAtlasFilter("earth")}
-            >
-              Age of Sail
-            </button>
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "surface" ? "cur" : ""}`}
-              title="Boots on other worlds"
-              onClick={() => setAtlasFilter("surface")}
-            >
-              Worlds
-            </button>
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "space" ? "cur" : ""}`}
-              title="The probes kept logs too"
-              onClick={() => setAtlasFilter("space")}
-            >
-              Space voyages
-            </button>
-          </div>
-          {/* Server-backed search: the index never reaches the browser, so this
-              holds up when the atlas is thousands of voyages deep. The chip
-              list below stays as the browse view for the current handful. */}
-          {/* Search and browse are both server-fed (see AtlasSearch): the panel
-              never lists the whole atlas, and ATLAS stays out of the bundle. */}
-          <AtlasSearch
-            placeholder="Search voyages, navigators, places…"
-            kind={atlasFilter}
-            excludeSlug={voyage.slug}
-          />
-          <div className="voy-more">
-            Missing one? <a href="/contribute">Find a Waypoint in the Chartroom</a>.
-          </div>
-        </DraggableWindow>
+          voyage={voyage}
+          navigator={navigator}
+        />
       )}
 
 

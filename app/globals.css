@@ -3169,6 +3169,78 @@ main.prose {
 .atlas-chip.cur { border-color: var(--brass); color: var(--ink); background: rgba(169, 119, 47, 0.12); }
 .atlas-chip.off { opacity: 0.55; }
 
+/* --- New Atlas Browser --- */
+.atlas-browser-orientation {
+  margin-bottom: var(--space-2);
+}
+.atlas-orientation-title {
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  font-weight: 600;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.realm-explanation {
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.4;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--parchment-deep);
+}
+.current-voyage-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--parchment-deep);
+}
+.current-voyage-title {
+  font-family: var(--font-serif);
+  font-size: var(--step-0);
+  font-weight: bold;
+  color: var(--ink);
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.current-voyage-nav {
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+.current-voyage-ships {
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  font-style: italic;
+  margin-top: 1px;
+}
+.current-voyage-actions {
+  margin-top: var(--space-2);
+}
+.atlas-grow-cta {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--parchment-deep);
+}
+.cta-text {
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin: 4px 0 8px;
+}
+.cta-link {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: bold;
+}
+@media (hover: hover) {
+  .cta-link:hover {
+    text-decoration: underline;
+  }
+}
+
 /* --- Pigafetta suggested questions --- */
 .pig-suggs { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
 .pig-sugg {

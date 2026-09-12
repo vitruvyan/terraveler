@@ -67,8 +67,8 @@ export default function MapImprint({
         <span>
           {atlasCount ? (
             <>
+              <span className="map-door-word">EXPLORE THE ATLAS · </span>
               {atlasCount}
-              <span className="map-door-word"> voyages</span>
             </>
           ) : (
             "The Atlas"

@@ -14,7 +14,7 @@ import TransportBar from "@/components/map/TransportBar";
 import { type MilestonePoint, type ScaleMode } from "@/lib/orrery-scale";
 import type { CameraMode } from "@/components/SolarSystem3D";
 import { voyageLogPath } from "@/lib/voyages";
-import AtlasSearch from "@/components/AtlasSearch";
+import AtlasBrowser from "@/components/AtlasBrowser";
 import {
   DAY,
   PLAYBACK_TICK_MS,
@@ -411,54 +411,11 @@ export default function SpaceVoyageExperience({
       </div>
 
       {pickerOpen && (
-        <DraggableWindow
-          title="The Atlas"
+        <AtlasBrowser
           onClose={() => setPickerOpen(false)}
-          width={350}
-          initial={{ left: 14, top: 64 }}
-        >
-          <div className="atlas-id">
-            <span className="cart-kicker">Now tracking</span>
-            <div className="cart-title">{voyage.title}</div>
-            <div className="cart-nav">
-              <strong>{navigator.name}</strong>
-              {navigator.birth_year ? ` (launched ${navigator.birth_year})` : ""}
-            </div>
-            <div className="cart-ships">{voyage.ships}</div>
-            <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-              <Icon name="scroll" size={16} /> Read this voyage&rsquo;s log as text →
-            </a>
-          </div>
-          <div className="atlas-chips">
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "earth" ? "cur" : ""}`}
-              onClick={() => setAtlasFilter("earth")}
-            >
-              Age of Sail
-            </button>
-            {/* Worlds was simply absent here. The Atlas panel is written twice
-                — once in each experience — and this copy lost a chip, so from
-                a space voyage there was no way to reach a surface one. */}
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "surface" ? "cur" : ""}`}
-              onClick={() => setAtlasFilter("surface")}
-            >
-              Worlds
-            </button>
-            <button
-              type="button"
-              className={`atlas-chip ${atlasFilter === "space" ? "cur" : ""}`}
-              onClick={() => setAtlasFilter("space")}
-            >
-              Space voyages
-            </button>
-          </div>
-          {/* Search and browse are both server-fed (see AtlasSearch): the panel
-              never lists the whole atlas, and ATLAS stays out of the bundle. */}
-          <AtlasSearch kind={atlasFilter} excludeSlug={voyage.slug} />
-        </DraggableWindow>
+          voyage={voyage}
+          navigator={navigator}
+        />
       )}
 
 

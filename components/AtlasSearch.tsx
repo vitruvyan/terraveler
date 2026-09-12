@@ -172,9 +172,7 @@ export default function AtlasSearch({
               away rather than an endless scroll inside a 350px panel. */}
           {res.featured && res.featured.length > 0 && (
             <>
-              <div className="atlas-search-grouphead">
-                {excludeSlug ? "Also in the atlas" : "In the atlas"}
-              </div>
+              <div className="atlas-search-grouphead">Voyages</div>
               {res.featured.map((it) => (
                 <a key={it.href} className="atlas-search-hit" href={it.href}>
                   <span className="atlas-search-ico" aria-hidden="true"><Icon name="anchor" size={16} /></span>
