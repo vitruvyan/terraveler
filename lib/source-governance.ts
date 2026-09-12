@@ -53,6 +53,16 @@ export interface SourceAccessRule {
   expected_redirect_hosts: string[];
 }
 
+export interface SourceProposal {
+  id: number;
+  target_url: string;
+  proposed_by_actor_type: "human" | "agent"; // Removed system proposals
+  proposed_by_actor_id: number;
+  endpoint_id?: number;
+  collection_id?: number;
+  status: "submitted" | "resolved";
+}
+
 export interface SourcePolicyDecision {
   id: number;
   endpoint_id?: number;
@@ -64,7 +74,7 @@ export interface SourcePolicyDecision {
   evidence_snapshot: EvidenceSnapshot; // Strongly typed
   carta_version: string;
   decided_by_actor_type: "system" | "human";
-  decided_by_actor_id: number | null; // Nullable bigint (0/null when system)
+  decided_by_actor_id: number | null; // Nullable bigint (null when system)
   reason: string;
 }
 

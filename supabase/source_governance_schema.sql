@@ -56,7 +56,8 @@ create table if not exists source_access_rules (
 create table if not exists source_proposals (
   id bigint generated always as identity primary key,
   target_url text not null,
-  proposed_by_actor_type text not null check (proposed_by_actor_type in ('human', 'agent', 'system')),
+  -- System proposals removed; only humans and Scribe agents propose sources.
+  proposed_by_actor_type text not null check (proposed_by_actor_type in ('human', 'agent')),
   proposed_by_actor_id bigint not null, -- references contributors.id or agent_accounts.id polymorphically
   endpoint_id bigint references source_endpoints(id) on delete set null,
   collection_id bigint references source_collections(id) on delete set null,
@@ -84,11 +85,11 @@ create table if not exists source_assessments (
 );
 
 -- Immutable Decision Record (The actual security authority boundary)
--- Note: Uses ON DELETE SET NULL to ensure decision provenance survives parent deletion.
+-- Note: Uses ON DELETE RESTRICT to ensure decision provenance survives and prevents cascading deletion of active policy.
 create table if not exists source_policy_decisions (
   id bigint generated always as identity primary key,
-  endpoint_id bigint references source_endpoints(id) on delete set null,
-  collection_id bigint references source_collections(id) on delete set null,
+  endpoint_id bigint references source_endpoints(id) on delete restrict,
+  collection_id bigint references source_collections(id) on delete restrict,
   
   trust_mode text not null check (trust_mode in ('domain_trusted', 'collection_trusted', 'item_verified', 'link_only')),
   rights_class text not null check (rights_class in ('public_domain', 'creative_commons', 'mixed', 'in_copyright', 'unknown')),
@@ -108,6 +109,11 @@ create table if not exists source_policy_decisions (
   check (
     (endpoint_id is not null and collection_id is null) or
     (endpoint_id is null and collection_id is not null)
+  ),
+
+  check (
+    (decided_by_actor_type = 'system' and decided_by_actor_id is null) or
+    (decided_by_actor_type = 'human' and decided_by_actor_id is not null)
   )
 );
 

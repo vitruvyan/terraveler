@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { 
   resolveTrust, 
   SEED_ENDPOINTS, 
@@ -112,26 +114,34 @@ test("Source Governance Domain Model", async (t) => {
     assert.equal(decision.evidence_snapshot.rights_statement_hash, "abcd1234hash");
   });
 
-  await t.test("audit retention model: policy decisions persist independently", () => {
-    // Tests that policy decisions don't cascade delete at the domain level
-    const decision: SourcePolicyDecision = {
-      id: 100,
-      endpoint_id: null, // Nullable to survive endpoint deletion (set null)
-      collection_id: null,
-      trust_mode: "domain_trusted",
-      rights_class: "public_domain",
-      evidence_snapshot: {
-        rights_scope_type: "endpoint",
-        rights_class: "public_domain",
-        rights_statement_hash: "hash"
-      },
-      carta_version: "0.7",
-      decided_by_actor_type: "system",
-      decided_by_actor_id: null,
-      reason: "Retained history after endpoint removal"
-    };
+  await t.test("Static Database Schema Verifications", () => {
+    const sqlPath = join(__dirname, "../supabase/source_governance_schema.sql");
+    const sql = readFileSync(sqlPath, "utf8");
 
-    assert.equal(decision.endpoint_id, null);
-    assert.equal(decision.trust_mode, "domain_trusted");
+    // 1. Assert ON DELETE RESTRICT on policy decisions (Audit retention mechanism)
+    assert.match(
+      sql,
+      /endpoint_id\s+bigint\s+references\s+source_endpoints\(id\)\s+on\s+delete\s+restrict/i,
+      "source_policy_decisions.endpoint_id MUST use ON DELETE RESTRICT"
+    );
+    assert.match(
+      sql,
+      /collection_id\s+bigint\s+references\s+source_collections\(id\)\s+on\s+delete\s+restrict/i,
+      "source_policy_decisions.collection_id MUST use ON DELETE RESTRICT"
+    );
+
+    // 2. Assert that System proposals are removed (only 'human' and 'agent')
+    assert.match(
+      sql,
+      /proposed_by_actor_type\s+text\s+not\s+null\s+check\s+\(proposed_by_actor_type\s+in\s+\('human',\s*'agent'\)\)/i,
+      "source_proposals.proposed_by_actor_type must restrict only to 'human' and 'agent'"
+    );
+
+    // 3. Assert the System/Human decider and actor ID invariants on policy decisions
+    assert.match(
+      sql,
+      /check\s*\(\s*\(decided_by_actor_type\s*=\s*'system'\s+and\s+decided_by_actor_id\s+is\s+null\)\s+or\s+\(decided_by_actor_type\s*=\s*'human'\s+and\s+decided_by_actor_id\s+is\s+not\s+null\)\s*\)/i,
+      "source_policy_decisions MUST enforce that system actors have NULL IDs, and humans have NON-NULL IDs"
+    );
   });
 });
