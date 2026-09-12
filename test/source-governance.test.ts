@@ -196,6 +196,23 @@ test("Source Governance Domain Model", async (t) => {
     }
   });
 
+  await t.test("public source proposals tool does not leak internal database PKs", () => {
+    const mcpRoutePath = join(__dirname, "../app/api/mcp/route.ts");
+    const mcpRoute = readFileSync(mcpRoutePath, "utf8");
+    
+    // Assert that we map or explicitly strip proposed_by_actor_id from list_source_proposals
+    assert.match(
+      mcpRoute,
+      /case\s+"list_source_proposals":\s*\{[\s\S]*?select=id,target_url,proposed_by_actor_type,status/i,
+      "list_source_proposals MUST NOT select or return proposed_by_actor_id"
+    );
+    assert.match(
+      mcpRoute,
+      /case\s+"get_source_proposal":\s*\{[\s\S]*?select=id,target_url,proposed_by_actor_type,status/i,
+      "get_source_proposal MUST NOT select or return proposed_by_actor_id"
+    );
+  });
+
   await t.test("Shadow Mode A/B Fixture Parity", () => {
     const testURLs = [
       // 1. Gutenberg / Runeberg

@@ -1900,13 +1900,30 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         return "ERROR: target_url is not a valid URL.";
       }
 
-      // Deduplication check
-      const existing = await sb("GET", `source_proposals?target_url=eq.${encodeURIComponent(url)}`);
-      if (existing.length) {
+      // Suffix/Exact matching deduplication for pending/unresolved proposals on the same host
+      const proposals = await sb("GET", "source_proposals?select=id,target_url,status");
+      const existingProposal = proposals.find((p: any) => {
+        try {
+          const pHost = new URL(p.target_url).hostname.toLowerCase();
+          return (pHost === host || host.endsWith("." + pHost) || pHost.endsWith("." + host)) && p.status !== "resolved";
+        } catch {
+          return false;
+        }
+      });
+
+      if (existingProposal) {
+        // Log additional proposal intent to the audit trail
+        await sb("POST", "audit_log", {
+          actor: `contributor:${a.ok!.handle}`,
+          action: "propose_source_additional",
+          findings: [["INFO", 0, `Additional intent for existing pending proposal ${existingProposal.id} (URL: ${url})`]],
+          carta_version: CARTA_VERSION
+        });
+
         return JSON.stringify({
           status: "success",
-          note: "This source URL has already been proposed previously.",
-          proposal: existing[0]
+          note: "This source endpoint has already been proposed and is currently under pending assessment. Your intent has been associated.",
+          proposal: existingProposal
         }, null, 2);
       }
 
@@ -1918,8 +1935,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
 
       const propPayload = {
         target_url: url,
-        proposed_by_actor_type: bearer ? "human" : "agent",
-        proposed_by_actor_id: a.ok!.id,
+        proposed_by_actor_type: bearer ? "agent" : "human",
+        proposed_by_actor_id: bearer ? bearer.agent_account_id : a.ok!.id,
         endpoint_id,
         status: "submitted"
       };
@@ -1958,7 +1975,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     case "get_source_proposal": {
       const id = Number(args?.id);
       if (!Number.isInteger(id) || id <= 0) return "ERROR: id must be a positive integer.";
-      const list = await sb("GET", `source_proposals?id=eq.${id}&select=id,target_url,proposed_by_actor_type,proposed_by_actor_id,status`);
+      const list = await sb("GET", `source_proposals?id=eq.${id}&select=id,target_url,proposed_by_actor_type,status`);
       if (!list.length) return "ERROR: unknown source proposal id.";
       return JSON.stringify(list[0], null, 2);
     }

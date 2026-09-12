@@ -178,6 +178,33 @@ class Phase3ASecurityAndGovernanceTests(unittest.TestCase):
         self.assertEqual(rights_class, "mixed")
         self.assertEqual(spdx, "mixed_repository_warning")
 
+    # -------------------------------------------------------------------------
+    # 3. Specialist Archivist Durable Identity & Safety
+    # -------------------------------------------------------------------------
+
+    def test_archivist_identity_missing_fails_closed(self):
+        # Verify that if the durable system-archivist agent record does not exist
+        # or is inactive, the Archivist system immediately fails closed (throws PermissionError)
+        class FakeCursor:
+            def execute(self, query, params=None):
+                pass
+            def fetchone(self):
+                return None  # Simulate missing/inactive row
+                
+        with self.assertRaises(PermissionError):
+            archivist.get_archivist_agent_id(FakeCursor())
+
+    def test_archivist_identity_resolution_success(self):
+        # Verify that when active, it resolves the correct database primary key
+        class FakeCursor:
+            def execute(self, query, params=None):
+                pass
+            def fetchone(self):
+                return {"id": 12345}  # Valid DB PK
+                
+        pk = archivist.get_archivist_agent_id(FakeCursor())
+        self.assertEqual(pk, 12345)
+
 
 if __name__ == "__main__":
     unittest.main()
