@@ -1922,8 +1922,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const result = await rpc("mcp_propose_source", {
         p_target_url: canonicalUrl,
         p_canonical_url: canonicalUrl,
-        p_proposed_by_actor_type,
-        p_proposed_by_actor_id,
+        p_proposed_by_actor_type: proposed_by_actor_type,
+        p_proposed_by_actor_id: proposed_by_actor_id,
         p_voyage: args?.context?.voyage || null,
         p_waypoint: args?.context?.waypoint != null ? Number(args.context.waypoint) : null,
         p_region: args?.context?.region || null,

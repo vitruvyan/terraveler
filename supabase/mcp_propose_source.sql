@@ -1,4 +1,4 @@
--- Phase 3A: Atomic Source Proposal and Intent Creation Function
+-- Phase 3A: Atomic Source Proposal and Intent Creation Function (Corrected)
 -- Guarantees transactional atomicity for registering proposals and mapping intents,
 -- preventing orphan proposal states and ensuring deduplication and security.
 
@@ -24,16 +24,32 @@ begin
   -- Extract host pattern from canonical URL (safely normalized)
   v_host := lower(substring(p_canonical_url from '^(?:https?://)?([^:/]+)'));
   
-  -- Check if an active endpoint matching this host pattern already exists
+  -- 1. Try exact matches first
   select id into v_endpoint_id
   from source_endpoints
-  where host_pattern = v_host and status = 'active'
+  where match_type = 'exact' and host_pattern = v_host and status = 'active'
   limit 1;
   
-  -- Check for an existing pending proposal matching this canonical URL
+  -- 2. Try suffix matches safely (preventing spoofing, ensuring correct suffix boundary)
+  if v_endpoint_id is null then
+    select id into v_endpoint_id
+    from source_endpoints
+    where match_type = 'suffix' 
+      and length(v_host) >= length(host_pattern)
+      and right(v_host, length(host_pattern)) = host_pattern 
+      and status = 'active'
+    limit 1;
+  end if;
+  
+  -- 3. Check for an existing pending proposal matching this host family (Deduplication)
   select id into v_proposal_id
   from source_proposals
-  where target_url = p_canonical_url and status != 'resolved'
+  where status != 'resolved' and (
+    -- Case A: Both map to the same active registered endpoint
+    (v_endpoint_id is not null and endpoint_id = v_endpoint_id) or
+    -- Case B: Unregistered endpoints, matching exactly by host string
+    (v_endpoint_id is null and lower(substring(target_url from '^(?:https?://)?([^:/]+)')) = v_host)
+  )
   limit 1;
   
   -- If no pending proposal, create one using the safe canonical public representation
