@@ -11,7 +11,7 @@ import type { Waypoint } from "@/lib/types";
 // Served from Vercel's edge and regenerated in the background, which is also
 // what makes it resilient — if the backend is unreachable at revalidation
 // time the last good page keeps being served instead of erroring.
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { voyage, navigator } = await getVoyageBundle();
@@ -21,8 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  // The homepage always serves the default Earth voyage (Bougainville).
-  const { navigator, voyage, waypoints } = await getVoyageBundle();
+  // Choose a random voyage from the Atlas on each refresh.
+  const randomIndex = Math.floor(Math.random() * ATLAS.length);
+  const randomVoyage = ATLAS[randomIndex];
+  const slug = randomVoyage.slug;
+
+  const { navigator, voyage, waypoints } = await getVoyageBundle(slug);
   return (
     <>
       <VoyageExperience navigator={navigator} voyage={voyage} waypoints={waypoints as Waypoint[]}
@@ -33,7 +37,7 @@ export default async function Home() {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(voyageJsonLd("boudeuse-1766", voyage, navigator, waypoints.length)),
+          __html: JSON.stringify(voyageJsonLd(slug, voyage, navigator, waypoints.length)),
         }}
       />
     </>
