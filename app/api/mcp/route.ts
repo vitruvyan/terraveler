@@ -13,6 +13,7 @@ import { adaptEditorialGap } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
+import { RANK_QUOTA, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -267,24 +268,12 @@ function validRegistrationToken(given: unknown): boolean {
  * authorised this agent, and a handle can be claimed on that authority; an
  * api_key registration is the legacy path and gates itself on the Carta token.
  */
-const SCOPE_FOR: Record<string, Scope | undefined> = {
-  // Both of these need to know who is asking — the queue hides your own
-  // drafts and the ones you have already reviewed — and get_review_brief
-  // hands back an unpublished draft, which anonymous callers had no business
-  // reading. Neither triggered a challenge, so a Scribe met the old
-  // credential problem before it ever reached submit_review.
-  // list_review_queue is NOT here: the backlog is public, like the audit trail.
-  // get_review_brief is, because it returns an unpublished draft.
-  get_review_brief: "review",
-  claim_gap: "contribute",
-  propose_idea: "contribute",
-  submit_draft: "contribute",
-  suggest_feature: "contribute",
-  suggest_content: "contribute",
-  suggest_source: "contribute",
-  submit_review: "review",
-  appeal: "appeal",
-};
+// Phase 5 write-authority audit: this used to be its own object literal,
+// hand-kept identical to lib/agentCapabilities.ts's TOOL_SCOPE (the OAuth
+// write route's copy of the same mapping) by nothing but discipline — two
+// independently-maintained copies of one authorization table is exactly the
+// shape drift takes until someone edits one and not the other.
+const SCOPE_FOR: Record<string, Scope | undefined> = TOOL_SCOPE;
 
 const RESOURCE_METADATA =
   "https://www.terraveler.com/.well-known/oauth-protected-resource";
@@ -347,13 +336,17 @@ const PROVENANCE_PROPS = {
 
 // ------------------------------------------------------------------ quotas
 // Standing earns capacity, never exemption from review (Carta 7).
-const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }> = {
-  "cabin-boy": { submissionsPerDay: 3, activeClaims: 1 },
-  "deckhand":  { submissionsPerDay: 6, activeClaims: 2 },
-  "navigator": { submissionsPerDay: 12, activeClaims: 3 },
-  "captain":   { submissionsPerDay: 24, activeClaims: 5 },
-  "admiral":   { submissionsPerDay: 48, activeClaims: 8 },
-};
+//
+// Phase 5 write-authority audit: the numbers used to be retyped here,
+// camelCase, next to lib/agentCapabilities.ts's RANK_QUOTA (snake_case,
+// what the OAuth write route reads) — one src/api-shape difference away from
+// silently drifting apart. Derived from RANK_QUOTA now, so a rank's quota
+// has exactly one number in the codebase; the camelCase shape stays local
+// because every call site in this file already reads it that way.
+const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }> =
+  Object.fromEntries(Object.entries(RANK_QUOTA).map(([r, q]) => [
+    r, { submissionsPerDay: q.submissions_per_day, activeClaims: q.active_claims },
+  ]));
 const CLAIM_TTL_DAYS = 7;
 // Reviewing is the work we want to scale (Carta 10.4): double the authoring quota.
 const reviewsPerDay = (rank: string) => quotaFor(rank).submissionsPerDay * 2;

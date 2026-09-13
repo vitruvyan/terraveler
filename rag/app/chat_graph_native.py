@@ -369,7 +369,7 @@ def config_from_env(pg: dict[str, Any]) -> ChatConfig:
         pg=pg,
         embed_url=os.getenv("EMBED_URL", "http://terraveler_embedding:8010"),
         openrouter_key=os.getenv("OPENROUTER_API_KEY", ""),
-        model=os.getenv("OPENROUTER_MODEL", "~anthropic/claude-opus-latest"),
+        model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash"),
         k=int(os.getenv("RAG_K", "6")),
     )
 

@@ -19,14 +19,18 @@ test("publication is never an agent capability", () => {
 });
 
 test("modern capability scopes stay aligned with legacy runtime enforcement", async () => {
+  // Phase 5 write-authority audit: this was a second, hand-typed copy of
+  // TOOL_SCOPE (const SCOPE_FOR = {...9 literal entries...}), pinned equal to
+  // the import by a regex here. Two literals that happen to match is exactly
+  // the shape drift takes the day someone edits one and not the other — so
+  // the fix was to delete the second literal, not add a third check. This
+  // now pins the STRUCTURAL guarantee that replaced the regex: one map,
+  // imported, never retyped.
   const route = await read("../app/api/mcp/route.ts");
-  const map = route.match(/const SCOPE_FOR[^{]*\{([\s\S]*?)\n\};/);
-  assert.ok(map, "legacy SCOPE_FOR not found");
-  const legacy = Object.fromEntries(
-    [...map[1].matchAll(/^\s*([a-z_]+):\s*"(\w+)"/gm)].map((m) => [m[1], m[2]]),
-  );
-  assert.deepEqual(legacy, TOOL_SCOPE,
-    "modern policy and legacy enforcement must not silently diverge during migration");
+  assert.match(route, /import \{ RANK_QUOTA, TOOL_SCOPE \} from "@\/lib\/agentCapabilities"/);
+  assert.match(route, /const SCOPE_FOR: Record<string, Scope \| undefined> = TOOL_SCOPE;/);
+  assert.equal(/const SCOPE_FOR[^=]*=\s*\{/.test(route), false,
+    "SCOPE_FOR must be the imported TOOL_SCOPE, not a re-declared object literal");
 });
 
 test("modern catalogue hides conversation-carried credential mechanics", async () => {
@@ -41,11 +45,15 @@ test("modern catalogue hides conversation-carried credential mechanics", async (
 test("rank quota mirror is pinned to the product policy", async () => {
   assert.deepEqual(RANK_QUOTA["cabin-boy"], { submissions_per_day: 3, active_claims: 1 });
   assert.deepEqual(RANK_QUOTA.admiral, { submissions_per_day: 48, active_claims: 8 });
+  // Phase 5 write-authority audit: the legacy route used to retype every
+  // rank's numbers a second time (camelCase, next to this file's
+  // snake_case) — pinned equal here by a regex per rank. Derived from
+  // RANK_QUOTA now, so there is exactly one number for a rank's quota in
+  // the codebase; this pins that derivation, not a second copy of it.
   const route = await read("../app/api/mcp/route.ts");
-  for (const [rank, q] of Object.entries(RANK_QUOTA)) {
-    const pattern = new RegExp(`"${rank.replace("-", "\\-")}"?:?\\s*\\{\\s*submissionsPerDay:\\s*${q.submissions_per_day},\\s*activeClaims:\\s*${q.active_claims}`);
-    assert.match(route, pattern, `${rank} quota drifted between legacy enforcement and capability introspection`);
-  }
+  assert.match(route,
+    /const QUOTA: Record<string, \{ submissionsPerDay: number; activeClaims: number \}> =\s*\n\s*Object\.fromEntries\(Object\.entries\(RANK_QUOTA\)/,
+    "QUOTA must be derived from RANK_QUOTA, not a second hand-typed table");
 });
 
 test("authenticated modern calls bootstrap a persistent agent before enforcement", async () => {

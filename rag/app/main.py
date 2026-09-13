@@ -162,7 +162,7 @@ def health():
     # is all a key can tell you — whether it still buys anything is what the
     # `failure` column on chat_traces is for.
     return {"status": "healthy" if pg else "degraded", "pg": pg,
-            "writer": bool(CHAT_CFG.anthropic_key)}
+            "writer": bool(CHAT_CFG.openrouter_key)}
 
 
 @app.post("/rag/search")
@@ -193,9 +193,9 @@ def chat(req: ChatReq, authorization: str = Header(default="")):
     _require(authorization)
     if not req.question or not req.question.strip():
         raise HTTPException(status_code=400, detail="empty question")
-    if not CHAT_CFG.anthropic_key:
+    if not CHAT_CFG.openrouter_key:
         raise HTTPException(status_code=503,
-                            detail="ANTHROPIC_API_KEY not configured on the backend")
+                            detail="OPENROUTER_API_KEY not configured on the backend")
     voyage = req.voyage or DEFAULT_VOYAGE
 
     run_id = f"chat-{voyage}-{_stamp()}"

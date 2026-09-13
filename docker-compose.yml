@@ -105,7 +105,7 @@ services:
       # reads ANTHROPIC_API_KEY directly; provider choice is expressed by the
       # OpenRouter model slug instead.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-~anthropic/claude-opus-latest}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-deepseek/deepseek-v4.1-flash}
       RAG_K: ${RAG_K:-6}
       PGHOST: terraveler_postgres
       PGPORT: 5432
