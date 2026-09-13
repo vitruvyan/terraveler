@@ -31,9 +31,11 @@ going forward.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import os
-import sys
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 import psycopg2
@@ -43,7 +45,7 @@ STATE_FILE = Path(os.environ.get(
     "MOTUS_RAISED_STATE_FILE", Path.home() / "backups" / "terraveler" / "motus_raised_state.json"))
 
 
-def pg_params() -> dict:
+def _dotenv() -> dict:
     env = {}
     f = ROOT / ".env"
     if f.exists():
@@ -51,6 +53,11 @@ def pg_params() -> dict:
             if "=" in line and not line.lstrip().startswith("#"):
                 k, v = line.split("=", 1)
                 env[k.strip()] = v.strip().strip('"')
+    return env
+
+
+def pg_params() -> dict:
+    env = _dotenv()
     return {
         "host": os.environ.get("PGHOST", "127.0.0.1"),
         "port": int(os.environ.get("PGPORT", "6000")),
@@ -58,6 +65,28 @@ def pg_params() -> dict:
         "user": os.environ.get("PGUSER", "terraveler"),
         "password": os.environ.get("PGPASSWORD") or env.get("POSTGRES_PASSWORD", ""),
     }
+
+
+def notify(text: str) -> None:
+    """Best-effort Telegram push. A failed notification must never fail the
+    check itself — the findings are already printed to stdout/the cron log
+    either way, which is the durable record; Telegram is a convenience on
+    top of it, not the evidence."""
+    env = _dotenv()
+    token = os.environ.get("TELEGRAM_TOKEN") or env.get("TELEGRAM_TOKEN", "")
+    chat_id = os.environ.get("TELEGRAM_CHAT_ID") or env.get("TELEGRAM_CHAT_ID", "")
+    if not token or not chat_id:
+        print("(no TELEGRAM_TOKEN/TELEGRAM_CHAT_ID configured — skipping notification)")
+        return
+    body = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode()
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendMessage", data=body, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if r.status != 200:
+                print(f"(Telegram notification failed: HTTP {r.status})")
+    except Exception as exc:  # noqa: BLE001 — a notification failure is not a check failure
+        print(f"(Telegram notification failed: {exc})")
 
 
 def load_state() -> dict:
@@ -124,6 +153,17 @@ TABLES = [
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--notify-test", action="store_true",
+                    help="send a test Telegram message and exit, without touching the checkpoint")
+    args = ap.parse_args()
+
+    if args.notify_test:
+        notify("Terraveler / check_motus_raised.py: test notification — if you see this, "
+               "the Telegram wiring works.")
+        print("test notification sent (see stdout above for delivery status)")
+        return 0
+
     state = load_state()
     conn = psycopg2.connect(**pg_params())
     all_found: list[dict] = []
@@ -143,10 +183,15 @@ def main() -> int:
         print("no raised nodes since last check")
         return 0
 
-    print(f"{len(all_found)} raised node(s) found — Motus continued the run and recorded it, "
-          f"nobody has looked until now:")
+    summary = (f"{len(all_found)} raised node(s) found — Motus continued the run and recorded it, "
+               f"nobody has looked until now:")
+    print(summary)
+    lines = [summary]
     for f in all_found:
-        print(f"  [{f['store']}#{f['row_id']}] {f['created_at']}  run={f['run']!r}  node={f['node']!r}")
+        line = f"  [{f['store']}#{f['row_id']}] {f['created_at']}  run={f['run']!r}  node={f['node']!r}"
+        print(line)
+        lines.append(line)
+    notify("\n".join(lines))
     return 1
 
 

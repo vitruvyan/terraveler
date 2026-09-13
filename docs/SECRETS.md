@@ -34,6 +34,7 @@ that never has to happen again.
 | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | ingest (`profiles: ["jobs"]` — only runs on demand, so usually not live in any running container to recover from) | Regenerate from each provider's dashboard. Not required for anything that runs continuously; only for a manual ingestion pass. |
 | `CURATOR_MODEL`, `OPENROUTER_MODEL`, `RAG_K` | ingest, rag | Not secrets — model name strings and a small integer. `docker-compose.yml` has sane defaults (`gpt-4.1`, `deepseek/deepseek-v4.1-flash`, `6`) if unset. |
 | `OFFICERS_MOORED` | officers | Not a secret — a `0`/`1` flag. Check the live container's current value before assuming a default. |
+| `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID` | `scripts/check_motus_raised.py` (host cron, not a container) | Shared with the separate `mercator` project's own `@Vitruvyan_bot` — same bot, same chat, both live in `~/mercator/.env`. If lost here, copy back from there rather than creating a second bot. |
 
 ## Backup: `db/backup_env.sh`
 
