@@ -49,11 +49,16 @@ class OpenRouterHTTPError(RuntimeError):
 
 
 SYSTEM_PROMPT = (
-    "You are Antonio Pigafetta, chronicler of great voyages. Answer the user's "
-    "question ONLY from the numbered sources below, which come from the ship's "
-    "journals and reference works for the voyage in question. Cite the sources "
-    "you use inline as [n]. If the answer is not in the sources, say plainly that "
-    "the sources do not tell. "
+    "You are Antonio Pigafetta, chronicler of great voyages, and also this ship's "
+    "own steward. Answer the user's question ONLY from the numbered sources below. "
+    "Most come from the ship's journals and reference works for the voyage in "
+    "question; a few may instead be Terraveler's own help documentation, answering "
+    "practical questions about using the site itself — contributing, review, "
+    "search, accounts. Answer from whichever kind actually answers the question, "
+    "in the voice that fits it: a voyage question in Pigafetta's chronicler voice, "
+    "a site-usage question plainly and helpfully, still from the sources given, "
+    "never invented. Cite the sources you use inline as [n]. If the answer is not "
+    "in the sources, say plainly that the sources do not tell. "
     "Answer in the language the QUESTION is written in, whatever language the "
     "sources happen to be in. "
     "Write plain prose only: no Markdown, no headings, no asterisks, no bullet "
@@ -114,6 +119,7 @@ class ChatConfig:
     openrouter_key: str
     model: str = "~anthropic/claude-opus-latest"
     k: int = 6
+    help_k: int = 4
     max_tokens: int = 4000
 
 
@@ -246,15 +252,31 @@ def make_nodes(cfg: ChatConfig) -> dict[str, Any]:
                     "select * from match_rag_docs(%s::vector, %s, %s)",
                     (lit, cfg.k, voyage),
                 )
-                rows = [dict(r) for r in cur.fetchall()]
+                voyage_rows = [dict(r) for r in cur.fetchall()]
+                # Site-help content (embed_site_help.py) is voyage_slug-less by
+                # convention — a "how do I contribute" question asked from any
+                # voyage page must find it regardless of which voyage is open,
+                # so this second lookup passes no voyage filter at all. Merging
+                # by similarity rather than concatenating means an irrelevant
+                # help chunk cannot crowd out a relevant journal passage, or the
+                # reverse: whichever kind of source actually answers wins the
+                # slots, exactly as if there had been one combined query.
+                cur.execute(
+                    "select * from match_rag_docs(%s::vector, %s, %s, %s)",
+                    (lit, cfg.help_k, None, "help"),
+                )
+                help_rows = [dict(r) for r in cur.fetchall()]
         finally:
             conn.close()
 
         ctx.record_effect(EffectDescriptor(
             effect_class=EffectClass.RECORDED_EFFECT,
-            description=f"queried match_rag_docs for voyage {voyage!r}, k={cfg.k}",
+            description=(f"queried match_rag_docs for voyage {voyage!r} (k={cfg.k}) "
+                         f"and site-help docs (k={cfg.help_k}): "
+                         f"{len(voyage_rows)} + {len(help_rows)} candidate(s)"),
         ))
 
+        rows = sorted(voyage_rows + help_rows, key=lambda r: r["similarity"], reverse=True)[:cfg.k]
         top = float(rows[0]["similarity"]) if rows else 0.0
         now = ctx.now()
         sources = [{
@@ -371,6 +393,7 @@ def config_from_env(pg: dict[str, Any]) -> ChatConfig:
         openrouter_key=os.getenv("OPENROUTER_API_KEY", ""),
         model=os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-v4.1-flash"),
         k=int(os.getenv("RAG_K", "6")),
+        help_k=int(os.getenv("RAG_HELP_K", "4")),
     )
 
 
