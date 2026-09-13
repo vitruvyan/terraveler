@@ -284,10 +284,39 @@ def curator_handler(cfg, conn, fields):
     time.sleep(cfg.CURATOR_COOLDOWN_SECONDS)
 
 
+def embedder_handler(cfg, conn, fields):
+    """The Archivist (docs/SHIPS_OFFICERS.md §4.9): re-embed what the
+    Publisher just shipped so the site's own RAG search/chat can answer
+    questions about it. No idempotency check needed before running it —
+    scripts/embed_published.py replaces its own prior rows for the voyage
+    rather than accumulating them, so a redelivered event is harmless."""
+    payload = json.loads(fields.get("payload") or "{}")
+    sid = payload.get("submission_id")
+    if not sid:
+        log.info("submission.published without submission_id — nothing to embed")
+        return
+    log.info("archivist waking on submission %s", sid)
+    proc = subprocess.run(
+        [sys.executable, f"{cfg.REPO}/scripts/embed_published.py", str(sid)],
+        env={"PGHOST": cfg.PGHOST, "PGPORT": str(cfg.PGPORT),
+             "PGDATABASE": cfg.PGDATABASE, "PGUSER": cfg.PGUSER,
+             "PGPASSWORD": cfg.PGPASSWORD, "PATH": "/usr/local/bin:/usr/bin:/bin",
+             "HOME": "/tmp", "PYTHONIOENCODING": "utf-8"},
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=cfg.EMBEDDER_TIMEOUT_SECONDS)
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"embed_published.py exited {proc.returncode}: "
+            f"{(proc.stderr or proc.stdout)[-400:]}")
+    log.info("archivist indexed submission %s:\n%s", sid, proc.stdout[-1500:])
+    time.sleep(cfg.EMBEDDER_COOLDOWN_SECONDS)
+
+
 def watches(cfg):
     """The officers standing watch today. Growing this list is how the ship
     gains a watch — one Watch per commission in docs/SHIPS_OFFICERS.md §4,
     each behind its own consumer group so extraction stays possible."""
     return [
         Watch("curator-desk", "editorial", "reviews.advanced", curator_handler),
+        Watch("archivist", "editorial", "submission.published", embedder_handler),
     ]
