@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import {
   MCP_RESOURCE, SCOPES, constantTimeEqual, parseScopes, pkceMatches, redirectAllowed,
 } from "../lib/oauth";
+import { TOOL_SCOPE } from "../lib/agentCapabilities";
 
 /**
  * The authorization server's decisions, pinned.
@@ -80,9 +81,11 @@ test("the resource identifier is the MCP endpoint itself", () => {
 test("every write tool declares a scope, and no read tool does", async () => {
   const { readFile } = await import("node:fs/promises");
   const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
-  const map = route.match(/const SCOPE_FOR[^{]*\{([\s\S]*?)\n\};/);
-  assert.ok(map, "SCOPE_FOR not found");
-  const guarded = [...map[1].matchAll(/^\s*([a-z_]+):\s*"(\w+)"/gm)].map((m) => [m[1], m[2]]);
+  // Phase 5 write-authority audit: SCOPE_FOR is TOOL_SCOPE now (imported,
+  // not a second hand-typed literal — see test/agent-capabilities.test.ts),
+  // so this reads the one real mapping directly instead of regex-parsing a
+  // copy of it out of the route's source text.
+  const guarded = Object.entries(TOOL_SCOPE);
   // The catalogue and the enforcement drifted apart once already: the server
   // refused what the tools/list contract said was open.
   for (const [tool, scope] of guarded) {
@@ -192,9 +195,8 @@ test("the review surfaces keep the classification they were given", async () => 
   // brief hands back an unpublished draft — and neither may drift silently.
   const { readFile } = await import("node:fs/promises");
   const route = await readFile(new URL("../app/api/mcp/route.ts", import.meta.url), "utf8");
-  const map = route.match(/const SCOPE_FOR[^{]*\{([\s\S]*?)\n\};/)![1];
-  assert.equal(/^\s*list_review_queue:/m.test(map), false, "the queue must stay public");
-  assert.match(map, /^\s*get_review_brief: "review"/m, "the brief must stay behind `review`");
+  assert.equal("list_review_queue" in TOOL_SCOPE, false, "the queue must stay public");
+  assert.equal(TOOL_SCOPE.get_review_brief, "review", "the brief must stay behind `review`");
 
   const block = (t: string) => {
     const i = route.indexOf(`{ name: "${t}",`);
