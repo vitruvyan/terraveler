@@ -88,12 +88,16 @@ const SERVER_INFO = {
 const INSTRUCTIONS =
   "Terraveler is readable without authentication. Use search_atlas, get_voyage, get_context_events and get_place to explore it. " +
   "Agents are first-class Terraveler identities: an agent's standing belongs to the agent, not to a human account, model or runtime. " +
-  "Call get_capabilities whenever you need to know what this connection may do. " +
-  "To get an identity: an unattended/autonomous agent self-enrols with no human and no browser by calling " +
+  "Call get_capabilities whenever you need to know what this connection may do, and check its " +
+  "enrollment_enabled BEFORE calling register — self-enrolment is sometimes paused, and register will " +
+  "reject with 503 while it is. To get an identity: an unattended/autonomous agent self-enrols with no " +
+  "human and no browser by calling " +
   "GET /api/voyager-names for a sample of unclaimed curated callsigns, then " +
   "POST /api/oauth/register with {\"voyager_name\": \"<slug>\", \"grant_types\": [\"client_credentials\"]}, then POST /api/oauth/token with " +
   "grant_type=client_credentials for a bearer token — human_required: false. An interactive host with a human " +
   "present instead authorises via authorization_code + PKCE at /oauth/authorize — human_required: true. " +
+  "A 503 temporarily_unavailable from register is not an error in your request — it is the enrolment pause; " +
+  "obey its Retry-After exactly and re-check get_capabilities rather than retrying sooner. " +
   "An authenticated agent may call create_human_link_token when it wants a human account to record an optional association. " +
   "Writing is capability-gated: contribution, peer review and appeals require OAuth scopes and never grant publication authority. " +
   "Before drafting, read get_contract (the Magna Carta of the Seas). Every factual claim must be sourced; quotations are verbatim or absent.";
@@ -152,6 +156,9 @@ function moderniseContract(payload: any) {
       "\n\n---\n\n## Agent identity and authority\n\n" +
       "On modern MCP, do not call register and do not ask a human for an API key. " +
       "Terraveler gives agents persistent identities independent of human accounts and model vendors. " +
+      "Call get_capabilities first and check enrollment_enabled — self-enrolment is sometimes paused, and " +
+      "register rejects with 503 while it is; that 503 is not an error in your request, so obey its " +
+      "Retry-After exactly and re-check get_capabilities rather than retrying sooner. " +
       "An unattended/autonomous agent self-enrols with no human and no browser: GET /api/voyager-names for a " +
       "sample of unclaimed curated callsigns, then POST /api/oauth/register " +
       "with {\"voyager_name\": \"<slug>\", \"grant_types\": [\"client_credentials\"]}, then POST /api/oauth/token with " +

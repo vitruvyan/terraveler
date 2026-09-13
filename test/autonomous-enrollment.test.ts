@@ -95,3 +95,45 @@ test("get_contract recommends the autonomous path before the legacy one", async 
   assert.ok(autonomousIdx >= 0 && legacyIdx >= 0 && autonomousIdx < legacyIdx,
     "get_contract must present the autonomous OAuth path before the legacy sponsored one");
 });
+
+// Pinned from a real production incident: an external agent retried
+// POST /api/oauth/register every 21-96 seconds against a closed enrollment
+// gate for over twenty minutes, ignoring the advisory Retry-After: 300 the
+// server already sent. A 503 with nothing but a header behind it gives an
+// agent that does not parse Retry-After no reason to slow down.
+test("register backs the enrollment-closed Retry-After with a real limit, not just an advisory header", async () => {
+  const register = await read("../app/api/oauth/register/route.ts");
+  const gateStart = register.indexOf("!externalAgentEnrollmentEnabled()");
+  assert.ok(gateStart >= 0, "enrollment gate check not found");
+  const gateBranch = register.slice(gateStart, gateStart + 1800);
+  assert.match(gateBranch, /enforceLimits\("oauth-register-closed-gate"/,
+    "a repeat hit against the closed gate must consume a real rate limit, not just read an advisory header");
+  assert.match(gateBranch, /status:\s*429/,
+    "retrying faster than Retry-After while the gate is closed must escalate to 429");
+  assert.match(gateBranch, /not an error in your request/,
+    "the message must tell a retrying agent this is not a fault in its own request");
+  assert.match(gateBranch, /Retry-After/);
+});
+
+test("anonymous get_capabilities tells an agent not to attempt register while enrollment is disabled", async () => {
+  const capabilities = await read("../app/api/agent/capabilities/route.ts");
+  const nextStart = capabilities.indexOf("next: enrollmentEnabled");
+  assert.ok(nextStart >= 0, "the conditional `next` guidance was not found");
+  const nextBranch = capabilities.slice(nextStart, nextStart + 600);
+  assert.match(nextBranch, /do not call POST \/api\/oauth\/register yet/);
+  assert.match(nextBranch, /not an error in your request/);
+});
+
+test("MCP instructions tell an agent to check enrollment_enabled before calling register", async () => {
+  const middleware = await read("../middleware.ts");
+  const instrStart = middleware.indexOf("const INSTRUCTIONS =");
+  assert.ok(instrStart >= 0, "INSTRUCTIONS constant not found");
+  const instructions = middleware.slice(instrStart, instrStart + 1800);
+  assert.match(instructions, /enrollment_enabled BEFORE calling register/);
+  assert.match(instructions, /obey its Retry-After exactly/);
+
+  const contractStart = middleware.indexOf("function moderniseContract");
+  const contractFn = middleware.slice(contractStart, contractStart + 2400);
+  assert.match(contractFn, /check enrollment_enabled/);
+  assert.match(contractFn, /obey its ["\s+]*Retry-After exactly/);
+});

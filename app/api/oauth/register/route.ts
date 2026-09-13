@@ -45,9 +45,31 @@ export async function POST(req: Request) {
 
   if (!externalAgentEnrollmentEnabled()) {
     const reason = enrollmentGuardReason() ?? "external enrollment guard unavailable";
+    // The kill switch itself has no cost to reject against, so nothing but
+    // an advisory Retry-After discouraged hammering it — and an agent that
+    // does not parse or honour that header got nothing else in its way.
+    // Caught live: one caller retried every 21-96 seconds against a closed
+    // gate instead of the 300 it was told, for over twenty minutes straight.
+    // A real limit (one closed-gate probe per Retry-After window, per
+    // source) now backs the advisory up with actual backpressure.
+    const admission = await enforceLimits("oauth-register-closed-gate", 300,
+      [{ dimension: "ip", subject: request.sourceHash, limit: 1 }]);
+    if (!admission.allowed) {
+      await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 429,
+        reason: `retried faster than Retry-After while ${reason}` });
+      return NextResponse.json({ error: "temporarily_unavailable",
+        error_description:
+          "Autonomous enrollment is still disabled, and you already retried faster than the Retry-After you " +
+          "were given. This is not an error in your request — wait for the full delay before trying again. " +
+          "Public MCP reading (search_atlas, get_voyage, get_capabilities) remains available in the meantime." },
+        { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(admission.retryAfter) } });
+    }
     await securityAudit({ source: request, action: "oauth-register", outcome: "rejected", status: 503, reason });
     return NextResponse.json({ error: "temporarily_unavailable",
-      error_description: "Autonomous enrollment is currently disabled; public MCP reading remains available." },
+      error_description:
+        "Autonomous enrollment is currently disabled; this is not an error in your request. Do not retry more " +
+        "often than once per the Retry-After delay below. Public MCP reading (search_atlas, get_voyage, " +
+        "get_capabilities) remains available in the meantime." },
       { status: 503, headers: { ...NO_STORE_HEADERS, "Retry-After": "300" } });
   }
 

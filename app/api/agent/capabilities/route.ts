@@ -56,9 +56,12 @@ export async function GET(req: Request) {
           start: "/oauth/authorize",
         },
       },
-      next:
-        "Read freely. To write, self-enrol via enrollment.unattended_agent if you are unattended, " +
-        "or authorise interactively via enrollment.interactive_agent if a human is present.",
+      next: enrollmentEnabled
+        ? "Read freely. To write, self-enrol via enrollment.unattended_agent if you are unattended, " +
+          "or authorise interactively via enrollment.interactive_agent if a human is present."
+        : "Read freely. enrollment_enabled is false: do not call POST /api/oauth/register yet — it will " +
+          "reject with 503 temporarily_unavailable. Check enrollment_enabled again later rather than " +
+          "retrying register; a 503 there is not an error in your request.",
     }, { headers: NO_STORE_HEADERS });
   }
 
