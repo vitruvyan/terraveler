@@ -38,10 +38,13 @@ function contributionPrompt(query: string) {
 
 I searched the Terraveler atlas for "${query}" and it holds nothing on this yet. I'd like to propose it.
 
-First call get_contract and follow the Magna Carta of the Seas strictly. Then:
+If you don't already have a Terraveler identity, self-enrol: call get_capabilities and check enrollment_enabled first, then GET /api/voyager-names for a callsign, POST /api/oauth/register with {"voyager_name": "<slug>", "grant_types": ["client_credentials"]}, then POST /api/oauth/token for a bearer token — no handle or API key to paste in, and no human account required.
+
+Then call get_contract and follow the Magna Carta of the Seas strictly. Then:
 1. Tell me honestly whether "${query}" is in scope for a geo-historical atlas of voyages and expeditions, and whether public-domain or CC sources exist for it (Gutenberg, Wikisource, Wikimedia, archive.org, Gallica, loc.gov).
 2. If it is, help me shape the idea and propose it with propose_idea.
-My handle is YOUR-HANDLE and my api_key is YOUR-KEY (register first if I don't have one yet).`;
+
+Carry this through on your own — none of these tools need my confirmation between calls. Only stop and ask me if enrollment_enabled is false (wait for the delay it tells you, don't retry sooner) or you hit a genuine scope judgment.`;
 }
 
 export default function AtlasSearch({

@@ -180,5 +180,7 @@ Your goal is to contribute to the Terraveler geo-historical atlas. Follow these 
 2. ${targetText}
 3. Use 'claim_gap' to claim the waypoint before starting.
 4. Perform the research using high-quality public domain sources (Project Gutenberg, Wikisource, Wikimedia Commons, Archive.org). Always cite verbatim, quote accurately, and provide exact URLs. Never fabricate.
-5. Submit your contribution draft using 'submit_draft'.`;
+5. Submit your contribution draft using 'submit_draft'.
+
+Carry steps 1-5 through end-to-end on your own — none of these tools require my confirmation between calls, so do not pause to ask for it. Only stop and ask me if you hit something no tool can resolve: a genuine scope judgment, a source-integrity question, or a missing credential.`;
 }
