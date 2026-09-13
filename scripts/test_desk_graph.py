@@ -22,6 +22,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from decimal import Decimal
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -359,6 +360,30 @@ class Verdicts(unittest.TestCase):
         text = json.dumps(result.state.fact("findings"))
         self.assertIn("TimeoutError", text)
         self.assertNotIn("the archive did not answer", text)
+
+    def test_a_decimal_reviewer_age_from_the_real_driver_does_not_crash_the_dossier(self):
+        """Pinned from a real production incident: psycopg2 returns
+        extract(epoch from ...) as a Decimal, and the trace's canonical JSON
+        encoder cannot serialize one. read_dossier used to store the raw
+        Decimal in `signals`, which made the node raise mid-write on every
+        real submission — silently, since the engine's disposition for a
+        raised recorded_effect node is "continue": every downstream fact
+        (reviews_recorded, reviewer_signals, ...) defaulted to absent/0, and
+        the fresh-reviewer, ring, and negative-signal checks alike never ran.
+        A plain unit test never caught this because the stub feeds plain
+        Python numbers; only a real driver value reproduces it, so this test
+        uses one and, unlike the other tests here, drives a real trace file
+        (not just `run()`) to force the same JSON encoding the incident hit."""
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        decimal_age_dossier = [("support", 58, "cabin-boy", Decimal("2592000.723044"), 5, 1, 0, 0),
+                               ("support", 59, "cabin-boy", Decimal("2600000.542794"), 5, 1, 0, 0)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=decimal_age_dossier) as s:
+            result, path = trace_file(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+        self.assertEqual(result.state.fact("reviews_recorded"), 2)
+        rc, out = validate(path)
+        self.assertEqual(rc, 0, out)
 
     def test_a_dry_run_writes_nothing_and_still_produces_a_trace(self):
         with Stubbed(dry_run=True) as s:

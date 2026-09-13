@@ -594,7 +594,14 @@ def make_nodes(cfg: DeskConfig):
             conn.close()
         dossier = [row[0] for row in rows]
         refutes = dossier.count("refute")
-        signals = [{"reviewer_id": rid, "rank": rank, "age_at_review_seconds": age,
+        # extract(epoch from ...) comes back as a Decimal, which the trace's
+        # canonical JSON encoder cannot serialize — this crashed read_dossier
+        # on every real submission (caught live: the node "raised" and every
+        # downstream fact silently defaulted to absent/0, masking the fresh-
+        # reviewer, ring, and negative-signal checks alike). A bare float is
+        # all reviewer_is_established's threshold comparison ever needed.
+        signals = [{"reviewer_id": rid, "rank": rank,
+                    "age_at_review_seconds": float(age) if age is not None else None,
                     "prior_reviews": prior, "accepted_submissions": accepted,
                     "rejections": rejections, "abandoned_claims": abandoned}
                    for _, rid, rank, age, prior, accepted, rejections, abandoned in rows]
