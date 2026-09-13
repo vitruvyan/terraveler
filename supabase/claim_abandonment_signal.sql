@@ -11,10 +11,24 @@
 -- so scripts/desk_graph.py's read_dossier can count it with a plain equality
 -- match against contributors.handle, no parsing of `findings` prose.
 --
--- One statement, not two round trips: the UPDATE...RETURNING feeds the
--- INSERT...SELECT directly, so a claim can never be reaped without also
--- being recorded, or vice versa -- the two facts commit together or not at
--- all, in the same transaction pg_advisory_xact_lock(a.id) already covers.
+-- One statement, not two round trips: a SELECT...FOR UPDATE feeds both the
+-- reaping UPDATE and the audit INSERT, so a claim can never be reaped
+-- without also being recorded, or vice versa -- the two facts commit
+-- together or not at all, in the same transaction pg_advisory_xact_lock(a.id)
+-- already covers.
+--
+-- Two CTEs, not one, and the reason is worth stating because it looks like
+-- needless caution: `UPDATE ... SET claimed_by = null ... RETURNING
+-- claimed_by` returns the NEW value -- null, always -- not the value being
+-- overwritten. A first version of this migration returned exactly that:
+-- every reap fired, every claim correctly reopened, and not one abandonment
+-- was ever recorded, silently, because the row this file's own INSERT read
+-- from was already the post-UPDATE row. Caught by running it against the
+-- real database and checking audit_log directly rather than trusting that
+-- an UPDATE returning the row it just changed said "changed" and "reopened"
+-- prove the value the migration's whole purpose is to capture is still
+-- there. `stale` below is deliberately a plain SELECT, locked but never
+-- written, that reads claimed_by before anything touches it.
 --
 -- Apply to the canonical PostgreSQL database on the Terraveler VPS.
 
@@ -33,19 +47,26 @@ begin
   perform pg_advisory_xact_lock(a.id);
   lim := coalesce((p_claim_limits ->> a.rank)::int, (p_claim_limits ->> 'cabin-boy')::int);
 
-  with reaped as (
-    update editorial_gaps
-       set status = 'open', claimed_by = null, claimed_by_contributor_id = null, claimed_at = null
+  with stale as (
+    select id, title, claimed_by from editorial_gaps
      where status = 'claimed'
        and (claimed_at is null or claimed_at < now() - make_interval(days => p_ttl_days))
-    returning id, title, claimed_by
+     for update
+  ),
+  reaped as (
+    update editorial_gaps eg
+       set status = 'open', claimed_by = null, claimed_by_contributor_id = null, claimed_at = null
+      from stale
+     where eg.id = stale.id
+    returning eg.id
   )
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
-  select null, 'contributor:' || claimed_by, 'claim-abandoned', null,
+  select null, 'contributor:' || stale.claimed_by, 'claim-abandoned', null,
          jsonb_build_array(jsonb_build_array('INFO', 0,
-           format('gap #%s ''%s'' expired unworked (%s-day TTL) and reopened', id, title, p_ttl_days))),
+           format('gap #%s ''%s'' expired unworked (%s-day TTL) and reopened', stale.id, stale.title, p_ttl_days))),
          p_carta
-    from reaped where claimed_by is not null;
+    from stale join reaped on reaped.id = stale.id
+   where stale.claimed_by is not null;
 
   select eg.requested_agent_account_id, aa.contributor_id
     into reserved
@@ -107,19 +128,26 @@ begin
   perform pg_advisory_xact_lock(a.id);
   lim := coalesce((p_claim_limits ->> a.rank)::int, (p_claim_limits ->> 'cabin-boy')::int);
 
-  with reaped as (
-    update editorial_gaps
-       set status = 'open', claimed_by = null, claimed_by_contributor_id = null, claimed_at = null
+  with stale as (
+    select id, title, claimed_by from editorial_gaps
      where status = 'claimed'
        and (claimed_at is null or claimed_at < now() - make_interval(days => p_ttl_days))
-    returning id, title, claimed_by
+     for update
+  ),
+  reaped as (
+    update editorial_gaps eg
+       set status = 'open', claimed_by = null, claimed_by_contributor_id = null, claimed_at = null
+      from stale
+     where eg.id = stale.id
+    returning eg.id
   )
   insert into audit_log (submission_id, actor, action, verdict, findings, carta_version)
-  select null, 'contributor:' || claimed_by, 'claim-abandoned', null,
+  select null, 'contributor:' || stale.claimed_by, 'claim-abandoned', null,
          jsonb_build_array(jsonb_build_array('INFO', 0,
-           format('gap #%s ''%s'' expired unworked (%s-day TTL) and reopened', id, title, p_ttl_days))),
+           format('gap #%s ''%s'' expired unworked (%s-day TTL) and reopened', stale.id, stale.title, p_ttl_days))),
          p_carta
-    from reaped where claimed_by is not null;
+    from stale join reaped on reaped.id = stale.id
+   where stale.claimed_by is not null;
 
   select eg.requested_agent_account_id, aa.contributor_id, c.handle
     into reserved
