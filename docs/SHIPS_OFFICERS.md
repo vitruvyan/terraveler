@@ -174,6 +174,17 @@ goal of every office above is that this person's finite attention — "the
 scarcest thing in this constitution" (§7.1) — is spent only where the
 Herald says it must be.
 
+### 4.9 The Archivist — search indexing
+
+*Agent: none (a script, `scripts/embed_published.py`, woken by the dispatcher).*
+
+| | |
+|---|---|
+| Mandate | Make a published voyage answerable by the site's own RAG search/chat (`rag/app/main.py`), which otherwise only knows the archival sources bulk-ingested ahead of time (`ingest/pipeline_native.py`) and never a voyage's own narrative or the Curator's verified quotations. |
+| Authority | `execute` (deterministic, no judgment): re-embeds what the Publisher already assembled and the Curator already verified — nothing new is fetched, verified or decided. |
+| Autonomy | **A0, event-driven** — wakes on `submission.published`, the same commission the Publisher already holds; it adds no authority the Publisher's own act did not already grant. |
+| Forbidden | Touching `submissions`, `voyages` or any bulk-ingested `rag_docs` row (distinguished by title, never by a separate table) — it only ever replaces its own prior output for the same voyage, so a redelivered event is harmless. |
+
 ## 5. The mycelium — event fabric
 
 The officers act because events wake them. The transport is Terraveler's
@@ -233,7 +244,7 @@ consumer's side of the wire the two are indistinguishable.
 | `verdict.issued` | Curator or editor rules | **Publisher** (if approved), **Purser** |
 | `escalation.raised` | Curator escalates; DLQ overflow; any officer's "I cannot" | **Herald** |
 | `appeal.filed` | `appeal` tool used | **Herald** (straight to the editor; no officer rules on appeals) |
-| `submission.published` | Publisher ships a bundle | Purser, desk overview |
+| `submission.published` | Publisher ships a bundle | **Archivist** (rag_docs), Purser, desk overview |
 
 ### 5.2 Stream `terraveler:crew`
 

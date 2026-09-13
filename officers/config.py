@@ -21,6 +21,8 @@ class Settings:
     DLQ_MAX_RETRIES = int(os.getenv("DLQ_MAX_RETRIES", "3"))
     CURATOR_TIMEOUT_SECONDS = int(os.getenv("CURATOR_TIMEOUT_SECONDS", "900"))
     CURATOR_COOLDOWN_SECONDS = float(os.getenv("CURATOR_COOLDOWN_SECONDS", "10"))
+    EMBEDDER_TIMEOUT_SECONDS = int(os.getenv("EMBEDDER_TIMEOUT_SECONDS", "300"))
+    EMBEDDER_COOLDOWN_SECONDS = float(os.getenv("EMBEDDER_COOLDOWN_SECONDS", "5"))
     # A failed entry sits in the PEL until idle this long, then the sweep
     # reclaims it; the server's times_delivered decides when it is spent.
     PEL_MIN_IDLE_MS = int(os.getenv("PEL_MIN_IDLE_MS", "60000"))
