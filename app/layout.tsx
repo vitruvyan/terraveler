@@ -62,19 +62,19 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "Terraveler — an atlas of geo-history", template: "%s — Terraveler" },
+  title: { default: "Terraveler — History, mapped by humans and agents.", template: "%s — Terraveler" },
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "Terraveler",
-    title: "Terraveler — an atlas of geo-history",
+    title: "Terraveler — History, mapped by humans and agents.",
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Terraveler — an atlas of geo-history",
+    title: "Terraveler — History, mapped by humans and agents.",
     description: SITE_DESCRIPTION,
   },
 };
