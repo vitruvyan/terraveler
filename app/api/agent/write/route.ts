@@ -9,6 +9,7 @@ import {
   completeIdempotent, contentMutationGuardReason, contentMutationsEnabled,
   enforceLimits, idempotencyKey, readLimitedJson, releaseMutationLease, requestSource, securityAudit,
 } from "@/lib/externalBetaSecurity";
+import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,25 @@ async function overAuthorQuota(c: Contributor) {
     : null;
 }
 
+/**
+ * Duplicate-submission integrity (Phase 5): the same canonical content from
+ * the same author must not create a second submission just because the
+ * Idempotency-Key changed. The fingerprint is computed once here — the one
+ * place both the RPC and the manual-insert fallback create a submission —
+ * so neither path can drift from the other's idea of "the same content".
+ * Race-safety is the database's job: supabase/submission_content_fingerprint.sql's
+ * partial unique index admits exactly one row per (contributor, fingerprint)
+ * among non-rejected statuses, so two concurrent identical requests cannot
+ * both succeed regardless of which path either one takes.
+ */
+async function crossAuthorDuplicates(contributorId: number, fingerprint: string): Promise<number[]> {
+  const rows = await sb("GET",
+    `submissions?content_fingerprint=eq.${encodeURIComponent(fingerprint)}` +
+    `&contributor_id=neq.${contributorId}` +
+    `&status=not.in.(rejected,curator-rejected)&select=id&limit=5`);
+  return (rows ?? []).map((r: any) => r.id);
+}
+
 async function recordSubmission(c: Contributor, o: {
   type: string;
   target_voyage?: string | null;
@@ -69,6 +89,7 @@ async function recordSubmission(c: Contributor, o: {
   verdict?: string | null;
   findings?: unknown;
 }) {
+  const fp = contentFingerprint(o.type, o.payload);
   const one = await optionalRpc("mcp_record_submission_oauth", {
     p_contributor_id: c.id,
     p_type: o.type,
@@ -81,19 +102,31 @@ async function recordSubmission(c: Contributor, o: {
     p_action: o.action,
     p_verdict: o.verdict ?? null,
     p_findings: o.findings ?? null,
+    p_content_fingerprint: fp,
   });
   if (one) return one;
 
   const over = await overAuthorQuota(c);
   if (over) return { error: over };
-  const s = await sb("POST", "submissions", {
-    contributor_id: c.id,
-    type: o.type,
-    target_voyage: o.target_voyage ?? null,
-    payload: o.payload,
-    status: o.status,
-    carta_version: CARTA_VERSION,
-  });
+  let s: any;
+  try {
+    s = await sb("POST", "submissions", {
+      contributor_id: c.id,
+      type: o.type,
+      target_voyage: o.target_voyage ?? null,
+      payload: o.payload,
+      status: o.status,
+      content_fingerprint: fp,
+      carta_version: CARTA_VERSION,
+    });
+  } catch (e) {
+    if (!isUniqueViolation(e)) throw e;
+    const existing = await sb("GET",
+      `submissions?contributor_id=eq.${c.id}&content_fingerprint=eq.${encodeURIComponent(fp)}` +
+      `&status=not.in.(rejected,curator-rejected)&select=id&limit=1`);
+    const err = new DuplicateSubmissionError(existing?.[0]?.id ?? null);
+    return { error: err.message };
+  }
   await sb("POST", "audit_log", {
     submission_id: s[0].id,
     actor: o.actor,
@@ -102,7 +135,8 @@ async function recordSubmission(c: Contributor, o: {
     findings: o.findings ?? null,
     carta_version: CARTA_VERSION,
   });
-  return { submission_id: s[0].id, status: o.status };
+  const cross_author_duplicates = await crossAuthorDuplicates(c.id, fp);
+  return { submission_id: s[0].id, status: o.status, cross_author_duplicates };
 }
 
 const provenance = (args: any) => ({
@@ -235,6 +269,7 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
       });
       if (one.error) return `ERROR: ${one.error}`;
       return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+        cross_author_duplicates: one.cross_author_duplicates ?? [],
         note: "Idea recorded. The editorial desk will assess scope and feasibility." }, null, 2);
     }
 
@@ -257,6 +292,7 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
         submission_id: one.submission_id,
         status,
         gate_failures: fails,
+        cross_author_duplicates: one.cross_author_duplicates ?? [],
         note: fails.length
           ? "Rejected at the Stage-0 gate. Fix every finding and resubmit."
           : "Passed the instant gate. The draft now enters peer review before any human publication decision.",
@@ -274,6 +310,7 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
       });
       if (one.error) return `ERROR: ${one.error}`;
       return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+        cross_author_duplicates: one.cross_author_duplicates ?? [],
         note: "Suggestion recorded on the editorial desk." }, null, 2);
     }
 
@@ -290,6 +327,7 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
       });
       if (one.error) return `ERROR: ${one.error}`;
       return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+        cross_author_duplicates: one.cross_author_duplicates ?? [],
         note: "Content suggestion recorded on the editorial desk." }, null, 2);
     }
 

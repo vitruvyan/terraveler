@@ -12,6 +12,7 @@ import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
 import { adaptEditorialGap } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
+import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -84,6 +85,7 @@ const keyHash = (key: string) => createHash("sha256").update(key).digest("hex");
 async function recordSubmission(args: any, o: {
   type: string; payload: unknown; status: string; actor: string; action: string;
   target_voyage?: string | null; verdict?: string | null; findings?: unknown;
+  contentFingerprint: string;
 }): Promise<any> {
   return rpc("mcp_record_submission", {
     p_handle: args.handle,
@@ -93,6 +95,7 @@ async function recordSubmission(args: any, o: {
     p_payload: o.payload,
     p_status: o.status,
     p_carta: CARTA_VERSION,
+    p_content_fingerprint: o.contentFingerprint,
     // The SQL function applies the quota by looking the contributor's rank up
     // in this map, so an override that lives only in quotaFor() would never be
     // reached — which is exactly how Magellan was refused as a 'cabin-boy'
@@ -109,6 +112,47 @@ async function recordSubmission(args: any, o: {
     p_verdict: o.verdict ?? null,
     p_findings: o.findings ?? null,
   });
+}
+
+/**
+ * Insert a submission behind the fingerprint's unique index (see
+ * supabase/submission_content_fingerprint.sql), for the TS fallback path —
+ * the RPC path enforces the same index through mcp_record_submission
+ * directly. Race-safe by construction: two concurrent identical requests
+ * both reach Postgres, the index admits exactly one, and the loser lands
+ * here as a 23505 rather than as two rows.
+ */
+async function insertSubmission(row: {
+  contributor_id: number; type: string; target_voyage: string | null;
+  payload: unknown; status: string; content_fingerprint: string;
+}): Promise<any> {
+  try {
+    return await sb("POST", "submissions", { ...row, carta_version: CARTA_VERSION });
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    const existing = await sb("GET",
+      `submissions?contributor_id=eq.${row.contributor_id}` +
+      `&content_fingerprint=eq.${encodeURIComponent(row.content_fingerprint)}` +
+      `&status=not.in.(rejected,curator-rejected)&select=id&limit=1`);
+    throw new DuplicateSubmissionError(existing?.[0]?.id ?? null);
+  }
+}
+
+/**
+ * Non-blocking: does this exact content already exist under a DIFFERENT
+ * author? Phase 5's policy choice, stated plainly because it is a judgement
+ * call and not a mechanical necessity: two independent agents proposing the
+ * same well-documented idea is not itself abuse, and refusing the second one
+ * outright would punish honest convergence as readily as a coordinated
+ * farm. So this detects and surfaces the relationship in the response for a
+ * curator to weigh — it never blocks the write.
+ */
+async function crossAuthorDuplicates(contributorId: number, fingerprint: string): Promise<number[]> {
+  const rows = await sb("GET",
+    `submissions?content_fingerprint=eq.${encodeURIComponent(fingerprint)}` +
+    `&contributor_id=neq.${contributorId}` +
+    `&status=not.in.(rejected,curator-rejected)&select=id&limit=5`);
+  return (rows ?? []).map((r: any) => r.id);
 }
 
 // ------------------------------------------------------------------ identity
@@ -1427,41 +1471,52 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     case "propose_idea": {
       const bad = badText(args, ["title", "description"]);
       if (bad) return `ERROR: ${bad}`;
+      const ideaPayload = { title: args.title, description: args.description, kind: args.kind ?? null };
+      const fp = contentFingerprint("idea", ideaPayload);
       const one = await recordSubmission(args, {
-        type: "idea",
-        payload: { title: args.title, description: args.description, kind: args.kind ?? null },
+        type: "idea", payload: ideaPayload, contentFingerprint: fp,
         status: "human-review", actor: "mcp", action: "proposal",
       });
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          cross_author_duplicates: one.cross_author_duplicates ?? [],
           note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
       }
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
-      const s = await sb("POST", "submissions", {
-        contributor_id: a.ok!.id, type: "idea", target_voyage: null,
-        payload: { title: args.title, description: args.description, kind: args.kind ?? null },
-        status: "human-review", carta_version: CARTA_VERSION,
-      });
+      let s: any;
+      try {
+        s = await insertSubmission({
+          contributor_id: a.ok!.id, type: "idea", target_voyage: null,
+          payload: ideaPayload, status: "human-review", content_fingerprint: fp,
+        });
+      } catch (e) {
+        if (e instanceof DuplicateSubmissionError) return `ERROR: ${e.message}`;
+        throw e;
+      }
       await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "proposal",
         verdict: null, findings: null, carta_version: CARTA_VERSION });
+      const crossAuthor = await crossAuthorDuplicates(a.ok!.id, fp);
       return JSON.stringify({ submission_id: s[0].id, status: "human-review",
+        cross_author_duplicates: crossAuthor,
         note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
     }
     case "submit_draft": {
       const sub = args.submission;
       const fails = stage0(sub);
       const status = fails.length ? "curator-rejected" : "peer-review";
+      const draftType = sub?.meta?.type ?? "draft";
+      const fp = contentFingerprint(draftType, sub);
       const draftNote = (rejected: boolean) => rejected
         ? "Rejected at the Stage-0 gate. Fix every finding (each cites a Carta rule) and resubmit."
         : "Passed the instant gate. The draft now enters PEER REVIEW (Carta 10.4): other Scribes will try to refute it against the sources, then the editor rules. Check get_submission_status.";
       const one = await recordSubmission(args, {
-        type: sub?.meta?.type ?? "draft",
+        type: draftType,
         target_voyage: sub?.meta?.target_voyage ?? null,
-        payload: sub, status,
+        payload: sub, status, contentFingerprint: fp,
         actor: "curator-gate", action: "verdict",
         verdict: fails.length ? "reject" : "pass-gate",
         findings: fails.map((m) => ["FAIL", 0, m]),
@@ -1470,23 +1525,32 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ submission_id: one.submission_id, status,
           gate_failures: fails, note: draftNote(fails.length > 0),
+          cross_author_duplicates: one.cross_author_duplicates ?? [],
           ...nextSteps(one.submission_id, status) }, null, 2);
       }
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
-      const s = await sb("POST", "submissions", {
-        contributor_id: a.ok!.id, type: sub?.meta?.type ?? "draft",
-        target_voyage: sub?.meta?.target_voyage ?? null, payload: sub,
-        status, carta_version: CARTA_VERSION,
-      });
+      let s: any;
+      try {
+        s = await insertSubmission({
+          contributor_id: a.ok!.id, type: draftType,
+          target_voyage: sub?.meta?.target_voyage ?? null, payload: sub,
+          status, content_fingerprint: fp,
+        });
+      } catch (e) {
+        if (e instanceof DuplicateSubmissionError) return `ERROR: ${e.message}`;
+        throw e;
+      }
       await sb("POST", "audit_log", { submission_id: s[0].id, actor: "curator-gate", action: "verdict",
         verdict: fails.length ? "reject" : "pass-gate", findings: fails.map((m) => ["FAIL", 0, m]),
         carta_version: CARTA_VERSION });
+      const crossAuthor = await crossAuthorDuplicates(a.ok!.id, fp);
       return JSON.stringify({
         submission_id: s[0].id, status,
         gate_failures: fails,
+        cross_author_duplicates: crossAuthor,
         note: fails.length
           ? "Rejected at the Stage-0 gate. Fix every finding (each cites a Carta rule) and resubmit."
           : "Passed the instant gate. The draft now enters PEER REVIEW (Carta 10.4): other Scribes will try to refute it against the sources, then the editor rules. Check get_submission_status.",
@@ -1495,30 +1559,38 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     case "suggest_feature": {
       const bad = badText(args, ["title", "description", "area"]);
       if (bad) return `ERROR: ${bad}`;
+      const featurePayload = { meta: provenance(args), title: args.title,
+                                description: args.description, area: args.area ?? null };
+      const fp = contentFingerprint("feature-suggestion", featurePayload);
       const one = await recordSubmission(args, {
-        type: "feature-suggestion",
-        payload: { meta: provenance(args), title: args.title,
-                   description: args.description, area: args.area ?? null },
+        type: "feature-suggestion", payload: featurePayload, contentFingerprint: fp,
         status: "human-review", actor: "mcp", action: "suggestion",
       });
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          cross_author_duplicates: one.cross_author_duplicates ?? [],
           note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
       }
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
-      const s = await sb("POST", "submissions", {
-        contributor_id: a.ok!.id, type: "feature-suggestion", target_voyage: null,
-        payload: { meta: provenance(args), title: args.title,
-                   description: args.description, area: args.area ?? null },
-        status: "human-review", carta_version: CARTA_VERSION,
-      });
+      let s: any;
+      try {
+        s = await insertSubmission({
+          contributor_id: a.ok!.id, type: "feature-suggestion", target_voyage: null,
+          payload: featurePayload, status: "human-review", content_fingerprint: fp,
+        });
+      } catch (e) {
+        if (e instanceof DuplicateSubmissionError) return `ERROR: ${e.message}`;
+        throw e;
+      }
       await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "suggestion",
         verdict: null, findings: null, carta_version: CARTA_VERSION });
+      const crossAuthor = await crossAuthorDuplicates(a.ok!.id, fp);
       return JSON.stringify({ submission_id: s[0].id, status: "human-review",
+        cross_author_duplicates: crossAuthor,
         note: "Suggestion recorded — it now appears on the editorial desk. Track it with get_submission_status." });
     }
     case "suggest_content": {
@@ -1528,35 +1600,50 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         `Content suggestion recorded for ${args.voyage}` +
         (args.waypoint != null ? ` waypoint ${args.waypoint}` : "") +
         " — it now appears on the editorial desk. Track it with get_submission_status.";
+      // meta is provenance only (stripped by contentFingerprint's own
+      // VOLATILE_KEYS regardless), so the fallback payload below omitting it
+      // does not change what fingerprints to — both paths describe the same
+      // voyage/waypoint/content_type/idea.
+      const contentPayload = { meta: provenance(args),
+                                voyage: args.voyage, waypoint: args.waypoint ?? null,
+                                content_type: args.type, idea: args.idea };
+      const fp = contentFingerprint("content-suggestion", contentPayload);
       const one = await recordSubmission(args, {
         type: "content-suggestion", target_voyage: args.voyage ?? null,
-        payload: { meta: provenance(args),
-                   voyage: args.voyage, waypoint: args.waypoint ?? null,
-                   content_type: args.type, idea: args.idea },
+        payload: contentPayload, contentFingerprint: fp,
         status: "human-review", actor: "mcp", action: "content-suggestion",
       });
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
         return JSON.stringify({ submission_id: one.submission_id, status: one.status,
+          cross_author_duplicates: one.cross_author_duplicates ?? [],
           note: contentNote(one.submission_id) });
       }
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const over = await overDailyLimit(a.ok!);
       if (over) return `ERROR: ${over}`;
-      const s = await sb("POST", "submissions", {
-        contributor_id: a.ok!.id, type: "content-suggestion",
-        target_voyage: args.voyage ?? null,
-        payload: {
-          voyage: args.voyage, waypoint: args.waypoint ?? null,
-          content_type: args.type, idea: args.idea,
-        },
-        status: "human-review", carta_version: CARTA_VERSION,
-      });
+      let s: any;
+      try {
+        s = await insertSubmission({
+          contributor_id: a.ok!.id, type: "content-suggestion",
+          target_voyage: args.voyage ?? null,
+          payload: {
+            voyage: args.voyage, waypoint: args.waypoint ?? null,
+            content_type: args.type, idea: args.idea,
+          },
+          status: "human-review", content_fingerprint: fp,
+        });
+      } catch (e) {
+        if (e instanceof DuplicateSubmissionError) return `ERROR: ${e.message}`;
+        throw e;
+      }
       await sb("POST", "audit_log", { submission_id: s[0].id, actor: "mcp", action: "content-suggestion",
         verdict: null, findings: null, carta_version: CARTA_VERSION });
+      const crossAuthor = await crossAuthorDuplicates(a.ok!.id, fp);
       return JSON.stringify({
         submission_id: s[0].id, status: "human-review",
+        cross_author_duplicates: crossAuthor,
         note: `Content suggestion recorded for ${args.voyage}` +
           (args.waypoint != null ? ` waypoint ${args.waypoint}` : "") +
           " — it now appears on the editorial desk. Track it with get_submission_status.",
