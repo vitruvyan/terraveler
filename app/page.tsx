@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { voyage, navigator } = await getVoyageBundle();
   const m = voyageMetadata("boudeuse-1766", voyage, navigator);
   // The homepage keeps the site title; the voyage supplies the description.
-  return { ...m, title: "Terraveler — an atlas of geo-history" };
+  return { ...m, title: "Terraveler — History, mapped by humans and agents." };
 }
 
 export default async function Home() {
