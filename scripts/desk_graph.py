@@ -567,7 +567,13 @@ def make_nodes(cfg: DeskConfig):
                     "(select count(*) from reviews r2 where r2.reviewer_id = r.reviewer_id "
                     " and r2.submission_id <> r.submission_id) as prior_reviews, "
                     "(select count(*) from submissions s3 where s3.contributor_id = r.reviewer_id "
-                    " and s3.status = 'approved') as accepted_submissions "
+                    " and s3.status = 'approved') as accepted_submissions, "
+                    "(select count(*) from submissions s4 join audit_log a4 on a4.submission_id = s4.id "
+                    " where s4.contributor_id = r.reviewer_id "
+                    " and a4.actor in ('editor-in-chief', 'curator-desk', 'curator-v0') "
+                    " and a4.verdict = 'reject') as rejections, "
+                    "(select count(*) from audit_log a5 where a5.action = 'claim-abandoned' "
+                    " and a5.actor = 'contributor:' || c.handle) as abandoned_claims "
                     "from reviews r join contributors c on c.id = r.reviewer_id "
                     "where r.submission_id = %s", (sid,))
                 rows = cur.fetchall()
@@ -589,8 +595,9 @@ def make_nodes(cfg: DeskConfig):
         dossier = [row[0] for row in rows]
         refutes = dossier.count("refute")
         signals = [{"reviewer_id": rid, "rank": rank, "age_at_review_seconds": age,
-                    "prior_reviews": prior, "accepted_submissions": accepted}
-                   for _, rid, rank, age, prior, accepted in rows]
+                    "prior_reviews": prior, "accepted_submissions": accepted,
+                    "rejections": rejections, "abandoned_claims": abandoned}
+                   for _, rid, rank, age, prior, accepted, rejections, abandoned in rows]
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=(f"read the review dossier for #{sid}: {len(dossier)} "
@@ -641,12 +648,21 @@ def make_nodes(cfg: DeskConfig):
             # The dossier was long enough and unanimous — but long enough by
             # whom is exactly what a ring of fresh accounts can fake, and
             # unanimous is what they would all say. Neither check above reads
-            # who is in the dossier; this one does.
+            # who is in the dossier; these do — negative signal first, since
+            # a reviewer actively showing a pattern of bad behaviour is a
+            # sharper reason to distrust this dossier than merely being new.
             signals = state.fact("reviewer_signals") or []
             ring = state.fact("reviewer_ring_detected") or False
+            flagged = [sig for sig in signals if K.reviewer_has_negative_signal(sig)]
             none_established = bool(signals) and not any(
                 K.reviewer_is_established(sig) for sig in signals)
-            if ring or none_established:
+            if flagged:
+                f.escalate("desk", "DOSSIER_REVIEWER_NEGATIVE_SIGNAL",
+                           recorded=recorded, submission_id=sid)
+                verdict = "escalate"
+                why = ("a reviewer on this dossier has a negative standing signal "
+                       "(rejection rate or abandoned claims)")
+            elif ring or none_established:
                 f.escalate("desk", "DOSSIER_REVIEWER_RING" if ring else "DOSSIER_REVIEWERS_FRESH",
                            recorded=recorded, submission_id=sid)
                 verdict = "escalate"

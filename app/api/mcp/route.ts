@@ -387,11 +387,31 @@ async function overDailyLimit(c: Contributor): Promise<string | null> {
 }
 
 /** Reopen claims whose holder went silent past the TTL (legacy claims lack a timestamp — reopen those too). */
+/**
+ * Phase 5 negative-standing signal: a claim nobody worked before its TTL is
+ * evidence about the contributor who held it, and until now that evidence
+ * was thrown away — the PATCH below reset claimed_by to null before anyone
+ * read it. Recorded the same way an appeal already is (`contributor:<handle>`
+ * as actor), so read_dossier (scripts/desk_graph.py) can count it with a
+ * plain equality match instead of parsing prose out of `findings`.
+ */
 async function reapStaleClaims(): Promise<void> {
   const cutoff = new Date(Date.now() - CLAIM_TTL_DAYS * 24 * 3600 * 1000).toISOString();
+  const stale = await sb("GET",
+    `editorial_gaps?status=eq.claimed&or=(claimed_at.lt.${cutoff},claimed_at.is.null)` +
+    `&select=id,title,claimed_by`);
+  if (!stale?.length) return;
   await sb("PATCH",
     `editorial_gaps?status=eq.claimed&or=(claimed_at.lt.${cutoff},claimed_at.is.null)`,
     { status: "open", claimed_by: null, claimed_at: null });
+  await sb("POST", "audit_log", stale
+    .filter((g: any) => g.claimed_by)
+    .map((g: any) => ({
+      submission_id: null, actor: `contributor:${g.claimed_by}`, action: "claim-abandoned",
+      verdict: null,
+      findings: [["INFO", 0, `gap #${g.id} '${g.title}' expired unworked (${CLAIM_TTL_DAYS}-day TTL) and reopened`]],
+      carta_version: CARTA_VERSION,
+    })));
 }
 
 // The Stage-0 gate lives in lib/gate.ts: it is Carta logic, not HTTP, and a
