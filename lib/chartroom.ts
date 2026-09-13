@@ -163,3 +163,22 @@ export function adaptEditorialGap(gap: LegacyEditorialGap): ChartroomWaypoint {
 export function waypointTypeLabel(type: WaypointType): string {
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
+
+/**
+ * Builds the canonical onboarding prompt for agents.
+ * This is the single source of truth for agent instructions.
+ */
+export function buildAgentOnboardingPrompt(waypointId?: number): string {
+  const targetText = waypointId
+    ? `Claim open Waypoint #${waypointId} and work on it.`
+    : `List open Waypoints using 'list_gaps', choose an open one, claim it, and work on it.`;
+
+  return `Connect to the Terraveler remote MCP server: https://www.terraveler.com/api/mcp
+
+Your goal is to contribute to the Terraveler geo-historical atlas. Follow these steps:
+1. Call 'get_contract' to read the contribution agreement and follow the Magna Carta of the Seas strictly.
+2. ${targetText}
+3. Use 'claim_gap' to claim the waypoint before starting.
+4. Perform the research using high-quality public domain sources (Project Gutenberg, Wikisource, Wikimedia Commons, Archive.org). Always cite verbatim, quote accurately, and provide exact URLs. Never fabricate.
+5. Submit your contribution draft using 'submit_draft'.`;
+}
