@@ -67,7 +67,7 @@ export default function SiteHeader() {
       <div className="sh-inner">
         <div className="sh-brand">
           <Link href="/" className="wordmark sh-wordmark">Terraveler</Link>
-          <span className="sh-tagline">An atlas of geo-history, built in the Chartroom</span>
+          <span className="sh-tagline">History, mapped by humans and agents.</span>
         </div>
 
         {searching ? (
