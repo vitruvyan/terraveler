@@ -129,12 +129,13 @@ class Stubbed:
                  superseded=False, unreachable=False, dry_run=False):
         dossier = list(dossier)
         if reviewer_rows is None:
-            # Established Scribes by default: thirty days old at review time
-            # and five reviews behind them — every existing test that does not
-            # care about reviewer identity keeps the answer it always got.
-            # Row shape mirrors the real query: (verdict, reviewer_id, rank,
-            # age_at_review_seconds, prior_reviews).
-            reviewer_rows = [(v, 100 + i, "scribe", 30 * 24 * 3600, 5)
+            # Established Scribes by default: thirty days old at review time,
+            # five reviews behind them, one accepted submission of their own —
+            # every existing test that does not care about reviewer identity
+            # keeps the answer it always got. Row shape mirrors the real
+            # query: (verdict, reviewer_id, rank, age_at_review_seconds,
+            # prior_reviews, accepted_submissions).
+            reviewer_rows = [(v, 100 + i, "scribe", 30 * 24 * 3600, 5, 1)
                              for i, v in enumerate(dossier)]
         self.world = {"payload": payload, "dossier": dossier,
                       "reviewer_rows": reviewer_rows, "ring_detected": ring_detected,
@@ -231,13 +232,14 @@ class Verdicts(unittest.TestCase):
         exactly what a ring of freshly self-enrolled accounts produces too,
         and REVIEWS_TO_ADVANCE alone cannot tell the two apart."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        fresh = [("support", 1, "cabin-boy", 90, 0), ("support", 2, "cabin-boy", 45, 0)]
+        fresh = [("support", 1, "cabin-boy", 90, 0, 0), ("support", 2, "cabin-boy", 45, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=fresh) as s:
             result = run(s)
         self.assertEqual(result.state.decision("verdict"), "escalate")
         self.assertEqual(s.world["status"], "peer-review")
-        self.assertIn("freshly-enrolled", result.state.fact("verdict_reason"))
+        self.assertIn("no reviewer on the dossier carries independent trust",
+                      result.state.fact("verdict_reason"))
 
     def test_the_actual_review_ring_shape_is_caught(self):
         """Pinned from a real run: three agents self-enrolled, each reviewed
@@ -245,7 +247,7 @@ class Verdicts(unittest.TestCase):
         already had one prior review to its name — a strict prior_reviews==0
         check would have missed exactly the ring it exists to catch."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        ring_shape = [("support", 42, "cabin-boy", 109.8, 1), ("support", 43, "cabin-boy", 110.0, 1)]
+        ring_shape = [("support", 42, "cabin-boy", 109.8, 1, 0), ("support", 43, "cabin-boy", 110.0, 1, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=ring_shape) as s:
             result = run(s)
@@ -256,11 +258,47 @@ class Verdicts(unittest.TestCase):
         Scribe with history vouching alongside a new account is the ordinary
         case this must not block."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        mixed = [("support", 1, "cabin-boy", 90, 0), ("support", 2, "scribe", 30 * 24 * 3600, 5)]
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
+                 ("support", 2, "scribe", 30 * 24 * 3600, 5, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=mixed) as s:
             result = run(s)
         self.assertEqual(result.state.decision("verdict"), "approve")
+
+    def test_earned_rank_alone_establishes_a_reviewer_even_if_otherwise_fresh(self):
+        """Rank was captured in the dossier from the start and stayed unused
+        until now — this pins that it actually counts."""
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
+                 ("support", 2, "scribe", 90, 0, 0)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=mixed) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+
+    def test_one_accepted_submission_of_its_own_establishes_a_reviewer(self):
+        """A reviewer with no rank, no age and no review history still counts
+        if the Curator has separately approved work of their own — evidence a
+        sybil ring cannot manufacture on the spot."""
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
+                 ("support", 2, "cabin-boy", 90, 0, 1)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=mixed) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+
+    def test_neither_rank_nor_acceptance_nor_history_is_enough_alone_if_absent(self):
+        """The inverse of the two tests above, pinned for symmetry: strip
+        every established-by signal from both reviewers and the escalation
+        returns."""
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        both_fresh = [("support", 1, "cabin-boy", 90, 0, 0),
+                      ("support", 2, "cabin-boy", 45, 0, 0)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=both_fresh) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "escalate")
 
     def test_a_reviewer_ring_is_escalated_even_with_an_established_looking_dossier(self):
         """Two reviewers can each be individually unremarkable and still form
@@ -378,6 +416,45 @@ class TheTraceCarriesShapesNotText(unittest.TestCase):
             result = run(s)
             written = s.world["spans_written"]
         self.assertEqual(result.state.fact("spans_digest"), G.digest(written))
+
+
+class ReviewerTrust(unittest.TestCase):
+    """K.reviewer_is_established, direct — no graph, no database, no dossier
+    around it. One boolean, four independent doors in; each test opens
+    exactly one and confirms the other three being shut does not matter."""
+
+    BLANK = {"rank": "cabin-boy", "age_at_review_seconds": 0,
+             "prior_reviews": 0, "accepted_submissions": 0}
+
+    def test_nothing_established_is_false(self):
+        self.assertFalse(K.reviewer_is_established(self.BLANK))
+
+    def test_old_enough_alone_is_established(self):
+        sig = {**self.BLANK, "age_at_review_seconds": K.SUSPICIOUS_REVIEWER_AGE_SECONDS}
+        self.assertTrue(K.reviewer_is_established(sig))
+        just_under = {**self.BLANK, "age_at_review_seconds": K.SUSPICIOUS_REVIEWER_AGE_SECONDS - 1}
+        self.assertFalse(K.reviewer_is_established(just_under))
+
+    def test_any_rank_above_entry_alone_is_established(self):
+        self.assertTrue(K.reviewer_is_established({**self.BLANK, "rank": "scribe"}))
+        self.assertFalse(K.reviewer_is_established({**self.BLANK, "rank": K.ENTRY_RANK}))
+        self.assertFalse(K.reviewer_is_established({**self.BLANK, "rank": None}))
+
+    def test_enough_prior_reviews_alone_is_established(self):
+        sig = {**self.BLANK, "prior_reviews": K.SUSPICIOUS_REVIEWER_PRIOR_REVIEWS}
+        self.assertTrue(K.reviewer_is_established(sig))
+        just_under = {**self.BLANK, "prior_reviews": K.SUSPICIOUS_REVIEWER_PRIOR_REVIEWS - 1}
+        self.assertFalse(K.reviewer_is_established(just_under))
+
+    def test_one_accepted_submission_alone_is_established(self):
+        sig = {**self.BLANK, "accepted_submissions": K.MIN_ACCEPTED_SUBMISSIONS_FOR_TRUST}
+        self.assertTrue(K.reviewer_is_established(sig))
+        self.assertFalse(K.reviewer_is_established({**self.BLANK, "accepted_submissions": 0}))
+
+    def test_missing_keys_read_as_the_least_trusting_value(self):
+        # A signal built from a row where every column came back NULL must
+        # not raise and must not accidentally read as established.
+        self.assertFalse(K.reviewer_is_established({}))
 
 
 class TheProse(unittest.TestCase):

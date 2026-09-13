@@ -565,7 +565,9 @@ def make_nodes(cfg: DeskConfig):
                     "select r.verdict, r.reviewer_id, c.rank, "
                     "extract(epoch from (r.created_at - c.created_at)) as age_at_review_seconds, "
                     "(select count(*) from reviews r2 where r2.reviewer_id = r.reviewer_id "
-                    " and r2.submission_id <> r.submission_id) as prior_reviews "
+                    " and r2.submission_id <> r.submission_id) as prior_reviews, "
+                    "(select count(*) from submissions s3 where s3.contributor_id = r.reviewer_id "
+                    " and s3.status = 'approved') as accepted_submissions "
                     "from reviews r join contributors c on c.id = r.reviewer_id "
                     "where r.submission_id = %s", (sid,))
                 rows = cur.fetchall()
@@ -586,9 +588,9 @@ def make_nodes(cfg: DeskConfig):
             conn.close()
         dossier = [row[0] for row in rows]
         refutes = dossier.count("refute")
-        signals = [{"reviewer_id": rid, "rank": rank,
-                    "age_at_review_seconds": age, "prior_reviews": prior}
-                   for _, rid, rank, age, prior in rows]
+        signals = [{"reviewer_id": rid, "rank": rank, "age_at_review_seconds": age,
+                    "prior_reviews": prior, "accepted_submissions": accepted}
+                   for _, rid, rank, age, prior, accepted in rows]
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=(f"read the review dossier for #{sid}: {len(dossier)} "
@@ -642,17 +644,16 @@ def make_nodes(cfg: DeskConfig):
             # who is in the dossier; this one does.
             signals = state.fact("reviewer_signals") or []
             ring = state.fact("reviewer_ring_detected") or False
-            all_fresh = bool(signals) and all(
-                (sig["age_at_review_seconds"] or 0) < K.SUSPICIOUS_REVIEWER_AGE_SECONDS
-                and sig["prior_reviews"] < K.SUSPICIOUS_REVIEWER_PRIOR_REVIEWS
-                for sig in signals)
-            if ring or all_fresh:
+            none_established = bool(signals) and not any(
+                K.reviewer_is_established(sig) for sig in signals)
+            if ring or none_established:
                 f.escalate("desk", "DOSSIER_REVIEWER_RING" if ring else "DOSSIER_REVIEWERS_FRESH",
                            recorded=recorded, submission_id=sid)
                 verdict = "escalate"
                 why = ("a reviewer ring: the author also reviewed one of its own reviewers"
                        if ring else
-                       "every reviewer on the dossier is freshly-enrolled with no review history")
+                       "no reviewer on the dossier carries independent trust — no earned rank, "
+                       "no accepted submission of their own, and not enough review history")
 
         state = (state
                  .with_fact(Fact("findings", f.rows, "decide", now))
