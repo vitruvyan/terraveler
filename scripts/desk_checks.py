@@ -66,6 +66,45 @@ REVIEWS_TO_ADVANCE = 2
 # long-term shape and is not this pass's job to build.
 SUSPICIOUS_REVIEWER_AGE_SECONDS = 3600
 SUSPICIOUS_REVIEWER_PRIOR_REVIEWS = 3
+# Any one submission of the reviewer's own that a Curator has separately
+# approved is independent evidence someone judged this account's work sound —
+# a signal age and review-count cannot fake by simply waiting or reviewing
+# more, since it requires having survived REVIEWS_TO_ADVANCE and a verdict.
+MIN_ACCEPTED_SUBMISSIONS_FOR_TRUST = 1
+# The rank a fresh contributor starts at (lib/agentCapabilities.ts's
+# RANK_QUOTA / supabase's contributors.rank default). Anything above it was
+# earned through §7's standing table, which is exactly the kind of evidence
+# a sybil ring cannot manufacture on the spot.
+ENTRY_RANK = "cabin-boy"
+
+
+def reviewer_is_established(signal: dict) -> bool:
+    """Independent trust through ANY one channel, not every channel at once.
+
+    Age is not the only door in — Phase 5 point 3 is explicit that a fresh
+    account is not banned, only that its review alone should not satisfy
+    autonomous advancement unless something ELSE about it is trustworthy.
+    A reviewer who cleared the account-age bar, or already carries earned
+    rank, or has reviewed enough before, or has had a submission of their
+    own survive the Curator, counts; a reviewer with none of those does not.
+
+    Deliberately NOT included: rejection/abandonment history as a way to
+    revoke an otherwise-established reviewer's standing. That is a real
+    signal (Phase 5 point 4 names it), but it is a second axis — "this
+    account is trusted, but should it be trusted less" — layered onto a
+    check built to answer a narrower question first: "is there any
+    independent trust here at all". Folding both into one boolean would
+    make an escalation's reason unreadable; this stays the smaller check.
+    """
+    if (signal.get("age_at_review_seconds") or 0) >= SUSPICIOUS_REVIEWER_AGE_SECONDS:
+        return True
+    if signal.get("rank") and signal["rank"] != ENTRY_RANK:
+        return True
+    if (signal.get("prior_reviews") or 0) >= SUSPICIOUS_REVIEWER_PRIOR_REVIEWS:
+        return True
+    if (signal.get("accepted_submissions") or 0) >= MIN_ACCEPTED_SUBMISSIONS_FOR_TRUST:
+        return True
+    return False
 
 # Submission types that bring no voyage record of their own.
 #
@@ -354,11 +393,12 @@ MESSAGES = {
         "with the reviewers' dossier in hand, not without it; escalating "
         "instead of approving.",
     "DOSSIER_REVIEWERS_FRESH":
-        "all {recorded} reviews on submission #{submission_id} came from an "
-        "account under an hour old at review time with no earlier review of "
-        "its own — that dossier could be genuine Scribes or a ring of "
-        "accounts validating each other, and this pass cannot tell them "
-        "apart; escalating instead of approving.",
+        "none of the {recorded} reviewers on submission #{submission_id} carries "
+        "independent trust — no earned rank, no accepted submission of their "
+        "own, not enough review history and not enough account age. That "
+        "dossier could be genuine new Scribes or a ring of accounts "
+        "validating each other, and this pass cannot tell them apart; "
+        "escalating instead of approving.",
     "DOSSIER_REVIEWER_RING":
         "submission #{submission_id}'s own author also reviewed a submission "
         "from one of its reviewers — a mutual-review pattern the dossier "
