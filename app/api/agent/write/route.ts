@@ -166,8 +166,20 @@ async function claimGap(c: Contributor, args: any): Promise<string> {
   }
 
   const cutoff = new Date(Date.now() - CLAIM_TTL_DAYS * 86_400_000).toISOString();
-  await sb("PATCH", `editorial_gaps?status=eq.claimed&or=(claimed_at.lt.${cutoff},claimed_at.is.null)`,
-    { status: "open", claimed_by: null, claimed_at: null });
+  const stale = await sb("GET",
+    `editorial_gaps?status=eq.claimed&or=(claimed_at.lt.${cutoff},claimed_at.is.null)&select=id,title,claimed_by`);
+  if (stale?.length) {
+    await sb("PATCH", `editorial_gaps?status=eq.claimed&or=(claimed_at.lt.${cutoff},claimed_at.is.null)`,
+      { status: "open", claimed_by: null, claimed_at: null });
+    await sb("POST", "audit_log", stale
+      .filter((g: any) => g.claimed_by)
+      .map((g: any) => ({
+        submission_id: null, actor: `contributor:${g.claimed_by}`, action: "claim-abandoned",
+        verdict: null,
+        findings: [["INFO", 0, `gap #${g.id} '${g.title}' expired unworked (${CLAIM_TTL_DAYS}-day TTL) and reopened`]],
+        carta_version: CARTA_VERSION,
+      })));
+  }
   const q = quotaForRank(c.rank);
   const mine = await sb("GET",
     `editorial_gaps?claimed_by=eq.${encodeURIComponent(c.handle)}&status=eq.claimed&select=id`);

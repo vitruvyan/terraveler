@@ -130,12 +130,13 @@ class Stubbed:
         dossier = list(dossier)
         if reviewer_rows is None:
             # Established Scribes by default: thirty days old at review time,
-            # five reviews behind them, one accepted submission of their own —
-            # every existing test that does not care about reviewer identity
-            # keeps the answer it always got. Row shape mirrors the real
-            # query: (verdict, reviewer_id, rank, age_at_review_seconds,
-            # prior_reviews, accepted_submissions).
-            reviewer_rows = [(v, 100 + i, "scribe", 30 * 24 * 3600, 5, 1)
+            # five reviews behind them, one accepted submission of their own,
+            # no rejections, no abandoned claims — every existing test that
+            # does not care about reviewer identity keeps the answer it
+            # always got. Row shape mirrors the real query: (verdict,
+            # reviewer_id, rank, age_at_review_seconds, prior_reviews,
+            # accepted_submissions, rejections, abandoned_claims).
+            reviewer_rows = [(v, 100 + i, "scribe", 30 * 24 * 3600, 5, 1, 0, 0)
                              for i, v in enumerate(dossier)]
         self.world = {"payload": payload, "dossier": dossier,
                       "reviewer_rows": reviewer_rows, "ring_detected": ring_detected,
@@ -232,7 +233,7 @@ class Verdicts(unittest.TestCase):
         exactly what a ring of freshly self-enrolled accounts produces too,
         and REVIEWS_TO_ADVANCE alone cannot tell the two apart."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        fresh = [("support", 1, "cabin-boy", 90, 0, 0), ("support", 2, "cabin-boy", 45, 0, 0)]
+        fresh = [("support", 1, "cabin-boy", 90, 0, 0, 0, 0), ("support", 2, "cabin-boy", 45, 0, 0, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=fresh) as s:
             result = run(s)
@@ -247,7 +248,7 @@ class Verdicts(unittest.TestCase):
         already had one prior review to its name — a strict prior_reviews==0
         check would have missed exactly the ring it exists to catch."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        ring_shape = [("support", 42, "cabin-boy", 109.8, 1, 0), ("support", 43, "cabin-boy", 110.0, 1, 0)]
+        ring_shape = [("support", 42, "cabin-boy", 109.8, 1, 0, 0, 0), ("support", 43, "cabin-boy", 110.0, 1, 0, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=ring_shape) as s:
             result = run(s)
@@ -258,8 +259,8 @@ class Verdicts(unittest.TestCase):
         Scribe with history vouching alongside a new account is the ordinary
         case this must not block."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
-                 ("support", 2, "scribe", 30 * 24 * 3600, 5, 0)]
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0, 0, 0),
+                 ("support", 2, "scribe", 30 * 24 * 3600, 5, 0, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=mixed) as s:
             result = run(s)
@@ -269,8 +270,8 @@ class Verdicts(unittest.TestCase):
         """Rank was captured in the dossier from the start and stayed unused
         until now — this pins that it actually counts."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
-                 ("support", 2, "scribe", 90, 0, 0)]
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0, 0, 0),
+                 ("support", 2, "scribe", 90, 0, 0, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=mixed) as s:
             result = run(s)
@@ -281,8 +282,8 @@ class Verdicts(unittest.TestCase):
         if the Curator has separately approved work of their own — evidence a
         sybil ring cannot manufacture on the spot."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        mixed = [("support", 1, "cabin-boy", 90, 0, 0),
-                 ("support", 2, "cabin-boy", 90, 0, 1)]
+        mixed = [("support", 1, "cabin-boy", 90, 0, 0, 0, 0),
+                 ("support", 2, "cabin-boy", 90, 0, 1, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=mixed) as s:
             result = run(s)
@@ -293,10 +294,33 @@ class Verdicts(unittest.TestCase):
         every established-by signal from both reviewers and the escalation
         returns."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        both_fresh = [("support", 1, "cabin-boy", 90, 0, 0),
-                      ("support", 2, "cabin-boy", 45, 0, 0)]
+        both_fresh = [("support", 1, "cabin-boy", 90, 0, 0, 0, 0),
+                      ("support", 2, "cabin-boy", 45, 0, 0, 0, 0)]
         with Stubbed(payload=payload, dossier=("support", "support"),
                     reviewer_rows=both_fresh) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "escalate")
+
+    def test_a_negative_signal_reviewer_is_escalated_even_with_earned_rank(self):
+        """Phase 5 negative-standing: rank, age and prior reviews all say
+        'established' -- rejections outnumbering acceptances says something
+        that outranks all three. Earned standing does not exempt a reviewer
+        from what they are doing with it now (Carta 7, both directions)."""
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        one_bad_admiral = [("support", 1, "admiral", 90 * 24 * 3600, 20, 2, 5, 0),
+                           ("support", 2, "scribe", 30 * 24 * 3600, 5, 1, 0, 0)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=one_bad_admiral) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "escalate")
+        self.assertIn("negative standing signal", result.state.fact("verdict_reason"))
+
+    def test_abandoned_claims_alone_escalate_an_otherwise_clean_dossier(self):
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        chronic_abandoner = [("support", 1, "scribe", 90 * 24 * 3600, 10, 2, 0, 3),
+                             ("support", 2, "scribe", 30 * 24 * 3600, 5, 1, 0, 0)]
+        with Stubbed(payload=payload, dossier=("support", "support"),
+                    reviewer_rows=chronic_abandoner) as s:
             result = run(s)
         self.assertEqual(result.state.decision("verdict"), "escalate")
 
@@ -455,6 +479,44 @@ class ReviewerTrust(unittest.TestCase):
         # A signal built from a row where every column came back NULL must
         # not raise and must not accidentally read as established.
         self.assertFalse(K.reviewer_is_established({}))
+
+
+class ReviewerNegativeSignal(unittest.TestCase):
+    """K.reviewer_has_negative_signal, direct. The second axis: not "is
+    there trust" but "is there a reason to distrust regardless of it"."""
+
+    CLEAN = {"rejections": 0, "accepted_submissions": 5, "abandoned_claims": 0}
+
+    def test_a_clean_record_has_no_negative_signal(self):
+        self.assertFalse(K.reviewer_has_negative_signal(self.CLEAN))
+
+    def test_rejections_alone_are_not_enough_below_the_minimum_sample(self):
+        sig = {**self.CLEAN, "rejections": K.MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL - 1,
+               "accepted_submissions": 0}
+        self.assertFalse(K.reviewer_has_negative_signal(sig),
+                         "one or two rejections is not yet a pattern")
+
+    def test_rejections_outnumbering_acceptances_past_the_minimum_is_a_signal(self):
+        sig = {"rejections": K.MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL, "accepted_submissions": 1,
+               "abandoned_claims": 0}
+        self.assertTrue(K.reviewer_has_negative_signal(sig))
+
+    def test_many_rejections_balanced_by_more_acceptances_is_not_a_signal(self):
+        # The check is a ratio, not a raw count -- a prolific, mostly-accepted
+        # contributor is not penalised for having enough volume to also carry
+        # a few rejections.
+        sig = {"rejections": K.MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL + 5,
+               "accepted_submissions": 50, "abandoned_claims": 0}
+        self.assertFalse(K.reviewer_has_negative_signal(sig))
+
+    def test_abandoned_claims_alone_are_a_signal_past_the_minimum(self):
+        sig = {**self.CLEAN, "abandoned_claims": K.MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL}
+        self.assertTrue(K.reviewer_has_negative_signal(sig))
+        just_under = {**self.CLEAN, "abandoned_claims": K.MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL - 1}
+        self.assertFalse(K.reviewer_has_negative_signal(just_under))
+
+    def test_missing_keys_read_as_clean(self):
+        self.assertFalse(K.reviewer_has_negative_signal({}))
 
 
 class TheProse(unittest.TestCase):

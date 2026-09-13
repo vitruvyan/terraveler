@@ -88,13 +88,12 @@ def reviewer_is_established(signal: dict) -> bool:
     rank, or has reviewed enough before, or has had a submission of their
     own survive the Curator, counts; a reviewer with none of those does not.
 
-    Deliberately NOT included: rejection/abandonment history as a way to
-    revoke an otherwise-established reviewer's standing. That is a real
-    signal (Phase 5 point 4 names it), but it is a second axis — "this
-    account is trusted, but should it be trusted less" — layered onto a
-    check built to answer a narrower question first: "is there any
-    independent trust here at all". Folding both into one boolean would
-    make an escalation's reason unreadable; this stays the smaller check.
+    Rejection/abandonment history is deliberately NOT folded in here — that
+    is a second axis, "this account is trusted, but should it be trusted
+    less", answered separately by reviewer_has_negative_signal() below.
+    Combining both into one boolean would make an escalation's reason
+    unreadable; this stays the narrower question, "is there any independent
+    trust here at all".
     """
     if (signal.get("age_at_review_seconds") or 0) >= SUSPICIOUS_REVIEWER_AGE_SECONDS:
         return True
@@ -105,6 +104,37 @@ def reviewer_is_established(signal: dict) -> bool:
     if (signal.get("accepted_submissions") or 0) >= MIN_ACCEPTED_SUBMISSIONS_FOR_TRUST:
         return True
     return False
+
+
+# The second axis reviewer_is_established() deliberately left for later: not
+# "is there independent trust" but "is there a reason to distrust regardless
+# of it". A minimum sample before judging a ratio -- one bad afternoon is not
+# a pattern -- and a plain count for abandonment, where even a small number
+# repeated is itself the pattern (a Scribe who lets three claims lapse unworked
+# has shown something a single lapse does not).
+MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL = 3
+MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL = 3
+
+
+def reviewer_has_negative_signal(signal: dict) -> bool:
+    """Accumulated bad behaviour, not a single bad outcome.
+
+    Rank, age and prior review count are all evidence that ages well —
+    nothing about them expires. This is the opposite kind of evidence: a
+    pattern in what a contributor has done lately, and it is deliberately
+    allowed to OUTRANK every reason reviewer_is_established() would
+    otherwise grant trust. Carta 7's "standing buys capacity, never
+    exemption" cuts both ways: earned rank does not exempt a contributor
+    from the consequences of what they are doing with it now.
+    """
+    rejections = signal.get("rejections") or 0
+    accepted = signal.get("accepted_submissions") or 0
+    if rejections >= MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL and rejections > accepted:
+        return True
+    if (signal.get("abandoned_claims") or 0) >= MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL:
+        return True
+    return False
+
 
 # Submission types that bring no voyage record of their own.
 #
@@ -403,6 +433,12 @@ MESSAGES = {
         "submission #{submission_id}'s own author also reviewed a submission "
         "from one of its reviewers — a mutual-review pattern the dossier "
         "requirement was not built to catch; escalating instead of approving.",
+    "DOSSIER_REVIEWER_NEGATIVE_SIGNAL":
+        "at least one reviewer on submission #{submission_id} has a negative "
+        "standing signal — more of their own submissions rejected than "
+        "accepted, or a pattern of claiming work and letting it expire "
+        "unworked. Earned rank does not exempt a reviewer from this; "
+        "escalating instead of approving.",
 }
 # One text, two codes: the sentence is identical and the distinction is which
 # half of §10.4 blocked the approval, which the verdict's own reason names.
