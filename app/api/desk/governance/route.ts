@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   try {
     const pending = await sb("GET",
       "source_proposals?status=eq.submitted&select=id,target_url,proposed_by_actor_type," +
-      "proposed_by_actor_id,endpoint_id,source_proposal_intents(voyage,waypoint,region,person,reason)");
+      "proposed_by_actor_id,endpoint_id,source_proposal_intents(voyage,waypoint,region,person,reason,suggested_trust_mode,suggested_rights_class)");
 
     const resolved = await sb("GET",
       "source_policy_decisions?order=timestamp.desc&limit=20&select=id,decision_outcome,trust_mode," +
