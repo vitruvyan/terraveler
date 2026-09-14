@@ -1,0 +1,211 @@
+/* Editorial shell refinement
+   This file intentionally overrides the legacy shell rules in globals.css.
+   It keeps Terraveler's specimen palette and typographic voices while making
+   the navigation quieter, lighter and more spatially coherent. */
+
+/* One quiet rule under the header, not a double ornamental band. */
+.site-header {
+  border-bottom: 1px solid var(--rule-mid);
+  box-shadow: none;
+}
+
+.sh-inner {
+  max-width: 1120px;
+  padding: 16px 24px;
+  gap: var(--space-5);
+}
+
+.sh-brand {
+  flex: 0 0 auto;
+}
+
+.sh-nav {
+  margin-left: auto;
+}
+
+.sh-nav a,
+.sh-nav-btn {
+  font-size: var(--step--1);
+  letter-spacing: 0.015em;
+}
+
+.sh-actions {
+  gap: 8px;
+}
+
+/* The Chartroom becomes one composed editorial frame rather than a wide rail
+   attached to the edge of the page. */
+.tv-page-shell {
+  width: min(1120px, calc(100% - 48px));
+  margin: var(--space-5) auto 0;
+  grid-template-columns: 11.25rem minmax(0, 1fr);
+  gap: clamp(2rem, 4vw, 4.25rem);
+}
+
+.tv-page-main {
+  min-width: 0;
+}
+
+.tv-fork {
+  top: calc(var(--space-7) + 52px);
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-5) var(--space-6) 0;
+  border-right: 1px solid var(--rule-hair);
+}
+
+.tv-fork-group + .tv-fork-group {
+  padding-top: var(--space-4);
+}
+
+.tv-fork-title {
+  font-family: var(--font-ui);
+  font-size: var(--step--3);
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-2);
+}
+
+.tv-fork-title.is-link {
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 6px 0 6px 10px;
+}
+
+.tv-fork-link {
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  line-height: 1.35;
+  padding: 7px 0 7px 10px;
+  color: var(--ink-soft);
+}
+
+.tv-fork-link[aria-current="true"],
+.tv-fork-title.is-link[aria-current="true"] {
+  font-weight: 500;
+}
+
+.tv-fork-badge {
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--brass-text);
+}
+
+/* Mobile: the rail disappears from document flow. Global navigation becomes
+   a proper off-canvas paper drawer opened by the header hamburger. */
+[data-layout="phone"] .tv-page-shell {
+  display: block;
+  width: 100%;
+  margin-top: 0;
+}
+
+[data-layout="phone"] .tv-fork {
+  display: none;
+}
+
+[data-layout="phone"] .sh-inner {
+  min-height: 66px;
+  padding: calc(10px + var(--safe-t)) max(14px, var(--safe-r)) 10px max(14px, var(--safe-l));
+  border: 0;
+}
+
+[data-layout="phone"] .sh-tagline,
+[data-layout="phone"] .sh-nav {
+  display: none;
+}
+
+[data-layout="phone"] .sh-menu-toggle {
+  display: inline-flex;
+}
+
+[data-layout="phone"] .sh-mobile-menu {
+  display: flex;
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 70;
+  width: min(86vw, 360px);
+  height: 100dvh;
+  padding: calc(84px + var(--safe-t)) max(24px, var(--safe-r)) calc(30px + var(--safe-b)) 28px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  overflow-y: auto;
+  background: var(--parchment-raised);
+  border-left: 1px solid var(--rule-mid);
+  box-shadow: var(--elev-1);
+}
+
+[data-layout="phone"] .sh-mobile-menu::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: rgba(43, 33, 23, 0.34);
+}
+
+[data-layout="phone"] .sh-mobile-menu > a {
+  display: block;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--rule-hair);
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  text-decoration: none;
+}
+
+[data-layout="phone"] .sh-mobile-menu > a[aria-current="page"] {
+  color: var(--accent-deep);
+  border-bottom-color: var(--brass);
+}
+
+[data-layout="phone"] .sh-mobile-section {
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--rule-mid);
+}
+
+[data-layout="phone"] .sh-mobile-section-title {
+  display: block;
+  margin-bottom: 7px;
+  font-family: var(--font-ui);
+  font-size: var(--step--3);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+[data-layout="phone"] .sh-mobile-section a {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  padding: 8px 0;
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+[data-layout="phone"] .sh-mobile-section a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (hover: hover) {
+  .sh-mobile-section a:hover,
+  .sh-mobile-menu > a:hover {
+    color: var(--ink);
+  }
+}

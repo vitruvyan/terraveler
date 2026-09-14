@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { LAYOUT_SCRIPT } from "@/lib/layout";
 import PageviewBeacon from "@/components/PageviewBeacon";
 import "./globals.css";
+import "./editorial-shell.css";
 
 /* The three voices of the atlas. All OFL, self-hosted, subset to latin — the
    same law the Magna Carta puts on sources applies to the type. Six cuts come
