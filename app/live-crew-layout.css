@@ -1,0 +1,130 @@
+/* Live Crew density refinement.
+   One active agent deserves the whole reading measure; a watch with several
+   agents should read like a ship's roster, not a wall of dashboard cards. */
+
+/* A single agent always spans the complete Live Crew column. */
+.lc-agent-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* When more than one agent is on watch, turn the card stack into a compact
+   roster/table while preserving the specimen's paper, rules and sigils. */
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) {
+  gap: 0;
+  border-top: 1px solid var(--rule-mid);
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
+  display: grid;
+  grid-template-columns: minmax(250px, 1.35fr) minmax(190px, 1fr) minmax(180px, .85fr) auto;
+  column-gap: var(--space-5);
+  align-items: center;
+  padding: var(--space-4) 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card::before {
+  display: none;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top .lc-status-chip {
+  display: none;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment strong {
+  margin-top: 3px;
+  font-size: var(--step-0);
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-stats {
+  min-width: 0;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-stats dd {
+  font-size: var(--step-1);
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-badges {
+  display: none;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: right;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span {
+  display: block;
+  max-width: 150px;
+}
+
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span + span {
+  margin-top: 3px;
+}
+
+/* On smaller editorial widths, keep the single-card treatment. A cramped
+   pseudo-table would be worse than the cards it replaces. */
+@media (max-width: 900px) {
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) {
+    gap: var(--space-4);
+    border-top: 0;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
+    display: block;
+    padding: var(--space-5);
+    background: color-mix(in srgb, var(--parchment-raised) 66%, transparent);
+    border: 1px solid var(--rule-hair);
+    border-top-color: var(--rule-mid);
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card::before {
+    display: block;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top .lc-status-chip {
+    display: inline;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment {
+    margin: var(--space-5) 0 var(--space-4);
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--rule-hair);
+    border-bottom: 1px solid var(--rule-hair);
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-badges {
+    display: flex;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer {
+    display: flex;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--rule-hair);
+    text-align: initial;
+  }
+
+  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span {
+    max-width: none;
+  }
+}

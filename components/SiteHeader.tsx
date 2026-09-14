@@ -32,7 +32,7 @@ const CHARTROOM_MOBILE = [
   { href: "/contribute?mode=sources#chartroom", label: "Sources" },
   { href: "/contribute?mode=agent-quick#chartroom", label: "Quick connect" },
   { href: "/contribute?mode=agent-setup#chartroom", label: "Persistent setup" },
-  { href: "/contribute?mode=crew#chartroom", label: "The Crew" },
+  { href: "/contribute?mode=crew#chartroom", label: "Live Crew" },
 ] as const;
 
 /** Bold, fixed site header for editorial pages. (The map page keeps its
