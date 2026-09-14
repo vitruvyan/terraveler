@@ -41,6 +41,7 @@ export default function SiteFooter() {
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/cookies">Cookies</Link>
+          <Link href="/data-deletion">Data deletion</Link>
         </div>
         <div className="sf-col">
           <h4>Contact</h4>
@@ -52,7 +53,7 @@ export default function SiteFooter() {
         © {new Date().getFullYear()} Terraveler · Content CC BY-SA · Sources public
         domain / CC · Built in the open, verified before publication. ·{" "}
         <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link> ·{" "}
-        <Link href="/cookies">Cookies</Link>
+        <Link href="/cookies">Cookies</Link> · <Link href="/data-deletion">Data deletion</Link>
       </div>
     </footer>
   );
