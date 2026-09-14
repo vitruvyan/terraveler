@@ -62,6 +62,11 @@ async function sb(method: string, path: string, body?: unknown): Promise<any> {
  */
 const RPC_MISSING = Symbol("rpc-not-installed");
 
+// suggest_source's own classification, mirrored from source_governance_schema.sql's
+// check constraints — kept in sync by hand since this route can't import SQL.
+const SOURCE_TRUST_MODES = ["domain_trusted", "collection_trusted", "item_verified", "link_only"];
+const SOURCE_RIGHTS_CLASSES = ["public_domain", "creative_commons", "mixed", "in_copyright", "unknown"];
+
 async function rpc(name: string, args: Record<string, unknown>): Promise<any> {
   const r = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, {
     method: "POST",
@@ -902,19 +907,27 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OAUTH("contribute"),
-    description: "Propose a new archival source, library, collection or repository for the Terraveler Atlas. The proposal will be investigated by the Archivist.",
+    description: "Propose a new archival source, library, collection or repository for the Terraveler Atlas. Reviewed directly by the Editor-in-chief, so research it before proposing: cite what makes it credible and classify it yourself rather than leaving that to a human working from a bare URL.",
     inputSchema: { type: "object", required: ["target_url"],
       properties: { ...AUTH_PROPS,
         target_url: { type: "string", description: "The URL of the source page, catalog, or archive to propose" },
         context: {
           type: "object",
-          description: "Optional context detailing the research need",
+          description: "Required research: why this source is credible and how it should be classified. Do the classification work yourself rather than leaving a bare URL for the editor to judge.",
           properties: {
             voyage: { type: "string", description: "voyage slug this concerns" },
             waypoint: { type: "number", description: "waypoint seq this concerns" },
             region: { type: "string" },
             person: { type: "string" },
-            reason: { type: "string", description: "reason / research need" }
+            reason: { type: "string", description: "reason / research need — what makes this source credible and useful" },
+            suggested_trust_mode: {
+              type: "string", enum: SOURCE_TRUST_MODES,
+              description: "Your assessment of how much of the source to trust: domain_trusted (the whole domain), collection_trusted (one collection within it), item_verified (checked per item at use), link_only (cite, never ingest)."
+            },
+            suggested_rights_class: {
+              type: "string", enum: SOURCE_RIGHTS_CLASSES,
+              description: "Your assessment of the source's rights status: public_domain, creative_commons, mixed (varies by item), in_copyright, or unknown."
+            }
           }
         }
       } } },
@@ -2131,6 +2144,15 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         return "ERROR: target_url is not a valid URL.";
       }
 
+      const suggestedTrustMode = args?.context?.suggested_trust_mode;
+      if (suggestedTrustMode != null && !SOURCE_TRUST_MODES.includes(String(suggestedTrustMode))) {
+        return `ERROR: context.suggested_trust_mode must be one of ${SOURCE_TRUST_MODES.join(", ")}.`;
+      }
+      const suggestedRightsClass = args?.context?.suggested_rights_class;
+      if (suggestedRightsClass != null && !SOURCE_RIGHTS_CLASSES.includes(String(suggestedRightsClass))) {
+        return `ERROR: context.suggested_rights_class must be one of ${SOURCE_RIGHTS_CLASSES.join(", ")}.`;
+      }
+
       const proposed_by_actor_type = bearer ? "agent" : "human";
       const proposed_by_actor_id = bearer ? bearer.agent_account_id : a.ok!.id;
 
@@ -2145,7 +2167,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         p_region: args?.context?.region || null,
         p_person: args?.context?.person || null,
         p_reason: args?.context?.reason || null,
-        p_original_target_url: url
+        p_original_target_url: url,
+        p_suggested_trust_mode: suggestedTrustMode ? String(suggestedTrustMode) : null,
+        p_suggested_rights_class: suggestedRightsClass ? String(suggestedRightsClass) : null
       });
 
       if (result === RPC_MISSING) {
@@ -2162,8 +2186,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
 
       return JSON.stringify({
         status: "success",
-        note: result.is_new 
-          ? "Source proposal registered. It will be investigated by the Archivist."
+        note: result.is_new
+          ? "Source proposal registered for the Editor-in-chief's direct review."
           : "This source endpoint has already been proposed and is currently under pending assessment. Your intent has been associated.",
         proposal: result
       }, null, 2);
