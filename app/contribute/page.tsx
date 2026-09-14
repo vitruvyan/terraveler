@@ -4,13 +4,13 @@ import TitlePage from "@/components/TitlePage";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import ChartroomBoard from "@/components/ChartroomBoard";
+import ChartroomSources from "@/components/ChartroomSources";
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
 import { adaptEditorialGap, type ChartroomWaypoint, type LegacyEditorialGap, type WaypointType } from "@/lib/chartroom";
 
 export const metadata: Metadata = {
   title: "The Chartroom",
-  description:
-    "Evolve the existing Chartroom into Terraveler's public contribution board and primary human onboarding surface.",
+  description: "See what Terraveler needs, contribute to ongoing work, propose what the atlas should explore next, or inspect its source policy.",
 };
 
 export const revalidate = 120;
@@ -25,10 +25,9 @@ function dataHeaders(): Record<string, string> {
 }
 
 type ChartroomQuery = { voyage?: string | null; waypoint?: number | null };
-type ChartroomLoad = {
-  waypoints: ChartroomWaypoint[] | null;
-  contextualReady: boolean;
-};
+type ChartroomLoad = { waypoints: ChartroomWaypoint[] | null; contextualReady: boolean };
+
+type ChartroomMode = "ongoing" | "propose" | "sources";
 
 function mapProjection(row: any): ChartroomWaypoint {
   const accountId = Number(row.requested_agent_account_id);
@@ -103,14 +102,9 @@ async function getWaypoints(query: ChartroomQuery): Promise<ChartroomLoad> {
 function parseFilter(searchParams: Record<string, string | string[] | undefined>): ChartroomQuery {
   const voyageRaw = Array.isArray(searchParams.voyage) ? searchParams.voyage[0] : searchParams.voyage;
   const waypointRaw = Array.isArray(searchParams.waypoint) ? searchParams.waypoint[0] : searchParams.waypoint;
-  const voyage = typeof voyageRaw === "string" && /^[a-z0-9][a-z0-9-]{0,99}$/.test(voyageRaw)
-    ? voyageRaw
-    : null;
+  const voyage = typeof voyageRaw === "string" && /^[a-z0-9][a-z0-9-]{0,99}$/.test(voyageRaw) ? voyageRaw : null;
   const waypoint = Number(waypointRaw);
-  return {
-    voyage,
-    waypoint: Number.isInteger(waypoint) && waypoint > 0 ? waypoint : null,
-  };
+  return { voyage, waypoint: Number.isInteger(waypoint) && waypoint > 0 ? waypoint : null };
 }
 
 interface CategoryInfo {
@@ -121,15 +115,47 @@ interface CategoryInfo {
 }
 
 const ALL_CATEGORIES: CategoryInfo[] = [
-  { id: "all", label: "All Work", description: "All available opportunities.", types: [] },
-  { id: "stories", label: "Stories", description: "Narrative improvements and missing voyage material.", types: ["narrative", "translation"] },
+  { id: "all", label: "All", description: "Every kind of work in the Chartroom.", types: [] },
+  { id: "stories", label: "Stories", description: "Narratives, missing voyage material and translations.", types: ["narrative", "translation"] },
   { id: "images", label: "Images", description: "Historical images, engravings, maps and visual evidence.", types: ["image"] },
   { id: "peoples", label: "Peoples & Encounters", description: "Historical and cultural context around encounters represented in voyages.", types: ["challenge"] },
   { id: "places", label: "Places", description: "Historical locations, coordinates and geographical verification.", types: ["map", "claim"] },
-  { id: "sources", label: "Sources", description: "Better sources, transcription, source verification and cross-references.", types: ["source", "transcription"] },
-  { id: "topics", label: "Topics", description: "Themes that could connect multiple voyages.", types: [] },
+  { id: "topics", label: "Topics", description: "Themes that connect several voyages across the atlas.", types: [] },
   { id: "review", label: "Review", description: "Evidence checking, challenges and editorial verification.", types: ["review"] },
 ];
+
+const contributionStages = [
+  {
+    step: "01",
+    eyebrow: "Discover",
+    title: "Choose something worth improving",
+    body: "Browse open work across stories, images, places, peoples and topics. Start with something that genuinely interests you.",
+    detail: "You can explore before signing in.",
+  },
+  {
+    step: "02",
+    eyebrow: "Contribute",
+    title: "Claim it, then work from a clear brief",
+    body: "Each opportunity tells you what is missing, why it matters and what evidence the atlas expects. Research, create and cite your sources.",
+    detail: "The brief defines the work — not Terraveler's internal machinery.",
+  },
+  {
+    step: "03",
+    eyebrow: "Publish",
+    title: "Submit it for human editorial review",
+    body: "A curator checks the evidence and editorial fit. Accepted work enters the atlas with its provenance preserved.",
+    detail: "Nothing goes public automatically.",
+  },
+];
+
+function buildHref(mode: ChartroomMode, category: string, tab: string) {
+  const params = new URLSearchParams();
+  if (mode !== "ongoing") params.set("mode", mode);
+  if (mode !== "sources" && category !== "all") params.set("category", category);
+  if (mode === "ongoing" && tab !== "open") params.set("tab", tab);
+  const query = params.toString();
+  return `/contribute${query ? `?${query}` : ""}#open-opportunities`;
+}
 
 export default async function Chartroom({
   searchParams,
@@ -142,24 +168,23 @@ export default async function Chartroom({
   const loaded = await getWaypoints(filter);
   const waypoints = loaded.waypoints;
 
-  const category = (Array.isArray(resolvedParams.category) ? resolvedParams.category[0] : resolvedParams.category) || "all";
-  const tab = (Array.isArray(resolvedParams.tab) ? resolvedParams.tab[0] : resolvedParams.tab) || "open";
-
+  const categoryRaw = Array.isArray(resolvedParams.category) ? resolvedParams.category[0] : resolvedParams.category;
+  const category = ALL_CATEGORIES.some((item) => item.id === categoryRaw) ? String(categoryRaw) : "all";
+  const tab = (Array.isArray(resolvedParams.tab) ? resolvedParams.tab[0] : resolvedParams.tab) === "progress" ? "progress" : "open";
+  const modeRaw = Array.isArray(resolvedParams.mode) ? resolvedParams.mode[0] : resolvedParams.mode;
+  const mode: ChartroomMode = modeRaw === "propose" ? "propose" : modeRaw === "sources" ? "sources" : "ongoing";
   const categoryMeta = ALL_CATEGORIES.find((c) => c.id === category) || ALL_CATEGORIES[0];
 
-  // In-memory filter on loaded waypoints
   const allWaypoints = waypoints || [];
+  const sourceNeeds = allWaypoints.filter((wp) => wp.type === "source" || wp.type === "transcription");
+  const contentWaypoints = allWaypoints.filter((wp) => wp.type !== "source" && wp.type !== "transcription");
   const categoryFiltered = categoryMeta.id === "all"
-    ? allWaypoints
-    : allWaypoints.filter((wp) => categoryMeta.types.includes(wp.type));
+    ? contentWaypoints
+    : contentWaypoints.filter((wp) => categoryMeta.types.includes(wp.type));
 
   const openWaypoints = categoryFiltered.filter((wp) => wp.status === "open" && wp.requestedVoyager === null);
   const progressWaypoints = categoryFiltered.filter((wp) => wp.status === "taken" || wp.requestedVoyager !== null);
-
   const displayWaypoints = tab === "progress" ? progressWaypoints : openWaypoints;
-
-  const openCount = openWaypoints.length;
-  const progressCount = progressWaypoints.length;
 
   return (
     <>
@@ -169,96 +194,155 @@ export default async function Chartroom({
         title="The Chartroom"
         dek={contextual
           ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
-          : "Terraveler is never completely finished. Some voyages need better sources. Some need images. Some encounters need historical context. Choose something that interests you and help improve it."}
+          : "Work on what the atlas needs, propose what it should explore next, or inspect the evidence it trusts."}
         background="/login-backgrounds/carta-marina.png"
         credit="Carta Marina · 1539 · Olaus Magnus"
-        actions={[
-          { href: "#open-opportunities", label: "Find something to contribute" },
-          { href: "#how-it-works", label: "How contributing works", variant: "secondary" as const },
-        ]}
-        meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
+        platePosition="after"
       >
-        {/* Onboarding section */}
-        <section id="how-it-works" className="ed-panel" style={{ marginTop: 28 }}>
-          <h3 style={{ fontFamily: "var(--font-ui)", fontSize: "1.1rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16 }}>
-            How it Works
-          </h3>
-          <ol style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "20px", padding: 0, listStyle: "none" }}>
-            {[
-              { step: "01", title: "Find", desc: "Find something that interests you in the board below." },
-              { step: "02", title: "Take", desc: "Choose an opportunity and claim it under your identity." },
-              { step: "03", title: "Research", desc: "Consult public-domain archives and locate the evidence." },
-              { step: "04", title: "Submit", desc: "Verify and submit your work with verbatim source citations." },
-              { step: "05", title: "Review", desc: "A curator reviews it before it is published to the atlas." },
-            ].map((item) => (
-              <li key={item.step} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "var(--brass-text)" }}>
-                  — {item.step}
-                </span>
-                <strong style={{ fontFamily: "var(--font-ui)", fontSize: "0.95rem" }}>{item.title}</strong>
-                <span className="ed-muted" style={{ fontSize: "0.85rem", lineHeight: 1.4 }}>{item.desc}</span>
-              </li>
-            ))}
-          </ol>
-          <p style={{ marginTop: 16, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
-            Human and AI contributions follow the same evidence rules. All submissions are audited before publication.
-          </p>
-        </section>
+        {!contextual && (
+          <div
+            aria-label="Contribution path"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: "7px 12px",
+              margin: "2px 0 0",
+              padding: "10px 0",
+              borderTop: "1px solid var(--rule-hair)",
+              borderBottom: "1px solid var(--rule-hair)",
+              fontFamily: "var(--font-ui)",
+              fontSize: "0.8rem",
+              color: "var(--ink-soft)",
+            }}
+          >
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)" }}>
+              How it works
+            </span>
+            <strong style={{ color: "var(--ink)" }}>Discover</strong><span aria-hidden="true">→</span>
+            <span>Claim</span><span aria-hidden="true">→</span>
+            <span>Create</span><span aria-hidden="true">→</span>
+            <span>Submit</span><span aria-hidden="true">→</span>
+            <span>Review</span>
+            <Link
+              href="#how-it-works"
+              style={{ marginLeft: "auto", color: "var(--ink-soft)", fontSize: "0.76rem", textUnderlineOffset: 3 }}
+            >
+              Details ↓
+            </Link>
+          </div>
+        )}
 
-        {/* Opportunity Catalogue / Board */}
-        <section id="open-opportunities" style={{ marginTop: 42 }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", marginBottom: 12 }}>
-            What the Atlas Needs
-          </h2>
-          <p className="ed-muted" style={{ marginBottom: 24 }}>
-            Explore the public roadmap and choose an opportunity to work on. Select a category to filter.
-          </p>
-
-          {/* Categories Navigation */}
-          <div className="tv-tabs" role="tablist" style={{ marginBottom: 20 }}>
-            {ALL_CATEGORIES.map((cat) => {
-              const isActive = category === cat.id;
-              const params = new URLSearchParams();
-              if (cat.id !== "all") params.set("category", cat.id);
-              if (tab !== "open") params.set("tab", tab);
-              const href = `/contribute?${params.toString()}#open-opportunities`;
-
-              return (
-                <Link
-                  key={cat.id}
-                  href={href}
-                  role="tab"
-                  aria-selected={isActive}
-                  className={isActive ? "tv-tab tv-tab-on" : "tv-tab"}
-                  style={{ textDecoration: "none" }}
-                >
-                  {cat.label}
-                </Link>
-              );
-            })}
+        <section id="open-opportunities" style={{ marginTop: 20 }}>
+          <div style={{ maxWidth: 800, marginBottom: 18 }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brass-text)" }}>
+              The Chartroom
+            </span>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 5vw, 2.75rem)", margin: "5px 0 8px", lineHeight: 1 }}>
+              Work. Propose. Trace the evidence.
+            </h2>
+            <p className="ed-muted" style={{ margin: 0, lineHeight: 1.55 }}>
+              Choose defined work, suggest what the atlas should add, or explore the source rules that ground its knowledge.
+            </p>
           </div>
 
-          {contextual && !loaded.contextualReady ? (
-            <p className="ed-muted">
-              Contextual Chartroom links need the additive Chartroom database migration before
-              they can be read here. The global backlog remains available from{" "}
-              <Link href="/contribute">The Chartroom</Link>.
-            </p>
-          ) : waypoints === null ? (
-            <p className="ed-muted">
-              The Chartroom is momentarily unavailable. Agents can retry <code>list_gaps</code>
-              through the Terraveler MCP endpoint.
-            </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginBottom: 20 }}>
+            <Link
+              href={buildHref("ongoing", category, tab)}
+              aria-current={mode === "ongoing" ? "page" : undefined}
+              style={{ textDecoration: "none", color: "inherit", border: mode === "ongoing" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "ongoing" ? "var(--parchment-raised)" : "transparent", padding: "14px 16px" }}
+            >
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 4 }}>Ongoing Projects</span>
+              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.28rem", marginBottom: 3 }}>Choose work that is ready.</strong>
+              <span className="ed-muted" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>Research, images and editorial work already identified.</span>
+            </Link>
+            <Link
+              href={buildHref("propose", category, "open")}
+              aria-current={mode === "propose" ? "page" : undefined}
+              style={{ textDecoration: "none", color: "inherit", border: mode === "propose" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "propose" ? "var(--parchment-raised)" : "transparent", padding: "14px 16px" }}
+            >
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 4 }}>Propose</span>
+              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.28rem", marginBottom: 3 }}>Tell us what is missing.</strong>
+              <span className="ed-muted" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>Suggest a subject, perspective, place or cross-voyage topic.</span>
+            </Link>
+            <Link
+              href={buildHref("sources", "all", "open")}
+              aria-current={mode === "sources" ? "page" : undefined}
+              style={{ textDecoration: "none", color: "inherit", border: mode === "sources" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "sources" ? "var(--parchment-raised)" : "transparent", padding: "14px 16px" }}
+            >
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 4 }}>Sources</span>
+              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.28rem", marginBottom: 3 }}>See what the atlas trusts.</strong>
+              <span className="ed-muted" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>Explore admissible evidence, languages and propose a new source.</span>
+            </Link>
+          </div>
+
+          {mode !== "sources" && (
+            <>
+              <div className="tv-tabs" role="tablist" aria-label="Contribution categories" style={{ marginBottom: 10 }}>
+                {ALL_CATEGORIES.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={buildHref(mode, cat.id, tab)}
+                    role="tab"
+                    aria-selected={category === cat.id}
+                    className={category === cat.id ? "tv-tab tv-tab-on" : "tv-tab"}
+                    style={{ textDecoration: "none" }}
+                  >
+                    {cat.label}
+                  </Link>
+                ))}
+              </div>
+              <p className="ed-muted" style={{ margin: "0 0 18px", fontSize: "0.86rem" }}>{categoryMeta.description}</p>
+            </>
+          )}
+
+          {mode === "sources" ? (
+            <ChartroomSources sourceNeeds={sourceNeeds} />
+          ) : contextual && !loaded.contextualReady ? (
+            <p className="ed-muted">Contextual Chartroom links need the additive Chartroom database migration before they can be read here. The global backlog remains available from <Link href="/contribute">The Chartroom</Link>.</p>
+          ) : waypoints === null && mode === "ongoing" ? (
+            <p className="ed-muted">The Chartroom is momentarily unavailable. Agents can retry <code>list_gaps</code> through the Terraveler MCP endpoint.</p>
           ) : (
             <ChartroomBoard
-              initial={displayWaypoints}
+              initial={mode === "ongoing" ? displayWaypoints : []}
               category={category}
               tab={tab}
-              openCount={openCount}
-              progressCount={progressCount}
+              mode={mode}
+              openCount={openWaypoints.length}
+              progressCount={progressWaypoints.length}
             />
           )}
         </section>
+
+        {!contextual && (
+          <section id="how-it-works" style={{ marginTop: 64, paddingTop: 30, borderTop: "1px solid var(--rule-hair)" }}>
+            <div style={{ maxWidth: 720, marginBottom: 22 }}>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.11em", textTransform: "uppercase", color: "var(--brass-text)", marginBottom: 7 }}>
+                How contributing works
+              </span>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.7rem, 4vw, 2.45rem)", lineHeight: 1.05, margin: 0 }}>
+                Your first contribution, without the machinery.
+              </h2>
+              <p className="ed-muted" style={{ fontSize: "0.95rem", lineHeight: 1.6, marginTop: 10, maxWidth: 650 }}>
+                Find a useful piece of work, follow its brief and submit your evidence. Terraveler handles the editorial workflow around you.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", borderTop: "1px solid var(--rule-hair)", borderBottom: "1px solid var(--rule-hair)" }}>
+              {contributionStages.map((stage, index) => (
+                <article key={stage.step} style={{ padding: "18px 18px 20px 0", marginRight: index < contributionStages.length - 1 ? 18 : 0, borderRight: index < contributionStages.length - 1 ? "1px solid var(--rule-hair)" : "none" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 9, marginBottom: 8 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--brass-text)" }}>{stage.step}</span>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{stage.eyebrow}</span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", lineHeight: 1.1, margin: "0 0 8px" }}>{stage.title}</h3>
+                  <p className="ed-muted" style={{ fontSize: "0.86rem", lineHeight: 1.5, margin: 0 }}>{stage.body}</p>
+                  <p style={{ fontFamily: "var(--font-ui)", fontSize: "0.75rem", lineHeight: 1.4, color: "var(--ink-soft)", margin: "11px 0 0" }}>{stage.detail}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </TitlePage>
       <SiteFooter />
     </>
