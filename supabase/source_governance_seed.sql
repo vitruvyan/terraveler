@@ -2,7 +2,7 @@
 -- Reproduces current whitelist.py semantics exactly.
 
 -- 1. Insert institutions
-insert into source_institutions (id, slug, name, primary_languages) values
+insert into source_institutions (id, slug, name, primary_languages) overriding system value values
   (1, 'gutenberg', 'Project Gutenberg', array['en']),
   (2, 'runeberg', 'Project Runeberg', array['sv', 'no', 'da']),
   (3, 'wikimedia', 'Wikimedia Foundation', array['mul']),
@@ -13,7 +13,7 @@ on conflict (id) do update set
   primary_languages = excluded.primary_languages;
 
 -- 2. Insert endpoints
-insert into source_endpoints (id, institution_id, host_pattern, match_type, status, trust_mode) values
+insert into source_endpoints (id, institution_id, host_pattern, match_type, status, trust_mode) overriding system value values
   (1, 1, 'gutenberg.org', 'exact', 'active', 'domain_trusted'),
   (2, 1, 'www.gutenberg.org', 'exact', 'active', 'domain_trusted'),
   (3, 1, 'gutendex.com', 'exact', 'active', 'domain_trusted'),
@@ -31,7 +31,7 @@ on conflict (id) do update set
   trust_mode = excluded.trust_mode;
 
 -- 3. Insert access rules
-insert into source_access_rules (id, endpoint_id, allowed_hosts, api_endpoints, verification_strategy) values
+insert into source_access_rules (id, endpoint_id, allowed_hosts, api_endpoints, verification_strategy) overriding system value values
   (1, 8, array['archive.org'], array['https://archive.org/metadata/'], 'archive_org_metadata'),
   (2, 9, array['www.archive.org'], array['https://archive.org/metadata/'], 'archive_org_metadata')
 on conflict (id) do update set
@@ -41,7 +41,7 @@ on conflict (id) do update set
   verification_strategy = excluded.verification_strategy;
 
 -- 4. Insert policy decisions
-insert into source_policy_decisions (id, endpoint_id, decision_outcome, trust_mode, rights_class, rights_identifier, evidence_snapshot, policy_version, verification_version, carta_version, decided_by_actor_type, decided_by_actor_id, reason) values
+insert into source_policy_decisions (id, endpoint_id, decision_outcome, trust_mode, rights_class, rights_identifier, evidence_snapshot, policy_version, verification_version, carta_version, decided_by_actor_type, decided_by_actor_id, reason) overriding system value values
   (1, 1, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
   (2, 2, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),
   (3, 3, 'approve', 'domain_trusted', 'public_domain', null, '{"rights_class": "public_domain", "rights_scope_type": "endpoint", "rights_statement_hash": "mock"}'::jsonb, 'legacy-v0', 'legacy-v0', '0.7', 'system', null, 'Legacy whitelist: Gutenberg is entirely PD.'),

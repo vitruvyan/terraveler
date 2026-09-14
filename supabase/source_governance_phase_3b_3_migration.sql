@@ -197,12 +197,12 @@ begin
     if not found then
       raise exception 'MISSING_SUBJECT_VIOLATION: Target endpoint % does not exist', new.subject_id;
     end if;
-  elif new.subject_type = 'collection' then
+  elsif new.subject_type = 'collection' then
     select reverification_generation into v_gen from public.source_collections where id = new.subject_id;
     if not found then
       raise exception 'MISSING_SUBJECT_VIOLATION: Target collection % does not exist', new.subject_id;
     end if;
-  elif new.subject_type = 'proposal' then
+  elsif new.subject_type = 'proposal' then
     v_gen := 0;
   end if;
   
