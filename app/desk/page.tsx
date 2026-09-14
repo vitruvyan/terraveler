@@ -100,6 +100,17 @@ const TAB_TITLE: Record<Tab, string> = {
   crew: "Crew",
   analytics: "Analytics",
 };
+const TABS = Object.keys(TAB_TITLE) as Tab[];
+
+/* A Telegram "Review" button has to land the editor somewhere specific —
+ * the source or submission it is about, not just "the desk" — or it is not
+ * actually a shortcut. Read once on mount; the tab row still fully owns
+ * navigation after that. */
+function initialTab(): Tab {
+  if (typeof window === "undefined") return "overview";
+  const t = new URLSearchParams(window.location.search).get("tab");
+  return (TABS as string[]).includes(t ?? "") ? (t as Tab) : "overview";
+}
 
 /* Signed out is not the same as signed in without the desk, and the old
    boolean could not tell them apart — /api/desk/overview answers 401 to both.
@@ -110,7 +121,7 @@ export default function Desk() {
   const [standing, setStanding] = useState<Standing>("checking");
   const [me, setMe] = useState<{ email?: string }>({});
   const [err, setErr] = useState("");
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
   const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
