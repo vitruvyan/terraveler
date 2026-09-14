@@ -4915,7 +4915,7 @@ main.prose {
    ========================================================================= */
 
 .dk-page {
-  max-width: 68rem;
+  max-width: 74rem;
   margin: 0 auto;
   padding: var(--space-7) var(--space-5) var(--space-9);
 }
@@ -4946,37 +4946,102 @@ main.prose {
   margin: var(--space-2) 0 0;
 }
 
-/* --- tabs: the institution speaking, so no cartouche at this size -------- */
-.dk-tabs {
-  display: flex;
-  gap: var(--space-5);
+/* --- the desk's own index: sections and subsections, machine voice ------- */
+.dk-shell {
+  display: grid;
+  grid-template-columns: 13.5rem 1fr;
+  gap: var(--space-7);
+  align-items: start;
   margin-top: var(--space-5);
-  border-bottom: 1px solid var(--rule-hair);
 }
-.dk-tab {
-  appearance: none;
-  background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  padding: 0 0 var(--space-3);
-  cursor: pointer;
+.dk-sidebar {
+  position: sticky;
+  top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-1);
+}
+.dk-nav-group + .dk-nav-group {
+  border-top: 1px solid var(--rule-hair);
+  padding-top: var(--space-4);
+}
+.dk-nav-heading {
+  display: block;
   font-family: var(--font-mono);
   font-size: var(--step--2);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-faint);
+  margin: 0 0 var(--space-2);
+}
+/* A top-level entry with no subsections (Quarterdeck, Crew, Analytics) reads
+   as a clickable ROW, not a label — it takes .dk-nav-sub's institution-voice
+   typography wholesale rather than the mono/uppercase group-label look
+   above, precisely so a glance can tell "clickable" from "heading" without
+   needing indentation to do it: Submissions and Sources never look like
+   this, no matter how similar their position in the tree. */
+.dk-nav-heading.is-link {
+  all: unset;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+  border-left: 2px solid transparent;
+  padding: var(--space-1) 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-soft);
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 @media (hover: hover) {
-  .dk-tab:hover { color: var(--ink); }
+  .dk-nav-heading.is-link:hover { color: var(--ink); }
 }
-.dk-tab[aria-selected="true"] {
-  color: var(--parchment);
-  background: var(--state-alarm);
-  border-bottom-color: var(--state-alarm);
-  padding-left: var(--space-3);
-  padding-right: var(--space-3);
-  border-radius: var(--radius-2);
+.dk-nav-sub {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+@media (hover: hover) {
+  .dk-nav-sub:hover { color: var(--ink); }
+}
+/* "You are here" is a ribbon marker in the margin, not a colour that also
+   means "this needs attention" — that one stays on the badge alone. */
+.dk-nav-sub[aria-current="true"],
+.dk-nav-heading.is-link[aria-current="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-left-color: var(--brass);
+}
+.dk-nav-badge {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--ink-faint);
+}
+.dk-nav-badge.is-alarm { color: var(--state-alarm); }
+.dk-nav-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-top: 1px solid var(--rule-hair);
+  padding-top: var(--space-4);
 }
 
 /* --- what the desk is being asked to do --------------------------------- */
@@ -5121,22 +5186,16 @@ main.prose {
   font-size: 0.9em;
 }
 
-/* The specimen links, sat at the far end of the desk's own tabs. They are
-   references rather than tabs, so they read as links and never take the
-   selected rule. */
-.dk-tabs-aside {
-  margin-left: auto;
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-4);
-  padding-bottom: var(--space-3);
-}
-.dk-tabs-aside-label {
+/* The specimen links, now the sidebar's own footer group. dk-nav-heading
+   already carries this label style; kept distinct so a plain reference link
+   never accidentally takes the is-link/aria-current treatment above. */
+.dk-nav-footer-label {
   font-family: var(--font-mono);
   font-size: var(--step--2);
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-faint);
+  margin-bottom: var(--space-1);
 }
 .dk-tab-link {
   font-family: var(--font-mono);
@@ -5153,8 +5212,23 @@ main.prose {
 }
 
 @media (max-width: 760px) {
-  .dk-tabs { flex-wrap: wrap; }
-  .dk-tabs-aside { margin-left: 0; width: 100%; }
+  /* A fixed-width column beside the content is a desktop reading of "index" —
+     on a phone there is no room for a permanent margin to hold it in (see
+     the design law's own note on marginalia at this width). It collapses to
+     a single horizontal strip above the content instead, subsections
+     included, so nothing in the tree becomes unreachable. */
+  .dk-shell { grid-template-columns: 1fr; }
+  .dk-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    border-bottom: 1px solid var(--rule-hair);
+    padding-bottom: var(--space-4);
+  }
+  .dk-nav-group + .dk-nav-group { border-top: 0; padding-top: 0; }
+  .dk-nav-group, .dk-nav-footer { flex: 1 1 auto; min-width: 8rem; }
+  .dk-nav-footer { border-top: 0; padding-top: 0; }
 }
 
 /* ============================================================================
@@ -5968,6 +6042,7 @@ main.prose {
 }
 .conf-badge.is-approve { border-color: var(--state-ok); color: var(--state-ok); }
 .conf-badge.is-reject { border-color: var(--state-no); color: var(--state-no); }
+.conf-badge.is-review { border-color: var(--state-desk); color: var(--state-desk); }
 
 /* ============================================================================
    CONTRIBUTE — the handoff, in the order the paths actually work

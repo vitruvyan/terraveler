@@ -6,7 +6,8 @@ import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
-import { PendingSourceProposals, ResolvedSourceDecisions } from "@/components/desk/SourceGovernance";
+import { PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts } from "@/components/desk/SourceGovernance";
+import DeskSidebar from "@/components/desk/DeskSidebar";
 import AccountWorkspace from "@/components/AccountWorkspace";
 
 /* Due proposte vere, come arrivano dall'MCP: una suggestione (prosa scritta
@@ -459,6 +460,59 @@ export default function SpecimenPage() {
             applicata a un giudizio diverso: non &ldquo;questo testo è pubblicabile&rdquo;
             ma &ldquo;questo dominio è affidabile, e quanto&rdquo;. Le due zone restano
             fisicamente separate: in attesa, sopra e aperta; risolte, sotto e chiuse.
+          </div>
+
+          <h3 className="dk-section-title">Flagged endpoints &amp; material drift</h3>
+          <FlaggedEndpoints
+            endpoints={[
+              { id: 5, host_pattern: "archive-mirror.example.org", match_type: "suffix", status: "quarantined", trust_mode: "domain_trusted", last_verified_at: "2026-06-02T00:00:00Z" },
+              { id: 9, host_pattern: "shifting-collection.example.org", match_type: "exact", status: "needs_human_review", trust_mode: "collection_trusted", last_verified_at: null },
+            ]}
+          />
+          <MaterialDrifts
+            drifts={[
+              {
+                id: 3, reverification_id: 1, subject_type: "endpoint", subject_id: 5,
+                drift_class: "content_substitution", drift_codes: ["LICENSE_CHANGED", "OWNERSHIP_CHANGED"],
+                old_material_fingerprint: "a1b2", new_material_fingerprint: "c3d4",
+                recommended_action: "QUARANTINE_AND_REEVALUATE", created_at: "2026-06-02T00:00:00Z",
+              },
+            ]}
+          />
+
+          <div className="spec-note">
+            <code>/api/desk/governance</code> calcolava già entrambe — <code>review_required_endpoints</code>{" "}
+            e <code>recent_material_drifts</code> — e il desk non le ha mai mostrate: la
+            fiducia in un dominio non è per sempre, ma senza queste due il declino non
+            aveva dove diventare visibile. Nessuna azione dal desk qui, ancora: sono
+            trovate della pipeline di riverifica, non decisioni da prendere in un tap.
+          </div>
+
+          <h3 className="dk-section-title">The desk&rsquo;s own index</h3>
+          <div className="dk-shell" style={{ maxWidth: 620 }}>
+            <DeskSidebar
+              section="submissions"
+              submissionsSub="needs_verdict"
+              sourcesSub="pending"
+              counts={{ needsVerdict: 3, peerReview: 5, history: 42, pending: 2, flagged: 1, drift: 1, resolved: 14 }}
+            />
+            <div className="dk-content">
+              <p className="dk-empty">
+                (la colonna a destra qui è solo per mostrare la sidebar accanto al contenuto —
+                sul desk vero contiene la sezione scelta)
+              </p>
+            </div>
+          </div>
+
+          <div className="spec-note">
+            Cinque tab in una riga sono diventate un indice a stampa: sezioni senza
+            sottovoci (Quarterdeck, Crew, Analytics) sono una riga cliccabile; Submissions
+            e Sources — le uniche che l&rsquo;hanno guadagnata — restano un&rsquo;etichetta
+            non cliccabile sopra le loro sottosezioni, invece di una quarta cosa da
+            imparare. &ldquo;Sei qui&rdquo; è un segnalibro di ottone nel margine, non lo
+            stesso rosso del badge che segnala urgenza: i due significati non erano lo
+            stesso colore prima di questo passaggio, e confonderli in una sidebar sempre
+            visibile — non una riga di tab vista di sfuggita — si sarebbe notato.
           </div>
 
           <h3 className="dk-section-title">Ship&rsquo;s log</h3>

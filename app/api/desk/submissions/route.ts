@@ -1,8 +1,31 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
+import { PENDING_STATUSES, hasEscalateFinding } from "@/lib/deskEscalation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * The desk's own "needs action vs. history" split, applied here the same
+ * way it already was to Sources — and computed with the exact same
+ * PENDING_STATUSES / hasEscalateFinding /api/desk/overview uses for its
+ * escalation count, so the two routes can't drift on what "escalated"
+ * means (see lib/deskEscalation.ts).
+ *
+ *   needs_verdict — appealed (Carta §5, the editor alone rules), human-review
+ *                   (ideas/suggestions skip peer review entirely), or a
+ *                   submitted/peer-review draft the Curator escalated
+ *   peer_review   — submitted/peer-review, not escalated: still with other
+ *                    contributors, nothing for the editor here yet
+ *   history       — approved, rejected, curator-rejected, changes-requested:
+ *                    settled, or (changes-requested) the next move belongs
+ *                    to the contributor, not the editor
+ */
+function bucket(status: string, escalated: boolean): "needs_verdict" | "peer_review" | "history" {
+  if (status === "appealed" || status === "human-review") return "needs_verdict";
+  if (PENDING_STATUSES.includes(status)) return escalated ? "needs_verdict" : "peer_review";
+  return "history";
+}
 
 export async function GET(req: Request) {
   const auth = await requireEditor(req);
@@ -27,14 +50,23 @@ export async function GET(req: Request) {
     for (const r of reviews) {
       (reviewsBySub[r.submission_id] ??= []).push({ ...r, reviewer: byId[r.reviewer_id] ?? null });
     }
-    return NextResponse.json({
-      submissions: subs.map((s: any) => ({
+
+    const grouped: { needs_verdict: any[]; peer_review: any[]; history: any[] } =
+      { needs_verdict: [], peer_review: [], history: [] };
+    for (const s of subs) {
+      const subAudit = auditBySub[s.id] ?? [];
+      const escalated = subAudit.length > 0 && hasEscalateFinding(subAudit[subAudit.length - 1].findings);
+      const full = {
         ...s,
         contributor: byId[s.contributor_id] ?? null,
-        audit: auditBySub[s.id] ?? [],
+        audit: subAudit,
         reviews: reviewsBySub[s.id] ?? [],
-      })),
-    });
+        escalated,
+      };
+      grouped[bucket(s.status, escalated)].push(full);
+    }
+
+    return NextResponse.json(grouped);
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
   }

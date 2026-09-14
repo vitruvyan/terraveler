@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
-import { PendingSourceProposals, ResolvedSourceDecisions, type PendingProposal, type ResolvedDecision } from "@/components/desk/SourceGovernance";
-import { hasEscalateFinding } from "@/lib/deskEscalation";
+import {
+  PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts,
+  type PendingProposal, type ResolvedDecision, type FlaggedEndpoint, type MaterialDrift,
+} from "@/components/desk/SourceGovernance";
+import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub } from "@/components/desk/DeskSidebar";
 
 type Sub = {
   id: number;
@@ -18,7 +21,11 @@ type Sub = {
   contributor: { handle: string; rank: string } | null;
   audit: { actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
   reviews: { reviewer: { handle: string; rank: string } | null; verdict: string; findings: any; created_at: string }[];
+  escalated: boolean;
 };
+
+type SubGroups = { needs_verdict: Sub[]; peer_review: Sub[]; history: Sub[] };
+const EMPTY_SUB_GROUPS: SubGroups = { needs_verdict: [], peer_review: [], history: [] };
 
 type CrewMember = {
   id: number;
@@ -73,14 +80,6 @@ const STATUS_COLOR: Record<string, string> = {
   appealed: "var(--state-alarm)",
 };
 
-/** A submission is showing an unanswered escalation when its own latest
- *  audit_log row (audit is ascending by id — see /api/desk/submissions)
- *  carries an ESCALATE finding. A later verdict replaces that row, so once
- *  the desk rules the badge goes with it. */
-function isEscalated(s: Sub): boolean {
-  return s.audit.length > 0 && hasEscalateFinding(s.audit[s.audit.length - 1].findings);
-}
-
 /** The grounds a contributor filed with `appeal` (app/api/mcp/route.ts),
  *  recorded as audit_log findings [["APPEAL", 0, grounds]]. Read here so the
  *  editor rules with them beside the draft rather than inside the collapsed
@@ -92,24 +91,33 @@ function appealGrounds(s: Sub): string | null {
 }
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
-type Tab = "overview" | "submissions" | "sources" | "crew" | "analytics";
-const TAB_TITLE: Record<Tab, string> = {
-  overview: "Quarterdeck",
-  submissions: "Submissions",
-  sources: "Sources",
-  crew: "Crew",
-  analytics: "Analytics",
-};
-const TABS = Object.keys(TAB_TITLE) as Tab[];
 
-/* A Telegram "Review" button has to land the editor somewhere specific —
- * the source or submission it is about, not just "the desk" — or it is not
- * actually a shortcut. Read once on mount; the tab row still fully owns
- * navigation after that. */
-function initialTab(): Tab {
+const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "analytics"];
+const SECTION_TITLE: Record<Section, string> = {
+  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", crew: "Crew", analytics: "Analytics",
+};
+const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
+const SOURCES_SUBS: SourcesSub[] = ["pending", "flagged", "drift", "resolved"];
+const SUB_LABEL: Record<string, string> = {
+  needs_verdict: "Needs your verdict", peer_review: "In peer review", history: "History",
+  pending: "Pending proposals", flagged: "Flagged endpoints", drift: "Material drift", resolved: "Resolved decisions",
+};
+
+/* A Telegram "Review" button, or any bookmarked link, has to land the editor
+ * somewhere specific — a section AND, where one exists, a subsection — or it
+ * is not actually a shortcut. Read once on mount; the sidebar owns
+ * navigation after that. Absent or invalid values fall back to the
+ * subsection that actually needs a decision, so an old ?tab=sources link
+ * (no &sub=) still lands on "pending" rather than an arbitrary first entry. */
+function initialSection(): Section {
   if (typeof window === "undefined") return "overview";
   const t = new URLSearchParams(window.location.search).get("tab");
-  return (TABS as string[]).includes(t ?? "") ? (t as Tab) : "overview";
+  return (SECTIONS as string[]).includes(t ?? "") ? (t as Section) : "overview";
+}
+function initialSub<T extends string>(valid: readonly T[], fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  const s = new URLSearchParams(window.location.search).get("sub");
+  return (valid as readonly string[]).includes(s ?? "") ? (s as T) : fallback;
 }
 
 /* Signed out is not the same as signed in without the desk, and the old
@@ -121,10 +129,14 @@ export default function Desk() {
   const [standing, setStanding] = useState<Standing>("checking");
   const [me, setMe] = useState<{ email?: string }>({});
   const [err, setErr] = useState("");
-  const [tab, setTab] = useState<Tab>(initialTab);
-  const [subs, setSubs] = useState<Sub[]>([]);
+  const [section, setSection] = useState<Section>(initialSection);
+  const [submissionsSub, setSubmissionsSub] = useState<SubmissionsSub>(() => initialSub(SUBMISSIONS_SUBS, "needs_verdict"));
+  const [sourcesSub, setSourcesSub] = useState<SourcesSub>(() => initialSub(SOURCES_SUBS, "pending"));
+  const [subGroups, setSubGroups] = useState<SubGroups>(EMPTY_SUB_GROUPS);
   const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
   const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
+  const [flaggedEndpoints, setFlaggedEndpoints] = useState<FlaggedEndpoint[]>([]);
+  const [materialDrifts, setMaterialDrifts] = useState<MaterialDrift[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -150,14 +162,28 @@ export default function Desk() {
       fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics"),
       fetch("/api/desk/governance"),
     ]);
-    if (rs.ok) setSubs((await rs.json()).submissions ?? []);
+    if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
     if (ra.ok) setAnalytics(await ra.json());
     if (rg.ok) {
       const gov = await rg.json();
       setPendingSources(gov.queue?.pending_proposals ?? []);
       setResolvedSources(gov.queue?.recent_decisions ?? []);
+      setFlaggedEndpoints(gov.queue?.review_required_endpoints ?? []);
+      setMaterialDrifts(gov.queue?.recent_material_drifts ?? []);
     }
+  }
+
+  /** Sets the sidebar's own state and rewrites ?tab=&sub= to match, so a
+   *  reload or a shared link lands back on the exact same subsection. */
+  function navigate(next: Section, sub?: string) {
+    setSection(next);
+    if (next === "submissions" && sub) setSubmissionsSub(sub as SubmissionsSub);
+    if (next === "sources" && sub) setSourcesSub(sub as SourcesSub);
+    const params = new URLSearchParams();
+    params.set("tab", next);
+    if (sub) params.set("sub", sub);
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   }
 
   async function resolveSource(
@@ -279,17 +305,20 @@ export default function Desk() {
     );
   }
 
-  const openCount = (overview?.counts.submissions["human-review"] ?? 0)
-    + (overview?.counts.submissions["peer-review"] ?? 0)
-    + (overview?.counts.submissions["appealed"] ?? 0);
+  const eyebrow = section === "submissions" || section === "sources"
+    ? `Terraveler · editorial desk · ${SECTION_TITLE[section]}`
+    : "Terraveler · editorial desk";
+  const title = section === "submissions" ? SUB_LABEL[submissionsSub]
+    : section === "sources" ? SUB_LABEL[sourcesSub]
+    : SECTION_TITLE[section];
 
   return (
     <>
     <SiteHeader />
     <main className="dk-page">
       <DeskHeading
-        eyebrow="Terraveler · editorial desk"
-        title={TAB_TITLE[tab]}
+        eyebrow={eyebrow}
+        title={title}
         aside={
           <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); window.location.href = "/"; }}>
             Sign out
@@ -297,31 +326,25 @@ export default function Desk() {
         }
       />
 
-      <div className="dk-tabs" role="tablist">
-        {(["overview", "submissions", "sources", "crew", "analytics"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            role="tab"
-            aria-selected={tab === t}
-            className="dk-tab"
-            onClick={() => setTab(t)}
-          >
-            {t === "submissions" && openCount ? `${t} (${openCount})`
-              : t === "sources" && pendingSources.length ? `${t} (${pendingSources.length})`
-              : t}
-          </button>
-        ))}
-        {/* The specimen lives behind this same session — it is a working
-            document about the site, not a page of the atlas. */}
-        <span className="dk-tabs-aside">
-          <span className="dk-tabs-aside-label">the system</span>
-          <a className="dk-tab-link" href="/specimen">type</a>
-          <a className="dk-tab-link" href="/specimen/palette">colour</a>
-          <a className="dk-tab-link" href="/specimen/mark">mark</a>
-        </span>
-      </div>
+      <div className="dk-shell">
+        <DeskSidebar
+          section={section}
+          submissionsSub={submissionsSub}
+          sourcesSub={sourcesSub}
+          counts={{
+            needsVerdict: subGroups.needs_verdict.length,
+            peerReview: subGroups.peer_review.length,
+            history: subGroups.history.length,
+            pending: pendingSources.length,
+            flagged: flaggedEndpoints.length,
+            drift: materialDrifts.length,
+            resolved: resolvedSources.length,
+          }}
+          onNavigate={navigate}
+        />
 
-      {tab === "overview" && overview && (
+        <div className="dk-content">
+      {section === "overview" && overview && (
         <>
           {/* Numbers that ask something of you, and a ledger for what is
               already settled. Approved 18 and Awaiting 0 were the same size
@@ -391,10 +414,18 @@ export default function Desk() {
         </>
       )}
 
-      {tab === "submissions" && (
+      {section === "submissions" && (() => {
+        const list = subGroups[submissionsSub];
+        return (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-          {subs.length === 0 && <p style={{ color: "var(--ink-soft)" }}>No submissions yet.</p>}
-          {subs.map((s) => (
+          {list.length === 0 && (
+            <p className="dk-empty">
+              {submissionsSub === "needs_verdict" ? "Nothing waiting on your verdict."
+                : submissionsSub === "peer_review" ? "Nothing currently with the Scribes."
+                : "No settled submissions yet."}
+            </p>
+          )}
+          {list.map((s) => (
             <div key={s.id} style={{ border: "1px solid var(--parchment-deep)", borderRadius: 10, background: "rgba(255,255,255,0.35)", padding: "14px 16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                 <strong style={{ fontFamily: "var(--font-display)" }}>
@@ -404,7 +435,7 @@ export default function Desk() {
                   {s.contributor && (
                     <span className="conf-badge">{s.contributor.handle} · {s.contributor.rank}</span>
                   )}
-                  {isEscalated(s) && (
+                  {s.escalated && (
                     <span
                       className="conf-badge"
                       title="the Curator's mechanical pass could not settle this — it needs a reader"
@@ -524,16 +555,19 @@ export default function Desk() {
             </div>
           ))}
         </div>
-      )}
+        );
+      })()}
 
-      {tab === "sources" && (
+      {section === "sources" && (
         <div style={{ marginTop: 20 }}>
-          <PendingSourceProposals proposals={pendingSources} busy={busy} onResolve={resolveSource} />
-          <ResolvedSourceDecisions decisions={resolvedSources} />
+          {sourcesSub === "pending" && <PendingSourceProposals proposals={pendingSources} busy={busy} onResolve={resolveSource} />}
+          {sourcesSub === "flagged" && <FlaggedEndpoints endpoints={flaggedEndpoints} />}
+          {sourcesSub === "drift" && <MaterialDrifts drifts={materialDrifts} />}
+          {sourcesSub === "resolved" && <ResolvedSourceDecisions decisions={resolvedSources} />}
         </div>
       )}
 
-      {tab === "crew" && (
+      {section === "crew" && (
         <div style={{ marginTop: 20, overflowX: "auto" }}>
           {crew.length === 0 && <p style={{ color: "var(--ink-soft)" }}>No contributors yet.</p>}
           {crew.length > 0 && (
@@ -596,7 +630,7 @@ export default function Desk() {
         </div>
       )}
 
-      {tab === "analytics" && analytics && (
+      {section === "analytics" && analytics && (
         <div style={{ marginTop: "var(--space-5)" }}>
           <DeskLedger
             items={[
@@ -650,6 +684,8 @@ export default function Desk() {
           )}
         </div>
       )}
+        </div>
+      </div>
     </main>
     </>
   );
