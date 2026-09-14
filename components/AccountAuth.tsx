@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import AuthBackdrop, { GoogleMark } from "@/components/AuthBackdrop";
+import AuthBackdrop, { FacebookMark, GoogleMark, XMark } from "@/components/AuthBackdrop";
 
 type Mode = "login" | "signup";
 
@@ -23,21 +23,12 @@ function nextPath(): string {
   return safePath(new URLSearchParams(window.location.search).get("next") ?? "");
 }
 
-/* Where to come back to after the Google round trip.
+/* Where to come back to after a social-login round trip.
  *
- * The destination cannot travel with the request: the button leaves for
- * /api/desk/google, which hands Supabase a redirect_to of a bare path, and
- * Google returns to that path with the tokens in the fragment and no query
- * string at all. So `?next=` was silently dropped every time, and signing in
- * with Google from a gated page left you sitting on /login reading "you are
- * signed in" instead of arriving anywhere. Email and password kept working,
- * because that flow never leaves the page — which is why the two methods
- * behaved differently.
- *
- * Putting the destination in redirect_to would need Supabase's allow-list to
- * accept a query string, which is configuration we cannot verify from here.
- * Remembering it in the tab is the version that cannot be broken by a setting
- * on someone else's dashboard. */
+ * The destination cannot travel with the request: the provider returns to the
+ * login/signup path with tokens in the fragment and no original query string.
+ * Remembering it in the tab keeps Google, X and Facebook behaviour identical
+ * without relying on provider-specific redirect allow-list quirks. */
 const RETURN_KEY = "tv:after-signin";
 
 function rememberDestination() {
@@ -78,7 +69,7 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
       signal: controller.signal,
     }).then(async (response) => {
       if (!response.ok) {
-        setError((await response.json()).error ?? "Google sign-in could not be completed.");
+        setError((await response.json()).error ?? "Social sign-in could not be completed.");
         setStatus("idle");
         return;
       }
@@ -88,7 +79,7 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
       setStatus("complete");
     }).catch((reason: unknown) => {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
-      setError("Google sign-in could not be completed.");
+      setError("Social sign-in could not be completed.");
       setStatus("idle");
     });
     return () => controller.abort();
@@ -146,9 +137,28 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
               href={`/api/desk/google?next=/${mode}`}
               className="auth-google-button"
               onClick={rememberDestination}
+              aria-label={isSignup ? "Sign up with Google" : "Continue with Google"}
             >
               <GoogleMark />
               <span>{isSignup ? "Sign up with Google" : "Continue with Google"}</span>
+            </a>
+            <a
+              href={`/api/desk/twitter?next=/${mode}`}
+              className="auth-google-button"
+              onClick={rememberDestination}
+              aria-label={isSignup ? "Sign up with X" : "Continue with X"}
+            >
+              <XMark />
+              <span>{isSignup ? "Sign up with X" : "Continue with X"}</span>
+            </a>
+            <a
+              href={`/api/desk/facebook?next=/${mode}`}
+              className="auth-google-button"
+              onClick={rememberDestination}
+              aria-label={isSignup ? "Sign up with Facebook" : "Continue with Facebook"}
+            >
+              <FacebookMark />
+              <span>{isSignup ? "Sign up with Facebook" : "Continue with Facebook"}</span>
             </a>
             <div className="auth-divider"><span>or continue with email</span></div>
             <form onSubmit={submit} className="auth-form">
