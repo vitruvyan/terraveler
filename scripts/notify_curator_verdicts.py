@@ -30,6 +30,16 @@ what the officer decided."
 
 Same checkpoint-by-id, cold-start-to-present pattern as
 notify_agent_activity.py, against audit_log instead of mcp_security_audit.
+
+The escalate case is the one WATCHED entry that gets Accept/Reject/Review
+buttons rather than plain text — it's the only one asking the editor to do
+something; approve/changes/reject already happened autonomously and the
+message is purely informational. Accept/Reject are answered by the same
+webhook (app/api/telegram/webhook/route.ts) built for source proposals,
+routed through lib/deskVerdict.ts's resolveVerdict() — an approve via
+Telegram always carries an override, since the whole reason a submission
+reached this queue is that its dossier wasn't clean enough for the Curator
+to rule alone.
 """
 from __future__ import annotations
 
@@ -46,6 +56,8 @@ ROOT = Path(__file__).resolve().parent.parent
 STATE_FILE = Path(os.environ.get(
     "CURATOR_VERDICT_STATE_FILE", Path.home() / "backups" / "terraveler" / "curator_verdict_state.json"))
 
+DESK_SUBMISSIONS_URL = "https://www.terraveler.com/desk?tab=submissions"
+
 # (actor, action, verdict) -> label
 WATCHED = {
     ("curator-desk", "verdict", "approve"): "✅ approved autonomously",
@@ -53,6 +65,10 @@ WATCHED = {
     ("curator-desk", "review", "escalate"): "🔺 escalated — needs your review",
     ("curator-gate", "verdict", "reject"): "❌ rejected at intake (Stage-0 shape check)",
 }
+
+# Which WATCHED entries get Accept/Reject/Review buttons instead of plain
+# text — only the one actually asking the editor to decide something.
+ACTIONABLE = {("curator-desk", "review", "escalate")}
 
 
 def _dotenv() -> dict:
@@ -77,14 +93,17 @@ def pg_params() -> dict:
     }
 
 
-def notify(text: str) -> None:
+def notify(text: str, reply_markup: dict | None = None) -> None:
     env = _dotenv()
     token = os.environ.get("TELEGRAM_TOKEN") or env.get("TELEGRAM_TOKEN", "")
     chat_id = os.environ.get("TELEGRAM_CHAT_ID") or env.get("TELEGRAM_CHAT_ID", "")
     if not token or not chat_id:
         print("(no TELEGRAM_TOKEN/TELEGRAM_CHAT_ID configured — skipping notification)")
         return
-    body = urllib.parse.urlencode({"chat_id": chat_id, "text": text}).encode()
+    payload = {"chat_id": chat_id, "text": text}
+    if reply_markup is not None:
+        payload["reply_markup"] = json.dumps(reply_markup)
+    body = urllib.parse.urlencode(payload).encode()
     req = urllib.request.Request(
         f"https://api.telegram.org/bot{token}/sendMessage", data=body, method="POST")
     try:
@@ -124,12 +143,14 @@ def fetch_verdicts(conn, since_id: int) -> tuple[list[dict], int]:
     found, max_id = [], since_id
     for row_id, submission_id, actor, action, verdict, created_at, sub_type, target_voyage in rows:
         max_id = max(max_id, row_id)
-        label = WATCHED.get((actor, action, verdict))
+        key = (actor, action, verdict)
+        label = WATCHED.get(key)
         if not label:
             continue  # e.g. curator-gate/pass-gate — deliberately not a signal
         found.append({
             "id": row_id, "submission_id": submission_id, "label": label,
             "type": sub_type, "target_voyage": target_voyage, "created_at": str(created_at),
+            "actionable": key in ACTIONABLE,
         })
     return found, max_id
 
@@ -137,6 +158,15 @@ def fetch_verdicts(conn, since_id: int) -> tuple[list[dict], int]:
 def describe(v: dict) -> str:
     where = v["target_voyage"] or v["type"] or "?"
     return f"{v['label']} — submission #{v['submission_id']} ({where}) — {v['created_at']}"
+
+
+def buttons(v: dict) -> dict:
+    row1 = [
+        {"text": "✅ Accetta", "callback_data": f"sub:approve:{v['submission_id']}"},
+        {"text": "❌ Rifiuta", "callback_data": f"sub:reject:{v['submission_id']}"},
+    ]
+    row2 = [{"text": "🔍 Rivedi sul desk", "url": DESK_SUBMISSIONS_URL}]
+    return {"inline_keyboard": [row1, row2]}
 
 
 def main() -> int:
@@ -181,7 +211,7 @@ def main() -> int:
     for event in events:
         line = describe(event)
         print(line)
-        notify(line)
+        notify(line, reply_markup=buttons(event) if event["actionable"] else None)
     return 0
 
 
