@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { TOOL_SCOPE, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE } from "../lib/agentCapabilities";
+import { TOOL_SCOPE, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, CLAIM_TTL_DAYS } from "../lib/agentCapabilities";
 
 /**
  * Phase 5 write-authority audit: cross-lane contract tests.
@@ -100,10 +100,18 @@ test("register and rotate_key stay legacy-only on both sides of the boundary", a
     "the OAuth-native write route must not grow its own rotate_key handler");
 });
 
-test("claim TTL agrees between the lane that reaps stale claims and the one that also claims them", async () => {
+test("both lanes import CLAIM_TTL_DAYS from lib/agentCapabilities rather than declaring their own", async () => {
+  // Used to be two separate `const CLAIM_TTL_DAYS = 7` declarations, kept in
+  // sync only by this test comparing the two numbers, plus a third,
+  // unrelated 14-day literal in the human Chartroom lane that nothing
+  // checked at all. Now there is exactly one declaration and every lane
+  // that claims or reaps a Waypoint imports it, so drift is structurally
+  // impossible rather than merely tested for.
   const [a, b] = await Promise.all([mcp(), write()]);
-  const ta = a.match(/const CLAIM_TTL_DAYS = (\d+);/);
-  const tb = b.match(/const CLAIM_TTL_DAYS = (\d+);/);
-  assert.ok(ta && tb);
-  assert.equal(ta![1], tb![1]);
+  assert.doesNotMatch(a, /const CLAIM_TTL_DAYS\s*=/, "mcp lane must not declare its own CLAIM_TTL_DAYS");
+  assert.doesNotMatch(b, /const CLAIM_TTL_DAYS\s*=/, "write lane must not declare its own CLAIM_TTL_DAYS");
+  const importsIt = /import\s*\{[^}]*\bCLAIM_TTL_DAYS\b[^}]*\}\s*from\s*"@\/lib\/agentCapabilities"/;
+  assert.match(a, importsIt, "mcp lane must import it");
+  assert.match(b, importsIt, "write lane must import it");
+  assert.equal(typeof CLAIM_TTL_DAYS, "number");
 });

@@ -9,7 +9,7 @@
  * fourth kind of thing to learn.
  */
 
-export type Section = "overview" | "submissions" | "sources" | "crew" | "prompts" | "analytics";
+export type Section = "overview" | "submissions" | "sources" | "crew" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 export type SourcesSub = "pending" | "flagged" | "drift" | "resolved";
 
@@ -21,6 +21,8 @@ export type DeskSidebarCounts = {
   flagged: number;
   drift: number;
   resolved: number;
+  claimed: number;
+  claimedOverdue: number;
 };
 
 export type DeskSidebarProps = {
@@ -124,6 +126,17 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, count
           onClick={() => onNavigate?.("crew")}
         >
           Crew
+        </button>
+      </div>
+
+      <div className="dk-nav-group">
+        <button
+          type="button"
+          className="dk-nav-heading is-link"
+          aria-current={section === "waypoints"}
+          onClick={() => onNavigate?.("waypoints")}
+        >
+          Waypoints, taken <Badge n={counts.claimed} alarm={counts.claimedOverdue > 0} />
         </button>
       </div>
 

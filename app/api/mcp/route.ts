@@ -13,7 +13,7 @@ import { adaptEditorialGap } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
-import { RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -352,7 +352,6 @@ const QUOTA: Record<string, { submissionsPerDay: number; activeClaims: number }>
   Object.fromEntries(Object.entries(RANK_QUOTA).map(([r, q]) => [
     r, { submissionsPerDay: q.submissions_per_day, activeClaims: q.active_claims },
   ]));
-const CLAIM_TTL_DAYS = 7;
 // Reviewing is the work we want to scale (Carta 10.4): double the authoring quota.
 const reviewsPerDay = (rank: string) => quotaFor(rank).submissionsPerDay * 2;
 // Reviews from distinct Scribes needed before a draft advances to the desk.

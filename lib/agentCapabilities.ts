@@ -40,6 +40,26 @@ export const LEGACY_ONLY_TOOLS = new Set(["register", "rotate_key"]);
  */
 export const REVIEWS_TO_ADVANCE = 1;
 
+/**
+ * How many days an unworked claim on an open Waypoint stands before it
+ * reopens automatically. Used to live as two separate `const CLAIM_TTL_DAYS`
+ * declarations (7 in app/api/mcp/route.ts and app/api/agent/write/route.ts,
+ * kept in sync only by a test comparing the two numbers) plus a third,
+ * independent 14-day literal for the human Chartroom lane
+ * (app/api/chartroom/waypoints/route.ts) that nothing checked against the
+ * other two at all.
+ *
+ * Set to 1 (2026-09-14): a claim with no expiry — or a long one nobody is
+ * actually reaping, since the reap only runs lazily inside claim/list calls
+ * — left Waypoints locked indefinitely with no way for anyone to work them.
+ * 24 hours is enough for a real attempt and short enough that a
+ * disappearance stops blocking others quickly; the editor can also release
+ * a claim by hand at any time regardless of this TTL (see
+ * app/api/desk/claims/route.ts and desk_release_claim in
+ * supabase/desk_claim_release.sql).
+ */
+export const CLAIM_TTL_DAYS = 1;
+
 export const RANK_QUOTA = Object.freeze({
   "cabin-boy": { submissions_per_day: 3, active_claims: 1 },
   deckhand: { submissions_per_day: 6, active_claims: 2 },

@@ -11,6 +11,7 @@ import {
 import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub } from "@/components/desk/DeskSidebar";
 import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
 import type { PromptKey } from "@/lib/promptRegistry";
+import { CLAIM_TTL_DAYS } from "@/lib/agentCapabilities";
 
 type Sub = {
   id: number;
@@ -43,6 +44,18 @@ type CrewMember = {
 };
 
 type Demand = { id: number; query: string; hits: number; first_seen: string; last_seen: string };
+
+type ClaimedWaypoint = {
+  id: number;
+  title: string;
+  waypoint_type: string | null;
+  kind: string;
+  claimed_by: string | null;
+  claimed_at: string | null;
+  context_voyage: string | null;
+  context_waypoint_seq: number | null;
+  priority: number;
+};
 
 type Overview = {
   counts: {
@@ -94,10 +107,10 @@ function appealGrounds(s: Sub): string | null {
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "prompts", "analytics"];
+const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "waypoints", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
   overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", crew: "Crew",
-  prompts: "Prompts", analytics: "Analytics",
+  waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
 const SOURCES_SUBS: SourcesSub[] = ["pending", "flagged", "drift", "resolved"];
@@ -141,6 +154,7 @@ export default function Desk() {
   const [flaggedEndpoints, setFlaggedEndpoints] = useState<FlaggedEndpoint[]>([]);
   const [materialDrifts, setMaterialDrifts] = useState<MaterialDrift[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
+  const [claims, setClaims] = useState<ClaimedWaypoint[]>([]);
   const [promptVersions, setPromptVersions] = useState<PromptVersion[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -162,14 +176,15 @@ export default function Desk() {
 
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
-    const [rs, rc, ra, rg, rp] = await Promise.all([
+    const [rs, rc, ra, rg, rp, rw] = await Promise.all([
       fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics"),
-      fetch("/api/desk/governance"), fetch("/api/desk/prompts"),
+      fetch("/api/desk/governance"), fetch("/api/desk/prompts"), fetch("/api/desk/claims"),
     ]);
     if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
     if (ra.ok) setAnalytics(await ra.json());
     if (rp.ok) setPromptVersions((await rp.json()).versions ?? []);
+    if (rw.ok) setClaims((await rw.json()).claims ?? []);
     if (rg.ok) {
       const gov = await rg.json();
       setPendingSources(gov.queue?.pending_proposals ?? []);
@@ -288,6 +303,19 @@ export default function Desk() {
     load();
   }
 
+  async function releaseClaim(id: number, title: string) {
+    if (!confirm(`Release "${title}"? It reopens for anyone to take.`)) return;
+    setBusy(true);
+    const r = await fetch("/api/desk/claims", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gap_id: id }),
+    });
+    setBusy(false);
+    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
+    load();
+  }
+
   if (standing === "checking" || standing === "guest") {
     /* err carries a failure from the OAuth hand-off. It used to be rendered by
        the desk's own sign-in screen; with that gone it had nowhere to surface
@@ -356,6 +384,10 @@ export default function Desk() {
             flagged: flaggedEndpoints.length,
             drift: materialDrifts.length,
             resolved: resolvedSources.length,
+            claimed: claims.length,
+            claimedOverdue: claims.filter((c) =>
+              c.claimed_at && Date.now() - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000
+            ).length,
           }}
           onNavigate={navigate}
         />
@@ -583,6 +615,53 @@ export default function Desk() {
           {sourcesSub === "resolved" && <ResolvedSourceDecisions decisions={resolvedSources} />}
         </div>
       )}
+
+      {section === "waypoints" && (() => {
+        const now = Date.now();
+        const overdue = (c: ClaimedWaypoint) =>
+          c.claimed_at ? now - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000 : true;
+        return (
+        <div style={{ marginTop: 20 }}>
+          <p style={{ fontSize: 13, color: "var(--ink-soft)", margin: "0 0 12px" }}>
+            A claim on an open Waypoint reopens on its own after {CLAIM_TTL_DAYS * 24}h of no
+            work — but only the next time someone else claims or lists Waypoints triggers the
+            check. Release one by hand here whenever it is clearly stuck, regardless of how long
+            it has been held.
+          </p>
+          {claims.length === 0 && <p className="dk-empty">Nothing currently taken.</p>}
+          {claims.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {claims.map((c) => (
+                <div key={c.id} style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  gap: 10, flexWrap: "wrap", border: "1px solid var(--parchment-deep)",
+                  borderRadius: 9, background: "rgba(255,255,255,0.35)", padding: "9px 12px",
+                }}>
+                  <span>
+                    <strong style={{ fontFamily: "var(--font-display)" }}>{c.title}</strong>
+                    <span style={{ color: "var(--ink-soft)", fontSize: 12.5 }}>
+                      {" "}· {c.waypoint_type ?? c.kind}
+                      {c.context_voyage ? ` · ${c.context_voyage}#${c.context_waypoint_seq}` : ""}
+                      {" "}· held by <span className="dk-id">{c.claimed_by ?? "unknown"}</span>
+                      {" "}since {c.claimed_at ? new Date(c.claimed_at).toLocaleString() : "unrecorded"}
+                    </span>
+                    {overdue(c) && (
+                      <span className="conf-badge" style={{ marginLeft: 8, borderColor: "var(--state-alarm)", color: "var(--state-alarm)" }}>
+                        overdue
+                      </span>
+                    )}
+                  </span>
+                  <button className="desk-btn desk-btn-reject" disabled={busy} style={{ padding: "4px 10px", fontSize: 12 }}
+                    onClick={() => releaseClaim(c.id, c.title)}>
+                    Release
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        );
+      })()}
 
       {section === "crew" && (
         <div style={{ marginTop: 20, overflowX: "auto" }}>

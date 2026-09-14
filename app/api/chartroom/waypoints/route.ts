@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CARTA_VERSION } from "@/lib/carta";
-import { RANK_QUOTA } from "@/lib/agentCapabilities";
+import { CLAIM_TTL_DAYS, RANK_QUOTA } from "@/lib/agentCapabilities";
 import { dataApi, dataRpc, getUser, readCookie } from "@/lib/deskAuth";
 import { ensureHumanContributor } from "@/lib/humanContributor";
 import {
@@ -324,7 +324,7 @@ export async function POST(req: Request) {
       p_contributor_id: contributor.id,
       p_waypoint_id: waypointId,
       p_claim_limits: CLAIM_LIMITS,
-      p_ttl_days: 14,
+      p_ttl_days: CLAIM_TTL_DAYS,
       p_carta: CARTA_VERSION,
       p_actor: `contributor:${contributor.handle}`,
     });
