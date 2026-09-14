@@ -2176,11 +2176,18 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         return "ERROR: mcp_propose_source routine is not installed on database.";
       }
       
-      // Audit trail record
+      // Audit trail record. PROPOSAL_ID is machine-readable on purpose —
+      // notify_source_proposals.py parses it to look the proposal up
+      // directly rather than guessing from audit_log ordering; audit_log's
+      // own submission_id column can't carry it (FK'd to submissions, a
+      // different table entirely).
       await sb("POST", "audit_log", {
         actor: `contributor:${a.ok!.handle}`,
         action: result.is_new ? "propose_source" : "propose_source_additional",
-        findings: [["INFO", 0, result.is_new ? `Proposed source URL: ${url}` : `Additional intent for existing pending proposal ${result.id} (URL: ${url})`]],
+        findings: [
+          ["INFO", 0, result.is_new ? `Proposed source URL: ${url}` : `Additional intent for existing pending proposal ${result.id} (URL: ${url})`],
+          ["PROPOSAL_ID", 0, String(result.id)],
+        ],
         carta_version: CARTA_VERSION
       });
 
