@@ -193,11 +193,6 @@ export default async function Chartroom({
         background="/login-backgrounds/carta-marina.png"
         credit="Carta Marina · 1539 · Olaus Magnus"
         platePosition="after"
-        actions={[
-          { href: "#open-opportunities", label: "Enter the Chartroom" },
-          { href: "#how-it-works", label: "How contributing works", variant: "secondary" as const },
-        ]}
-        meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
       >
         {!contextual && (
           <div
@@ -207,8 +202,8 @@ export default async function Chartroom({
               flexWrap: "wrap",
               alignItems: "center",
               gap: "7px 12px",
-              margin: "18px 0 0",
-              padding: "12px 0",
+              margin: "2px 0 0",
+              padding: "10px 0",
               borderTop: "1px solid var(--rule-hair)",
               borderBottom: "1px solid var(--rule-hair)",
               fontFamily: "var(--font-ui)",
@@ -217,18 +212,23 @@ export default async function Chartroom({
             }}
           >
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)" }}>
-              How it moves
+              How it works
             </span>
             <strong style={{ color: "var(--ink)" }}>Discover</strong><span aria-hidden="true">→</span>
             <span>Claim</span><span aria-hidden="true">→</span>
             <span>Create</span><span aria-hidden="true">→</span>
             <span>Submit</span><span aria-hidden="true">→</span>
             <span>Review</span>
-            <span style={{ marginLeft: "auto", fontSize: "0.76rem" }}>Browse first. Sign in only when you choose work.</span>
+            <Link
+              href="#how-it-works"
+              style={{ marginLeft: "auto", color: "var(--ink-soft)", fontSize: "0.76rem", textUnderlineOffset: 3 }}
+            >
+              Details ↓
+            </Link>
           </div>
         )}
 
-        <section id="open-opportunities" style={{ marginTop: 26 }}>
+        <section id="open-opportunities" style={{ marginTop: 20 }}>
           <div style={{ maxWidth: 760, marginBottom: 18 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brass-text)" }}>
               What the atlas needs
