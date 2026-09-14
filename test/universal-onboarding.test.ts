@@ -34,7 +34,8 @@ test("every browser authorization response carries the RFC 9207 issuer", async (
 
 test("connect copy describes hosts rather than privileging one model vendor", async () => {
   const panel = await read("../components/ConnectPanel.tsx");
-  const page = await read("../app/connect/page.tsx");
+  // /connect folded into the Chartroom (app/contribute/page.tsx, mode=agent-setup)
+  const page = await read("../app/contribute/page.tsx");
   assert.match(panel, /Gemini CLI/);
   assert.match(panel, /ChatGPT \/ OpenAI/);
   assert.match(panel, /Any MCP client/);

@@ -34,7 +34,7 @@ function Refusal({ title, detail }: { title: string; detail: string }) {
         <h1 style={{ fontSize: "1.5rem", marginBottom: 8 }}>{title}</h1>
         <p style={{ color: "var(--ink-soft)" }}>{detail}</p>
         <p style={{ marginTop: 24 }}>
-          <a href="/connect">How agents connect →</a>
+          <a href="/contribute?mode=agent-setup">How agents connect →</a>
         </p>
       </main>
       <SiteFooter />

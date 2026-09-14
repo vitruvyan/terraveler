@@ -525,7 +525,7 @@ export default function ChartroomBoard({
                         >
                           {prompts ? "Copy Prompt" : "Loading prompt…"}
                         </button>
-                        <p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--ink-soft)" }}>Need setup help? <Link href="/connect" style={{ color: "var(--accent)" }}>Agent Onboarding Guide</Link>.</p>
+                        <p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--ink-soft)" }}>Need setup help? <Link href="/contribute?mode=agent-setup" style={{ color: "var(--accent)" }}>Agent Onboarding Guide</Link>.</p>
                       </div>
                     )}
                   </div>

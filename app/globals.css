@@ -4272,6 +4272,101 @@ main.prose {
   border-radius: var(--radius-2);
 }
 
+/* --- the Chartroom's own index: same shape as the desk sidebar, same day - */
+.tv-shell {
+  display: grid;
+  grid-template-columns: 13.5rem 1fr;
+  gap: var(--space-7);
+  align-items: start;
+  margin-top: var(--space-5);
+}
+.tv-sidebar {
+  position: sticky;
+  top: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-1);
+}
+.tv-content { min-width: 0; }
+.tv-nav-group + .tv-nav-group {
+  border-top: 1px solid var(--rule-hair);
+  padding-top: var(--space-4);
+}
+.tv-nav-heading {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 var(--space-2);
+}
+/* A top-level entry with no children (The Crew) reads as a clickable ROW,
+   not a label — same reasoning as the desk sidebar: a glance should tell
+   "clickable" from "heading" without indentation doing the work. */
+.tv-nav-heading.is-link {
+  all: unset;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  width: 100%;
+  box-sizing: border-box;
+  border-left: 2px solid transparent;
+  padding: var(--space-1) 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+@media (hover: hover) {
+  .tv-nav-heading.is-link:hover { color: var(--ink); }
+}
+.tv-nav-sub {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  border-left: 2px solid transparent;
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+@media (hover: hover) {
+  .tv-nav-sub:hover { color: var(--ink); }
+}
+.tv-nav-sub[aria-current="true"],
+.tv-nav-heading.is-link[aria-current="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-left-color: var(--brass);
+}
+.tv-nav-badge {
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  font-variant-numeric: tabular-nums lining-nums;
+  color: var(--state-alarm);
+}
+
+@media (max-width: 760px) {
+  .tv-shell { grid-template-columns: 1fr; }
+  .tv-sidebar {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    border-bottom: 1px solid var(--rule-hair);
+    padding-bottom: var(--space-4);
+  }
+  .tv-nav-group + .tv-nav-group { border-top: 0; padding-top: 0; }
+  .tv-nav-group { flex: 1 1 auto; min-width: 8rem; }
+}
+
 /* ── the onboarding wizard ───────────────────────────────────────────────
    The welcome cartouche stays docked and quiet while someone is reading the
    atlas. Saying "invite your agent" grows it into the middle of the screen,

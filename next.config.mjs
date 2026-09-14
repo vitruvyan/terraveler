@@ -11,6 +11,16 @@ const nextConfig = {
     "/how-it-works": ["./docs/HOW_IT_WORKS.md"],
   },
 
+  // /connect and /crew are folded into the Chartroom (one hub, not three
+  // pages telling an overlapping story) — permanent redirects so existing
+  // links and bookmarks still land somewhere real.
+  async redirects() {
+    return [
+      { source: "/connect", destination: "/contribute?mode=agent-quick", permanent: true },
+      { source: "/crew", destination: "/contribute?mode=crew", permanent: true },
+    ];
+  },
+
   // ---------------------------------------------------------------------------
   // Security headers — applied to every response.
   //

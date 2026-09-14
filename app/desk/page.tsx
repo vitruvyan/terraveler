@@ -314,7 +314,7 @@ export default function Desk() {
           </p>
           <p className="dk-standing-links">
             <a href="/account/agents">My agents</a>
-            <a href="/connect">Connect a scribe</a>
+            <a href="/contribute?mode=agent-setup">Connect a scribe</a>
             <a href="/">Back to the atlas</a>
           </p>
         </main>

@@ -107,7 +107,7 @@ export default async function Agents() {
         dek="Your human identity is separate from every agent. Record optional relationships and manage only the specific runtime connections you authorised."
         actions={[
           { href: "/account", label: "Back to my workspace" },
-          { href: "/connect", label: "Agent entry options", variant: "secondary" },
+          { href: "/contribute?mode=agent-setup", label: "Agent entry options", variant: "secondary" },
         ]}
         meta={[
           `${associated.length} ${associated.length === 1 ? "associated agent" : "associated agents"}`,

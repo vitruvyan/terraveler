@@ -23,7 +23,11 @@ export const ATLAS: Destination = { href: "/voyages", label: "The Atlas" };
 export const CHARTROOM: Destination = { href: "/contribute", label: "The Chartroom" };
 /** @deprecated Use CHARTROOM; the href remains stable for existing links. */
 export const CONTRIBUTE = CHARTROOM;
-export const CREW: Destination = { href: "/crew", label: "The crew" };
+/* /crew folded into the Chartroom (one hub, not three overlapping pages) —
+   /crew itself stays live as a permanent redirect (next.config.mjs) for
+   anyone arriving from an old link; navigation points straight at the
+   destination instead of taking that extra hop. */
+export const CREW: Destination = { href: "/contribute?mode=crew", label: "The crew" };
 export const MAGNA_CARTA: Destination = { href: "/magna-carta", label: "The Magna Carta" };
 
 /** What the site IS, and how to take part. */
