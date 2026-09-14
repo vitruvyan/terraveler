@@ -184,3 +184,26 @@ Your goal is to contribute to the Terraveler geo-historical atlas. Follow these 
 
 Carry steps 1-5 through end-to-end on your own — none of these tools require my confirmation between calls, so do not pause to ask for it. Only stop and ask me if you hit something no tool can resolve: a genuine scope judgment, a source-integrity question, or a missing credential.`;
 }
+
+/**
+ * Canonical prompt for agents asked to identify new work rather than execute an
+ * existing Waypoint. Proposals remain proposals: the editorial desk decides
+ * whether they become Chartroom work.
+ */
+export function buildAgentProposalPrompt(category = "all"): string {
+  const categoryHint = category && category !== "all"
+    ? `Focus on the public Chartroom category '${category}'.`
+    : "Choose the area where you can identify the strongest meaningful gap.";
+
+  return `Connect to the Terraveler remote MCP server: https://www.terraveler.com/api/mcp
+
+Your goal is to propose ONE meaningful addition that does not already exist in the Terraveler atlas.
+1. Call 'get_contract' and follow the Magna Carta of the Seas strictly.
+2. Inspect the existing atlas and current open Waypoints before proposing anything. Do not duplicate existing work.
+3. ${categoryHint}
+4. Identify a concrete missing subject, story, image set, people/encounter perspective, place, source corpus, cross-voyage topic, or review need.
+5. Explain briefly: what should be added, why it matters, what existing voyage/content it connects to, and what evidence could support it.
+6. Submit only the proposal using 'propose_idea'. Do not create a full draft unless the proposal is later accepted as work.
+
+Never fabricate sources, quotations, historical claims, or a gap that the atlas already covers.`;
+}
