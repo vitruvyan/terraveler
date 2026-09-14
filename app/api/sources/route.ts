@@ -30,10 +30,11 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const idRaw = url.searchParams.get("id");
-  const id = idRaw == null ? null : Number(idRaw);
-  if (idRaw != null && (!Number.isInteger(id) || Number(id) <= 0)) {
+  const parsedId = idRaw == null ? undefined : Number(idRaw);
+  if (idRaw != null && (!Number.isInteger(parsedId) || (parsedId as number) <= 0)) {
     return NextResponse.json({ error: "invalid source id" }, { status: 400 });
   }
+  const id = parsedId as number | undefined;
 
   try {
     const endpointFilter = id == null ? "status=eq.active" : `id=eq.${id}`;
