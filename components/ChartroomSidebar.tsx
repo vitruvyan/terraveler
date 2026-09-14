@@ -81,7 +81,7 @@ export default function ChartroomSidebar({
 
       <div className="tv-fork-group">
         <Link className="tv-fork-title is-link" aria-current={mode === "crew"} href={chartroomHref("crew", category, tab)}>
-          The Crew
+          Live Crew
         </Link>
       </div>
     </nav>
