@@ -113,7 +113,7 @@ services:
       PGUSER: terraveler
       PGPASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "6003:8000"
+      - "127.0.0.1:6003:8000"
     networks:
       - terraveler_net
 
