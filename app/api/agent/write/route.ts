@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { CARTA_VERSION } from "@/lib/carta";
 import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
-import { RANK_QUOTA, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
+import { RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
 import {
   AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
@@ -15,7 +15,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CLAIM_TTL_DAYS = 7;
-const REVIEWS_TO_ADVANCE = 2;
 const AUTHOR_QUOTAS = Object.fromEntries(
   Object.entries(RANK_QUOTA).map(([rank, q]) => [rank, q.submissions_per_day]),
 );

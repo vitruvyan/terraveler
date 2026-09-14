@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { TOOL_SCOPE, LEGACY_ONLY_TOOLS, RANK_QUOTA } from "../lib/agentCapabilities";
+import { TOOL_SCOPE, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE } from "../lib/agentCapabilities";
 
 /**
  * Phase 5 write-authority audit: cross-lane contract tests.
@@ -30,12 +30,20 @@ test("both lanes block a reviewer from reviewing their own draft", async () => {
   assert.match(b, /contributor_id === c\.id\)\s*return "ERROR: you cannot review your own draft/);
 });
 
-test("both lanes require exactly REVIEWS_TO_ADVANCE reviews before a draft reaches the desk, and agree on the number", async () => {
+test("both lanes import REVIEWS_TO_ADVANCE from lib/agentCapabilities rather than declaring their own", async () => {
+  // Used to be two separate `const REVIEWS_TO_ADVANCE = 2` declarations,
+  // kept in sync only by this test comparing the two numbers — real drift
+  // risk for a value both lanes mean the same thing by. Now there is
+  // exactly one declaration (lib/agentCapabilities.ts) and both lanes
+  // import it, so drift is structurally impossible rather than merely
+  // tested for.
   const [a, b] = await Promise.all([mcp(), write()]);
-  const na = a.match(/const REVIEWS_TO_ADVANCE = (\d+);/);
-  const nb = b.match(/const REVIEWS_TO_ADVANCE = (\d+);/);
-  assert.ok(na && nb, "REVIEWS_TO_ADVANCE not found in one of the two lanes");
-  assert.equal(na![1], nb![1], "the two lanes must require the same number of reviews to advance a draft");
+  assert.doesNotMatch(a, /const REVIEWS_TO_ADVANCE\s*=/, "mcp lane must not declare its own REVIEWS_TO_ADVANCE");
+  assert.doesNotMatch(b, /const REVIEWS_TO_ADVANCE\s*=/, "write lane must not declare its own REVIEWS_TO_ADVANCE");
+  const importsIt = /import\s*\{[^}]*\bREVIEWS_TO_ADVANCE\b[^}]*\}\s*from\s*"@\/lib\/agentCapabilities"/;
+  assert.match(a, importsIt, "mcp lane must import it");
+  assert.match(b, importsIt, "write lane must import it");
+  assert.equal(typeof REVIEWS_TO_ADVANCE, "number");
 });
 
 test("both lanes refuse a second appeal on the same submission", async () => {

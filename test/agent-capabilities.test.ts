@@ -27,7 +27,11 @@ test("modern capability scopes stay aligned with legacy runtime enforcement", as
   // now pins the STRUCTURAL guarantee that replaced the regex: one map,
   // imported, never retyped.
   const route = await read("../app/api/mcp/route.ts");
-  assert.match(route, /import \{ RANK_QUOTA, TOOL_SCOPE \} from "@\/lib\/agentCapabilities"/);
+  const importsFromAgentCapabilities = route.match(/import\s*\{([^}]*)\}\s*from\s*"@\/lib\/agentCapabilities"/);
+  assert.ok(importsFromAgentCapabilities, "route must import from @/lib/agentCapabilities");
+  for (const name of ["RANK_QUOTA", "TOOL_SCOPE"]) {
+    assert.match(importsFromAgentCapabilities![1], new RegExp(`\\b${name}\\b`), `must import ${name}`);
+  }
   assert.match(route, /const SCOPE_FOR: Record<string, Scope \| undefined> = TOOL_SCOPE;/);
   assert.equal(/const SCOPE_FOR[^=]*=\s*\{/.test(route), false,
     "SCOPE_FOR must be the imported TOOL_SCOPE, not a re-declared object literal");

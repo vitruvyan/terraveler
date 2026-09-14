@@ -22,6 +22,24 @@ export const TOOL_SCOPE: Readonly<Record<string, Scope>> = Object.freeze({
 
 export const LEGACY_ONLY_TOOLS = new Set(["register", "rotate_key"]);
 
+/**
+ * How many independent peer reviews a draft needs before it leaves
+ * peer-review for the Curator/editor. Used to live as two separate
+ * `const REVIEWS_TO_ADVANCE = 2` declarations (app/api/mcp/route.ts and
+ * app/api/agent/write/route.ts), kept in sync only by a test asserting the
+ * two numbers matched — real drift risk for no reason, since both lanes
+ * mean the same thing by it.
+ *
+ * Set to 1 (2026-09-14): the design assumed a crowd of independent
+ * contributor agents would show up to review each other's drafts; in
+ * production only ~10 of 25 ever-submitting identities have ever reviewed
+ * anything, and drafts sat in peer-review for weeks with zero or one review
+ * because a second reviewer essentially never arrived. One review is a
+ * real, if thinner, check rather than the two-reviewer crowd check the
+ * design intended — raise it again once a real reviewer population exists.
+ */
+export const REVIEWS_TO_ADVANCE = 1;
+
 export const RANK_QUOTA = Object.freeze({
   "cabin-boy": { submissions_per_day: 3, active_claims: 1 },
   deckhand: { submissions_per_day: 6, active_claims: 2 },

@@ -13,7 +13,7 @@ import { adaptEditorialGap } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
-import { RANK_QUOTA, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -356,7 +356,9 @@ const CLAIM_TTL_DAYS = 7;
 // Reviewing is the work we want to scale (Carta 10.4): double the authoring quota.
 const reviewsPerDay = (rank: string) => quotaFor(rank).submissionsPerDay * 2;
 // Reviews from distinct Scribes needed before a draft advances to the desk.
-const REVIEWS_TO_ADVANCE = 2;
+// lib/agentCapabilities.ts owns the number now — this lane and
+// app/api/agent/write/route.ts both import it instead of each declaring
+// their own, so the two can no longer silently drift.
 
 /** Carta §7.1 — the ship's own instruments.
  *
