@@ -4272,31 +4272,34 @@ main.prose {
   border-radius: var(--radius-2);
 }
 
-/* --- the Chartroom's own index: a mounted panel, not a bare list of links -
-   A first draft borrowed the desk sidebar's own register wholesale — tiny
-   mono uppercase labels, dense unboxed rows. That register is the machine
-   reading its own ledger; a reader deciding "am I doing this myself, or is
-   my agent" is the narrator's moment, and the admin type read as a table
-   header rather than a real choice. Boxed like a plate, titled in the
-   cartouche voice, links sized to be read rather than scanned. */
-.tv-shell {
+/* --- the Chartroom's own index: a page-length rail, not a boxed panel ----
+   Two drafts before this one: a flat unboxed list borrowed straight from
+   the desk sidebar (too little presence — the admin's own tiny mono type,
+   wrong register for a reader's moment); then a mounted plate boxed in its
+   own parchment card, scoped to just the Chartroom section underneath the
+   title and the Carta Marina plate. The editor wanted something closer to
+   a real app rail: the same paper as the page it sits beside — no card, no
+   border around it, just a single rule marking the seam — running the full
+   height of the page from the title down through "how it works", not just
+   the width of one section. */
+.tv-page-shell {
   display: grid;
   grid-template-columns: 16rem 1fr;
   gap: var(--space-7);
   align-items: start;
   margin-top: var(--space-5);
 }
+.tv-page-main { min-width: 0; }
 .tv-content { min-width: 0; }
+
 .tv-fork {
   position: sticky;
   top: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  padding: var(--space-5);
-  background: var(--parchment-raised);
-  border: 1px solid var(--rule-hair);
-  border-radius: var(--radius-2);
+  padding: var(--space-2) var(--space-5) var(--space-6);
+  border-right: 1px solid var(--rule-hair);
 }
 .tv-fork-group + .tv-fork-group {
   border-top: 1px solid var(--rule-hair);
@@ -4312,7 +4315,9 @@ main.prose {
 }
 /* A top-level entry with no children (The Crew) reads as a clickable ROW,
    not a label — same reasoning as the desk sidebar: a glance should tell
-   "clickable" from "heading" without indentation doing the work. */
+   "clickable" from "heading" without indentation doing the work. It takes
+   the same hover/current states as an ordinary link below, not the static
+   group titles above it. */
 .tv-fork-title.is-link {
   all: unset;
   display: flex;
@@ -4327,11 +4332,8 @@ main.prose {
   cursor: pointer;
   font-family: var(--font-display);
   font-size: var(--step-2);
-  color: var(--ink);
-  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
-}
-@media (hover: hover) {
-  .tv-fork-title.is-link:hover { color: var(--ink); }
+  color: var(--ink-soft);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
 .tv-fork-link {
   display: flex;
@@ -4345,10 +4347,21 @@ main.prose {
   font-size: var(--step-1);
   line-height: 1.3;
   color: var(--ink-soft);
-  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+  transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
 }
+/* Three states, not two: "about to click" has to be felt before "you are
+   here" is asserted. The hover rule is the brass MARK at low strength
+   (color-mix, not a second hardcoded hex) — never the word itself, which
+   stays ink — plus a few pixels of travel toward the reader. The current
+   state keeps the full-strength brass rule and the bold weight, so the two
+   states read as different in kind, not just in opacity. */
 @media (hover: hover) {
-  .tv-fork-link:hover { color: var(--ink); }
+  .tv-fork-link:hover,
+  .tv-fork-title.is-link:hover {
+    color: var(--ink);
+    border-left-color: color-mix(in srgb, var(--brass) 45%, transparent);
+    transform: translateX(3px);
+  }
 }
 .tv-fork-link[aria-current="true"],
 .tv-fork-title.is-link[aria-current="true"] {
@@ -4356,19 +4369,25 @@ main.prose {
   font-weight: 600;
   border-left-color: var(--brass);
 }
+/* A count of available work is information, not an alarm — --state-alarm
+   is reserved for what genuinely needs the editor. brass-text keeps it in
+   the machine's voice (mono, tabular) without asserting urgency. */
 .tv-fork-badge {
   font-family: var(--font-mono);
   font-size: var(--step--2);
   font-variant-numeric: tabular-nums lining-nums;
-  color: var(--state-alarm);
+  color: var(--brass-text);
 }
 
 @media (max-width: 760px) {
-  .tv-shell { grid-template-columns: 1fr; }
+  .tv-page-shell { grid-template-columns: 1fr; }
   .tv-fork {
     position: static;
     flex-direction: column;
     gap: var(--space-5);
+    padding: 0 var(--space-5) var(--space-5);
+    border-right: none;
+    border-bottom: 1px solid var(--rule-hair);
   }
 }
 

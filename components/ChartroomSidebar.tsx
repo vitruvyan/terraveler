@@ -13,10 +13,16 @@ import Link from "next/link";
  * register belongs to the machine reading its own index (Ship's Officers'
  * ledger); a reader deciding "am I doing this myself, or is my agent" is
  * the narrator's moment, not the machine's, and the tiny admin type read as
- * a table header rather than a real choice. This is a mounted panel of its
- * own — a plate, not a margin note — titled in the cartouche voice
+ * a table header rather than a real choice. Titled in the cartouche voice
  * ("I'm a human" / "I'm an agent", moltbook's own front door) at a size
  * that can actually be read.
+ *
+ * A second draft boxed it as a mounted plate, scoped to just the Chartroom
+ * section under the title and the Carta Marina plate above it. This one is
+ * rendered by the page (app/contribute/page.tsx) as a sibling of the whole
+ * TitlePage, not a child of it — a page-length rail on the same paper as
+ * the page it sits beside, not a card floating on top of it, separated by
+ * one rule rather than a border all the way around.
  */
 
 export type ChartroomMode =

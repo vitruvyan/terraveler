@@ -225,23 +225,17 @@ export default async function Chartroom({
 
   const crew = mode === "crew" ? await crewBoard() : null;
 
-  return (
-    <>
-      <SiteHeader />
-      <TitlePage
-        eyebrow={contextual ? "Help build the atlas" : SECTION_META[mode].eyebrow}
-        title={contextual ? "The Chartroom" : SECTION_META[mode].title}
-        dek={contextual
-          ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
-          : SECTION_META[mode].dek}
-        background="/login-backgrounds/carta-marina.png"
-        credit="Carta Marina · 1539 · Olaus Magnus"
-      >
-        <section id="chartroom" className="tv-shell">
-          {!contextual && (
-            <ChartroomSidebar mode={mode} category={category} tab={tab} openCount={openWaypoints.length} />
-          )}
-
+  const titlePage = (
+    <TitlePage
+      eyebrow={contextual ? "Help build the atlas" : SECTION_META[mode].eyebrow}
+      title={contextual ? "The Chartroom" : SECTION_META[mode].title}
+      dek={contextual
+        ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
+        : SECTION_META[mode].dek}
+      background="/login-backgrounds/carta-marina.png"
+      credit="Carta Marina · 1539 · Olaus Magnus"
+    >
+        <section id="chartroom">
           <div className="tv-content">
           {!contextual && (mode === "ongoing" || mode === "propose") && (
             <>
@@ -353,7 +347,20 @@ export default async function Chartroom({
             </div>
           </section>
         )}
-      </TitlePage>
+    </TitlePage>
+  );
+
+  return (
+    <>
+      <SiteHeader />
+      {contextual ? (
+        titlePage
+      ) : (
+        <div className="tv-page-shell">
+          <ChartroomSidebar mode={mode} category={category} tab={tab} openCount={openWaypoints.length} />
+          <div className="tv-page-main">{titlePage}</div>
+        </div>
+      )}
       <SiteFooter />
     </>
   );
