@@ -428,6 +428,7 @@ export default function SpecimenPage() {
                 source_proposal_intents: [{
                   voyage: null, waypoint: null, region: null, person: null,
                   reason: "Large public-domain/open-license Dutch digital archive of historical texts and travel journals (reisverslagen), including VOC-era voyage accounts (e.g. Linschoten, Barentsz, Tasman) — useful for sourcing Dutch-perspective waypoints and voyages on Terraveler.",
+                  suggested_trust_mode: "domain_trusted", suggested_rights_class: "public_domain",
                 }],
               },
             ]}
