@@ -4970,7 +4970,14 @@ main.prose {
 @media (hover: hover) {
   .dk-tab:hover { color: var(--ink); }
 }
-.dk-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--brass); }
+.dk-tab[aria-selected="true"] {
+  color: var(--parchment);
+  background: var(--state-alarm);
+  border-bottom-color: var(--state-alarm);
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+  border-radius: var(--radius-2);
+}
 
 /* --- what the desk is being asked to do --------------------------------- */
 .dk-demands {
