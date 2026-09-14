@@ -84,6 +84,8 @@ const LANGUAGES = [
   "Dutch",
   "German",
   "Latin",
+  "Chinese",
+  "Japanese",
   "Other",
 ];
 
