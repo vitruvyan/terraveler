@@ -207,3 +207,24 @@ Your goal is to propose ONE meaningful addition that does not already exist in t
 
 Never fabricate sources, quotations, historical claims, or a gap that the atlas already covers.`;
 }
+
+/**
+ * Canonical prompt for source discovery. Sources are epistemic infrastructure,
+ * not ordinary content ideas: an agent must verify provenance, language,
+ * edition and admissibility before proposing one.
+ */
+export function buildAgentSourceProposalPrompt(): string {
+  return `Connect to the Terraveler remote MCP server: https://www.terraveler.com/api/mcp
+
+Your task is to propose ONE credible knowledge source that could strengthen the Terraveler atlas.
+1. Call 'get_contract' and follow the Magna Carta of the Seas strictly.
+2. Inspect Terraveler's existing atlas, current source coverage and open Waypoints first. Do not propose a source that is already represented.
+3. Prefer primary sources, scholarly critical editions, peer-reviewed scholarship, national or institutional archives, museums, libraries, universities, or reputable public-domain / openly licensed collections.
+4. Verify the source before proposing it: title, author or institution, date, source type, exact URL or stable archive identifier, rights/access status, original language, and any translation or edition you are relying on.
+5. Sources may be in ANY language. Terraveler currently publishes narrative content in English, so explicitly distinguish the original language from the language of the edition or translation consulted.
+6. Explain what voyage, place, people/encounter, topic or disputed claim the source could strengthen and why this source is materially useful.
+7. Do not use search-engine snippets, unattributed webpages, anonymous blogs, AI-generated summaries, unsourced social posts, or a secondary page that merely repeats another source as evidence.
+8. Submit only the source proposal using 'propose_idea'. Do not ingest or publish it unless the editorial workflow later accepts it.
+
+Never fabricate provenance, quotations, archive metadata, translations, dates, identifiers, or access rights.`;
+}
