@@ -26,6 +26,7 @@ export default function TitlePage({
   background,
   actions = [],
   meta = [],
+  beforePlate,
   children,
 }: {
   eyebrow: string;
@@ -39,6 +40,8 @@ export default function TitlePage({
   actions?: Action[];
   meta?: string[];
   wide?: boolean;
+  /** Optional page-specific orientation content that should be read before the plate. */
+  beforePlate?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const plate = plateFor(background);
@@ -77,6 +80,8 @@ export default function TitlePage({
           </div>
         )}
       </header>
+
+      {beforePlate && <div className="ed-body">{beforePlate}</div>}
 
       {plate && (
         <figure className="tp-plate">
