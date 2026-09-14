@@ -26,6 +26,15 @@ import AccountPanel from "@/components/AccountPanel";
  * through two reforms without anyone noticing. */
 import { ATLAS, PRIMARY, PROJECT, ALL } from "@/lib/nav";
 
+const CHARTROOM_MOBILE = [
+  { href: "/contribute", label: "Ongoing Projects" },
+  { href: "/contribute?mode=propose#chartroom", label: "Propose" },
+  { href: "/contribute?mode=sources#chartroom", label: "Sources" },
+  { href: "/contribute?mode=agent-quick#chartroom", label: "Quick connect" },
+  { href: "/contribute?mode=agent-setup#chartroom", label: "Persistent setup" },
+  { href: "/contribute?mode=crew#chartroom", label: "The Crew" },
+] as const;
+
 /** Bold, fixed site header for editorial pages. (The map page keeps its
  *  floating cartouche chrome; the account panel is shared by both.) */
 export default function SiteHeader() {
@@ -40,19 +49,31 @@ export default function SiteHeader() {
 
   const here = (href: string) => pathname === href || pathname.startsWith(href + "/");
   const inProject = PROJECT.some((l) => here(l.href));
+  const inChartroom = pathname === "/contribute" || pathname.startsWith("/contribute/");
 
   useEffect(() => {
     if (searching) field.current?.focus();
   }, [searching]);
 
   useEffect(() => {
-    if (!searching && !projectOpen) return;
+    if (!searching && !projectOpen && !menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setSearching(false); setProjectOpen(false); }
+      if (e.key === "Escape") {
+        setSearching(false);
+        setProjectOpen(false);
+        setMenuOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [searching, projectOpen]);
+  }, [searching, projectOpen, menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, [menuOpen]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -149,7 +170,7 @@ export default function SiteHeader() {
             className="tr-btn sh-menu-toggle"
             onClick={() => setMenuOpen((open) => !open)}
             title="Menu"
-            aria-label="Menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
             aria-controls="site-mobile-nav"
           >
@@ -182,6 +203,17 @@ export default function SiteHeader() {
               {link.label}
             </Link>
           ))}
+
+          {inChartroom && (
+            <div className="sh-mobile-section" aria-label="Chartroom navigation">
+              <span className="sh-mobile-section-title">The Chartroom</span>
+              {CHARTROOM_MOBILE.map((link) => (
+                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          )}
         </nav>
       )}
     </header>
