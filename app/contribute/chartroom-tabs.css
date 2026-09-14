@@ -43,6 +43,20 @@
   color: var(--parchment) !important;
 }
 
+/* Sources uses two editorial split-panels on wide layouts. Their column tracks
+   are declared inline because the desktop composition is deliberate, but that
+   means they do not collapse automatically when the site switches to the phone
+   arrangement. Scope the correction to the Chartroom's Sources body and use the
+   site's canonical data-layout attribute rather than introducing a breakpoint. */
+[data-layout="phone"] #open-opportunities > div:nth-of-type(3) > section {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+[data-layout="phone"] #open-opportunities > div:nth-of-type(3) > section > * {
+  min-width: 0;
+  width: 100%;
+}
+
 @media (hover: hover) {
   [aria-label="Contribution categories"] .tv-tab[aria-selected="false"]:hover {
     background: var(--parchment-raised);
