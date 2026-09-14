@@ -118,6 +118,7 @@ export default function ChartroomBoard({
   const [wizardStep, setWizardStep] = useState(1);
   const [draft, setDraft] = useState<ProposalDraft>({ title: "", why: "", context: "", evidence: "" });
   const [prompts, setPrompts] = useState<PromptMap | null>(null);
+  const [submittingProposal, setSubmittingProposal] = useState(false);
 
   useEffect(() => {
     setWaypoints(initial);
@@ -160,6 +161,30 @@ export default function ChartroomBoard({
       setFollowing((current) => new Set(current).add(id));
       setMessage(`Following Waypoint #${id}.`);
     }
+  }
+
+  async function submitProposal() {
+    setSubmittingProposal(true);
+    setMessage(null);
+    const response = await fetch("/api/chartroom/propose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ category, title: draft.title, why: draft.why, context: draft.context, evidence: draft.evidence }),
+    });
+    const result = await response.json().catch(() => ({}));
+    setSubmittingProposal(false);
+    if (response.status === 401) {
+      window.location.href = `/login?next=${encodeURIComponent("/contribute")}`;
+      return;
+    }
+    if (!response.ok) {
+      setMessage(result.error || "The Chartroom could not record that proposal.");
+      return;
+    }
+    setMessage(`Proposal #${result.submission_id} submitted — the editorial desk will assess scope and feasibility.`);
+    setShowWizard(false);
+    setWizardStep(1);
+    setDraft({ title: "", why: "", context: "", evidence: "" });
   }
 
   const displayedWaypoints = useMemo(() => {
@@ -343,18 +368,29 @@ export default function ChartroomBoard({
                   {draft.evidence && <p className="ed-muted"><strong>Starting evidence:</strong> {draft.evidence}</p>}
                   <div style={{ borderTop: "1px solid var(--rule-hair)", marginTop: 18, paddingTop: 14 }}>
                     <p className="ed-muted" style={{ fontSize: "0.84rem", lineHeight: 1.5 }}>
-                      This first UX draft prepares the proposal but does not bypass the editorial submission gate. Copy it now; direct human submission can be wired to the governed proposal endpoint after the interaction is approved.
+                      Submitting records this as a real proposal (status: awaiting the editorial desk) —
+                      nothing publishes yet, a curator assesses scope and feasibility first.
                     </p>
-                    <button
-                      type="button"
-                      className="welcome-btn primary"
-                      onClick={() => {
-                        navigator.clipboard?.writeText(proposalText(category, draft));
-                        setMessage("Proposal copied.");
-                      }}
-                    >
-                      Copy proposal
-                    </button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button
+                        type="button"
+                        className="welcome-btn primary"
+                        disabled={submittingProposal}
+                        onClick={submitProposal}
+                      >
+                        {submittingProposal ? "Submitting…" : "Submit proposal"}
+                      </button>
+                      <button
+                        type="button"
+                        className="welcome-btn"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(proposalText(category, draft));
+                          setMessage("Proposal text copied.");
+                        }}
+                      >
+                        Copy text instead
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

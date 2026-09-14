@@ -58,6 +58,35 @@ export default function SubmissionBrief({
 }) {
   if (!payload || typeof payload !== "object") return null;
 
+  /* ---- an idea: a human or agent naming a gap, not proposing content ------ */
+  if (type === "idea") {
+    return (
+      <section className="sb">
+        <p className="sb-lede">
+          <span className="sb-verb">Proposes a new idea</span>
+          {payload.kind && (
+            <>
+              {" — "}
+              <span className="dk-id">{payload.kind}</span>
+            </>
+          )}
+          .
+        </p>
+        {payload.title && <p className="sb-idea"><strong>{String(payload.title)}</strong></p>}
+        {payload.description && <p className="sb-idea">{String(payload.description)}</p>}
+        {payload.context && (
+          <p className="sb-note"><strong>Context:</strong> {String(payload.context)}</p>
+        )}
+        {payload.evidence && (
+          <p className="sb-note"><strong>Starting evidence:</strong> {String(payload.evidence)}</p>
+        )}
+        <p className="sb-note">
+          Nothing is published by approving this. An idea becomes open work in the Chartroom for a Scribe to pick up.
+        </p>
+      </section>
+    );
+  }
+
   /* ---- a suggestion is already prose; it only needs framing --------------- */
   if (type === "content-suggestion") {
     const what = KIND[String(payload.content_type)] ?? "a suggestion";

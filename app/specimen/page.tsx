@@ -23,6 +23,14 @@ const SUGGESTION = {
   idea: "Correction to submission 29 (waypoint-enrichment, plates), waypoint 14 Otumpan. The plate's image url is mistyped and returns 404: it reads .../commons/8/8a/ where the file is at .../commons/8/89/. Everything else about the plate — caption, credit, licence, source page — checks out.",
 };
 
+const IDEA = {
+  title: "The conquest of Antarctica: the race between Ross and Amundsen",
+  description: "It's a story worth telling — two very different expeditions, decades apart, both reaching for the same unclaimed place. Terraveler doesn't have a polar voyage yet.",
+  kind: "stories",
+  context: "Would sit alongside the existing age-of-sail voyages as the atlas's first polar material.",
+  evidence: "Amundsen's own expedition diary and Ross's published survey logs are both public domain.",
+};
+
 const DRAFT = {
   meta: { type: "waypoint-enrichment", target_voyage: "boudeuse-1766", carta_version: "0.6" },
   waypoints: [
@@ -407,6 +415,7 @@ export default function SpecimenPage() {
           />
 
           <h3 className="dk-section-title">A proposal, before the verdict</h3>
+          <SubmissionBrief type="idea" payload={IDEA} />
           <SubmissionBrief type="content-suggestion" payload={SUGGESTION} />
           <SubmissionBrief type="waypoint-enrichment" payload={DRAFT} />
 
