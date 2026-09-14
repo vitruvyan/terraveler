@@ -46,16 +46,11 @@
   min-width: 0;
 }
 
-/* The Carta Marina is a frontispiece, not the whole first screen. The shared
-   TitlePage allows plates up to 52svh so maps can be studied on editorial
-   chapters; inside the Chartroom that same rule hid the actual work below the
-   fold even on a wide monitor. Keep the plate generous, but cap it so the next
-   section is already visible and the page advertises that there is more to do. */
-.tv-page-main .tp-plate-mount img {
-  max-height: clamp(250px, 34svh, 340px);
-  width: auto;
-  max-width: 100%;
-  margin-inline: auto;
+/* Operational pages should reveal the work immediately. The shared TitlePage
+   still supports large editorial plates elsewhere, but the Chartroom hides its
+   frontispiece entirely so tabs and contribution work begin in the first view. */
+.tv-page-main .tp-plate {
+  display: none;
 }
 
 .tv-fork {
@@ -126,10 +121,6 @@
 
 [data-layout="phone"] .tv-fork {
   display: none;
-}
-
-[data-layout="phone"] .tv-page-main .tp-plate-mount img {
-  max-height: min(30svh, 260px);
 }
 
 [data-layout="phone"] .sh-inner {
