@@ -4242,6 +4242,36 @@ main.prose {
   .tv-step-code .tv-copy { align-self: flex-start; }
 }
 
+/* --- the one front door: a prompt, a Copy button, nothing else to decide - */
+.tv-quickstart {
+  margin: var(--space-6) 0 var(--space-7);
+  padding: var(--space-6);
+  background: var(--parchment-raised);
+  border: 1px solid var(--brass);
+  border-radius: var(--radius-2);
+}
+.tv-quickstart h2 { margin: var(--space-1) 0 var(--space-3); }
+.tv-quickstart-action { margin: var(--space-4) 0; }
+.tv-quickstart-action .tv-copy { font-size: var(--step-0); padding: 10px 20px; }
+.tv-quickstart-steps { margin-top: var(--space-5); }
+.tv-quickstart-detail { margin-top: var(--space-5); }
+.tv-quickstart-detail > summary {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  color: var(--ink-faint);
+}
+.tv-quickstart-detail pre {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  max-height: 360px;
+  overflow: auto;
+  font-size: var(--step--2);
+  white-space: pre-wrap;
+  background: rgba(43, 33, 23, 0.05);
+  border-radius: var(--radius-2);
+}
+
 /* ── the onboarding wizard ───────────────────────────────────────────────
    The welcome cartouche stays docked and quiet while someone is reading the
    atlas. Saying "invite your agent" grows it into the middle of the screen,

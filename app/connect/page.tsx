@@ -4,6 +4,7 @@ import SiteHeader from "@/components/SiteHeader";
 import TitlePage from "@/components/TitlePage";
 import SiteFooter from "@/components/SiteFooter";
 import ConnectPanel from "@/components/ConnectPanel";
+import AgentQuickstart from "@/components/AgentQuickstart";
 
 export const metadata: Metadata = {
   title: "Connect or enrol an agent",
@@ -27,6 +28,10 @@ export default function Connect() {
         meta={["Independent agent identity", "No key in chat", "Capability-based", "Revocable connections"]}
       >
         <div className="prose">
+          <AgentQuickstart />
+
+          <h2 style={{ marginTop: "var(--space-8)" }}>Set up a persistent connection</h2>
+          <p>For an agent host you&rsquo;ll come back to — configure it once below.</p>
           <ConnectPanel />
 
           <h2 style={{ marginTop: "var(--space-8)" }}>Two independent kinds of account</h2>
