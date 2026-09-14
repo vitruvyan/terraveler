@@ -115,28 +115,38 @@ export async function POST(req: Request) {
   const messageId = cq.message.message_id;
   const originalText = String(cq.message.text ?? "");
 
+  let result: Outcome | null = null;
+  let resolveError: string | null = null;
   if (!["approve", "reject"].includes(action) || !Number.isInteger(id)) {
-    await answerCallbackQuery(cq.id, "Azione non riconosciuta.", true);
-    return NextResponse.json({ ok: true });
+    result = { toast: "Azione non riconosciuta.", alert: true, outcome: "unrecognized action" };
+  } else {
+    try {
+      result =
+        domain === "src" ? await handleSourceCallback(action as "approve" | "reject", id) :
+        domain === "sub" ? await handleSubmissionCallback(action as "approve" | "reject", id) :
+        { toast: "Tipo di proposta non riconosciuto.", alert: true, outcome: "unrecognized domain" };
+    } catch (e: any) {
+      resolveError = String(e?.message || e).slice(0, 150);
+    }
   }
 
+  // The governance decision (or its refusal) has already landed by this
+  // point — everything past here is Telegram UI, best-effort. If it fails
+  // (an expired callback query, a transient API blip), swallow it rather
+  // than 500 the whole request: a 500 makes Telegram retry the same
+  // update, and a retry after a *successful* resolution would just re-hit
+  // the "already resolved" guard and fail acknowledgment a second time.
   try {
-    const result =
-      domain === "src" ? await handleSourceCallback(action as "approve" | "reject", id) :
-      domain === "sub" ? await handleSubmissionCallback(action as "approve" | "reject", id) :
-      null;
-
-    if (!result) {
-      await answerCallbackQuery(cq.id, "Tipo di proposta non riconosciuto.", true);
-      return NextResponse.json({ ok: true });
-    }
-
-    await answerCallbackQuery(cq.id, result.toast, result.alert);
-    if (!result.alert) {
-      await closeMessage(chatId, messageId, originalText, result.outcome);
+    if (resolveError) {
+      await answerCallbackQuery(cq.id, `Errore: ${resolveError}`, true);
+    } else if (result) {
+      await answerCallbackQuery(cq.id, result.toast, result.alert);
+      if (!result.alert) {
+        await closeMessage(chatId, messageId, originalText, result.outcome);
+      }
     }
   } catch (e: any) {
-    await answerCallbackQuery(cq.id, `Errore: ${String(e?.message || e).slice(0, 150)}`, true);
+    console.error("telegram webhook: failed to acknowledge callback_query", e);
   }
 
   return NextResponse.json({ ok: true });

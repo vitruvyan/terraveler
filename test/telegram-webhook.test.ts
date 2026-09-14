@@ -177,4 +177,37 @@ test("Telegram webhook", async (t) => {
     assert.ok(calls[0].url.includes("answerCallbackQuery"));
     assert.equal(calls[0].body.show_alert, true);
   });
+
+  await t.test("still returns 200 when the resolution succeeds but acknowledging Telegram fails", async () => {
+    // A resolved governance decision must never turn into a 500 just because
+    // the callback query expired before the ack landed — a 500 makes
+    // Telegram retry the update, and the retry would hit an already-resolved
+    // proposal rather than lose the decision, but there's no reason to make
+    // Telegram do that dance when the actual work already succeeded.
+    globalThis.fetch = async (input) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      if (url.includes("api.telegram.org")) {
+        return { ok: false, status: 400, json: async () => ({ ok: false, description: "query is too old" }) } as any;
+      }
+      if (url.includes("source_proposals?id=eq.12")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 12, target_url: "https://ctext.org/", status: "submitted",
+            source_proposal_intents: [{ reason: "x", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("human_principals?email=eq.")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+      }
+      if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 6, proposal_id: 12, status: "resolved" }) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    const res = await POST(req(telegramUpdate("src:approve:12")));
+    assert.equal(res.status, 200, "the RPC succeeded — the failing ack must not surface as a request failure");
+  });
 });
