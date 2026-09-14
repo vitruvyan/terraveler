@@ -24,6 +24,8 @@ export type SourceIntent = {
   region: string | null;
   person: string | null;
   reason: string | null;
+  suggested_trust_mode: string | null;
+  suggested_rights_class: string | null;
 };
 
 export type PendingProposal = {
@@ -92,8 +94,30 @@ function ProposalBrief({ p }: { p: PendingProposal }) {
           {intent.person && <>, {intent.person}</>}.
         </p>
       )}
+      {(intent?.suggested_trust_mode || intent?.suggested_rights_class) && (
+        <p className="sb-note">
+          Agent suggests
+          {intent.suggested_trust_mode && <> <span className="dk-id">{intent.suggested_trust_mode}</span></>}
+          {intent.suggested_rights_class && <>, <span className="dk-id">{intent.suggested_rights_class}</span></>}.
+        </p>
+      )}
     </section>
   );
+}
+
+/* The agent that researched and proposed a source already did the work a
+ * blank verdict form was asking the editor to redo from a URL and a
+ * sentence — that mismatch, not a bug in the resolve call, was why Approve
+ * sat disabled: the reason field has no default and the button requires
+ * one. Starting the form from what the agent already wrote gives the
+ * editor something to confirm or correct instead of type from nothing. */
+function defaultForm(p: PendingProposal): { trustMode: string; rightsClass: string; reason: string } {
+  const intent = p.source_proposal_intents?.[0];
+  return {
+    trustMode: intent?.suggested_trust_mode ?? TRUST_MODES[0].value,
+    rightsClass: intent?.suggested_rights_class ?? RIGHTS_CLASSES[4].value,
+    reason: intent?.reason ?? "",
+  };
 }
 
 export function PendingSourceProposals({
@@ -107,8 +131,11 @@ export function PendingSourceProposals({
 }) {
   const [form, setForm] = useState<Record<number, { trustMode: string; rightsClass: string; reason: string }>>({});
 
-  function set(id: number, patch: Partial<{ trustMode: string; rightsClass: string; reason: string }>) {
-    const defaults = { trustMode: TRUST_MODES[0].value, rightsClass: RIGHTS_CLASSES[4].value, reason: "" };
+  function set(
+    id: number,
+    patch: Partial<{ trustMode: string; rightsClass: string; reason: string }>,
+    defaults: { trustMode: string; rightsClass: string; reason: string },
+  ) {
     setForm((f) => ({ ...f, [id]: { ...defaults, ...f[id], ...patch } }));
   }
 
@@ -119,7 +146,8 @@ export function PendingSourceProposals({
   return (
     <div className="src-pending">
       {proposals.map((p) => {
-        const f = form[p.id] ?? { trustMode: TRUST_MODES[0].value, rightsClass: RIGHTS_CLASSES[4].value, reason: "" };
+        const d = defaultForm(p);
+        const f = form[p.id] ?? d;
         return (
           <div key={p.id} className="src-card">
             <div className="src-card-head">
@@ -135,7 +163,7 @@ export function PendingSourceProposals({
                 <select
                   className="desk-input"
                   value={f.trustMode}
-                  onChange={(e) => set(p.id, { trustMode: e.target.value })}
+                  onChange={(e) => set(p.id, { trustMode: e.target.value }, d)}
                 >
                   {TRUST_MODES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
@@ -145,7 +173,7 @@ export function PendingSourceProposals({
                 <select
                   className="desk-input"
                   value={f.rightsClass}
-                  onChange={(e) => set(p.id, { rightsClass: e.target.value })}
+                  onChange={(e) => set(p.id, { rightsClass: e.target.value }, d)}
                 >
                   {RIGHTS_CLASSES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
                 </select>
@@ -154,7 +182,7 @@ export function PendingSourceProposals({
                 className="desk-input src-reason"
                 placeholder="reason (recorded permanently)"
                 value={f.reason}
-                onChange={(e) => set(p.id, { reason: e.target.value })}
+                onChange={(e) => set(p.id, { reason: e.target.value }, d)}
               />
               <button
                 className="desk-btn desk-btn-approve"
