@@ -1,0 +1,36 @@
+/* Route-scoped Chartroom category tabs.
+   On touch devices the global .tv-tab-on treatment is intentionally hover-gated,
+   so the active category can read too much like its siblings. Here the selected
+   category is an explicit bordeaux block; unselected categories keep the quiet
+   underlined treatment the selected tab previously had on touch. */
+
+[aria-label="Contribution categories"] {
+  gap: 0.35rem;
+}
+
+[aria-label="Contribution categories"] .tv-tab {
+  padding: 0.42rem 0.7rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom-color: var(--brass);
+  text-decoration: none;
+  transition:
+    color var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease),
+    border-color var(--dur-1) var(--ease);
+}
+
+[aria-label="Contribution categories"] .tv-tab[aria-selected="true"],
+[aria-label="Contribution categories"] .tv-tab[aria-selected="true"]:hover {
+  color: var(--parchment) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+@media (hover: hover) {
+  [aria-label="Contribution categories"] .tv-tab[aria-selected="false"]:hover {
+    background: var(--parchment-raised);
+    border-color: var(--brass);
+  }
+}
