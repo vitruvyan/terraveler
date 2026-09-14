@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChartroomWaypoint } from "@/lib/chartroom";
 import { buildAgentSourceProposalPrompt } from "@/lib/chartroom";
+import { fetchCurrentPrompts, type PromptMap } from "@/lib/promptRegistry";
 
 type SourceDraft = {
   title: string;
@@ -117,6 +118,13 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
     rights: "",
     relevance: "",
   });
+  const [prompts, setPrompts] = useState<PromptMap | null>(null);
+
+  // Fetched once on mount, not inside the click handler: clipboard writes
+  // must fire synchronously within the user gesture that triggered them.
+  useEffect(() => {
+    fetchCurrentPrompts().then(setPrompts);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -207,12 +215,15 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
           <button
             type="button"
             className="tv-copy"
+            disabled={!prompts}
             onClick={() => {
-              navigator.clipboard?.writeText(buildAgentSourceProposalPrompt());
+              const text = buildAgentSourceProposalPrompt(prompts);
+              if (!text) return;
+              navigator.clipboard?.writeText(text);
               setMessage("Source-discovery prompt copied.");
             }}
           >
-            Copy source prompt
+            {prompts ? "Copy source prompt" : "Loading prompt…"}
           </button>
         </section>
       )}

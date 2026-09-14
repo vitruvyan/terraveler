@@ -9,6 +9,8 @@ import {
   type PendingProposal, type ResolvedDecision, type FlaggedEndpoint, type MaterialDrift,
 } from "@/components/desk/SourceGovernance";
 import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub } from "@/components/desk/DeskSidebar";
+import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
+import type { PromptKey } from "@/lib/promptRegistry";
 
 type Sub = {
   id: number;
@@ -92,9 +94,10 @@ function appealGrounds(s: Sub): string | null {
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "analytics"];
+const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
-  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", crew: "Crew", analytics: "Analytics",
+  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", crew: "Crew",
+  prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
 const SOURCES_SUBS: SourcesSub[] = ["pending", "flagged", "drift", "resolved"];
@@ -138,6 +141,7 @@ export default function Desk() {
   const [flaggedEndpoints, setFlaggedEndpoints] = useState<FlaggedEndpoint[]>([]);
   const [materialDrifts, setMaterialDrifts] = useState<MaterialDrift[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
+  const [promptVersions, setPromptVersions] = useState<PromptVersion[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [note, setNote] = useState<Record<number, string>>({});
@@ -158,13 +162,14 @@ export default function Desk() {
 
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
-    const [rs, rc, ra, rg] = await Promise.all([
+    const [rs, rc, ra, rg, rp] = await Promise.all([
       fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics"),
-      fetch("/api/desk/governance"),
+      fetch("/api/desk/governance"), fetch("/api/desk/prompts"),
     ]);
     if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
     if (ra.ok) setAnalytics(await ra.json());
+    if (rp.ok) setPromptVersions((await rp.json()).versions ?? []);
     if (rg.ok) {
       const gov = await rg.json();
       setPendingSources(gov.queue?.pending_proposals ?? []);
@@ -184,6 +189,18 @@ export default function Desk() {
     params.set("tab", next);
     if (sub) params.set("sub", sub);
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+  }
+
+  async function savePrompt(key: PromptKey, body: string, notes: string) {
+    setBusy(true);
+    const r = await fetch("/api/desk/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt_key: key, body, notes: notes || undefined }),
+    });
+    setBusy(false);
+    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
+    load();
   }
 
   async function resolveSource(
@@ -627,6 +644,12 @@ export default function Desk() {
               </tbody>
             </table>
           )}
+        </div>
+      )}
+
+      {section === "prompts" && (
+        <div style={{ marginTop: 20 }}>
+          <PromptEditor versions={promptVersions} busy={busy} onSave={savePrompt} />
         </div>
       )}
 

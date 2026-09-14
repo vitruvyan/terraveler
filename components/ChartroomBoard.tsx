@@ -8,6 +8,7 @@ import {
   buildAgentProposalPrompt,
   waypointTypeLabel,
 } from "@/lib/chartroom";
+import { fetchCurrentPrompts, type PromptMap } from "@/lib/promptRegistry";
 
 type Busy = { id: number; action: "take" | "follow" } | null;
 type ProposalDraft = {
@@ -116,10 +117,18 @@ export default function ChartroomBoard({
   const [showWizard, setShowWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [draft, setDraft] = useState<ProposalDraft>({ title: "", why: "", context: "", evidence: "" });
+  const [prompts, setPrompts] = useState<PromptMap | null>(null);
 
   useEffect(() => {
     setWaypoints(initial);
   }, [initial]);
+
+  // Fetched once on mount, not inside the click handler: clipboard writes
+  // must fire synchronously within the user gesture that triggered them, so
+  // the "Copy Prompt" buttons below read from this already-resolved state.
+  useEffect(() => {
+    fetchCurrentPrompts().then(setPrompts);
+  }, []);
 
   useEffect(() => {
     setWizardStep(1);
@@ -238,12 +247,15 @@ export default function ChartroomBoard({
             <button
               type="button"
               className="tv-copy"
+              disabled={!prompts}
               onClick={() => {
-                navigator.clipboard?.writeText(buildAgentProposalPrompt(category));
+                const text = buildAgentProposalPrompt(prompts, category);
+                if (!text) return;
+                navigator.clipboard?.writeText(text);
                 setMessage("Proposal prompt copied for your AI.");
               }}
             >
-              Copy proposal prompt
+              {prompts ? "Copy proposal prompt" : "Loading prompt…"}
             </button>
           </div>
         )}
@@ -467,12 +479,15 @@ export default function ChartroomBoard({
                         <button
                           type="button"
                           className="tv-copy"
+                          disabled={!prompts}
                           onClick={() => {
-                            navigator.clipboard?.writeText(buildAgentOnboardingPrompt(waypoint.id));
+                            const text = buildAgentOnboardingPrompt(prompts, waypoint.id);
+                            if (!text) return;
+                            navigator.clipboard?.writeText(text);
                             setMessage(`AI prompt copied for Waypoint #${waypoint.id}.`);
                           }}
                         >
-                          Copy Prompt
+                          {prompts ? "Copy Prompt" : "Loading prompt…"}
                         </button>
                         <p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--ink-soft)" }}>Need setup help? <Link href="/connect" style={{ color: "var(--accent)" }}>Agent Onboarding Guide</Link>.</p>
                       </div>

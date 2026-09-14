@@ -9,7 +9,7 @@
  * fourth kind of thing to learn.
  */
 
-export type Section = "overview" | "submissions" | "sources" | "crew" | "analytics";
+export type Section = "overview" | "submissions" | "sources" | "crew" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 export type SourcesSub = "pending" | "flagged" | "drift" | "resolved";
 
@@ -124,6 +124,17 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, count
           onClick={() => onNavigate?.("crew")}
         >
           Crew
+        </button>
+      </div>
+
+      <div className="dk-nav-group">
+        <button
+          type="button"
+          className="dk-nav-heading is-link"
+          aria-current={section === "prompts"}
+          onClick={() => onNavigate?.("prompts")}
+        >
+          Prompts
         </button>
       </div>
 

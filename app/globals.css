@@ -6136,3 +6136,52 @@ main.prose {
    row of 2px ticks under it repeated the leg boundaries the chain had just
    drawn — the same thing said twice, one line lower and less well. */
 .vt-ticks:empty { display: none; }
+
+/* --- the prompt registry: same card rhythm as Sources ------------------- */
+.pr-list { display: flex; flex-direction: column; gap: var(--space-7); }
+.pr-card { padding-bottom: var(--space-5); border-bottom: 1px solid var(--rule-hair); }
+.pr-card:last-child { border-bottom: none; }
+.pr-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.pr-card-title { font-family: var(--font-display); font-weight: 500; font-size: var(--step-1); }
+.pr-textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: var(--space-2);
+}
+.pr-notes { width: 100%; box-sizing: border-box; margin-bottom: var(--space-3); }
+.pr-history { margin-top: var(--space-5); }
+.pr-history > summary {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-faint);
+}
+.pr-history-row summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.pr-history-row summary::-webkit-details-marker { display: none; }
+.pr-old-body {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3);
+  max-height: 300px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  white-space: pre-wrap;
+  background: rgba(43, 33, 23, 0.05);
+  border-radius: var(--radius-2);
+}

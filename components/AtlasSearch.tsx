@@ -2,6 +2,7 @@
 
 import Icon, { type IconName } from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
+import { fetchCurrentPrompts, renderPrompt, type PromptMap } from "@/lib/promptRegistry";
 
 /**
  * Atlas search: debounced autocomplete against /api/search.
@@ -33,18 +34,13 @@ const ICON: Record<string, IconName> = {
   era: "hourglass",
 };
 
-function contributionPrompt(query: string) {
-  return `Connect to Terraveler (MCP server https://www.terraveler.com/api/mcp — if you can't use MCP connectors, read https://www.terraveler.com/skill.md and follow it).
-
-I searched the Terraveler atlas for "${query}" and it holds nothing on this yet. I'd like to propose it.
-
-If you don't already have a Terraveler identity, self-enrol: call get_capabilities and check enrollment_enabled first, then GET /api/voyager-names for a callsign, POST /api/oauth/register with {"voyager_name": "<slug>", "grant_types": ["client_credentials"]}, then POST /api/oauth/token for a bearer token — no handle or API key to paste in, and no human account required.
-
-Then call get_contract and follow the Magna Carta of the Seas strictly. Then:
-1. Tell me honestly whether "${query}" is in scope for a geo-historical atlas of voyages and expeditions, and whether public-domain or CC sources exist for it (Gutenberg, Wikisource, Wikimedia, archive.org, Gallica, loc.gov).
-2. If it is, help me shape the idea and propose it with propose_idea.
-
-Carry this through on your own — none of these tools need my confirmation between calls. Only stop and ask me if enrollment_enabled is false (wait for the delay it tells you, don't retry sooner) or you hit a genuine scope judgment.`;
+/* Content now lives in the versioned prompt registry (prompt_key
+ * "contribution" — supabase/agent_prompts_schema.sql), edited from the desk
+ * without a deploy. This stays a pure render over already-fetched prompts
+ * (see the `prompts` state below) so the clipboard write in copyPrompt()
+ * still fires synchronously within the click that triggers it. */
+function contributionPrompt(prompts: PromptMap | null, query: string): string | null {
+  return renderPrompt(prompts, "contribution", { query });
 }
 
 export default function AtlasSearch({
@@ -74,7 +70,12 @@ export default function AtlasSearch({
   const [res, setRes] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [prompts, setPrompts] = useState<PromptMap | null>(null);
   const seq = useRef(0);
+
+  useEffect(() => {
+    fetchCurrentPrompts().then(setPrompts);
+  }, []);
 
   useEffect(() => {
     const mine = ++seq.current;
@@ -128,8 +129,10 @@ export default function AtlasSearch({
   }, [q, onActiveChange]);
 
   const copyPrompt = async () => {
+    const text = contributionPrompt(prompts, res?.missing?.query ?? q);
+    if (!text) return;
     try {
-      await navigator.clipboard.writeText(contributionPrompt(res?.missing?.query ?? q));
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
     } catch {
@@ -224,8 +227,8 @@ export default function AtlasSearch({
                 from public-domain sources and propose it to the editorial desk.
               </p>
               <div className="atlas-search-actions">
-                <button type="button" className="welcome-btn primary" onClick={copyPrompt}>
-                  {copied ? "Copied" : "Copy the prompt for your AI"}
+                <button type="button" className="welcome-btn primary" onClick={copyPrompt} disabled={!prompts}>
+                  {copied ? "Copied" : prompts ? "Copy the prompt for your AI" : "Loading prompt…"}
                 </button>
                 <a className="welcome-btn" href="/how-it-works">How contributing works</a>
               </div>

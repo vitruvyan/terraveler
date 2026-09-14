@@ -8,6 +8,7 @@ import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
 import { PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts } from "@/components/desk/SourceGovernance";
 import DeskSidebar from "@/components/desk/DeskSidebar";
+import { PromptEditor } from "@/components/desk/PromptRegistry";
 import AccountWorkspace from "@/components/AccountWorkspace";
 
 /* Due proposte vere, come arrivano dall'MCP: una suggestione (prosa scritta
@@ -506,13 +507,50 @@ export default function SpecimenPage() {
 
           <div className="spec-note">
             Cinque tab in una riga sono diventate un indice a stampa: sezioni senza
-            sottovoci (Quarterdeck, Crew, Analytics) sono una riga cliccabile; Submissions
+            sottovoci (Quarterdeck, Crew, Prompts, Analytics) sono una riga cliccabile; Submissions
             e Sources — le uniche che l&rsquo;hanno guadagnata — restano un&rsquo;etichetta
             non cliccabile sopra le loro sottosezioni, invece di una quarta cosa da
             imparare. &ldquo;Sei qui&rdquo; è un segnalibro di ottone nel margine, non lo
             stesso rosso del badge che segnala urgenza: i due significati non erano lo
             stesso colore prima di questo passaggio, e confonderli in una sidebar sempre
             visibile — non una riga di tab vista di sfuggita — si sarebbe notato.
+          </div>
+
+          <h3 className="dk-section-title">The prompt registry</h3>
+          <PromptEditor
+            versions={[
+              {
+                id: 2, prompt_key: "onboarding", version: 2,
+                body: "Your goal is to contribute to the Terraveler geo-historical atlas. Follow these steps:\n1. Call 'get_contract'...\n2. {{target}}\n...",
+                notes: "Added the autonomy instruction — an external agent stopped mid-task waiting for confirmation none of these tools need.",
+                created_at: "2026-09-13T21:00:00Z", created_by: "dbaldoni@gmail.com",
+              },
+              {
+                id: 1, prompt_key: "onboarding", version: 1,
+                body: "Your goal is to contribute to the Terraveler geo-historical atlas. Follow these steps:\n1. Call 'get_contract'...\n2. {{target}}\n...",
+                notes: "Seeded from lib/chartroom.ts — verbatim migration.",
+                created_at: "2026-08-01T09:00:00Z", created_by: "migration",
+              },
+              {
+                id: 3, prompt_key: "source_proposal", version: 1,
+                body: "Your task is to propose ONE credible knowledge source...",
+                notes: "Seeded from lib/chartroom.ts — verbatim migration.",
+                created_at: "2026-08-01T09:00:00Z", created_by: "migration",
+              },
+            ]}
+            busy={false}
+          />
+
+          <div className="spec-note">
+            <b>I prompt erano stringhe incorporate nel codice</b> — due file,
+            nessuno storico oltre <code>git blame</code>. Una versione mancava
+            l&rsquo;istruzione di autonomia e un agente reale si è bloccato in
+            attesa di una conferma che nessuno strumento richiedeva: l&rsquo;abbiamo
+            scoperto solo indagando dopo il fatto. Ora ogni prompt è una riga
+            in un registro append-only (stessa disciplina di <code>audit_log</code> e
+            delle decisioni sulle fonti): pubblicare una nuova versione non
+            richiede un deploy, e la versione precedente resta leggibile, mai
+            sovrascritta.
           </div>
 
           <h3 className="dk-section-title">Ship&rsquo;s log</h3>
