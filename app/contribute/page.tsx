@@ -181,46 +181,6 @@ export default async function Chartroom({
   const progressWaypoints = categoryFiltered.filter((wp) => wp.status === "taken" || wp.requestedVoyager !== null);
   const displayWaypoints = tab === "progress" ? progressWaypoints : openWaypoints;
 
-  const onboarding = contextual ? null : (
-    <section id="how-it-works" style={{ marginTop: 34, marginBottom: 12 }}>
-      <div style={{ maxWidth: 760, marginBottom: 24 }}>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.72rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--brass-text)", marginBottom: 8 }}>
-          Your first contribution
-        </span>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.8rem, 4vw, 2.7rem)", lineHeight: 1.05, margin: 0 }}>
-          Start with a missing piece of the atlas.
-        </h2>
-        <p className="ed-muted" style={{ fontSize: "1rem", lineHeight: 1.65, marginTop: 12, maxWidth: 680 }}>
-          You do not need to learn Terraveler&apos;s workflow before you begin. Find a useful piece of work,
-          follow its brief, and let the editorial process take care of the rest.
-        </p>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", borderTop: "1px solid var(--rule-hair)", borderBottom: "1px solid var(--rule-hair)" }}>
-        {contributionStages.map((stage, index) => (
-          <article key={stage.step} style={{ padding: "22px 22px 24px 0", marginRight: index < contributionStages.length - 1 ? 22 : 0, borderRight: index < contributionStages.length - 1 ? "1px solid var(--rule-hair)" : "none" }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--brass-text)" }}>{stage.step}</span>
-              <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.76rem", textTransform: "uppercase", letterSpacing: "0.09em" }}>{stage.eyebrow}</span>
-            </div>
-            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.45rem", lineHeight: 1.1, margin: "0 0 10px" }}>{stage.title}</h3>
-            <p className="ed-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55, margin: 0 }}>{stage.body}</p>
-            <p style={{ fontFamily: "var(--font-ui)", fontSize: "0.78rem", lineHeight: 1.45, color: "var(--ink-soft)", margin: "14px 0 0" }}>{stage.detail}</p>
-          </article>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px 14px", marginTop: 18, fontFamily: "var(--font-ui)", fontSize: "0.82rem", color: "var(--ink-soft)" }}>
-        <strong style={{ color: "var(--ink)" }}>The full path</strong>
-        <span>Find</span><span aria-hidden="true">→</span>
-        <span>Claim</span><span aria-hidden="true">→</span>
-        <span>Research &amp; create</span><span aria-hidden="true">→</span>
-        <span>Submit</span><span aria-hidden="true">→</span>
-        <span>Review</span>
-      </div>
-    </section>
-  );
-
   return (
     <>
       <SiteHeader />
@@ -229,51 +189,80 @@ export default async function Chartroom({
         title="The Chartroom"
         dek={contextual
           ? `Waypoints attached to ${filter.voyage}, stop ${filter.waypoint}. This is the same work surfaced by Contribute in the Atlas.`
-          : "Terraveler is never completely finished. Work on what the atlas already needs, or propose what it should explore next."}
+          : "Work on what the atlas already needs, or propose what it should explore next."}
         background="/login-backgrounds/carta-marina.png"
         credit="Carta Marina · 1539 · Olaus Magnus"
+        platePosition="after"
         actions={[
           { href: "#open-opportunities", label: "Enter the Chartroom" },
           { href: "#how-it-works", label: "How contributing works", variant: "secondary" as const },
         ]}
         meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
-        beforePlate={onboarding}
       >
-        <section id="open-opportunities" style={{ marginTop: 42 }}>
-          <div style={{ maxWidth: 760, marginBottom: 24 }}>
+        {!contextual && (
+          <div
+            aria-label="Contribution path"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: "7px 12px",
+              margin: "18px 0 0",
+              padding: "12px 0",
+              borderTop: "1px solid var(--rule-hair)",
+              borderBottom: "1px solid var(--rule-hair)",
+              fontFamily: "var(--font-ui)",
+              fontSize: "0.8rem",
+              color: "var(--ink-soft)",
+            }}
+          >
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)" }}>
+              How it moves
+            </span>
+            <strong style={{ color: "var(--ink)" }}>Discover</strong><span aria-hidden="true">→</span>
+            <span>Claim</span><span aria-hidden="true">→</span>
+            <span>Create</span><span aria-hidden="true">→</span>
+            <span>Submit</span><span aria-hidden="true">→</span>
+            <span>Review</span>
+            <span style={{ marginLeft: "auto", fontSize: "0.76rem" }}>Browse first. Sign in only when you choose work.</span>
+          </div>
+        )}
+
+        <section id="open-opportunities" style={{ marginTop: 26 }}>
+          <div style={{ maxWidth: 760, marginBottom: 18 }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brass-text)" }}>
               What the atlas needs
             </span>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 5vw, 3rem)", margin: "6px 0 10px", lineHeight: 1 }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 5vw, 2.75rem)", margin: "5px 0 8px", lineHeight: 1 }}>
               Work on what exists. Propose what does not.
             </h2>
-            <p className="ed-muted" style={{ margin: 0, lineHeight: 1.6 }}>
-              Ongoing Projects are defined pieces of work ready to be taken. Propose is where humans and AI can suggest subjects the atlas does not cover yet.
+            <p className="ed-muted" style={{ margin: 0, lineHeight: 1.55 }}>
+              Choose defined work, or suggest a subject the atlas should explore next.
             </p>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginBottom: 26 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10, marginBottom: 20 }}>
             <Link
               href={buildHref("ongoing", category, tab)}
               aria-current={mode === "ongoing" ? "page" : undefined}
-              style={{ textDecoration: "none", color: "inherit", border: mode === "ongoing" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "ongoing" ? "var(--parchment-raised)" : "transparent", padding: "18px 20px" }}
+              style={{ textDecoration: "none", color: "inherit", border: mode === "ongoing" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "ongoing" ? "var(--parchment-raised)" : "transparent", padding: "14px 16px" }}
             >
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 6 }}>Ongoing Projects</span>
-              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.45rem", marginBottom: 5 }}>Choose work that is ready.</strong>
-              <span className="ed-muted" style={{ fontSize: "0.88rem", lineHeight: 1.45 }}>Research, images, sources and editorial work already identified by the atlas.</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 4 }}>Ongoing Projects</span>
+              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.28rem", marginBottom: 3 }}>Choose work that is ready.</strong>
+              <span className="ed-muted" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>Research, images, sources and editorial work already identified.</span>
             </Link>
             <Link
               href={buildHref("propose", category, "open")}
               aria-current={mode === "propose" ? "page" : undefined}
-              style={{ textDecoration: "none", color: "inherit", border: mode === "propose" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "propose" ? "var(--parchment-raised)" : "transparent", padding: "18px 20px" }}
+              style={{ textDecoration: "none", color: "inherit", border: mode === "propose" ? "1px solid var(--brass)" : "1px solid var(--rule-hair)", background: mode === "propose" ? "var(--parchment-raised)" : "transparent", padding: "14px 16px" }}
             >
-              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 6 }}>Propose</span>
-              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.45rem", marginBottom: 5 }}>Tell us what is missing.</strong>
-              <span className="ed-muted" style={{ fontSize: "0.88rem", lineHeight: 1.45 }}>Suggest a subject, perspective, source set or cross-voyage topic that does not exist yet.</span>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)", marginBottom: 4 }}>Propose</span>
+              <strong style={{ display: "block", fontFamily: "var(--font-display)", fontSize: "1.28rem", marginBottom: 3 }}>Tell us what is missing.</strong>
+              <span className="ed-muted" style={{ fontSize: "0.82rem", lineHeight: 1.4 }}>Suggest a subject, perspective, source set or cross-voyage topic.</span>
             </Link>
           </div>
 
-          <div className="tv-tabs" role="tablist" aria-label="Contribution categories" style={{ marginBottom: 12 }}>
+          <div className="tv-tabs" role="tablist" aria-label="Contribution categories" style={{ marginBottom: 10 }}>
             {ALL_CATEGORIES.map((cat) => (
               <Link
                 key={cat.id}
@@ -287,7 +276,7 @@ export default async function Chartroom({
               </Link>
             ))}
           </div>
-          <p className="ed-muted" style={{ margin: "0 0 22px", fontSize: "0.88rem" }}>{categoryMeta.description}</p>
+          <p className="ed-muted" style={{ margin: "0 0 18px", fontSize: "0.86rem" }}>{categoryMeta.description}</p>
 
           {contextual && !loaded.contextualReady ? (
             <p className="ed-muted">Contextual Chartroom links need the additive Chartroom database migration before they can be read here. The global backlog remains available from <Link href="/contribute">The Chartroom</Link>.</p>
@@ -304,6 +293,36 @@ export default async function Chartroom({
             />
           )}
         </section>
+
+        {!contextual && (
+          <section id="how-it-works" style={{ marginTop: 64, paddingTop: 30, borderTop: "1px solid var(--rule-hair)" }}>
+            <div style={{ maxWidth: 720, marginBottom: 22 }}>
+              <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.11em", textTransform: "uppercase", color: "var(--brass-text)", marginBottom: 7 }}>
+                How contributing works
+              </span>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.7rem, 4vw, 2.45rem)", lineHeight: 1.05, margin: 0 }}>
+                Your first contribution, without the machinery.
+              </h2>
+              <p className="ed-muted" style={{ fontSize: "0.95rem", lineHeight: 1.6, marginTop: 10, maxWidth: 650 }}>
+                Find a useful piece of work, follow its brief and submit your evidence. Terraveler handles the editorial workflow around you.
+              </p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", borderTop: "1px solid var(--rule-hair)", borderBottom: "1px solid var(--rule-hair)" }}>
+              {contributionStages.map((stage, index) => (
+                <article key={stage.step} style={{ padding: "18px 18px 20px 0", marginRight: index < contributionStages.length - 1 ? 18 : 0, borderRight: index < contributionStages.length - 1 ? "1px solid var(--rule-hair)" : "none" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 9, marginBottom: 8 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--brass-text)" }}>{stage.step}</span>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>{stage.eyebrow}</span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.3rem", lineHeight: 1.1, margin: "0 0 8px" }}>{stage.title}</h3>
+                  <p className="ed-muted" style={{ fontSize: "0.86rem", lineHeight: 1.5, margin: 0 }}>{stage.body}</p>
+                  <p style={{ fontFamily: "var(--font-ui)", fontSize: "0.75rem", lineHeight: 1.4, color: "var(--ink-soft)", margin: "11px 0 0" }}>{stage.detail}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </TitlePage>
       <SiteFooter />
     </>
