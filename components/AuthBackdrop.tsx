@@ -73,6 +73,23 @@ export function GoogleMark() {
   );
 }
 
+export function XMark() {
+  return (
+    <svg className="auth-google-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="currentColor" d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.24-8.28L2.96 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.84h1.73L8.42 4.05H6.57L17.8 19.84Z" />
+    </svg>
+  );
+}
+
+export function FacebookMark() {
+  return (
+    <svg className="auth-google-mark" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#1877f2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.03 1.79-4.7 4.53-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.27h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07Z" />
+      <path fill="#fff" d="M16.67 15.56l.53-3.49h-3.33V9.8c0-.96.47-1.89 1.96-1.89h1.51V4.95s-1.37-.24-2.68-.24c-2.74 0-4.53 1.67-4.53 4.7v2.66H7.08v3.49h3.05V24c.62.1 1.24.14 1.87.14.63 0 1.25-.05 1.87-.14v-8.44h2.8Z" />
+    </svg>
+  );
+}
+
 export default function AuthBackdrop({ children, variant = "account" }: { children: React.ReactNode; variant?: "account" | "desk" }) {
   const [active, setActive] = useState(0);
 
