@@ -18,6 +18,7 @@ import { plateFor } from "@/lib/plates";
  */
 
 type Action = { href: string; label: string; variant?: "secondary" };
+type PlatePosition = "before" | "after";
 
 export default function TitlePage({
   eyebrow,
@@ -27,6 +28,7 @@ export default function TitlePage({
   actions = [],
   meta = [],
   beforePlate,
+  platePosition = "before",
   children,
 }: {
   eyebrow: string;
@@ -42,9 +44,34 @@ export default function TitlePage({
   wide?: boolean;
   /** Optional page-specific orientation content that should be read before the plate. */
   beforePlate?: React.ReactNode;
+  /** Default keeps the atlas frontispiece pattern; selected pages may defer the plate. */
+  platePosition?: PlatePosition;
   children: React.ReactNode;
 }) {
   const plate = plateFor(background);
+
+  const plateFigure = plate ? (
+    <figure className="tp-plate">
+      <div className="tp-plate-mount">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={plate.url} alt={plate.caption} />
+      </div>
+      <figcaption>
+        <p className="tp-plate-cap">{plate.caption}</p>
+        <div className="tp-plate-prov">
+          <span>{plate.date}</span>
+          <span className="tp-sep">&middot;</span>
+          <span>{plate.credit}</span>
+          <span className="tp-sep">&middot;</span>
+          <span>{plate.license}</span>
+          <span className="tp-sep">&middot;</span>
+          <a href={plate.source_url} rel="noreferrer">
+            commons
+          </a>
+        </div>
+      </figcaption>
+    </figure>
+  ) : null;
 
   return (
     <div className="tp-page">
@@ -83,30 +110,11 @@ export default function TitlePage({
 
       {beforePlate && <div className="ed-body">{beforePlate}</div>}
 
-      {plate && (
-        <figure className="tp-plate">
-          <div className="tp-plate-mount">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={plate.url} alt={plate.caption} />
-          </div>
-          <figcaption>
-            <p className="tp-plate-cap">{plate.caption}</p>
-            <div className="tp-plate-prov">
-              <span>{plate.date}</span>
-              <span className="tp-sep">&middot;</span>
-              <span>{plate.credit}</span>
-              <span className="tp-sep">&middot;</span>
-              <span>{plate.license}</span>
-              <span className="tp-sep">&middot;</span>
-              <a href={plate.source_url} rel="noreferrer">
-                commons
-              </a>
-            </div>
-          </figcaption>
-        </figure>
-      )}
+      {platePosition === "before" && plateFigure}
 
       <div className="ed-body">{children}</div>
+
+      {platePosition === "after" && plateFigure}
     </div>
   );
 }
