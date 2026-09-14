@@ -1,8 +1,8 @@
-/* Route-scoped Chartroom category tabs.
-   On touch devices the global .tv-tab-on treatment is intentionally hover-gated,
-   so the active category can read too much like its siblings. Here the selected
-   category is an explicit bordeaux block; unselected categories keep the quiet
-   underlined treatment the selected tab previously had on touch. */
+/* Route-scoped Chartroom tabs.
+   Touch devices need explicit selected-state styling because the global active
+   treatment is hover-gated. Categories and the three primary Chartroom modes
+   therefore use the same grammar: selected = bordeaux, unselected = quiet
+   parchment/ink. */
 
 [aria-label="Contribution categories"] {
   gap: 0.35rem;
@@ -26,6 +26,21 @@
   color: var(--parchment) !important;
   background: var(--accent) !important;
   border-color: var(--accent) !important;
+}
+
+/* Primary modes: Ongoing Projects / Propose / Sources.
+   The mode links already expose aria-current="page". Override their inline
+   parchment treatment so mobile has an unmistakable selected state too. */
+#open-opportunities a[aria-current="page"] {
+  color: var(--parchment) !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+}
+
+#open-opportunities a[aria-current="page"] strong,
+#open-opportunities a[aria-current="page"] span,
+#open-opportunities a[aria-current="page"] .ed-muted {
+  color: var(--parchment) !important;
 }
 
 @media (hover: hover) {
