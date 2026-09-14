@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import AuthBackdrop, { FacebookMark, GoogleMark, XMark } from "@/components/AuthBackdrop";
+import AuthBackdrop, { GoogleMark } from "@/components/AuthBackdrop";
 
 type Mode = "login" | "signup";
 
@@ -142,24 +142,11 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
               <GoogleMark />
               <span>{isSignup ? "Sign up with Google" : "Continue with Google"}</span>
             </a>
-            <a
-              href={`/api/desk/twitter?next=/${mode}`}
-              className="auth-google-button"
-              onClick={rememberDestination}
-              aria-label={isSignup ? "Sign up with X" : "Continue with X"}
-            >
-              <XMark />
-              <span>{isSignup ? "Sign up with X" : "Continue with X"}</span>
-            </a>
-            <a
-              href={`/api/desk/facebook?next=/${mode}`}
-              className="auth-google-button"
-              onClick={rememberDestination}
-              aria-label={isSignup ? "Sign up with Facebook" : "Continue with Facebook"}
-            >
-              <FacebookMark />
-              <span>{isSignup ? "Sign up with Facebook" : "Continue with Facebook"}</span>
-            </a>
+            {/* X and Facebook sign-in temporarily disabled at the operator's
+                request — the OAuth entrypoints (app/api/desk/twitter,
+                app/api/desk/facebook) aren't completing correctly. Backend
+                routes are left in place; re-enable these two links once
+                that's fixed. */}
             <div className="auth-divider"><span>or continue with email</span></div>
             <form onSubmit={submit} className="auth-form">
               <label>
