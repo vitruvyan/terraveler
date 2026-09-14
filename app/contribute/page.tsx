@@ -131,6 +131,30 @@ const ALL_CATEGORIES: CategoryInfo[] = [
   { id: "review", label: "Review", description: "Evidence checking, challenges and editorial verification.", types: ["review"] },
 ];
 
+const contributionStages = [
+  {
+    step: "01",
+    eyebrow: "Discover",
+    title: "Choose something worth improving",
+    body: "Browse open work across stories, images, places, sources, peoples and topics. Start with something that genuinely interests you.",
+    detail: "You can explore before signing in.",
+  },
+  {
+    step: "02",
+    eyebrow: "Contribute",
+    title: "Claim it, then work from a clear brief",
+    body: "Each opportunity tells you what is missing, why it matters and what evidence the atlas expects. Research, create and cite your sources.",
+    detail: "The brief defines the work — not Terraveler's internal machinery.",
+  },
+  {
+    step: "03",
+    eyebrow: "Publish",
+    title: "Submit it for human editorial review",
+    body: "A curator checks the evidence and editorial fit. Accepted work enters the atlas with its provenance preserved.",
+    detail: "Nothing goes public automatically.",
+  },
+];
+
 export default async function Chartroom({
   searchParams,
 }: {
@@ -147,7 +171,6 @@ export default async function Chartroom({
 
   const categoryMeta = ALL_CATEGORIES.find((c) => c.id === category) || ALL_CATEGORIES[0];
 
-  // In-memory filter on loaded waypoints
   const allWaypoints = waypoints || [];
   const categoryFiltered = categoryMeta.id === "all"
     ? allWaypoints
@@ -160,6 +183,113 @@ export default async function Chartroom({
 
   const openCount = openWaypoints.length;
   const progressCount = progressWaypoints.length;
+
+  const onboarding = contextual ? null : (
+    <section id="how-it-works" style={{ marginTop: 34, marginBottom: 12 }}>
+      <div style={{ maxWidth: 760, marginBottom: 24 }}>
+        <span
+          style={{
+            display: "block",
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.72rem",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "var(--brass-text)",
+            marginBottom: 8,
+          }}
+        >
+          Your first contribution
+        </span>
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(1.8rem, 4vw, 2.7rem)",
+            lineHeight: 1.05,
+            margin: 0,
+          }}
+        >
+          Start with a missing piece of the atlas.
+        </h2>
+        <p className="ed-muted" style={{ fontSize: "1rem", lineHeight: 1.65, marginTop: 12, maxWidth: 680 }}>
+          You do not need to learn Terraveler&apos;s workflow before you begin. Find a useful piece of work,
+          follow its brief, and let the editorial process take care of the rest.
+        </p>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          borderTop: "1px solid var(--rule-hair)",
+          borderBottom: "1px solid var(--rule-hair)",
+        }}
+      >
+        {contributionStages.map((stage, index) => (
+          <article
+            key={stage.step}
+            style={{
+              padding: "22px 22px 24px 0",
+              marginRight: index < contributionStages.length - 1 ? 22 : 0,
+              borderRight: index < contributionStages.length - 1 ? "1px solid var(--rule-hair)" : "none",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--brass-text)" }}>
+                {stage.step}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--font-ui)",
+                  fontSize: "0.76rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.09em",
+                }}
+              >
+                {stage.eyebrow}
+              </span>
+            </div>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.45rem", lineHeight: 1.1, margin: "0 0 10px" }}>
+              {stage.title}
+            </h3>
+            <p className="ed-muted" style={{ fontSize: "0.9rem", lineHeight: 1.55, margin: 0 }}>
+              {stage.body}
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: "0.78rem",
+                lineHeight: 1.45,
+                color: "var(--ink-soft)",
+                margin: "14px 0 0",
+              }}
+            >
+              {stage.detail}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "8px 14px",
+          marginTop: 18,
+          fontFamily: "var(--font-ui)",
+          fontSize: "0.82rem",
+          color: "var(--ink-soft)",
+        }}
+      >
+        <strong style={{ color: "var(--ink)" }}>The full path</strong>
+        <span>Find</span><span aria-hidden="true">→</span>
+        <span>Claim</span><span aria-hidden="true">→</span>
+        <span>Research &amp; create</span><span aria-hidden="true">→</span>
+        <span>Submit</span><span aria-hidden="true">→</span>
+        <span>Review</span>
+      </div>
+    </section>
+  );
 
   return (
     <>
@@ -177,35 +307,8 @@ export default async function Chartroom({
           { href: "#how-it-works", label: "How contributing works", variant: "secondary" as const },
         ]}
         meta={["Shared backlog", "Independent standing", "Human editorial decision"]}
+        beforePlate={onboarding}
       >
-        {/* Onboarding section */}
-        <section id="how-it-works" className="ed-panel" style={{ marginTop: 28 }}>
-          <h3 style={{ fontFamily: "var(--font-ui)", fontSize: "1.1rem", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16 }}>
-            How it Works
-          </h3>
-          <ol style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "20px", padding: 0, listStyle: "none" }}>
-            {[
-              { step: "01", title: "Find", desc: "Find something that interests you in the board below." },
-              { step: "02", title: "Take", desc: "Choose an opportunity and claim it under your identity." },
-              { step: "03", title: "Research", desc: "Consult public-domain archives and locate the evidence." },
-              { step: "04", title: "Submit", desc: "Verify and submit your work with verbatim source citations." },
-              { step: "05", title: "Review", desc: "A curator reviews it before it is published to the atlas." },
-            ].map((item) => (
-              <li key={item.step} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.85rem", color: "var(--brass-text)" }}>
-                  — {item.step}
-                </span>
-                <strong style={{ fontFamily: "var(--font-ui)", fontSize: "0.95rem" }}>{item.title}</strong>
-                <span className="ed-muted" style={{ fontSize: "0.85rem", lineHeight: 1.4 }}>{item.desc}</span>
-              </li>
-            ))}
-          </ol>
-          <p style={{ marginTop: 16, fontSize: "0.85rem", color: "var(--ink-soft)" }}>
-            Human and AI contributions follow the same evidence rules. All submissions are audited before publication.
-          </p>
-        </section>
-
-        {/* Opportunity Catalogue / Board */}
         <section id="open-opportunities" style={{ marginTop: 42 }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "2rem", marginBottom: 12 }}>
             What the Atlas Needs
@@ -214,7 +317,6 @@ export default async function Chartroom({
             Explore the public roadmap and choose an opportunity to work on. Select a category to filter.
           </p>
 
-          {/* Categories Navigation */}
           <div className="tv-tabs" role="tablist" style={{ marginBottom: 20 }}>
             {ALL_CATEGORIES.map((cat) => {
               const isActive = category === cat.id;
