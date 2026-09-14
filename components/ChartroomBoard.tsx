@@ -1,24 +1,88 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { ChartroomWaypoint } from "@/lib/chartroom";
-import { waypointTypeLabel, buildAgentOnboardingPrompt } from "@/lib/chartroom";
+import {
+  buildAgentOnboardingPrompt,
+  buildAgentProposalPrompt,
+  waypointTypeLabel,
+} from "@/lib/chartroom";
 
 type Busy = { id: number; action: "take" | "follow" } | null;
+type ProposalDraft = {
+  title: string;
+  why: string;
+  context: string;
+  evidence: string;
+};
 
 interface ChartroomBoardProps {
   initial: ChartroomWaypoint[];
   category: string;
   tab: string;
+  mode: "ongoing" | "propose";
   openCount: number;
   progressCount: number;
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  all: "Any area",
+  stories: "Stories",
+  images: "Images",
+  peoples: "Peoples & Encounters",
+  places: "Places",
+  sources: "Sources",
+  topics: "Topics",
+  review: "Review",
+};
+
+const PROPOSAL_GUIDANCE: Record<string, { headline: string; body: string; examples: string[] }> = {
+  all: {
+    headline: "What should Terraveler explore next?",
+    body: "Propose one meaningful gap that is not already covered. It may be a voyage, visual corpus, encounter, place, source set, topic or review question.",
+    examples: ["A missing voyage", "A neglected historical perspective", "A theme connecting several voyages"],
+  },
+  stories: {
+    headline: "Propose a story the atlas does not yet tell.",
+    body: "Suggest a voyage, episode or narrative thread that deserves a place in Terraveler and explain why it matters.",
+    examples: ["A voyage not yet represented", "A missing episode within a known voyage", "A translation worth adding"],
+  },
+  images: {
+    headline: "Propose a visual collection worth adding.",
+    body: "Identify imagery, charts, engravings or visual evidence that would materially improve how a voyage or topic is understood.",
+    examples: ["A historical chart collection", "A missing portrait set", "Visual evidence for a landfall"],
+  },
+  peoples: {
+    headline: "Propose a people or encounter that needs context.",
+    body: "Suggest where the atlas should better distinguish the voyager's account from historical context and modern scholarship.",
+    examples: ["A first-contact episode", "An indigenous perspective", "Material culture around an encounter"],
+  },
+  places: {
+    headline: "Propose a place the atlas should recover.",
+    body: "Identify a historical port, landfall, route or uncertain location that deserves geographical investigation.",
+    examples: ["A disputed landfall", "A historical port", "A route segment needing reconstruction"],
+  },
+  sources: {
+    headline: "Propose a source corpus the atlas is missing.",
+    body: "Point Terraveler toward primary texts, archives, translations or source groups that could strengthen existing content.",
+    examples: ["A neglected primary journal", "A public-domain archive", "A source set for cross-checking claims"],
+  },
+  topics: {
+    headline: "Propose a theme that crosses voyages.",
+    body: "Topics are not tags. They are editorial paths through the atlas: recurring ideas that connect different journeys, periods and sources.",
+    examples: ["Longitude", "Scurvy and survival at sea", "First contact", "Natural history", "Navigation instruments"],
+  },
+  review: {
+    headline: "Propose something the atlas should re-examine.",
+    body: "Suggest a claim, representation pattern or body of evidence that deserves independent editorial review.",
+    examples: ["Representation of indigenous voices", "A disputed route claim", "A source-quality review"],
+  },
+};
+
 function isGoodFirstContribution(wp: ChartroomWaypoint): boolean {
   if (!wp.title || !wp.description) return false;
-  const text = (wp.title + " " + wp.description).toLowerCase();
-  // Very conservative keyword criteria to avoid false positives
+  const text = `${wp.title} ${wp.description}`.toLowerCase();
   return text.includes("portrait") || text.includes("coordinates for") || text.includes("public-domain");
 }
 
@@ -30,10 +94,15 @@ function formatVoyage(slug: string): string {
     .join(" ");
 }
 
+function proposalText(category: string, draft: ProposalDraft) {
+  return `Terraveler proposal\n\nCategory: ${CATEGORY_LABELS[category] ?? category}\nTitle: ${draft.title}\n\nWhy this belongs in the atlas:\n${draft.why}\n\nContext / related voyages:\n${draft.context || "Not specified"}\n\nPossible evidence or starting points:\n${draft.evidence || "Not specified"}`;
+}
+
 export default function ChartroomBoard({
   initial,
   category,
   tab,
+  mode,
   openCount,
   progressCount,
 }: ChartroomBoardProps) {
@@ -42,13 +111,20 @@ export default function ChartroomBoard({
   const [busy, setBusy] = useState<Busy>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [showAiModal, setShowAiModal] = useState<number | null>(null);
+  const [showAiModal, setShowAiModal] = useState<number | "proposal" | null>(null);
   const [sortByPriority, setSortByPriority] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
+  const [wizardStep, setWizardStep] = useState(1);
+  const [draft, setDraft] = useState<ProposalDraft>({ title: "", why: "", context: "", evidence: "" });
 
-  // Synchronize state with server-rendered initial waypoints
   useEffect(() => {
     setWaypoints(initial);
   }, [initial]);
+
+  useEffect(() => {
+    setWizardStep(1);
+    setDraft({ title: "", why: "", context: "", evidence: "" });
+  }, [category]);
 
   async function act(id: number, action: "take" | "follow") {
     setBusy({ id, action });
@@ -69,11 +145,7 @@ export default function ChartroomBoard({
       return;
     }
     if (action === "take") {
-      setWaypoints((all) =>
-        all.map((item) =>
-          item.id === id ? { ...item, status: "taken", takenBy: "you" } : item,
-        ),
-      );
+      setWaypoints((all) => all.map((item) => item.id === id ? { ...item, status: "taken", takenBy: "you" } : item));
       setMessage(`Waypoint #${id} is now in My Waypoints.`);
     } else {
       setFollowing((current) => new Set(current).add(id));
@@ -81,186 +153,251 @@ export default function ChartroomBoard({
     }
   }
 
-  // Handle conceptual Topics category view
-  if (category === "topics") {
+  const displayedWaypoints = useMemo(() => {
+    return [...waypoints].sort((a, b) => {
+      if (sortByPriority) return a.priority - b.priority || a.id - b.id;
+      return a.id - b.id;
+    });
+  }, [waypoints, sortByPriority]);
+
+  if (mode === "propose") {
+    const guide = PROPOSAL_GUIDANCE[category] ?? PROPOSAL_GUIDANCE.all;
+    const canAdvance = wizardStep === 1 || (wizardStep === 2 ? draft.title.trim().length >= 4 && draft.why.trim().length >= 20 : true);
+
     return (
-      <div
-        className="ed-panel"
-        style={{
-          marginTop: 24,
-          padding: "24px",
-          background: "var(--parchment-raised)",
-          borderLeft: "4px solid var(--brass)",
-        }}
-      >
-        <h3
-          style={{
-            fontFamily: "var(--font-ui)",
-            fontSize: "1.2rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-            marginBottom: 12,
-          }}
-        >
-          Propose a Topic
-        </h3>
-        <p className="ed-muted" style={{ marginBottom: 16, lineHeight: 1.6 }}>
-          A <strong>Topic</strong> is a theme that could connect several voyages. Community members can propose topics to help group historical narratives around key concepts:
-        </p>
-        <ul
+      <div style={{ marginTop: 8 }}>
+        <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            padding: "0 0 0 20px",
-            marginBottom: 24,
+            gridTemplateColumns: "minmax(0, 1.35fr) minmax(240px, .65fr)",
+            gap: 18,
+            alignItems: "stretch",
           }}
         >
-          {[
-            { name: "Longitude", desc: "The quest to measure time and distance at sea." },
-            {
-              name: "Scurvy",
-              desc: "Scientific discovery, medicine and survival on long expeditions.",
-            },
-            {
-              name: "First Contact",
-              desc: "Cultural encounters and documented perspectives from shores.",
-            },
-            {
-              name: "Natural History",
-              desc: "Botanical, zoological, and astronomical recordings of voyage naturalists.",
-            },
-            {
-              name: "Women Explorers",
-              desc: "Uncovering forgotten female navigators and chroniclers.",
-            },
-            {
-              name: "Navigation Instruments",
-              desc: "The technology of astrolabes, octants, and marine chronometers.",
-            },
-          ].map((t) => (
-            <li key={t.name} style={{ fontSize: "0.95rem", lineHeight: 1.4 }}>
-              <strong style={{ fontFamily: "var(--font-ui)", color: "var(--ink)" }}>
-                {t.name}
-              </strong>{" "}
-              — <span className="ed-muted">{t.desc}</span>
-            </li>
-          ))}
-        </ul>
-        <button
-          type="button"
-          className="welcome-btn primary"
-          onClick={() => alert("Topic proposals will be enabled in a future release.")}
-          style={{ width: "auto" }}
-        >
-          Propose a topic concept
-        </button>
+          <section
+            className="ed-panel"
+            style={{
+              padding: "24px",
+              background: "var(--parchment-raised)",
+              borderLeft: "4px solid var(--brass)",
+            }}
+          >
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brass-text)" }}>
+              {CATEGORY_LABELS[category] ?? "Proposal"}
+            </span>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.8rem, 4vw, 2.45rem)", lineHeight: 1.05, margin: "8px 0 10px" }}>
+              {guide.headline}
+            </h3>
+            <p className="ed-muted" style={{ maxWidth: 720, lineHeight: 1.6, margin: 0 }}>{guide.body}</p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 18 }}>
+              {guide.examples.map((example) => (
+                <span key={example} className="conf-badge" style={{ background: "transparent", borderColor: "var(--rule-hair)" }}>
+                  {example}
+                </span>
+              ))}
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 24 }}>
+              <button type="button" className="welcome-btn primary" onClick={() => setShowWizard(true)}>
+                Start a human proposal
+              </button>
+              <button
+                type="button"
+                className="welcome-btn"
+                style={{ borderColor: "var(--brass)", color: "var(--brass-text)" }}
+                onClick={() => setShowAiModal(showAiModal === "proposal" ? null : "proposal")}
+              >
+                Give this to your AI →
+              </button>
+            </div>
+          </section>
+
+          <aside style={{ border: "1px solid var(--rule-hair)", padding: "20px", background: "var(--parchment)" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--brass-text)" }}>
+              Proposal ≠ publication
+            </span>
+            <p style={{ fontFamily: "var(--font-display)", fontSize: "1.25rem", lineHeight: 1.15, margin: "10px 0" }}>
+              First suggest the gap. Then the Chartroom decides whether it becomes work.
+            </p>
+            <p className="ed-muted" style={{ fontSize: "0.86rem", lineHeight: 1.5, margin: 0 }}>
+              A curator can accept the idea, ask for clarification, merge it with existing work, or decline it. Accepted proposals can become Ongoing Projects.
+            </p>
+          </aside>
+        </div>
+
+        {showAiModal === "proposal" && (
+          <div className="tv-connect" style={{ marginTop: 14, padding: 16, background: "var(--parchment-raised)", border: "1px solid var(--brass)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+              <strong style={{ fontFamily: "var(--font-ui)" }}>Ask your AI to find one meaningful gap</strong>
+              <button type="button" aria-label="Close" onClick={() => setShowAiModal(null)} style={{ border: 0, background: "none", cursor: "pointer", fontSize: "1.2rem" }}>×</button>
+            </div>
+            <p className="ed-muted" style={{ fontSize: "0.86rem", lineHeight: 1.5 }}>
+              The prompt tells the agent to inspect the existing atlas and open work first, then submit a proposal rather than a finished contribution.
+            </p>
+            <button
+              type="button"
+              className="tv-copy"
+              onClick={() => {
+                navigator.clipboard?.writeText(buildAgentProposalPrompt(category));
+                setMessage("Proposal prompt copied for your AI.");
+              }}
+            >
+              Copy proposal prompt
+            </button>
+          </div>
+        )}
+
+        {showWizard && (
+          <section style={{ marginTop: 22, borderTop: "1px solid var(--rule-hair)", paddingTop: 22 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline", flexWrap: "wrap", marginBottom: 18 }}>
+              <div>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--brass-text)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  Human proposal · step {wizardStep} of 4
+                </span>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.7rem", margin: "5px 0 0" }}>
+                  {wizardStep === 1 && "Choose the kind of gap"}
+                  {wizardStep === 2 && "Describe the idea"}
+                  {wizardStep === 3 && "Add context and evidence"}
+                  {wizardStep === 4 && "Review your proposal"}
+                </h3>
+              </div>
+              <button type="button" className="welcome-btn" onClick={() => setShowWizard(false)}>Close</button>
+            </div>
+
+            <div style={{ border: "1px solid var(--rule-hair)", padding: "20px", background: "var(--parchment-raised)" }}>
+              {wizardStep === 1 && (
+                <div>
+                  <p style={{ marginTop: 0 }}>You are proposing under <strong>{CATEGORY_LABELS[category] ?? "Any area"}</strong>.</p>
+                  <p className="ed-muted" style={{ lineHeight: 1.55 }}>Use the category tabs above if you want to change the kind of contribution before continuing.</p>
+                </div>
+              )}
+
+              {wizardStep === 2 && (
+                <div style={{ display: "grid", gap: 14 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.85rem" }}>What should Terraveler add?</span>
+                    <input
+                      value={draft.title}
+                      onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
+                      placeholder="A short, concrete title"
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule-hair)", background: "var(--parchment)", color: "var(--ink)" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.85rem" }}>Why should this be in the atlas?</span>
+                    <textarea
+                      value={draft.why}
+                      onChange={(e) => setDraft((d) => ({ ...d, why: e.target.value }))}
+                      rows={5}
+                      placeholder="Explain the missing historical value in a few sentences."
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule-hair)", background: "var(--parchment)", color: "var(--ink)", resize: "vertical" }}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {wizardStep === 3 && (
+                <div style={{ display: "grid", gap: 14 }}>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.85rem" }}>Related voyage, place or context <span className="ed-muted">(optional)</span></span>
+                    <textarea
+                      value={draft.context}
+                      onChange={(e) => setDraft((d) => ({ ...d, context: e.target.value }))}
+                      rows={3}
+                      placeholder="What existing part of Terraveler does this connect to?"
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule-hair)", background: "var(--parchment)", color: "var(--ink)", resize: "vertical" }}
+                    />
+                  </label>
+                  <label style={{ display: "grid", gap: 6 }}>
+                    <span style={{ fontFamily: "var(--font-ui)", fontSize: "0.85rem" }}>Possible sources or evidence <span className="ed-muted">(optional)</span></span>
+                    <textarea
+                      value={draft.evidence}
+                      onChange={(e) => setDraft((d) => ({ ...d, evidence: e.target.value }))}
+                      rows={3}
+                      placeholder="Useful books, archives, collections or leads you already know."
+                      style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--rule-hair)", background: "var(--parchment)", color: "var(--ink)", resize: "vertical" }}
+                    />
+                  </label>
+                </div>
+              )}
+
+              {wizardStep === 4 && (
+                <div>
+                  <span className="conf-badge">{CATEGORY_LABELS[category] ?? category}</span>
+                  <h4 style={{ fontFamily: "var(--font-display)", fontSize: "1.6rem", margin: "12px 0 8px" }}>{draft.title}</h4>
+                  <p style={{ lineHeight: 1.6 }}>{draft.why}</p>
+                  {draft.context && <p className="ed-muted"><strong>Context:</strong> {draft.context}</p>}
+                  {draft.evidence && <p className="ed-muted"><strong>Starting evidence:</strong> {draft.evidence}</p>}
+                  <div style={{ borderTop: "1px solid var(--rule-hair)", marginTop: 18, paddingTop: 14 }}>
+                    <p className="ed-muted" style={{ fontSize: "0.84rem", lineHeight: 1.5 }}>
+                      This first UX draft prepares the proposal but does not bypass the editorial submission gate. Copy it now; direct human submission can be wired to the governed proposal endpoint after the interaction is approved.
+                    </p>
+                    <button
+                      type="button"
+                      className="welcome-btn primary"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(proposalText(category, draft));
+                        setMessage("Proposal copied.");
+                      }}
+                    >
+                      Copy proposal
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 12 }}>
+              <button type="button" className="welcome-btn" disabled={wizardStep === 1} onClick={() => setWizardStep((s) => Math.max(1, s - 1))}>Back</button>
+              {wizardStep < 4 && (
+                <button type="button" className="welcome-btn primary" disabled={!canAdvance} onClick={() => setWizardStep((s) => Math.min(4, s + 1))}>Continue</button>
+              )}
+            </div>
+          </section>
+        )}
+
+        {message && <p className="chartroom-message" role="status" style={{ marginTop: 12 }}>{message}</p>}
       </div>
     );
   }
 
-  // Sort local state waypoints if checkbox is active
-  const displayedWaypoints = [...waypoints].sort((a, b) => {
-    if (sortByPriority) {
-      return a.priority - b.priority || a.id - b.id;
-    }
-    return a.id - b.id;
-  });
-
   return (
     <>
-      {/* Sub-tabs: Open vs In Progress */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 16,
-          marginBottom: 20,
-          borderBottom: "1px solid var(--parchment-deep)",
-          paddingBottom: 10,
-        }}
-      >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 20, borderBottom: "1px solid var(--parchment-deep)", paddingBottom: 10 }}>
         <div className="tv-tabs" role="tablist" style={{ margin: 0 }}>
-          <Link
-            href={`/contribute?${category !== "all" ? `category=${category}&` : ""}tab=open#open-opportunities`}
-            role="tab"
-            aria-selected={tab === "open"}
-            className={tab === "open" ? "tv-tab tv-tab-on" : "tv-tab"}
-            style={{ textDecoration: "none" }}
-          >
+          <Link href={`/contribute?${category !== "all" ? `category=${category}&` : ""}tab=open#open-opportunities`} role="tab" aria-selected={tab === "open"} className={tab === "open" ? "tv-tab tv-tab-on" : "tv-tab"} style={{ textDecoration: "none" }}>
             Open ({openCount})
           </Link>
-          <Link
-            href={`/contribute?${category !== "all" ? `category=${category}&` : ""}tab=progress#open-opportunities`}
-            role="tab"
-            aria-selected={tab === "progress"}
-            className={tab === "progress" ? "tv-tab tv-tab-on" : "tv-tab"}
-            style={{ textDecoration: "none" }}
-          >
+          <Link href={`/contribute?${category !== "all" ? `category=${category}&` : ""}tab=progress#open-opportunities`} role="tab" aria-selected={tab === "progress"} className={tab === "progress" ? "tv-tab tv-tab-on" : "tv-tab"} style={{ textDecoration: "none" }}>
             In Progress ({progressCount})
           </Link>
         </div>
 
-        {/* Priority Sort Toggle */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            id="priority-sort"
-            type="checkbox"
-            checked={sortByPriority}
-            onChange={(e) => setSortByPriority(e.target.checked)}
-            style={{ cursor: "pointer" }}
-          />
-          <label
-            htmlFor="priority-sort"
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: "0.9rem",
-              cursor: "pointer",
-              color: "var(--ink)",
-            }}
-          >
-            Highlight High-Priority Needs
-          </label>
-        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-ui)", fontSize: "0.9rem", cursor: "pointer" }}>
+          <input type="checkbox" checked={sortByPriority} onChange={(e) => setSortByPriority(e.target.checked)} />
+          Most needed first
+        </label>
       </div>
 
-      {message && (
-        <p className="chartroom-message" role="status">
-          {message}
-        </p>
-      )}
+      {message && <p className="chartroom-message" role="status">{message}</p>}
 
       {displayedWaypoints.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 20px" }}>
-          <p className="ed-muted">There are no open opportunities in this category at the moment.</p>
-          <p style={{ fontSize: "0.9rem", color: "var(--ink-soft)", marginTop: 8 }}>
-            Check back later or explore other categories.
-          </p>
+        <div style={{ padding: "34px 0", borderTop: "1px solid var(--rule-hair)", borderBottom: "1px solid var(--rule-hair)" }}>
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.55rem", margin: "0 0 6px" }}>Nothing open here right now.</h3>
+          <p className="ed-muted" style={{ margin: 0 }}>Try another category, or switch to Propose if you know something the atlas should add.</p>
         </div>
       ) : (
         <div className="ed-card-list">
           {displayedWaypoints.map((waypoint) => {
             const isExpanded = expandedId === waypoint.id;
-            const requested =
-              waypoint.requestedVoyager?.name ||
-              waypoint.requestedVoyager?.handle ||
-              waypoint.requestedVoyager?.agentId;
-
+            const requested = waypoint.requestedVoyager?.name || waypoint.requestedVoyager?.handle || waypoint.requestedVoyager?.agentId;
             const context = waypoint.context.voyage
-              ? `${formatVoyage(waypoint.context.voyage)}${
-                  waypoint.context.waypointSeq ? ` · stop ${waypoint.context.waypointSeq}` : ""
-                }`
+              ? `${formatVoyage(waypoint.context.voyage)}${waypoint.context.waypointSeq ? ` · stop ${waypoint.context.waypointSeq}` : ""}`
               : null;
-
-            const isGoodFirst = isGoodFirstContribution(waypoint);
-
-            // Progressive disclosure: simple truncation for scannability on card
-            const shortSummary =
-              waypoint.description && waypoint.description.length > 140
-                ? `${waypoint.description.substring(0, 137)}…`
-                : waypoint.description;
+            const shortSummary = waypoint.description && waypoint.description.length > 160
+              ? `${waypoint.description.substring(0, 157)}…`
+              : waypoint.description;
 
             return (
               <article
@@ -272,273 +409,72 @@ export default function ChartroomBoard({
               >
                 <div className="ed-card-head">
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.75rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--brass-text)",
-                      }}
-                    >
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--brass-text)" }}>
                       {waypointTypeLabel(waypoint.type)}
                     </span>
-                    <strong style={{ fontSize: "1.15rem", fontFamily: "var(--font-ui)" }}>
-                      {waypoint.title}
-                    </strong>
+                    <strong style={{ fontSize: "1.15rem", fontFamily: "var(--font-ui)" }}>{waypoint.title}</strong>
                   </div>
                   <span className="ed-badges">
-                    {isGoodFirst && (
-                      <span
-                        className="conf-badge"
-                        style={{
-                          background: "var(--parchment-deep)",
-                          borderColor: "var(--brass)",
-                          color: "var(--brass-text)",
-                        }}
-                      >
-                        Good First Contribution
-                      </span>
-                    )}
-                    <span className="conf-badge">
-                      {waypoint.status === "taken"
-                        ? "claimed"
-                        : requested
-                          ? "offered"
-                          : `priority ${waypoint.priority}`}
-                    </span>
+                    {isGoodFirstContribution(waypoint) && <span className="conf-badge" style={{ background: "var(--parchment-deep)", borderColor: "var(--brass)", color: "var(--brass-text)" }}>Good First Contribution</span>}
+                    <span className="conf-badge">{waypoint.status === "taken" ? "claimed" : requested ? "offered" : `priority ${waypoint.priority}`}</span>
                   </span>
                 </div>
 
-                {context && (
-                  <p
-                    className="ed-muted"
-                    style={{ marginTop: 8, marginBottom: 4, fontSize: "0.85rem" }}
-                  >
-                    {waypoint.context.place ? `${waypoint.context.place} · ` : ""}
-                    {context}
-                  </p>
-                )}
+                {context && <p className="ed-muted" style={{ marginTop: 8, marginBottom: 4, fontSize: "0.85rem" }}>{waypoint.context.place ? `${waypoint.context.place} · ` : ""}{context}</p>}
+                {!isExpanded && shortSummary && <p style={{ fontFamily: "var(--font-body)", fontSize: "1rem", marginTop: 8 }}>{shortSummary}</p>}
 
-                {!isExpanded && shortSummary && (
-                  <p style={{ fontFamily: "var(--font-body)", fontSize: "1rem", marginTop: 8 }}>
-                    {shortSummary}
-                  </p>
-                )}
-
-                {/* Expanded progressive disclosure view */}
                 {isExpanded && (
-                  <div
-                    className="waypoint-brief-detail"
-                    style={{
-                      marginTop: 16,
-                      paddingTop: 16,
-                      borderTop: "1px solid var(--parchment-deep)",
-                    }}
-                    onClick={(e) => e.stopPropagation()} // Prevent closing card on interaction
-                  >
-                    <h4
-                      style={{
-                        fontFamily: "var(--font-ui)",
-                        fontSize: "0.85rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--brass-text)",
-                        marginBottom: 6,
-                      }}
-                    >
-                      What is needed
-                    </h4>
-                    <p
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "1.05rem",
-                        lineHeight: 1.6,
-                        color: "var(--ink)",
-                        marginBottom: 16,
-                      }}
-                    >
-                      {waypoint.description}
-                    </p>
-
-                    <h4
-                      style={{
-                        fontFamily: "var(--font-ui)",
-                        fontSize: "0.85rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--brass-text)",
-                        marginBottom: 6,
-                      }}
-                    >
-                      Evidence Policy
-                    </h4>
-                    <ul
-                      style={{
-                        paddingLeft: 20,
-                        marginBottom: 16,
-                        fontSize: "0.9rem",
-                        lineHeight: 1.5,
-                        color: "var(--ink-soft)",
-                      }}
-                    >
-                      <li>Provide high-quality public domain or CC-licensed evidence.</li>
-                      <li>Quote verbatim from primary sources and cite exact URLs.</li>
-                      <li>Verify historical locations and coordinates where applicable.</li>
-                      <li>Submissions are subject to peer review and human curation.</li>
+                  <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--parchment-deep)" }} onClick={(e) => e.stopPropagation()}>
+                    <h4 style={{ fontFamily: "var(--font-ui)", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--brass-text)", marginBottom: 6 }}>What is needed</h4>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: "1.05rem", lineHeight: 1.6, marginBottom: 16 }}>{waypoint.description}</p>
+                    <h4 style={{ fontFamily: "var(--font-ui)", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--brass-text)", marginBottom: 6 }}>Evidence policy</h4>
+                    <ul style={{ paddingLeft: 20, marginBottom: 16, fontSize: "0.9rem", lineHeight: 1.5, color: "var(--ink-soft)" }}>
+                      <li>Use reliable public-domain or appropriately licensed evidence.</li>
+                      <li>Quote primary sources accurately and cite exact URLs.</li>
+                      <li>Verify locations and coordinates where applicable.</li>
+                      <li>Every submission is reviewed before publication.</li>
                     </ul>
 
-                    {requested && waypoint.status === "open" && (
-                      <p className="ed-muted" style={{ fontSize: "0.85rem", marginBottom: 16 }}>
-                        Offered to Voyager <strong>{requested}</strong>. The agent must claim it
-                        through MCP under its own identity before the work becomes theirs.
-                      </p>
-                    )}
+                    {requested && waypoint.status === "open" && <p className="ed-muted" style={{ fontSize: "0.85rem", marginBottom: 16 }}>Offered to Voyager <strong>{requested}</strong>.</p>}
 
-                    <div
-                      className="chartroom-actions"
-                      style={{ display: "flex", flexWrap: "wrap", gap: 12 }}
-                    >
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
                       {waypoint.status === "open" && !requested ? (
-                        <button
-                          type="button"
-                          className="welcome-btn primary"
-                          disabled={busy?.id === waypoint.id}
-                          onClick={() => act(waypoint.id, "take")}
-                        >
-                          {busy?.id === waypoint.id && busy.action === "take"
-                            ? "Taking…"
-                            : "Claim Opportunity"}
+                        <button type="button" className="welcome-btn primary" disabled={busy?.id === waypoint.id} onClick={() => act(waypoint.id, "take")}>
+                          {busy?.id === waypoint.id && busy.action === "take" ? "Taking…" : "Claim Opportunity"}
                         </button>
                       ) : waypoint.status === "taken" ? (
-                        <span className="ed-muted" style={{ alignSelf: "center" }}>
-                          {waypoint.takenBy === "you"
-                            ? "In your workspace"
-                            : "Already being worked"}
-                        </span>
+                        <span className="ed-muted" style={{ alignSelf: "center" }}>{waypoint.takenBy === "you" ? "In your workspace" : "Already being worked"}</span>
                       ) : (
-                        <span className="ed-muted" style={{ alignSelf: "center" }}>
-                          Waiting for requested Voyager
-                        </span>
+                        <span className="ed-muted" style={{ alignSelf: "center" }}>Waiting for requested Voyager</span>
                       )}
 
                       {!following.has(waypoint.id) && (
-                        <button
-                          type="button"
-                          className="welcome-btn chartroom-follow"
-                          disabled={busy?.id === waypoint.id}
-                          onClick={() => act(waypoint.id, "follow")}
-                        >
-                          Follow Need
-                        </button>
+                        <button type="button" className="welcome-btn chartroom-follow" disabled={busy?.id === waypoint.id} onClick={() => act(waypoint.id, "follow")}>Follow Need</button>
                       )}
 
-                      {/* Small, secondary AI trigger action */}
-                      <button
-                        type="button"
-                        className="welcome-btn"
-                        style={{
-                          borderColor: "var(--brass)",
-                          color: "var(--brass-text)",
-                          fontSize: "0.85rem",
-                          padding: "6px 12px",
-                        }}
-                        onClick={() => setShowAiModal(showAiModal === waypoint.id ? null : waypoint.id)}
-                      >
+                      <button type="button" className="welcome-btn" style={{ borderColor: "var(--brass)", color: "var(--brass-text)" }} onClick={() => setShowAiModal(showAiModal === waypoint.id ? null : waypoint.id)}>
                         Give this to your AI →
                       </button>
                     </div>
 
-                    {/* AI Prompt Onboarding Modal inline overlay */}
                     {showAiModal === waypoint.id && (
-                      <div
-                        className="tv-connect"
-                        style={{
-                          marginTop: 16,
-                          padding: 14,
-                          background: "var(--parchment-raised)",
-                          border: "1px solid var(--brass)",
-                          position: "relative",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 8,
-                          }}
-                        >
-                          <strong style={{ fontFamily: "var(--font-ui)", fontSize: "0.95rem" }}>
-                            Use your AI Assistant
-                          </strong>
-                          <button
-                            type="button"
-                            onClick={() => setShowAiModal(null)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              color: "var(--ink-soft)",
-                              cursor: "pointer",
-                              fontSize: "1.2rem",
-                            }}
-                          >
-                            ×
-                          </button>
+                      <div className="tv-connect" style={{ marginTop: 14, padding: 14, background: "var(--parchment-raised)", border: "1px solid var(--brass)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                          <strong style={{ fontFamily: "var(--font-ui)", fontSize: "0.95rem" }}>Use your AI assistant</strong>
+                          <button type="button" aria-label="Close" onClick={() => setShowAiModal(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "1.2rem" }}>×</button>
                         </div>
-                        <p
-                          style={{
-                            margin: "0 0 12px",
-                            color: "var(--ink-soft)",
-                            fontSize: "0.85rem",
-                            lineHeight: 1.4,
+                        <p className="ed-muted" style={{ fontSize: "0.85rem", lineHeight: 1.45 }}>Copy the canonical Terraveler prompt for this specific Waypoint.</p>
+                        <button
+                          type="button"
+                          className="tv-copy"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(buildAgentOnboardingPrompt(waypoint.id));
+                            setMessage(`AI prompt copied for Waypoint #${waypoint.id}.`);
                           }}
                         >
-                          Your AI assistant can connect directly to Terraveler via MCP to read available work. Copy this unified onboarding prompt:
-                        </p>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: 10,
-                            alignItems: "center",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <code
-                            style={{
-                              fontSize: "0.8rem",
-                              background: "rgba(0,0,0,0.04)",
-                              padding: "4px 6px",
-                              borderRadius: 2,
-                              flex: 1,
-                              minWidth: 150,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            https://www.terraveler.com/api/mcp
-                          </code>
-                          <button
-                            type="button"
-                            className="tv-copy"
-                            onClick={() => {
-                              const promptText = buildAgentOnboardingPrompt(waypoint.id);
-                              navigator.clipboard?.writeText(promptText);
-                              setMessage(`AI Prompt copied for Waypoint #${waypoint.id}`);
-                              setTimeout(() => setMessage(null), 3000);
-                            }}
-                            style={{ fontSize: "0.85rem", padding: "4px 10px" }}
-                          >
-                            Copy Prompt
-                          </button>
-                        </div>
-                        <p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--ink-soft)" }}>
-                          For detailed integration instructions, visit our{" "}
-                          <Link href="/connect" style={{ color: "var(--accent)" }}>
-                            Agent Onboarding Guide
-                          </Link>
-                          .
-                        </p>
+                          Copy Prompt
+                        </button>
+                        <p style={{ margin: "8px 0 0", fontSize: "0.8rem", color: "var(--ink-soft)" }}>Need setup help? <Link href="/connect" style={{ color: "var(--accent)" }}>Agent Onboarding Guide</Link>.</p>
                       </div>
                     )}
                   </div>
