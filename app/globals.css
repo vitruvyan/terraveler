@@ -4272,40 +4272,48 @@ main.prose {
   border-radius: var(--radius-2);
 }
 
-/* --- the Chartroom's own index: same shape as the desk sidebar, same day - */
+/* --- the Chartroom's own index: a mounted panel, not a bare list of links -
+   A first draft borrowed the desk sidebar's own register wholesale — tiny
+   mono uppercase labels, dense unboxed rows. That register is the machine
+   reading its own ledger; a reader deciding "am I doing this myself, or is
+   my agent" is the narrator's moment, and the admin type read as a table
+   header rather than a real choice. Boxed like a plate, titled in the
+   cartouche voice, links sized to be read rather than scanned. */
 .tv-shell {
   display: grid;
-  grid-template-columns: 13.5rem 1fr;
+  grid-template-columns: 16rem 1fr;
   gap: var(--space-7);
   align-items: start;
   margin-top: var(--space-5);
 }
-.tv-sidebar {
+.tv-content { min-width: 0; }
+.tv-fork {
   position: sticky;
   top: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  padding-top: var(--space-1);
+  gap: var(--space-6);
+  padding: var(--space-5);
+  background: var(--parchment-raised);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
 }
-.tv-content { min-width: 0; }
-.tv-nav-group + .tv-nav-group {
+.tv-fork-group + .tv-fork-group {
   border-top: 1px solid var(--rule-hair);
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
 }
-.tv-nav-heading {
+.tv-fork-title {
   display: block;
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0 0 var(--space-3);
 }
 /* A top-level entry with no children (The Crew) reads as a clickable ROW,
    not a label — same reasoning as the desk sidebar: a glance should tell
    "clickable" from "heading" without indentation doing the work. */
-.tv-nav-heading.is-link {
+.tv-fork-title.is-link {
   all: unset;
   display: flex;
   justify-content: space-between;
@@ -4313,40 +4321,42 @@ main.prose {
   gap: var(--space-2);
   width: 100%;
   box-sizing: border-box;
-  border-left: 2px solid transparent;
-  padding: var(--space-1) 0;
+  border-left: 3px solid transparent;
+  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  margin: 0;
   cursor: pointer;
-  font-family: var(--font-ui);
-  font-size: var(--step-0);
-  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: var(--step-2);
+  color: var(--ink);
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 @media (hover: hover) {
-  .tv-nav-heading.is-link:hover { color: var(--ink); }
+  .tv-fork-title.is-link:hover { color: var(--ink); }
 }
-.tv-nav-sub {
+.tv-fork-link {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   gap: var(--space-2);
-  border-left: 2px solid transparent;
-  padding: var(--space-1) 0 var(--space-1) var(--space-3);
+  border-left: 3px solid transparent;
+  padding: var(--space-2) 0 var(--space-2) var(--space-3);
   text-decoration: none;
   font-family: var(--font-ui);
-  font-size: var(--step-0);
+  font-size: var(--step-1);
+  line-height: 1.3;
   color: var(--ink-soft);
   transition: color var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
 }
 @media (hover: hover) {
-  .tv-nav-sub:hover { color: var(--ink); }
+  .tv-fork-link:hover { color: var(--ink); }
 }
-.tv-nav-sub[aria-current="true"],
-.tv-nav-heading.is-link[aria-current="true"] {
+.tv-fork-link[aria-current="true"],
+.tv-fork-title.is-link[aria-current="true"] {
   color: var(--ink);
   font-weight: 600;
   border-left-color: var(--brass);
 }
-.tv-nav-badge {
+.tv-fork-badge {
   font-family: var(--font-mono);
   font-size: var(--step--2);
   font-variant-numeric: tabular-nums lining-nums;
@@ -4355,16 +4365,11 @@ main.prose {
 
 @media (max-width: 760px) {
   .tv-shell { grid-template-columns: 1fr; }
-  .tv-sidebar {
+  .tv-fork {
     position: static;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: var(--space-4);
-    border-bottom: 1px solid var(--rule-hair);
-    padding-bottom: var(--space-4);
+    flex-direction: column;
+    gap: var(--space-5);
   }
-  .tv-nav-group + .tv-nav-group { border-top: 0; padding-top: 0; }
-  .tv-nav-group { flex: 1 1 auto; min-width: 8rem; }
 }
 
 /* ── the onboarding wizard ───────────────────────────────────────────────

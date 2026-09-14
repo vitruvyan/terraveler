@@ -236,7 +236,6 @@ export default async function Chartroom({
           : SECTION_META[mode].dek}
         background="/login-backgrounds/carta-marina.png"
         credit="Carta Marina · 1539 · Olaus Magnus"
-        platePosition="after"
       >
         <section id="chartroom" className="tv-shell">
           {!contextual && (
