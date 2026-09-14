@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
+import { PendingSourceProposals, ResolvedSourceDecisions, type PendingProposal, type ResolvedDecision } from "@/components/desk/SourceGovernance";
 import { hasEscalateFinding } from "@/lib/deskEscalation";
 
 type Sub = {
@@ -91,10 +92,11 @@ function appealGrounds(s: Sub): string | null {
 }
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
-type Tab = "overview" | "submissions" | "crew" | "analytics";
+type Tab = "overview" | "submissions" | "sources" | "crew" | "analytics";
 const TAB_TITLE: Record<Tab, string> = {
   overview: "Quarterdeck",
   submissions: "Submissions",
+  sources: "Sources",
   crew: "Crew",
   analytics: "Analytics",
 };
@@ -110,6 +112,8 @@ export default function Desk() {
   const [err, setErr] = useState("");
   const [tab, setTab] = useState<Tab>("overview");
   const [subs, setSubs] = useState<Sub[]>([]);
+  const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
+  const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
   const [crew, setCrew] = useState<CrewMember[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -131,10 +135,32 @@ export default function Desk() {
 
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
-    const [rs, rc, ra] = await Promise.all([fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics")]);
+    const [rs, rc, ra, rg] = await Promise.all([
+      fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics"),
+      fetch("/api/desk/governance"),
+    ]);
     if (rs.ok) setSubs((await rs.json()).submissions ?? []);
     if (rc.ok) setCrew((await rc.json()).crew ?? []);
     if (ra.ok) setAnalytics(await ra.json());
+    if (rg.ok) {
+      const gov = await rg.json();
+      setPendingSources(gov.queue?.pending_proposals ?? []);
+      setResolvedSources(gov.queue?.recent_decisions ?? []);
+    }
+  }
+
+  async function resolveSource(
+    id: number, decision: "approve" | "reject", trustMode: string, rightsClass: string, reason: string,
+  ) {
+    setBusy(true);
+    const r = await fetch("/api/desk/governance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ proposal_id: id, decision, trust_mode: trustMode, rights_class: rightsClass, reason }),
+    });
+    setBusy(false);
+    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
+    load();
   }
 
   useEffect(() => {
@@ -261,7 +287,7 @@ export default function Desk() {
       />
 
       <div className="dk-tabs" role="tablist">
-        {(["overview", "submissions", "crew", "analytics"] as Tab[]).map((t) => (
+        {(["overview", "submissions", "sources", "crew", "analytics"] as Tab[]).map((t) => (
           <button
             key={t}
             role="tab"
@@ -269,7 +295,9 @@ export default function Desk() {
             className="dk-tab"
             onClick={() => setTab(t)}
           >
-            {t === "submissions" && openCount ? `${t} (${openCount})` : t}
+            {t === "submissions" && openCount ? `${t} (${openCount})`
+              : t === "sources" && pendingSources.length ? `${t} (${pendingSources.length})`
+              : t}
           </button>
         ))}
         {/* The specimen lives behind this same session — it is a working
@@ -484,6 +512,13 @@ export default function Desk() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {tab === "sources" && (
+        <div style={{ marginTop: 20 }}>
+          <PendingSourceProposals proposals={pendingSources} busy={busy} onResolve={resolveSource} />
+          <ResolvedSourceDecisions decisions={resolvedSources} />
         </div>
       )}
 

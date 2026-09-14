@@ -5899,6 +5899,69 @@ main.prose {
   .sb-lines li { grid-template-columns: 1fr; gap: 0; }
 }
 
+/* ---- source governance: the Sources tab ---------------------------------
+   Pending proposals reuse .sb for framing (the same "what is being decided"
+   card SubmissionBrief draws) rather than a second boxed-card treatment —
+   paper does not need two ways to say "this is a record". Only the header
+   row and the verdict form beneath are new. */
+.src-pending { display: flex; flex-direction: column; gap: var(--space-6); }
+.src-card { padding-bottom: var(--space-5); border-bottom: 1px solid var(--rule-hair); }
+.src-card:last-child { border-bottom: none; }
+.src-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.src-card-title { font-family: var(--font-display); font-weight: 500; font-size: var(--step-1); }
+.src-verdict {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+.src-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+.src-reason { flex: 1 1 220px; }
+
+.src-history { margin-top: var(--space-7); }
+.src-history > summary {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  color: var(--ink-faint);
+}
+.src-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.src-history-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: var(--step--1);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+.src-history-reason {
+  flex: 1 1 240px;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.conf-badge.is-approve { border-color: var(--state-ok); color: var(--state-ok); }
+.conf-badge.is-reject { border-color: var(--state-no); color: var(--state-no); }
+
 /* ============================================================================
    CONTRIBUTE — the handoff, in the order the paths actually work
    ----------------------------------------------------------------------------

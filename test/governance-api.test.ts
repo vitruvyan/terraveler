@@ -59,7 +59,7 @@ test("Governance Queue API Endpoint", async (t) => {
     assert.equal(res.status, 500);
     const body = await res.json();
     assert.ok(body.error);
-    assert.match(body.error, /Supabase query failed with status 500: PostgREST database error/);
+    assert.match(body.error, /backend 500: PostgREST database error/);
   });
 
   await t.test("returns empty lists on successful empty queries", async (t) => {
@@ -95,8 +95,13 @@ test("Governance Queue API Endpoint", async (t) => {
     assert.equal(res.status, 200);
     const body = await res.json();
     assert.ok(body.success);
+    // pending_proposals and recent_decisions were the actual gap this route
+    // existed to close (see the route's own comment): a proposal sitting at
+    // status='submitted' had nowhere to be seen. review_required_endpoints
+    // and recent_material_drifts predate that fix and stay as they were.
+    assert.deepEqual(body.queue.pending_proposals, []);
+    assert.deepEqual(body.queue.recent_decisions, []);
     assert.deepEqual(body.queue.review_required_endpoints, []);
-    assert.deepEqual(body.queue.recent_rejects, []);
     assert.deepEqual(body.queue.recent_material_drifts, []);
   });
 });

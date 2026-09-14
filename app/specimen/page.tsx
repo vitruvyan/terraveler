@@ -6,6 +6,7 @@ import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
+import { PendingSourceProposals, ResolvedSourceDecisions } from "@/components/desk/SourceGovernance";
 import AccountWorkspace from "@/components/AccountWorkspace";
 
 /* Due proposte vere, come arrivano dall'MCP: una suggestione (prosa scritta
@@ -416,6 +417,47 @@ export default function SpecimenPage() {
             audit trail — e sopra c&rsquo;è ora la risposta a <b>cosa sto approvando</b>.
             Ogni riga è <b>ricavata</b> dal payload, mai scritta dentro: un
             riassunto non può lusingare una proposta che i dati non reggono.
+          </div>
+
+          <h3 className="dk-section-title">Sources, before the verdict</h3>
+          <PendingSourceProposals
+            proposals={[
+              {
+                id: 2, target_url: "https://www.dbnl.org/", proposed_by_actor_type: "agent",
+                proposed_by_actor_id: 2, endpoint_id: null,
+                source_proposal_intents: [{
+                  voyage: null, waypoint: null, region: null, person: null,
+                  reason: "Large public-domain/open-license Dutch digital archive of historical texts and travel journals (reisverslagen), including VOC-era voyage accounts (e.g. Linschoten, Barentsz, Tasman) — useful for sourcing Dutch-perspective waypoints and voyages on Terraveler.",
+                }],
+              },
+            ]}
+            busy={false}
+          />
+          <ResolvedSourceDecisions
+            decisions={[
+              {
+                id: 10, decision_outcome: "approve", trust_mode: "item_verified", rights_class: "mixed",
+                reason: "Institutional archive, per-item rights vary — verify at use rather than trust the whole domain.",
+                timestamp: "2026-09-14T09:00:00Z", proposal_id: 3, endpoint_id: 10,
+                source_endpoints: { host_pattern: "ctext.org" }, source_proposals: null,
+              },
+              {
+                id: 11, decision_outcome: "reject", trust_mode: null, rights_class: "unknown",
+                reason: "No stated licence or rights information found on the site.",
+                timestamp: "2026-09-13T09:00:00Z", proposal_id: 8, endpoint_id: null,
+                source_endpoints: null, source_proposals: { target_url: "https://example-unlicensed.org/" },
+              },
+            ]}
+          />
+
+          <div className="spec-note">
+            <b>Un agente propose cinque archivi reali</b> — olandese, cinese, giapponese,
+            arabo, portoghese — e nessuno vide mai dove giudicarli: l&rsquo;intake
+            (<code>suggest_source</code>) esisteva, la coda umana no. Stessa disciplina
+            del riquadro sopra — <b>cosa si sta decidendo</b>, ricavato, non il JSON —
+            applicata a un giudizio diverso: non &ldquo;questo testo è pubblicabile&rdquo;
+            ma &ldquo;questo dominio è affidabile, e quanto&rdquo;. Le due zone restano
+            fisicamente separate: in attesa, sopra e aperta; risolte, sotto e chiuse.
           </div>
 
           <h3 className="dk-section-title">Ship&rsquo;s log</h3>
