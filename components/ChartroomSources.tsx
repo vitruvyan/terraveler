@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChartroomWaypoint } from "@/lib/chartroom";
 import { buildAgentSourceProposalPrompt } from "@/lib/chartroom";
 
@@ -14,6 +14,35 @@ type SourceDraft = {
   url: string;
   rights: string;
   relevance: string;
+};
+
+type GovernedSource = {
+  id: number;
+  host_pattern: string;
+  match_type: string;
+  status: string;
+  trust_mode: string | null;
+  last_verified_at?: string | null;
+  next_reverification_at?: string | null;
+  institution?: {
+    id: number;
+    slug: string;
+    name: string;
+    country?: string | null;
+    primary_languages?: string[] | null;
+  } | null;
+  policy?: {
+    rights_class?: string | null;
+    rights_identifier?: string | null;
+    reason?: string | null;
+    carta_version?: string | null;
+  } | null;
+  collections?: Array<{
+    id: number;
+    name: string;
+    path_prefix?: string | null;
+    trust_mode?: string | null;
+  }>;
 };
 
 const SOURCE_CLASSES = [
@@ -62,11 +91,19 @@ function sourceProposalText(draft: SourceDraft) {
   return `Terraveler source proposal\n\nTitle: ${draft.title}\nAuthor / institution: ${draft.author}\nDate: ${draft.date || "Not specified"}\nType: ${draft.sourceType || "Not specified"}\nOriginal language: ${draft.originalLanguage || "Not specified"}\nEdition / translation language: ${draft.editionLanguage || "Not specified"}\nURL / archive identifier: ${draft.url}\nRights / access: ${draft.rights || "Not specified"}\n\nWhy this source matters:\n${draft.relevance}`;
 }
 
+function prettyValue(value?: string | null) {
+  if (!value) return "Not specified";
+  return value.replaceAll("_", " ");
+}
+
 export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: ChartroomWaypoint[] }) {
   const [showWizard, setShowWizard] = useState(false);
   const [showAi, setShowAi] = useState(false);
   const [step, setStep] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
+  const [sources, setSources] = useState<GovernedSource[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(true);
+  const [sourcesError, setSourcesError] = useState<string | null>(null);
   const [draft, setDraft] = useState<SourceDraft>({
     title: "",
     author: "",
@@ -78,6 +115,28 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
     rights: "",
     relevance: "",
   });
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/sources")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("The governed source catalogue is temporarily unavailable.");
+        return response.json();
+      })
+      .then((payload) => {
+        if (!active) return;
+        setSources(Array.isArray(payload?.sources) ? payload.sources : []);
+        setSourcesError(null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSourcesError(error instanceof Error ? error.message : "The governed source catalogue is temporarily unavailable.");
+      })
+      .finally(() => {
+        if (active) setSourcesLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   const canAdvance = useMemo(() => {
     if (step === 1) return draft.title.trim().length >= 4 && draft.author.trim().length >= 2;
@@ -141,7 +200,7 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
             <button type="button" aria-label="Close" onClick={() => setShowAi(false)} style={{ border: 0, background: "none", cursor: "pointer", fontSize: "1.2rem" }}>×</button>
           </div>
           <p className="ed-muted" style={{ fontSize: "0.86rem", lineHeight: 1.5 }}>
-            The prompt requires the agent to verify provenance, language, edition, rights and relevance before proposing anything.
+            The prompt now follows the dedicated Source Governance path: inspect governed sources, avoid duplicate proposals, then use <code>suggest_source</code>.
           </p>
           <button
             type="button"
@@ -157,6 +216,53 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
       )}
 
       {message && <p role="status" className="chartroom-message">{message}</p>}
+
+      <section style={{ marginTop: 30 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)" }}>
+          Governed catalogue
+        </span>
+        <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.7rem, 4vw, 2.3rem)", margin: "6px 0 8px" }}>
+          Sources Terraveler currently trusts.
+        </h3>
+        <p className="ed-muted" style={{ margin: "0 0 16px", lineHeight: 1.55, maxWidth: 760 }}>
+          This is the live Source Governance registry: the endpoints and collections Terraveler may consult, together with their trust mode and rights policy. It is not yet a catalogue of every individual book, page or image used by the atlas.
+        </p>
+
+        {sourcesLoading ? (
+          <p className="ed-muted">Loading governed sources…</p>
+        ) : sourcesError ? (
+          <p className="ed-muted">{sourcesError}</p>
+        ) : sources.length === 0 ? (
+          <p className="ed-muted">No active governed source endpoints are currently exposed.</p>
+        ) : (
+          <div className="ed-card-list">
+            {sources.map((source) => (
+              <article key={source.id} className="ed-roadmap-card">
+                <div className="ed-card-head" style={{ alignItems: "flex-start" }}>
+                  <div>
+                    <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: "0.66rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--brass-text)", marginBottom: 4 }}>
+                      {source.institution?.name ?? "Governed source"}
+                    </span>
+                    <strong style={{ fontFamily: "var(--font-display)", fontSize: "1.2rem", fontWeight: 500 }}>{source.host_pattern}</strong>
+                  </div>
+                  <span className="conf-badge">{prettyValue(source.trust_mode)}</span>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
+                  {source.policy?.rights_class && <span className="conf-badge">{prettyValue(source.policy.rights_class)}</span>}
+                  {source.policy?.rights_identifier && <span className="conf-badge">{source.policy.rights_identifier}</span>}
+                  {source.institution?.primary_languages?.map((language) => <span key={language} className="conf-badge">{language}</span>)}
+                </div>
+                {source.policy?.reason && <p className="ed-muted" style={{ margin: "10px 0 0", lineHeight: 1.5 }}>{source.policy.reason}</p>}
+                {source.collections && source.collections.length > 0 && (
+                  <p style={{ margin: "10px 0 0", fontSize: "0.82rem", fontFamily: "var(--font-ui)" }}>
+                    Collections: {source.collections.map((collection) => collection.name).join(" · ")}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section style={{ marginTop: 30 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--brass-text)" }}>
@@ -285,7 +391,7 @@ export default function ChartroomSources({ sourceNeeds }: { sourceNeeds: Chartro
                   className="welcome-btn primary"
                   onClick={() => {
                     navigator.clipboard?.writeText(sourceProposalText(draft));
-                    setMessage("Source proposal copied. Submission wiring comes after this UX pass.");
+                    setMessage("Source proposal copied. Human submission wiring remains intentionally separate from the agent MCP path for this UX pass.");
                   }}
                 >
                   Copy proposal
