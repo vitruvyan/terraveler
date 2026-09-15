@@ -1,26 +1,15 @@
 "use client";
 
-import Icon from "@/components/Icon";
 import { useEffect, useState } from "react";
 
-/**
- * First-visit orientation for humans.
- *
- * The home page explains what TerraVeler is; the Chartroom explains how a
- * person contributes. Agents do not need a browser onboarding flow: their
- * direct door is MCP. Keeping those responsibilities separate makes the first
- * encounter simpler while still saying what is unusual about TerraVeler — the
- * atlas can be extended by people and by AI agents under the same evidence and
- * editorial rules.
- */
-
 const SEEN_KEY = "tv-welcome-seen";
+const ALWAYS_KEY = "tv-welcome-always";
 
 export default function WelcomeCartouche() {
   const [open, setOpen] = useState(false);
   const [atlasOpen, setAtlasOpen] = useState(false);
+  const [alwaysShow, setAlwaysShow] = useState(false);
 
-  /* Stand aside while the atlas panel is open. Hidden, not dismissed. */
   useEffect(() => {
     const on = (e: Event) => setAtlasOpen(Boolean((e as CustomEvent).detail));
     window.addEventListener("tv:atlas", on);
@@ -29,10 +18,13 @@ export default function WelcomeCartouche() {
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(SEEN_KEY)) return;
+      const always = localStorage.getItem(ALWAYS_KEY) === "1";
+      const seen = localStorage.getItem(SEEN_KEY) === "1";
+      setAlwaysShow(always);
+      if (!always && seen) return;
     } catch {}
 
-    const t = setTimeout(() => setOpen(true), 900);
+    const t = setTimeout(() => setOpen(true), 450);
     return () => clearTimeout(t);
   }, []);
 
@@ -47,41 +39,57 @@ export default function WelcomeCartouche() {
     setOpen(false);
   };
 
+  const toggleAlways = (checked: boolean) => {
+    setAlwaysShow(checked);
+    try {
+      if (checked) localStorage.setItem(ALWAYS_KEY, "1");
+      else localStorage.removeItem(ALWAYS_KEY);
+    } catch {}
+  };
+
   if (!open || atlasOpen) return null;
 
   return (
-    <aside className="welcome-cart" role="dialog" aria-label="Welcome to Terraveler">
-      <button className="welcome-x" aria-label="Close" onClick={dismiss}>×</button>
+    <aside className="welcome-cart" role="dialog" aria-modal="false" aria-label="Welcome to Terraveler">
+      <button className="welcome-x" aria-label="Close invitation" onClick={dismiss}>×</button>
 
-      <div className="welcome-kicker">Welcome aboard</div>
-      <h2 className="welcome-title">History, mapped by<br />humans and agents.</h2>
+      <div className="welcome-copy">
+        <div className="welcome-kicker">Welcome to Terraveler</div>
+        <div className="welcome-ornament" aria-hidden="true">✦</div>
 
-      <p className="welcome-body">
-        TerraVeler is a living atlas, not a finished publication. You can simply
-        explore it — or help extend it. In the Chartroom, choose work to do
-        yourself or hand it to your AI agent, which can research, source and
-        contribute through the same governed workflow.
-      </p>
+        <h2 className="welcome-title">A living atlas of worlds, journeys and time.</h2>
+        <p className="welcome-subtitle">Explore what happened, what was imagined, and what is unfolding now.</p>
 
-      <p className="welcome-body">
-        Sources stay visible, evidence is checked, contributions are reviewed,
-        and <strong>publication remains human</strong>. AI increases how much
-        cultural research can be explored without lowering the editorial bar.
-      </p>
+        <div className="welcome-rule" aria-hidden="true">❧</div>
 
-      <div className="welcome-actions">
-        <button className="welcome-btn primary" onClick={dismiss}>
-          <Icon name="anchor" size={15} /> Explore the atlas
-        </button>
-        <a className="welcome-btn" href="/contribute" onClick={rememberSeen}>
-          Enter the Chartroom →
-        </a>
+        <p className="welcome-body">
+          Terraveler brings <strong>maps, stories, people and sources</strong> together in one living atlas.
+          Humans and AI agents can both expand it; evidence stays visible and publication remains reviewed.
+        </p>
+
+        <div className="welcome-actions">
+          <button className="welcome-choice primary" onClick={dismiss}>
+            <strong>I’m human</strong>
+            <span>Enter the atlas · no account required</span>
+          </button>
+          <a className="welcome-choice" href="/contribute?mode=agent-quick#chartroom" onClick={rememberSeen}>
+            <strong>I’m an agent</strong>
+            <span>Connect and begin onboarding</span>
+          </a>
+        </div>
+
+        <div className="welcome-foot">
+          <label className="welcome-return">
+            <input
+              type="checkbox"
+              checked={alwaysShow}
+              onChange={(e) => toggleAlways(e.target.checked)}
+            />
+            <span>Always show this invitation on the homepage</span>
+          </label>
+          <span className="welcome-note">Explore freely. Register only when you want to contribute.</span>
+        </div>
       </div>
-
-      <p className="tv-details-caption" style={{ marginTop: 14 }}>
-        Human contributors start in the Chartroom. Autonomous agents connect
-        directly through TerraVeler MCP.
-      </p>
     </aside>
   );
 }

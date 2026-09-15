@@ -1,0 +1,208 @@
+/* Map chrome refinement — controls should feel like engraved instruments,
+   not generic app buttons. Keep all tap targets and behaviour unchanged. */
+
+/* Atlas door: a small printed plaque rather than a modern pill. */
+.map-atlas-door {
+  position: relative;
+  border-radius: var(--radius-2);
+  border: 1px solid rgba(216, 178, 92, .72);
+  background:
+    linear-gradient(rgba(43, 33, 23, .93), rgba(43, 33, 23, .97)),
+    var(--parchment);
+  color: var(--parchment-raised);
+  box-shadow:
+    0 5px 14px rgba(43, 33, 23, .22),
+    inset 0 0 0 2px rgba(216, 178, 92, .10),
+    inset 0 0 0 3px rgba(43, 33, 23, .36);
+  font-family: var(--font-ui);
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+.map-atlas-door::before,
+.map-atlas-door::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(216,178,92,.52), transparent);
+  pointer-events: none;
+}
+.map-atlas-door::before { left: 6px; }
+.map-atlas-door::after { right: 6px; }
+
+/* Top-right map doors: medallions with an engraved rim. */
+.tr-cluster .tr-btn {
+  position: relative;
+  border: 1px solid rgba(216, 178, 92, .62);
+  background: rgba(43, 33, 23, .95);
+  color: var(--parchment-raised);
+  box-shadow:
+    0 5px 14px rgba(43, 33, 23, .20),
+    inset 0 0 0 2px rgba(216, 178, 92, .10),
+    inset 0 0 0 3px rgba(43, 33, 23, .34);
+}
+.tr-cluster .tr-btn::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(216, 178, 92, .22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Pigafetta: a brass-edged nameplate, not a SaaS launcher. */
+.pig-pill {
+  position: relative;
+  border-radius: var(--radius-2);
+  border: 1px solid rgba(216, 178, 92, .76);
+  background: rgba(43, 33, 23, .96);
+  color: var(--parchment-raised);
+  box-shadow:
+    0 5px 14px rgba(43, 33, 23, .24),
+    inset 0 0 0 2px rgba(216, 178, 92, .11),
+    inset 0 0 0 3px rgba(43, 33, 23, .34);
+  font-family: var(--font-ui);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+.pig-pill::before,
+.pig-pill::after {
+  content: "✦";
+  color: var(--brass-on-dark);
+  font-family: var(--font-display);
+  font-size: .58rem;
+  line-height: 1;
+  opacity: .78;
+}
+
+/* Left lens rail: treat it like a slim ivory instrument case. */
+.lens-rail {
+  border: 1px solid rgba(124, 87, 35, .38);
+  background: rgba(var(--paper-rgb), .90);
+  box-shadow:
+    0 8px 18px rgba(43, 33, 23, .14),
+    inset 0 0 0 2px rgba(169, 119, 47, .08);
+}
+.lens-rail .lens-btn {
+  border-bottom-color: rgba(43, 33, 23, .13);
+  background: transparent;
+}
+
+/* The two timelines should read as engraved instruments from the same atlas,
+   not generic floating cards. Their positioning remains owned by globals.css:
+   the world strip stays at the top and the transport bar at the bottom. */
+.world-strip,
+.transport-bar {
+  border: 1px solid rgba(124, 87, 35, .42);
+  background: rgba(var(--paper-rgb), .89);
+  box-shadow:
+    0 9px 22px rgba(43, 33, 23, .15),
+    inset 0 0 0 2px rgba(248,240,222,.70),
+    inset 0 0 0 3px rgba(169,119,47,.22),
+    inset 0 0 0 6px rgba(248,240,222,.34);
+}
+.world-strip::before,
+.transport-bar::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(124,87,35,.17);
+  pointer-events: none;
+  z-index: 0;
+}
+.world-strip::after,
+.transport-bar::after {
+  content: "✦";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(124,87,35,.62);
+  background: rgba(var(--paper-rgb), .92);
+  padding: 0 7px;
+  font: 400 .62rem/1 var(--font-display);
+  pointer-events: none;
+  z-index: 2;
+}
+.world-strip::after { top: -4px; }
+.transport-bar::after { bottom: -4px; }
+.world-strip > *,
+.transport-bar > * { position: relative; z-index: 1; }
+
+/* Transport play control: small compass-like seal. */
+.transport-bar .play-btn {
+  position: relative;
+  border: 1px solid rgba(124, 87, 35, .48);
+  background: color-mix(in srgb, var(--parchment-raised) 88%, transparent);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 2px rgba(169, 119, 47, .09),
+    0 3px 8px rgba(43, 33, 23, .10);
+}
+.transport-bar .play-btn::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(169, 119, 47, .22);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Welcome invitation buttons: printed plaques with a double rule. */
+.welcome-choice {
+  position: relative;
+  border-radius: var(--radius-1);
+  border: 1px solid rgba(124, 87, 35, .64);
+  box-shadow:
+    inset 0 0 0 3px rgba(248, 240, 222, .52),
+    inset 0 0 0 4px rgba(169, 119, 47, .32),
+    0 3px 8px rgba(43, 33, 23, .10);
+}
+.welcome-choice::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(169, 119, 47, .20);
+  pointer-events: none;
+}
+.welcome-choice strong,
+.welcome-choice span {
+  position: relative;
+  z-index: 1;
+}
+.welcome-choice.primary {
+  box-shadow:
+    inset 0 0 0 3px rgba(88, 21, 34, .86),
+    inset 0 0 0 4px rgba(216, 178, 92, .38),
+    0 3px 8px rgba(43, 33, 23, .16);
+}
+.welcome-choice.primary::before {
+  border-color: rgba(216, 178, 92, .26);
+}
+
+@media (hover: hover) {
+  .map-atlas-door:hover,
+  .pig-pill:hover,
+  .tr-cluster .tr-btn:hover {
+    background: var(--accent-deep);
+    color: var(--parchment-raised);
+    border-color: var(--brass-on-dark);
+  }
+  .transport-bar .play-btn:hover {
+    background: var(--parchment-deep);
+    border-color: var(--brass-text);
+  }
+}
+
+[data-layout="phone"] .map-atlas-door,
+[data-layout="phone"] .pig-pill {
+  border-radius: var(--radius-2);
+}
+[data-layout="phone"] .transport-bar::after { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-atlas-door,
+  .pig-pill,
+  .tr-cluster .tr-btn,
+  .transport-bar .play-btn { transition: none; }
+}
