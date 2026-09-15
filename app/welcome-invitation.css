@@ -6,16 +6,12 @@
   width: min(1080px, calc(100vw - 72px), calc((100dvh - 112px) * 16 / 9));
   aspect-ratio: 16 / 9;
   margin: auto;
-  overflow: visible;
+  overflow: hidden;
   color: var(--ink);
   text-align: center;
-  background-color: var(--parchment-raised);
-  background-image:
-    url("/terraveler-welcome-engraving-hq.webp"),
-    url("/terraveler-welcome-engraving.webp");
-  background-position: center, center;
-  background-size: cover, cover;
-  background-repeat: no-repeat, no-repeat;
+  background:
+    url("/terraveler-welcome-engraving.avif") center / cover no-repeat,
+    var(--parchment-raised);
   border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
     0 30px 78px rgba(43, 33, 23, .34),
@@ -23,8 +19,8 @@
   isolation: isolate;
 }
 
-/* The artwork contains the engraved scene; a very light central wash protects
-   type without bleaching ships, winds or sea creatures near the edges. */
+/* The artwork itself now carries the frame, the compass language, ships,
+   winds and sea creatures. Keep the protective wash deliberately light. */
 .welcome-cart::after {
   content: "";
   position: absolute;
@@ -33,26 +29,11 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(248,240,222,.16) 0%,
-    rgba(248,240,222,.10) 35%,
-    rgba(248,240,222,.03) 62%,
-    transparent 79%
+    rgba(248,240,222,.14) 0%,
+    rgba(248,240,222,.08) 36%,
+    rgba(248,240,222,.02) 62%,
+    transparent 80%
   );
-}
-
-/* The top compass is deliberately independent of the raster background so it
-   can break the frame like an eighteenth-century engraved cartouche. */
-.welcome-compass {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  z-index: 5;
-  width: clamp(92px, 10.5vw, 132px);
-  height: auto;
-  transform: translate(-50%, -52%);
-  pointer-events: none;
-  user-select: none;
-  filter: drop-shadow(0 5px 5px rgba(43,33,23,.24));
 }
 
 .welcome-copy {
@@ -63,7 +44,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 7.4% 12% 5.3%;
+  padding: 6.5% 12% 5.5%;
 }
 
 .welcome-x {
@@ -259,11 +240,10 @@
   aspect-ratio: auto;
   min-height: min(540px, calc(100dvh - 64px));
   max-height: calc(100dvh - 64px);
-  background-size: cover, cover;
-  background-position: center, center;
+  background-size: cover;
+  background-position: center;
 }
-[data-layout="phone"] .welcome-compass { width: 82px; transform: translate(-50%, -48%); }
-[data-layout="phone"] .welcome-copy { padding: 48px 26px 28px; justify-content: center; }
+[data-layout="phone"] .welcome-copy { padding: 42px 26px 28px; justify-content: center; }
 [data-layout="phone"] .welcome-x { top: 18px; right: 18px; }
 [data-layout="phone"] .welcome-kicker { font-size: .58rem; }
 [data-layout="phone"] .welcome-title { max-width: 94%; font-size: clamp(2.1rem, 9.6vw, 3rem); }
