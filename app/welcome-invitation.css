@@ -10,7 +10,7 @@
   color: var(--ink);
   text-align: center;
   background:
-    url("/terraveler-welcome-engraving.avif") center / cover no-repeat,
+    url("/terraveler-welcome-engraving.webp") center / cover no-repeat,
     var(--parchment-raised);
   border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
