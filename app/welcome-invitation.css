@@ -1,92 +1,124 @@
-/* Homepage welcome invitation — a printed invitation, not product chrome. */
+/* Homepage welcome invitation — a printed cartographic invitation, not product chrome. */
 .welcome-cart {
   --welcome-map: none;
   position: fixed;
   inset: 0;
   z-index: 65;
-  width: min(980px, calc(100vw - 64px), calc((100dvh - 72px) * 16 / 9));
+  width: min(1080px, calc(100vw - 72px), calc((100dvh - 56px) * 16 / 9));
   aspect-ratio: 16 / 9;
   margin: auto;
   overflow: hidden;
-  padding: clamp(28px, 3.2vw, 44px) clamp(38px, 5vw, 68px) clamp(26px, 3vw, 40px);
+  padding: clamp(32px, 3vw, 46px) clamp(54px, 5.2vw, 82px) clamp(30px, 3vw, 42px);
   color: var(--ink);
   text-align: center;
   background: var(--parchment-raised);
-  border: 1px solid var(--brass);
+  border: 1px solid rgba(124, 87, 35, .72);
   box-shadow:
-    0 24px 70px rgba(43, 33, 23, .3),
-    0 0 0 100vmax rgba(43, 33, 23, .16),
-    inset 0 0 0 7px color-mix(in srgb, var(--parchment-raised) 84%, transparent),
-    inset 0 0 0 8px color-mix(in srgb, var(--brass) 42%, transparent);
+    0 28px 74px rgba(43, 33, 23, .32),
+    0 0 0 100vmax rgba(43, 33, 23, .18),
+    inset 0 0 0 5px rgba(248, 240, 222, .88),
+    inset 0 0 0 7px rgba(169, 119, 47, .38),
+    inset 0 0 0 11px rgba(248, 240, 222, .72),
+    inset 0 0 0 12px rgba(124, 87, 35, .34);
   isolation: isolate;
 }
 
-/* The map is deliberately visible: it should feel like ink and engraving on
-   the paper, not disappear under an opaque UI panel. */
+/* The map is part of the invitation itself. It should read as engraving on
+   paper, not as a nearly invisible texture. */
 .welcome-cart::before {
   content: "";
   position: absolute;
-  inset: 8px;
+  inset: 12px;
   z-index: -2;
   background-image: var(--welcome-map);
   background-position: center;
   background-size: cover;
-  filter: sepia(.18) saturate(.78) contrast(.96);
-  opacity: .46;
+  filter: sepia(.15) saturate(.7) contrast(1.04) brightness(1.03);
+  opacity: .64;
 }
 
 .welcome-cart::after {
   content: "";
   position: absolute;
-  inset: 8px;
+  inset: 12px;
   z-index: -1;
   background:
     radial-gradient(ellipse at center,
-      rgba(248,240,222,.7) 0%,
-      rgba(248,240,222,.79) 36%,
-      rgba(242,230,207,.84) 67%,
-      rgba(231,213,176,.8) 100%);
+      rgba(248,240,222,.46) 0%,
+      rgba(248,240,222,.56) 34%,
+      rgba(242,230,207,.66) 68%,
+      rgba(231,213,176,.74) 100%),
+    linear-gradient(to bottom, rgba(248,240,222,.10), rgba(242,230,207,.18));
 }
 
-/* A typographic frame: restrained enough to feel engraved, not decorative UI. */
+/* Engraved frame: more ceremonial than the previous hairline treatment, but
+   still typographic rather than faux-antique illustration. */
 .welcome-frame {
   position: absolute;
-  inset: 16px;
+  inset: 18px;
   pointer-events: none;
-  border: 1px solid color-mix(in srgb, var(--brass) 72%, transparent);
+  border: 1px solid rgba(124, 87, 35, .72);
   box-shadow:
-    inset 0 0 0 4px color-mix(in srgb, var(--parchment-raised) 76%, transparent),
-    inset 0 0 0 5px color-mix(in srgb, var(--brass) 22%, transparent);
+    inset 0 0 0 3px rgba(248,240,222,.76),
+    inset 0 0 0 4px rgba(169,119,47,.42),
+    inset 0 0 0 8px rgba(248,240,222,.48),
+    inset 0 0 0 9px rgba(124,87,35,.24);
 }
 .welcome-frame::before,
 .welcome-frame::after {
   content: "";
   position: absolute;
   left: 50%;
-  width: 92px;
+  width: 170px;
   height: 1px;
   transform: translateX(-50%);
-  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+  background: linear-gradient(90deg, transparent 0, rgba(124,87,35,.24) 10%, var(--brass-text) 50%, rgba(124,87,35,.24) 90%, transparent 100%);
 }
-.welcome-frame::before { top: 9px; }
-.welcome-frame::after { bottom: 9px; }
+.welcome-frame::before { top: 15px; }
+.welcome-frame::after { bottom: 15px; }
 .welcome-frame > span {
   position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
   font-family: var(--font-display);
-  font-size: 1.08rem;
-  line-height: 1;
   color: var(--brass-text);
-  opacity: .86;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(248,240,222,.75);
 }
-.welcome-frame .nw { top: 7px; left: 9px; transform: rotate(-45deg); }
-.welcome-frame .ne { top: 7px; right: 9px; transform: rotate(45deg) scaleX(-1); }
-.welcome-frame .sw { bottom: 7px; left: 9px; transform: rotate(45deg) scaleY(-1); }
-.welcome-frame .se { bottom: 7px; right: 9px; transform: rotate(-45deg) scale(-1); }
+.welcome-frame .nw,
+.welcome-frame .ne,
+.welcome-frame .sw,
+.welcome-frame .se {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(124,87,35,.46);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248,240,222,.88) 0 52%, rgba(231,213,176,.82) 53% 100%);
+  box-shadow: inset 0 0 0 3px rgba(248,240,222,.72), inset 0 0 0 4px rgba(169,119,47,.22);
+  font-size: 1.22rem;
+}
+.welcome-frame .nw { top: 8px; left: 8px; }
+.welcome-frame .ne { top: 8px; right: 8px; }
+.welcome-frame .sw { bottom: 8px; left: 8px; }
+.welcome-frame .se { bottom: 8px; right: 8px; }
+.welcome-frame .north,
+.welcome-frame .south {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 44px;
+  height: 32px;
+  background: var(--parchment-raised);
+  font-size: 1.35rem;
+  color: var(--brass-text);
+}
+.welcome-frame .north { top: -8px; }
+.welcome-frame .south { bottom: -8px; }
 
 .welcome-x {
   position: absolute;
-  top: 23px;
-  right: 27px;
+  top: 27px;
+  right: 31px;
   z-index: 3;
   width: 32px;
   height: 32px;
@@ -102,13 +134,14 @@
   font-family: var(--font-ui);
   font-size: var(--step--2);
   font-weight: 600;
-  letter-spacing: .2em;
+  letter-spacing: .22em;
   text-transform: uppercase;
   color: var(--brass-text);
+  text-shadow: 0 1px 0 rgba(248,240,222,.86);
 }
 
 .welcome-ornament {
-  margin: 7px 0 5px;
+  margin: 6px 0 4px;
   font-family: var(--font-display);
   font-size: 1.12rem;
   line-height: 1;
@@ -116,24 +149,26 @@
 }
 
 .welcome-title {
-  max-width: 760px;
+  max-width: 820px;
   margin: 0 auto;
   font-family: var(--font-display);
-  font-size: clamp(2.7rem, 4.5vw, 4.6rem);
+  font-size: clamp(3rem, 4.7vw, 4.95rem);
   font-weight: 400;
-  line-height: .94;
-  letter-spacing: -.025em;
+  line-height: .92;
+  letter-spacing: -.027em;
   text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(248,240,222,.92);
 }
 
 .welcome-subtitle {
-  max-width: 650px;
-  margin: 12px auto 0;
+  max-width: 690px;
+  margin: 11px auto 0;
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 1.65vw, 1.38rem);
+  font-size: clamp(1.08rem, 1.7vw, 1.46rem);
   font-style: italic;
-  line-height: 1.28;
+  line-height: 1.26;
   color: var(--ink-soft);
+  text-shadow: 0 1px 0 rgba(248,240,222,.9);
 }
 
 .welcome-rule {
@@ -141,38 +176,39 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  width: min(430px, 72%);
-  margin: 16px auto 14px;
+  width: min(470px, 74%);
+  margin: 14px auto 13px;
   color: var(--brass-text);
 }
 .welcome-rule::before,
 .welcome-rule::after {
   content: "";
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--rule-mid));
+  background: linear-gradient(90deg, transparent, rgba(124,87,35,.62));
 }
-.welcome-rule::after { background: linear-gradient(90deg, var(--rule-mid), transparent); }
+.welcome-rule::after { background: linear-gradient(90deg, rgba(124,87,35,.62), transparent); }
 
 .welcome-body {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   font-family: var(--font-ui);
-  font-size: clamp(.96rem, 1.2vw, 1.08rem);
+  font-size: clamp(.98rem, 1.18vw, 1.1rem);
   line-height: 1.42;
   color: var(--ink-soft);
+  text-shadow: 0 1px 0 rgba(248,240,222,.88);
 }
 .welcome-body strong { color: var(--ink); font-weight: 600; }
 
 .welcome-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  width: min(720px, 100%);
-  margin: 20px auto 0;
+  gap: 16px;
+  width: min(760px, 100%);
+  margin: 19px auto 0;
 }
 
 .welcome-choice {
-  min-height: 76px;
+  min-height: 78px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -180,7 +216,7 @@
   gap: 3px;
   padding: 12px 18px;
   border: 1px solid var(--brass);
-  background: color-mix(in srgb, var(--parchment-raised) 74%, transparent);
+  background: rgba(248,240,222,.78);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
@@ -188,7 +224,7 @@
 }
 .welcome-choice:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--parchment) 88%, white);
+  background: rgba(248,240,222,.92);
   border-color: var(--brass-text);
 }
 .welcome-choice.primary {
@@ -199,7 +235,7 @@
 .welcome-choice.primary:hover { background: var(--accent); border-color: var(--accent); }
 .welcome-choice strong {
   font-family: var(--font-display);
-  font-size: 1.38rem;
+  font-size: 1.46rem;
   font-weight: 500;
   line-height: 1;
 }
@@ -216,7 +252,7 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px 16px;
-  margin-top: 15px;
+  margin-top: 14px;
 }
 .welcome-return {
   display: inline-flex;
@@ -241,18 +277,21 @@
   color: var(--ink-faint);
 }
 
-/* Phone keeps the same visual language but gives up the literal 16:9 ratio;
-   forcing a landscape card onto a portrait device would recreate the scroll
-   problem this treatment is meant to remove. */
 [data-layout="phone"] .welcome-cart {
   width: calc(100vw - 22px);
   aspect-ratio: auto;
   max-height: calc(100dvh - 22px);
   margin: auto;
   overflow: hidden;
-  padding: 30px 24px 24px;
+  padding: 32px 24px 25px;
 }
 [data-layout="phone"] .welcome-frame { inset: 10px; }
+[data-layout="phone"] .welcome-frame .nw,
+[data-layout="phone"] .welcome-frame .ne,
+[data-layout="phone"] .welcome-frame .sw,
+[data-layout="phone"] .welcome-frame .se { width: 28px; height: 28px; font-size: .95rem; }
+[data-layout="phone"] .welcome-frame .north,
+[data-layout="phone"] .welcome-frame .south { display: none; }
 [data-layout="phone"] .welcome-x { top: 15px; right: 17px; }
 [data-layout="phone"] .welcome-title { max-width: 92%; font-size: clamp(2.15rem, 10vw, 3.2rem); }
 [data-layout="phone"] .welcome-subtitle { margin-top: 9px; font-size: 1.05rem; }
