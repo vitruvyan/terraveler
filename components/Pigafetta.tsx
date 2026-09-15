@@ -192,7 +192,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
           aria-label="Ask Pigafetta"
           title="Ask Pigafetta"
         >
-          <span aria-hidden="true" style={{ fontSize: "19px", lineHeight: 1 }}>🧭</span>
+          <Icon name="dialogue" size={18} />
           <span className="pig-pill-word">Ask Pigafetta</span>
         </button>
       </div>
