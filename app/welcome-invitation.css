@@ -1,25 +1,28 @@
-/* Homepage welcome invitation — an editorial broadside, not product chrome. */
+/* Homepage welcome invitation — a printed invitation, not product chrome. */
 .welcome-cart {
   --welcome-map: none;
   position: fixed;
-  inset: 50% auto auto 50%;
+  inset: 0;
   z-index: 65;
-  width: min(720px, calc(100vw - 40px));
-  max-height: min(86dvh, 760px);
-  overflow: auto;
-  transform: translate(-50%, -50%);
-  padding: clamp(34px, 5vw, 58px) clamp(30px, 6vw, 66px) clamp(28px, 4vw, 46px);
+  width: min(980px, calc(100vw - 64px), calc((100dvh - 72px) * 16 / 9));
+  aspect-ratio: 16 / 9;
+  margin: auto;
+  overflow: hidden;
+  padding: clamp(28px, 3.2vw, 44px) clamp(38px, 5vw, 68px) clamp(26px, 3vw, 40px);
   color: var(--ink);
   text-align: center;
   background: var(--parchment-raised);
   border: 1px solid var(--brass);
   box-shadow:
-    0 24px 70px rgba(43, 33, 23, .28),
+    0 24px 70px rgba(43, 33, 23, .3),
+    0 0 0 100vmax rgba(43, 33, 23, .16),
     inset 0 0 0 7px color-mix(in srgb, var(--parchment-raised) 84%, transparent),
-    inset 0 0 0 8px color-mix(in srgb, var(--brass) 34%, transparent);
+    inset 0 0 0 8px color-mix(in srgb, var(--brass) 42%, transparent);
   isolation: isolate;
 }
 
+/* The map is deliberately visible: it should feel like ink and engraving on
+   the paper, not disappear under an opaque UI panel. */
 .welcome-cart::before {
   content: "";
   position: absolute;
@@ -28,8 +31,8 @@
   background-image: var(--welcome-map);
   background-position: center;
   background-size: cover;
-  filter: sepia(.2) saturate(.72) contrast(.92);
-  opacity: .2;
+  filter: sepia(.18) saturate(.78) contrast(.96);
+  opacity: .46;
 }
 
 .welcome-cart::after {
@@ -38,20 +41,59 @@
   inset: 8px;
   z-index: -1;
   background:
-    radial-gradient(circle at 50% 20%, rgba(248,240,222,.72) 0, rgba(248,240,222,.9) 42%, rgba(242,230,207,.96) 76%),
-    linear-gradient(rgba(248,240,222,.82), rgba(242,230,207,.96));
+    radial-gradient(ellipse at center,
+      rgba(248,240,222,.7) 0%,
+      rgba(248,240,222,.79) 36%,
+      rgba(242,230,207,.84) 67%,
+      rgba(231,213,176,.8) 100%);
 }
+
+/* A typographic frame: restrained enough to feel engraved, not decorative UI. */
+.welcome-frame {
+  position: absolute;
+  inset: 16px;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--brass) 72%, transparent);
+  box-shadow:
+    inset 0 0 0 4px color-mix(in srgb, var(--parchment-raised) 76%, transparent),
+    inset 0 0 0 5px color-mix(in srgb, var(--brass) 22%, transparent);
+}
+.welcome-frame::before,
+.welcome-frame::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 92px;
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+}
+.welcome-frame::before { top: 9px; }
+.welcome-frame::after { bottom: 9px; }
+.welcome-frame > span {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1;
+  color: var(--brass-text);
+  opacity: .86;
+}
+.welcome-frame .nw { top: 7px; left: 9px; transform: rotate(-45deg); }
+.welcome-frame .ne { top: 7px; right: 9px; transform: rotate(45deg) scaleX(-1); }
+.welcome-frame .sw { bottom: 7px; left: 9px; transform: rotate(45deg) scaleY(-1); }
+.welcome-frame .se { bottom: 7px; right: 9px; transform: rotate(-45deg) scale(-1); }
 
 .welcome-x {
   position: absolute;
-  top: 17px;
-  right: 19px;
-  width: 34px;
-  height: 34px;
+  top: 23px;
+  right: 27px;
+  z-index: 3;
+  width: 32px;
+  height: 32px;
   border: 0;
   background: transparent;
   color: var(--ink-faint);
-  font: 400 1.55rem/1 var(--font-display);
+  font: 400 1.45rem/1 var(--font-display);
   cursor: pointer;
 }
 .welcome-x:hover { color: var(--ink); }
@@ -60,37 +102,37 @@
   font-family: var(--font-ui);
   font-size: var(--step--2);
   font-weight: 600;
-  letter-spacing: .19em;
+  letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--brass-text);
 }
 
 .welcome-ornament {
-  margin: 11px 0 8px;
+  margin: 7px 0 5px;
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1.12rem;
   line-height: 1;
   color: var(--accent);
 }
 
 .welcome-title {
-  max-width: 580px;
+  max-width: 760px;
   margin: 0 auto;
   font-family: var(--font-display);
-  font-size: clamp(2.45rem, 6.1vw, 4.75rem);
+  font-size: clamp(2.7rem, 4.5vw, 4.6rem);
   font-weight: 400;
-  line-height: .92;
+  line-height: .94;
   letter-spacing: -.025em;
   text-wrap: balance;
 }
 
 .welcome-subtitle {
-  max-width: 540px;
-  margin: 18px auto 0;
+  max-width: 650px;
+  margin: 12px auto 0;
   font-family: var(--font-display);
-  font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+  font-size: clamp(1.05rem, 1.65vw, 1.38rem);
   font-style: italic;
-  line-height: 1.3;
+  line-height: 1.28;
   color: var(--ink-soft);
 }
 
@@ -99,7 +141,8 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  margin: 23px auto 20px;
+  width: min(430px, 72%);
+  margin: 16px auto 14px;
   color: var(--brass-text);
 }
 .welcome-rule::before,
@@ -111,11 +154,11 @@
 .welcome-rule::after { background: linear-gradient(90deg, var(--rule-mid), transparent); }
 
 .welcome-body {
-  max-width: 560px;
+  max-width: 720px;
   margin: 0 auto;
   font-family: var(--font-ui);
-  font-size: clamp(1.02rem, 1.6vw, 1.16rem);
-  line-height: 1.48;
+  font-size: clamp(.96rem, 1.2vw, 1.08rem);
+  line-height: 1.42;
   color: var(--ink-soft);
 }
 .welcome-body strong { color: var(--ink); font-weight: 600; }
@@ -123,20 +166,21 @@
 .welcome-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 27px;
+  gap: 14px;
+  width: min(720px, 100%);
+  margin: 20px auto 0;
 }
 
 .welcome-choice {
-  min-height: 92px;
+  min-height: 76px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 15px 18px;
+  gap: 3px;
+  padding: 12px 18px;
   border: 1px solid var(--brass);
-  background: color-mix(in srgb, var(--parchment-raised) 78%, transparent);
+  background: color-mix(in srgb, var(--parchment-raised) 74%, transparent);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
@@ -148,29 +192,36 @@
   border-color: var(--brass-text);
 }
 .welcome-choice.primary {
-  background: var(--accent-deep);
+  background: color-mix(in srgb, var(--accent-deep) 94%, var(--ink));
   border-color: var(--accent-deep);
   color: var(--parchment-raised);
 }
 .welcome-choice.primary:hover { background: var(--accent); border-color: var(--accent); }
 .welcome-choice strong {
   font-family: var(--font-display);
-  font-size: 1.45rem;
+  font-size: 1.38rem;
   font-weight: 500;
   line-height: 1;
 }
 .welcome-choice span {
   font-family: var(--font-ui);
   font-size: var(--step--2);
-  line-height: 1.25;
-  opacity: .82;
+  line-height: 1.2;
+  opacity: .84;
 }
 
+.welcome-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 15px;
+}
 .welcome-return {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  margin-top: 21px;
+  gap: 8px;
   font-family: var(--font-ui);
   font-size: var(--step--2);
   color: var(--ink-faint);
@@ -178,31 +229,39 @@
   user-select: none;
 }
 .welcome-return input {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   accent-color: var(--accent);
 }
-
 .welcome-note {
-  margin: 12px auto 0;
+  margin: 0;
   font-family: var(--font-ui);
   font-size: var(--step--3);
-  line-height: 1.4;
+  line-height: 1.35;
   color: var(--ink-faint);
 }
 
+/* Phone keeps the same visual language but gives up the literal 16:9 ratio;
+   forcing a landscape card onto a portrait device would recreate the scroll
+   problem this treatment is meant to remove. */
 [data-layout="phone"] .welcome-cart {
-  width: calc(100vw - 24px);
-  max-height: calc(100dvh - 24px);
-  padding: 34px 22px 26px;
-  border-color: var(--rule-mid);
+  width: calc(100vw - 22px);
+  aspect-ratio: auto;
+  max-height: calc(100dvh - 22px);
+  margin: auto;
+  overflow: hidden;
+  padding: 30px 24px 24px;
 }
-[data-layout="phone"] .welcome-title { font-size: clamp(2.25rem, 12vw, 3.45rem); }
-[data-layout="phone"] .welcome-subtitle { margin-top: 14px; font-size: 1.14rem; }
-[data-layout="phone"] .welcome-rule { margin: 18px auto 16px; }
-[data-layout="phone"] .welcome-body { font-size: 1rem; line-height: 1.42; }
-[data-layout="phone"] .welcome-actions { grid-template-columns: 1fr; margin-top: 22px; }
-[data-layout="phone"] .welcome-choice { min-height: 78px; }
+[data-layout="phone"] .welcome-frame { inset: 10px; }
+[data-layout="phone"] .welcome-x { top: 15px; right: 17px; }
+[data-layout="phone"] .welcome-title { max-width: 92%; font-size: clamp(2.15rem, 10vw, 3.2rem); }
+[data-layout="phone"] .welcome-subtitle { margin-top: 9px; font-size: 1.05rem; }
+[data-layout="phone"] .welcome-rule { margin: 13px auto 11px; }
+[data-layout="phone"] .welcome-body { font-size: .95rem; line-height: 1.34; }
+[data-layout="phone"] .welcome-actions { grid-template-columns: 1fr; gap: 9px; margin-top: 15px; }
+[data-layout="phone"] .welcome-choice { min-height: 64px; }
+[data-layout="phone"] .welcome-foot { margin-top: 12px; gap: 6px; }
+[data-layout="phone"] .welcome-note { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .welcome-choice { transition: none; }
