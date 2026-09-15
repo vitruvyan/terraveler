@@ -51,12 +51,6 @@ export default function WelcomeCartouche() {
 
   return (
     <aside className="welcome-cart" role="dialog" aria-modal="false" aria-label="Welcome to Terraveler">
-      <img
-        className="welcome-compass"
-        src="/terraveler-compass-rose.svg"
-        alt=""
-        aria-hidden="true"
-      />
       <button className="welcome-x" aria-label="Close invitation" onClick={dismiss}>×</button>
 
       <div className="welcome-copy">
