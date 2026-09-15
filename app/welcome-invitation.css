@@ -1,6 +1,5 @@
-/* Homepage welcome invitation — a printed cartographic invitation, not product chrome. */
+/* Homepage welcome invitation — a printed cartographic object, not product chrome. */
 .welcome-cart {
-  --welcome-map: none;
   position: fixed;
   inset: 0;
   z-index: 65;
@@ -8,142 +7,75 @@
   aspect-ratio: 16 / 9;
   margin: auto;
   overflow: hidden;
-  padding: clamp(32px, 3vw, 46px) clamp(54px, 5.2vw, 82px) clamp(30px, 3vw, 42px);
   color: var(--ink);
   text-align: center;
-  background: var(--parchment-raised);
-  border: 1px solid rgba(124, 87, 35, .72);
+  background:
+    url("/terraveler-welcome-engraving.jpg") center / 100% 100% no-repeat,
+    var(--parchment-raised);
+  border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
-    0 28px 74px rgba(43, 33, 23, .32),
-    0 0 0 100vmax rgba(43, 33, 23, .18),
-    inset 0 0 0 5px rgba(248, 240, 222, .88),
-    inset 0 0 0 7px rgba(169, 119, 47, .38),
-    inset 0 0 0 11px rgba(248, 240, 222, .72),
-    inset 0 0 0 12px rgba(124, 87, 35, .34);
+    0 30px 78px rgba(43, 33, 23, .34),
+    0 0 0 100vmax rgba(43, 33, 23, .18);
   isolation: isolate;
 }
 
-/* The map is part of the invitation itself. It should read as engraving on
-   paper, not as a nearly invisible texture. */
-.welcome-cart::before {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  z-index: -2;
-  background-image: var(--welcome-map);
-  background-position: center;
-  background-size: cover;
-  filter: sepia(.15) saturate(.7) contrast(1.04) brightness(1.03);
-  opacity: .64;
-}
-
+/* The artwork already contains the frame, ships, winds, compass roses and sea
+   creature. A faint central wash protects type without bleaching the drawing. */
 .welcome-cart::after {
   content: "";
   position: absolute;
-  inset: 12px;
-  z-index: -1;
-  background:
-    radial-gradient(ellipse at center,
-      rgba(248,240,222,.46) 0%,
-      rgba(248,240,222,.56) 34%,
-      rgba(242,230,207,.66) 68%,
-      rgba(231,213,176,.74) 100%),
-    linear-gradient(to bottom, rgba(248,240,222,.10), rgba(242,230,207,.18));
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(248,240,222,.18) 0%,
+    rgba(248,240,222,.12) 36%,
+    rgba(248,240,222,.04) 62%,
+    transparent 78%
+  );
 }
 
-/* Engraved frame: more ceremonial than the previous hairline treatment, but
-   still typographic rather than faux-antique illustration. */
-.welcome-frame {
-  position: absolute;
-  inset: 18px;
-  pointer-events: none;
-  border: 1px solid rgba(124, 87, 35, .72);
-  box-shadow:
-    inset 0 0 0 3px rgba(248,240,222,.76),
-    inset 0 0 0 4px rgba(169,119,47,.42),
-    inset 0 0 0 8px rgba(248,240,222,.48),
-    inset 0 0 0 9px rgba(124,87,35,.24);
+.welcome-copy {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 6.5% 12% 5.5%;
 }
-.welcome-frame::before,
-.welcome-frame::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 170px;
-  height: 1px;
-  transform: translateX(-50%);
-  background: linear-gradient(90deg, transparent 0, rgba(124,87,35,.24) 10%, var(--brass-text) 50%, rgba(124,87,35,.24) 90%, transparent 100%);
-}
-.welcome-frame::before { top: 15px; }
-.welcome-frame::after { bottom: 15px; }
-.welcome-frame > span {
-  position: absolute;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  color: var(--brass-text);
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(248,240,222,.75);
-}
-.welcome-frame .nw,
-.welcome-frame .ne,
-.welcome-frame .sw,
-.welcome-frame .se {
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(124,87,35,.46);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(248,240,222,.88) 0 52%, rgba(231,213,176,.82) 53% 100%);
-  box-shadow: inset 0 0 0 3px rgba(248,240,222,.72), inset 0 0 0 4px rgba(169,119,47,.22);
-  font-size: 1.22rem;
-}
-.welcome-frame .nw { top: 8px; left: 8px; }
-.welcome-frame .ne { top: 8px; right: 8px; }
-.welcome-frame .sw { bottom: 8px; left: 8px; }
-.welcome-frame .se { bottom: 8px; right: 8px; }
-.welcome-frame .north,
-.welcome-frame .south {
-  left: 50%;
-  transform: translateX(-50%);
-  width: 44px;
-  height: 32px;
-  background: var(--parchment-raised);
-  font-size: 1.35rem;
-  color: var(--brass-text);
-}
-.welcome-frame .north { top: -8px; }
-.welcome-frame .south { bottom: -8px; }
 
 .welcome-x {
   position: absolute;
-  top: 27px;
-  right: 31px;
+  top: 6.6%;
+  right: 6.1%;
   z-index: 3;
   width: 32px;
   height: 32px;
   border: 0;
-  background: transparent;
+  background: rgba(248,240,222,.58);
   color: var(--ink-faint);
-  font: 400 1.45rem/1 var(--font-display);
+  font: 400 1.4rem/1 var(--font-display);
   cursor: pointer;
 }
-.welcome-x:hover { color: var(--ink); }
+.welcome-x:hover { color: var(--ink); background: rgba(248,240,222,.82); }
 
 .welcome-kicker {
   font-family: var(--font-ui);
   font-size: var(--step--2);
   font-weight: 600;
-  letter-spacing: .22em;
+  letter-spacing: .23em;
   text-transform: uppercase;
   color: var(--brass-text);
-  text-shadow: 0 1px 0 rgba(248,240,222,.86);
+  text-shadow: 0 1px 0 rgba(248,240,222,.96);
 }
 
 .welcome-ornament {
-  margin: 6px 0 4px;
+  margin: 5px 0 3px;
   font-family: var(--font-display);
-  font-size: 1.12rem;
+  font-size: 1.08rem;
   line-height: 1;
   color: var(--accent);
 }
@@ -157,18 +89,18 @@
   line-height: .92;
   letter-spacing: -.027em;
   text-wrap: balance;
-  text-shadow: 0 1px 0 rgba(248,240,222,.92);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
 .welcome-subtitle {
   max-width: 690px;
-  margin: 11px auto 0;
+  margin: 10px auto 0;
   font-family: var(--font-display);
   font-size: clamp(1.08rem, 1.7vw, 1.46rem);
   font-style: italic;
   line-height: 1.26;
   color: var(--ink-soft);
-  text-shadow: 0 1px 0 rgba(248,240,222,.9);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
 .welcome-rule {
@@ -176,26 +108,26 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  width: min(470px, 74%);
-  margin: 14px auto 13px;
+  width: min(440px, 68%);
+  margin: 12px auto 11px;
   color: var(--brass-text);
 }
 .welcome-rule::before,
 .welcome-rule::after {
   content: "";
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(124,87,35,.62));
+  background: linear-gradient(90deg, transparent, rgba(124,87,35,.64));
 }
-.welcome-rule::after { background: linear-gradient(90deg, rgba(124,87,35,.62), transparent); }
+.welcome-rule::after { background: linear-gradient(90deg, rgba(124,87,35,.64), transparent); }
 
 .welcome-body {
   max-width: 760px;
   margin: 0 auto;
   font-family: var(--font-ui);
   font-size: clamp(.98rem, 1.18vw, 1.1rem);
-  line-height: 1.42;
+  line-height: 1.4;
   color: var(--ink-soft);
-  text-shadow: 0 1px 0 rgba(248,240,222,.88);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 .welcome-body strong { color: var(--ink); font-weight: 600; }
 
@@ -204,10 +136,13 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   width: min(760px, 100%);
-  margin: 19px auto 0;
+  margin: 18px auto 0;
 }
 
+/* Printed plaques: square-cut, double ruled, closer to an engraved invitation
+   than to web-product CTA chrome. */
 .welcome-choice {
+  position: relative;
   min-height: 78px;
   display: flex;
   flex-direction: column;
@@ -215,24 +150,43 @@
   justify-content: center;
   gap: 3px;
   padding: 12px 18px;
-  border: 1px solid var(--brass);
-  background: rgba(248,240,222,.78);
+  border: 1px solid rgba(124,87,35,.70);
+  border-radius: var(--radius-1);
+  background: rgba(248,240,222,.84);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
+  box-shadow:
+    inset 0 0 0 3px rgba(248,240,222,.72),
+    inset 0 0 0 4px rgba(169,119,47,.34),
+    0 3px 8px rgba(43,33,23,.10);
   transition: transform .14s ease, background .14s ease, border-color .14s ease;
+}
+.welcome-choice::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(169,119,47,.24);
+  pointer-events: none;
 }
 .welcome-choice:hover {
   transform: translateY(-1px);
-  background: rgba(248,240,222,.92);
+  background: rgba(248,240,222,.96);
   border-color: var(--brass-text);
 }
 .welcome-choice.primary {
-  background: color-mix(in srgb, var(--accent-deep) 94%, var(--ink));
+  background: color-mix(in srgb, var(--accent-deep) 95%, var(--ink));
   border-color: var(--accent-deep);
   color: var(--parchment-raised);
+  box-shadow:
+    inset 0 0 0 3px rgba(88,21,34,.86),
+    inset 0 0 0 4px rgba(216,178,92,.40),
+    0 3px 8px rgba(43,33,23,.18);
 }
+.welcome-choice.primary::before { border-color: rgba(216,178,92,.30); }
 .welcome-choice.primary:hover { background: var(--accent); border-color: var(--accent); }
+.welcome-choice strong,
+.welcome-choice span { position: relative; z-index: 1; }
 .welcome-choice strong {
   font-family: var(--font-display);
   font-size: 1.46rem;
@@ -252,7 +206,7 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px 16px;
-  margin-top: 14px;
+  margin-top: 13px;
 }
 .welcome-return {
   display: inline-flex;
@@ -263,6 +217,7 @@
   color: var(--ink-faint);
   cursor: pointer;
   user-select: none;
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 .welcome-return input {
   width: 14px;
@@ -275,31 +230,29 @@
   font-size: var(--step--3);
   line-height: 1.35;
   color: var(--ink-faint);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
+/* Phone keeps the same engraved artwork but lets the card grow vertically so
+   the invitation remains readable without an inner scrollbar. */
 [data-layout="phone"] .welcome-cart {
-  width: calc(100vw - 22px);
+  width: calc(100vw - 18px);
   aspect-ratio: auto;
+  min-height: min(540px, calc(100dvh - 22px));
   max-height: calc(100dvh - 22px);
-  margin: auto;
-  overflow: hidden;
-  padding: 32px 24px 25px;
+  background-size: cover;
+  background-position: center;
 }
-[data-layout="phone"] .welcome-frame { inset: 10px; }
-[data-layout="phone"] .welcome-frame .nw,
-[data-layout="phone"] .welcome-frame .ne,
-[data-layout="phone"] .welcome-frame .sw,
-[data-layout="phone"] .welcome-frame .se { width: 28px; height: 28px; font-size: .95rem; }
-[data-layout="phone"] .welcome-frame .north,
-[data-layout="phone"] .welcome-frame .south { display: none; }
-[data-layout="phone"] .welcome-x { top: 15px; right: 17px; }
-[data-layout="phone"] .welcome-title { max-width: 92%; font-size: clamp(2.15rem, 10vw, 3.2rem); }
-[data-layout="phone"] .welcome-subtitle { margin-top: 9px; font-size: 1.05rem; }
-[data-layout="phone"] .welcome-rule { margin: 13px auto 11px; }
-[data-layout="phone"] .welcome-body { font-size: .95rem; line-height: 1.34; }
-[data-layout="phone"] .welcome-actions { grid-template-columns: 1fr; gap: 9px; margin-top: 15px; }
-[data-layout="phone"] .welcome-choice { min-height: 64px; }
-[data-layout="phone"] .welcome-foot { margin-top: 12px; gap: 6px; }
+[data-layout="phone"] .welcome-copy { padding: 42px 26px 28px; justify-content: center; }
+[data-layout="phone"] .welcome-x { top: 18px; right: 18px; }
+[data-layout="phone"] .welcome-kicker { font-size: .58rem; }
+[data-layout="phone"] .welcome-title { max-width: 94%; font-size: clamp(2.1rem, 9.6vw, 3rem); }
+[data-layout="phone"] .welcome-subtitle { margin-top: 8px; font-size: 1rem; }
+[data-layout="phone"] .welcome-rule { margin: 11px auto 9px; }
+[data-layout="phone"] .welcome-body { font-size: .91rem; line-height: 1.3; }
+[data-layout="phone"] .welcome-actions { grid-template-columns: 1fr; gap: 8px; margin-top: 13px; }
+[data-layout="phone"] .welcome-choice { min-height: 60px; }
+[data-layout="phone"] .welcome-foot { margin-top: 10px; gap: 5px; }
 [data-layout="phone"] .welcome-note { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
