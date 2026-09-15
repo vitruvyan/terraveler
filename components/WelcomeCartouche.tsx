@@ -68,8 +68,9 @@ export default function WelcomeCartouche() {
   return (
     <aside className="welcome-cart" role="dialog" aria-modal="false" aria-label="Welcome to Terraveler" style={style}>
       <div className="welcome-frame" aria-hidden="true">
-        <span className="nw">❦</span><span className="ne">❦</span>
-        <span className="sw">❦</span><span className="se">❦</span>
+        <span className="nw">✥</span><span className="ne">✥</span>
+        <span className="sw">✥</span><span className="se">✥</span>
+        <span className="north">⚜</span><span className="south">✦</span>
       </div>
 
       <button className="welcome-x" aria-label="Close invitation" onClick={dismiss}>×</button>
