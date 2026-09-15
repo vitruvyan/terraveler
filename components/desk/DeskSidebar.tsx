@@ -9,9 +9,10 @@
  * fourth kind of thing to learn.
  */
 
-export type Section = "overview" | "submissions" | "sources" | "crew" | "waypoints" | "prompts" | "analytics";
+export type Section = "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 export type SourcesSub = "pending" | "flagged" | "drift" | "resolved";
+export type UsersSub = "humans" | "agents";
 
 export type DeskSidebarCounts = {
   needsVerdict: number;
@@ -23,12 +24,15 @@ export type DeskSidebarCounts = {
   resolved: number;
   claimed: number;
   claimedOverdue: number;
+  humans: number;
+  agents: number;
 };
 
 export type DeskSidebarProps = {
   section: Section;
   submissionsSub: SubmissionsSub;
   sourcesSub: SourcesSub;
+  usersSub: UsersSub;
   counts: DeskSidebarCounts;
   /** Optional so a Server Component (the /specimen chapter) can render this
    *  with fixture data without crossing the client-function boundary —
@@ -40,7 +44,7 @@ function Badge({ n, alarm }: { n: number; alarm?: boolean }) {
   return <span className={`dk-nav-badge${alarm && n > 0 ? " is-alarm" : ""}`}>{n}</span>;
 }
 
-export default function DeskSidebar({ section, submissionsSub, sourcesSub, counts, onNavigate }: DeskSidebarProps) {
+export default function DeskSidebar({ section, submissionsSub, sourcesSub, usersSub, counts, onNavigate }: DeskSidebarProps) {
   return (
     <nav className="dk-sidebar" aria-label="desk sections">
       <div className="dk-nav-group">
@@ -119,13 +123,22 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, count
       </div>
 
       <div className="dk-nav-group">
+        <span className="dk-nav-heading">Users</span>
         <button
           type="button"
-          className="dk-nav-heading is-link"
-          aria-current={section === "crew"}
-          onClick={() => onNavigate?.("crew")}
+          className="dk-nav-sub"
+          aria-current={section === "users" && usersSub === "humans"}
+          onClick={() => onNavigate?.("users", "humans")}
         >
-          Crew
+          Humans <Badge n={counts.humans} />
+        </button>
+        <button
+          type="button"
+          className="dk-nav-sub"
+          aria-current={section === "users" && usersSub === "agents"}
+          onClick={() => onNavigate?.("users", "agents")}
+        >
+          Agents <Badge n={counts.agents} />
         </button>
       </div>
 

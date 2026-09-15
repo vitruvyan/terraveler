@@ -8,7 +8,7 @@ import {
   PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts,
   type PendingProposal, type ResolvedDecision, type FlaggedEndpoint, type MaterialDrift,
 } from "@/components/desk/SourceGovernance";
-import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub } from "@/components/desk/DeskSidebar";
+import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub, type UsersSub } from "@/components/desk/DeskSidebar";
 import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
 import type { PromptKey } from "@/lib/promptRegistry";
 import { CLAIM_TTL_DAYS } from "@/lib/agentCapabilities";
@@ -30,17 +30,62 @@ type Sub = {
 type SubGroups = { needs_verdict: Sub[]; peer_review: Sub[]; history: Sub[] };
 const EMPTY_SUB_GROUPS: SubGroups = { needs_verdict: [], peer_review: [], history: [] };
 
-type CrewMember = {
-  id: number;
+/** Same shape whether the contributor behind it is a human's own standing
+ *  or an agent's — one row in contributor_standing either way. */
+type StandingSummary = {
+  contributor_id: number;
   handle: string;
-  rank: string;
+  rank: string | null;
   status: string;
+  has_key: boolean;
+  created_at: string | null;
   approvals: number;
   rejections: number;
   passed_curator: number;
   reviews_given: number;
-  has_key: boolean;
-  created_at: string | null;
+};
+
+type LinkedAgent = {
+  agent_account_id: number;
+  public_id: string;
+  display_name: string | null;
+  agent_status: string;
+  relation: string;
+  linked_at: string;
+  contributor: StandingSummary | null;
+};
+
+type HumanUser = {
+  principal_id: number;
+  email: string | null;
+  display_name: string | null;
+  created_at: string;
+  contributor: StandingSummary | null;
+  agents: LinkedAgent[];
+};
+
+type LinkedHuman = {
+  principal_id: number;
+  email: string | null;
+  display_name: string | null;
+  relation: string;
+  linked_at: string;
+};
+
+type AgentUser = {
+  contributor: StandingSummary;
+  agent_account: {
+    agent_account_id: number;
+    public_id: string;
+    display_name: string | null;
+    operator: string | null;
+    voyager_name: string | null;
+    enrollment: string;
+    agent_status: string;
+    created_at: string;
+  } | null;
+  is_internal: boolean;
+  humans: LinkedHuman[];
 };
 
 type Demand = { id: number; query: string; hits: number; first_seen: string; last_seen: string };
@@ -107,16 +152,18 @@ function appealGrounds(s: Sub): string | null {
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["overview", "submissions", "sources", "crew", "waypoints", "prompts", "analytics"];
+const SECTIONS: Section[] = ["overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
-  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", crew: "Crew",
+  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
   waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
 const SOURCES_SUBS: SourcesSub[] = ["pending", "flagged", "drift", "resolved"];
+const USERS_SUBS: UsersSub[] = ["humans", "agents"];
 const SUB_LABEL: Record<string, string> = {
   needs_verdict: "Needs your verdict", peer_review: "In peer review", history: "History",
   pending: "Pending proposals", flagged: "Flagged endpoints", drift: "Material drift", resolved: "Resolved decisions",
+  humans: "Humans", agents: "Agents",
 };
 
 /* A Telegram "Review" button, or any bookmarked link, has to land the editor
@@ -148,12 +195,14 @@ export default function Desk() {
   const [section, setSection] = useState<Section>(initialSection);
   const [submissionsSub, setSubmissionsSub] = useState<SubmissionsSub>(() => initialSub(SUBMISSIONS_SUBS, "needs_verdict"));
   const [sourcesSub, setSourcesSub] = useState<SourcesSub>(() => initialSub(SOURCES_SUBS, "pending"));
+  const [usersSub, setUsersSub] = useState<UsersSub>(() => initialSub(USERS_SUBS, "humans"));
   const [subGroups, setSubGroups] = useState<SubGroups>(EMPTY_SUB_GROUPS);
   const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
   const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
   const [flaggedEndpoints, setFlaggedEndpoints] = useState<FlaggedEndpoint[]>([]);
   const [materialDrifts, setMaterialDrifts] = useState<MaterialDrift[]>([]);
-  const [crew, setCrew] = useState<CrewMember[]>([]);
+  const [humans, setHumans] = useState<HumanUser[]>([]);
+  const [agentUsers, setAgentUsers] = useState<AgentUser[]>([]);
   const [claims, setClaims] = useState<ClaimedWaypoint[]>([]);
   const [promptVersions, setPromptVersions] = useState<PromptVersion[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -177,11 +226,15 @@ export default function Desk() {
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
     const [rs, rc, ra, rg, rp, rw] = await Promise.all([
-      fetch("/api/desk/submissions"), fetch("/api/desk/crew"), fetch("/api/desk/analytics"),
+      fetch("/api/desk/submissions"), fetch("/api/desk/users"), fetch("/api/desk/analytics"),
       fetch("/api/desk/governance"), fetch("/api/desk/prompts"), fetch("/api/desk/claims"),
     ]);
     if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
-    if (rc.ok) setCrew((await rc.json()).crew ?? []);
+    if (rc.ok) {
+      const u = await rc.json();
+      setHumans(u.humans ?? []);
+      setAgentUsers(u.agents ?? []);
+    }
     if (ra.ok) setAnalytics(await ra.json());
     if (rp.ok) setPromptVersions((await rp.json()).versions ?? []);
     if (rw.ok) setClaims((await rw.json()).claims ?? []);
@@ -200,6 +253,7 @@ export default function Desk() {
     setSection(next);
     if (next === "submissions" && sub) setSubmissionsSub(sub as SubmissionsSub);
     if (next === "sources" && sub) setSourcesSub(sub as SourcesSub);
+    if (next === "users" && sub) setUsersSub(sub as UsersSub);
     const params = new URLSearchParams();
     params.set("tab", next);
     if (sub) params.set("sub", sub);
@@ -282,7 +336,7 @@ export default function Desk() {
     load();
   }
 
-  async function crewAction(id: number, action: string, rank?: string) {
+  async function userAction(id: number, action: string, rank?: string) {
     const labels: Record<string, string> = {
       suspend: "Suspend this contributor? Their key stops working immediately.",
       reactivate: "Reactivate this contributor?",
@@ -291,7 +345,7 @@ export default function Desk() {
     };
     if (!confirm(labels[action] ?? action)) return;
     setBusy(true);
-    const r = await fetch("/api/desk/crew", {
+    const r = await fetch("/api/desk/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contributor_id: id, action, rank }),
@@ -300,6 +354,19 @@ export default function Desk() {
     const j = await r.json();
     if (!r.ok) { alert(j.error ?? "failed"); return; }
     if (j.api_key) prompt("New api_key — hand it to the contributor over a private channel. It is shown ONCE:", j.api_key);
+    load();
+  }
+
+  async function revokeLink(humanPrincipalId: number, agentAccountId: number) {
+    if (!confirm("Revoke this association? The agent's identity, standing and credentials are unaffected.")) return;
+    setBusy(true);
+    const r = await fetch("/api/desk/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "revoke-link", human_principal_id: humanPrincipalId, agent_account_id: agentAccountId }),
+    });
+    setBusy(false);
+    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
     load();
   }
 
@@ -350,11 +417,12 @@ export default function Desk() {
     );
   }
 
-  const eyebrow = section === "submissions" || section === "sources"
+  const eyebrow = section === "submissions" || section === "sources" || section === "users"
     ? `Terraveler · editorial desk · ${SECTION_TITLE[section]}`
     : "Terraveler · editorial desk";
   const title = section === "submissions" ? SUB_LABEL[submissionsSub]
     : section === "sources" ? SUB_LABEL[sourcesSub]
+    : section === "users" ? SUB_LABEL[usersSub]
     : SECTION_TITLE[section];
 
   return (
@@ -376,6 +444,7 @@ export default function Desk() {
           section={section}
           submissionsSub={submissionsSub}
           sourcesSub={sourcesSub}
+          usersSub={usersSub}
           counts={{
             needsVerdict: subGroups.needs_verdict.length,
             peerReview: subGroups.peer_review.length,
@@ -388,6 +457,8 @@ export default function Desk() {
             claimedOverdue: claims.filter((c) =>
               c.claimed_at && Date.now() - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000
             ).length,
+            humans: humans.length,
+            agents: agentUsers.length,
           }}
           onNavigate={navigate}
         />
@@ -663,63 +734,145 @@ export default function Desk() {
         );
       })()}
 
-      {section === "crew" && (
+      {section === "users" && usersSub === "humans" && (
         <div style={{ marginTop: 20, overflowX: "auto" }}>
-          {crew.length === 0 && <p style={{ color: "var(--ink-soft)" }}>No contributors yet.</p>}
-          {crew.length > 0 && (
+          {humans.length === 0 && <p style={{ color: "var(--ink-soft)" }}>No human accounts yet.</p>}
+          {humans.length > 0 && (
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
               <thead>
                 <tr style={{ textAlign: "left", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: "0.05em" }}>
-                  {["Handle", "Rank", "Status", "Approved", "Rejected", "Reviews", "Actions"].map((h) => (
+                  {["Human", "Own standing", "Linked agents", "Actions"].map((h) => (
                     <th key={h} style={{ borderBottom: "2px solid var(--parchment-deep)", padding: "6px 8px" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {crew.map((c) => (
-                  <tr key={c.id} style={{ borderBottom: "1px solid var(--parchment-deep)", opacity: c.status === "suspended" ? 0.55 : 1 }}>
+                {humans.map((h) => (
+                  <tr key={h.principal_id} style={{ borderBottom: "1px solid var(--parchment-deep)" }}>
                     <td style={{ padding: "8px" }}>
-                      <strong>{c.handle}</strong>
-                      {!c.has_key && <span title="no personal key yet" style={{ marginLeft: 6 }} className="dk-warn">no key</span>}
+                      <strong>{h.display_name || h.email || `principal #${h.principal_id}`}</strong>
+                      {h.display_name && h.email && <div style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>{h.email}</div>}
                     </td>
                     <td style={{ padding: "8px" }}>
-                      <select className="desk-input" style={{ padding: "4px 6px", fontSize: 12.5 }}
-                        value={rankPick[c.id] ?? c.rank}
-                        onChange={(e) => setRankPick({ ...rankPick, [c.id]: e.target.value })}>
-                        {RANKS.map((r) => <option key={r} value={r}>{r}</option>)}
-                      </select>
-                      {(rankPick[c.id] ?? c.rank) !== c.rank && (
-                        <button className="desk-btn" disabled={busy} style={{ marginLeft: 6, padding: "4px 8px", fontSize: 12 }}
-                          onClick={() => crewAction(c.id, "set-rank", rankPick[c.id])}>set</button>
-                      )}
-                    </td>
-                    <td style={{ padding: "8px" }}>
-                      <span
-                        className="conf-badge"
-                        style={{
-                          borderColor: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
-                          color: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
-                        }}
-                      >
-                        {c.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: "8px" }}>{c.approvals}</td>
-                    <td style={{ padding: "8px" }}>{c.rejections}</td>
-                    <td style={{ padding: "8px" }}>{c.reviews_given}</td>
-                    <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
-                      {c.status === "active" ? (
-                        <button className="desk-btn desk-btn-reject" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
-                          onClick={() => crewAction(c.id, "suspend")}>Suspend</button>
+                      {!h.contributor ? (
+                        <span style={{ color: "var(--ink-faint)" }}>reader only</span>
                       ) : (
-                        <button className="desk-btn desk-btn-approve" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
-                          onClick={() => crewAction(c.id, "reactivate")}>Reactivate</button>
+                        <>
+                          <strong>{h.contributor.handle}</strong> · {h.contributor.rank}
+                          <span
+                            className="conf-badge"
+                            style={{
+                              marginLeft: 6,
+                              borderColor: h.contributor.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                              color: h.contributor.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                            }}
+                          >
+                            {h.contributor.status}
+                          </span>
+                          <div style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>
+                            {h.contributor.approvals} approved · {h.contributor.rejections} rejected · {h.contributor.reviews_given} reviews
+                          </div>
+                        </>
                       )}
-                      <button className="desk-btn" disabled={busy} style={{ marginLeft: 6, padding: "4px 8px", fontSize: 12 }}
-                        onClick={() => crewAction(c.id, "rotate-key")}>Rotate key</button>
+                    </td>
+                    <td style={{ padding: "8px" }}>
+                      {h.agents.length === 0 && <span style={{ color: "var(--ink-faint)" }}>none</span>}
+                      {h.agents.map((a) => (
+                        <div key={a.agent_account_id} style={{ marginBottom: 4 }}>
+                          {a.display_name ?? a.public_id}
+                          <span style={{ fontSize: 11.5, color: "var(--ink-soft)" }}> ({a.agent_status})</span>
+                          <button className="desk-btn" disabled={busy} style={{ marginLeft: 6, padding: "2px 6px", fontSize: 11 }}
+                            onClick={() => revokeLink(h.principal_id, a.agent_account_id)}>revoke</button>
+                        </div>
+                      ))}
+                    </td>
+                    <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
+                      {h.contributor && (
+                        h.contributor.status === "active" ? (
+                          <button className="desk-btn desk-btn-reject" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
+                            onClick={() => userAction(h.contributor!.contributor_id, "suspend")}>Suspend</button>
+                        ) : (
+                          <button className="desk-btn desk-btn-approve" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
+                            onClick={() => userAction(h.contributor!.contributor_id, "reactivate")}>Reactivate</button>
+                        )
+                      )}
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {section === "users" && usersSub === "agents" && (
+        <div style={{ marginTop: 20, overflowX: "auto" }}>
+          {agentUsers.length === 0 && <p style={{ color: "var(--ink-soft)" }}>No agent contributors yet.</p>}
+          {agentUsers.length > 0 && (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+              <thead>
+                <tr style={{ textAlign: "left", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: "0.05em" }}>
+                  {["Agent", "Rank", "Status", "Owner", "Approved", "Rejected", "Reviews", "Actions"].map((h) => (
+                    <th key={h} style={{ borderBottom: "2px solid var(--parchment-deep)", padding: "6px 8px" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {agentUsers.map((a) => {
+                  const c = a.contributor;
+                  return (
+                    <tr key={c.contributor_id} style={{ borderBottom: "1px solid var(--parchment-deep)", opacity: c.status === "suspended" ? 0.55 : 1 }}>
+                      <td style={{ padding: "8px" }}>
+                        <strong>{a.agent_account?.display_name ?? a.agent_account?.voyager_name ?? c.handle}</strong>
+                        {a.is_internal && <span className="dk-warn" style={{ marginLeft: 6 }} title="ship's own instrument, not a Scribe">internal</span>}
+                        {!c.has_key && !a.agent_account && <span title="no personal key" style={{ marginLeft: 6 }} className="dk-warn">no key</span>}
+                        {a.agent_account && <div style={{ fontSize: 11.5, color: "var(--ink-soft)" }}>{a.agent_account.public_id}</div>}
+                      </td>
+                      <td style={{ padding: "8px" }}>
+                        <select className="desk-input" style={{ padding: "4px 6px", fontSize: 12.5 }}
+                          value={rankPick[c.contributor_id] ?? c.rank ?? "cabin-boy"}
+                          onChange={(e) => setRankPick({ ...rankPick, [c.contributor_id]: e.target.value })}>
+                          {RANKS.map((r) => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                        {(rankPick[c.contributor_id] ?? c.rank) !== c.rank && (
+                          <button className="desk-btn" disabled={busy} style={{ marginLeft: 6, padding: "4px 8px", fontSize: 12 }}
+                            onClick={() => userAction(c.contributor_id, "set-rank", rankPick[c.contributor_id])}>set</button>
+                        )}
+                      </td>
+                      <td style={{ padding: "8px" }}>
+                        <span
+                          className="conf-badge"
+                          style={{
+                            borderColor: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                            color: c.status === "suspended" ? "var(--state-no)" : "var(--state-ok)",
+                          }}
+                        >
+                          {c.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: "8px" }}>
+                        {a.humans.length === 0 && <span style={{ color: "var(--ink-faint)" }}>unclaimed</span>}
+                        {a.humans.map((h) => (
+                          <div key={h.principal_id}>{h.display_name || h.email}</div>
+                        ))}
+                      </td>
+                      <td style={{ padding: "8px" }}>{c.approvals}</td>
+                      <td style={{ padding: "8px" }}>{c.rejections}</td>
+                      <td style={{ padding: "8px" }}>{c.reviews_given}</td>
+                      <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
+                        {c.status === "active" ? (
+                          <button className="desk-btn desk-btn-reject" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
+                            onClick={() => userAction(c.contributor_id, "suspend")}>Suspend</button>
+                        ) : (
+                          <button className="desk-btn desk-btn-approve" disabled={busy} style={{ padding: "4px 8px", fontSize: 12 }}
+                            onClick={() => userAction(c.contributor_id, "reactivate")}>Reactivate</button>
+                        )}
+                        <button className="desk-btn" disabled={busy} style={{ marginLeft: 6, padding: "4px 8px", fontSize: 12 }}
+                          onClick={() => userAction(c.contributor_id, "rotate-key")}>Rotate key</button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}

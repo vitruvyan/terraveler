@@ -504,7 +504,8 @@ export default function SpecimenPage() {
               section="submissions"
               submissionsSub="needs_verdict"
               sourcesSub="pending"
-              counts={{ needsVerdict: 3, peerReview: 5, history: 42, pending: 2, flagged: 1, drift: 1, resolved: 14, claimed: 2, claimedOverdue: 1 }}
+              usersSub="humans"
+              counts={{ needsVerdict: 3, peerReview: 5, history: 42, pending: 2, flagged: 1, drift: 1, resolved: 14, claimed: 2, claimedOverdue: 1, humans: 9, agents: 6 }}
             />
             <div className="dk-content">
               <p className="dk-empty">
