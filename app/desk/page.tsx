@@ -309,15 +309,29 @@ export default function Desk() {
   }, []);
 
 
-  async function verdict(id: number, v: string) {
+  /** lib/deskVerdict.ts's Carta §10.4 dossier guard refuses an approve whose
+   *  reviewers' dossier isn't clean (fewer than 2 reviews, or any refute)
+   *  unless it's told this is deliberate. Nothing here ever collected that
+   *  reason, so the guard was unconditional in practice — this is the one
+   *  place the editor's own authority to overrule the dossier gets exercised. */
+  async function verdict(id: number, v: string, override?: string) {
     setBusy(true);
     const r = await fetch("/api/desk/verdict", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submission_id: id, verdict: v, note: note[id] || undefined }),
+      body: JSON.stringify({ submission_id: id, verdict: v, note: note[id] || undefined, override }),
     });
     setBusy(false);
-    if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      if (v === "approve" && !override && String(j.error ?? "").includes("dossier is not clean")) {
+        const reason = prompt(`${j.error}\n\nOverride reason (leave blank to cancel):`);
+        if (reason && reason.trim()) verdict(id, v, reason.trim());
+        return;
+      }
+      alert(j.error ?? "failed");
+      return;
+    }
     load();
   }
 
