@@ -9,9 +9,13 @@
   overflow: visible;
   color: var(--ink);
   text-align: center;
-  background:
-    url("/terraveler-welcome-engraving.webp") center / cover no-repeat,
-    var(--parchment-raised);
+  background-color: var(--parchment-raised);
+  background-image:
+    url("/terraveler-welcome-engraving-hq.webp"),
+    url("/terraveler-welcome-engraving.webp");
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat, no-repeat;
   border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
     0 30px 78px rgba(43, 33, 23, .34),
@@ -255,8 +259,8 @@
   aspect-ratio: auto;
   min-height: min(540px, calc(100dvh - 64px));
   max-height: calc(100dvh - 64px);
-  background-size: cover;
-  background-position: center;
+  background-size: cover, cover;
+  background-position: center, center;
 }
 [data-layout="phone"] .welcome-compass { width: 82px; transform: translate(-50%, -48%); }
 [data-layout="phone"] .welcome-copy { padding: 48px 26px 28px; justify-content: center; }
