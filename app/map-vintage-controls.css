@@ -90,10 +90,10 @@
 }
 
 /* The two timelines should read as engraved instruments from the same atlas,
-   not generic floating cards. */
+   not generic floating cards. Their positioning remains owned by globals.css:
+   the world strip stays at the top and the transport bar at the bottom. */
 .world-strip,
 .transport-bar {
-  position: relative;
   border: 1px solid rgba(124, 87, 35, .42);
   background: rgba(var(--paper-rgb), .89);
   box-shadow:
