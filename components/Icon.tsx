@@ -45,6 +45,7 @@ export type IconName =
   | "lens"
   | "key"
   | "wheel"
+  | "dialogue"
   | "arrow-up"
   | "check"
   | "close"
@@ -260,6 +261,16 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="1.9" />
       <path d="M12 5.9V2.2M12 21.8v-3.7M5.9 12H2.2M21.8 12h-3.7" />
       <path d="M7.7 7.7 5.1 5.1M16.3 7.7l2.6-2.6M7.7 16.3l-2.6 2.6M16.3 16.3l2.6 2.6" />
+    </>
+  ),
+
+  /* Conversation, expressed as two small editorial cartouches rather than a
+     chatbot face or a platform emoji. The offset tails make the exchange read
+     at 17px without adding dots or decorative detail. */
+  dialogue: (
+    <>
+      <path d="M4.2 5.2h10.6a2 2 0 0 1 2 2v4.6a2 2 0 0 1-2 2H9l-3.3 2.7.7-2.7H4.2a2 2 0 0 1-2-2V7.2a2 2 0 0 1 2-2z" />
+      <path d="M17 9.2h2.8a2 2 0 0 1 2 2v4.6a2 2 0 0 1-2 2h-2.2l.7 2.7-3.3-2.7h-4.2a2 2 0 0 1-2-2v-1.6" />
     </>
   ),
 

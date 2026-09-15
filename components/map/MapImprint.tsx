@@ -72,11 +72,11 @@ export default function MapImprint({
           touchAction: "manipulation",
         }}
       >
-        <Icon name="globe" size={17} />
+        <Icon name="wheel" size={17} />
         {/* Split so a narrow phone can drop the word and keep the number.
             Below 400px the labelled pill and the two round doors cannot share
             a row — measured, not assumed: 100px of room for a control that
-            wants 131. A globe beside a count still says what it is. */}
+            wants 131. A helm beside a count still says what it is. */}
         <span>
           {atlasCount ? (
             <>

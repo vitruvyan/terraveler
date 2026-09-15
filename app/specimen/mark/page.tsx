@@ -31,6 +31,8 @@ const ICONS: { name: IconName; was: string; role: string }[] = [
   { name: "anchor", was: "⚓", role: "The voyage lens" },
   { name: "map", was: "🗺", role: "Historical borders" },
   { name: "compass", was: "🧭", role: "The cartographer's lens" },
+  { name: "wheel", was: "🌐", role: "Open the Atlas — a navigator's helm" },
+  { name: "dialogue", was: "🧭", role: "Ask Pigafetta — a sourced exchange" },
   { name: "plates", was: "🖼", role: "Engraved plates" },
   { name: "antiquity", was: "🗿", role: "Antiquities" },
   { name: "scroll", was: "📜", role: "Read the log as text" },

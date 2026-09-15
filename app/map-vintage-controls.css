@@ -1,10 +1,38 @@
 /* Map chrome refinement — controls should feel like engraved instruments,
    not generic app buttons. Keep all tap targets and behaviour unchanged. */
 
-/* Atlas door: a small printed plaque rather than a modern pill. */
+/* The two map doors rest as medallions so the controls do not occupy the map
+   while idle. A real pointer (or keyboard focus) opens the engraved label. */
+.map-atlas-door,
+.pig-pill {
+  width: var(--tap-min);
+  height: var(--tap-min);
+  min-width: var(--tap-min);
+  padding: 0;
+  gap: 0;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  border-radius: 50%;
+  transition:
+    width var(--dur-1) var(--ease),
+    padding var(--dur-1) var(--ease),
+    gap var(--dur-1) var(--ease),
+    border-radius var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
+}
+.map-atlas-door > span,
+.pig-pill-word {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    max-width var(--dur-1) var(--ease),
+    opacity var(--dur-1) var(--ease);
+}
+
 .map-atlas-door {
   position: relative;
-  border-radius: var(--radius-2);
   border: 1px solid rgba(216, 178, 92, .72);
   background:
     linear-gradient(rgba(43, 33, 23, .93), rgba(43, 33, 23, .97)),
@@ -20,7 +48,7 @@
 }
 .map-atlas-door::before,
 .map-atlas-door::after {
-  content: "";
+  content: none;
   position: absolute;
   top: 5px;
   bottom: 5px;
@@ -54,7 +82,6 @@
 /* Pigafetta: a brass-edged nameplate, not a SaaS launcher. */
 .pig-pill {
   position: relative;
-  border-radius: var(--radius-2);
   border: 1px solid rgba(216, 178, 92, .76);
   background: rgba(43, 33, 23, .96);
   color: var(--parchment-raised);
@@ -68,12 +95,33 @@
 }
 .pig-pill::before,
 .pig-pill::after {
-  content: "✦";
-  color: var(--brass-on-dark);
-  font-family: var(--font-display);
-  font-size: .58rem;
-  line-height: 1;
-  opacity: .78;
+  content: none;
+}
+
+@media (hover: hover) {
+  .map-atlas-door:hover,
+  .map-atlas-door:focus-visible {
+    width: 190px;
+  }
+  .pig-pill:hover,
+  .pig-pill:focus-visible {
+    width: 174px;
+  }
+  .map-atlas-door:hover,
+  .map-atlas-door:focus-visible,
+  .pig-pill:hover,
+  .pig-pill:focus-visible {
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+    border-radius: var(--radius-2);
+  }
+  .map-atlas-door:hover > span,
+  .map-atlas-door:focus-visible > span,
+  .pig-pill:hover .pig-pill-word,
+  .pig-pill:focus-visible .pig-pill-word {
+    max-width: 160px;
+    opacity: 1;
+  }
 }
 
 /* Left lens rail: treat it like a slim ivory instrument case. */
@@ -194,10 +242,6 @@
   }
 }
 
-[data-layout="phone"] .map-atlas-door,
-[data-layout="phone"] .pig-pill {
-  border-radius: var(--radius-2);
-}
 [data-layout="phone"] .transport-bar::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
