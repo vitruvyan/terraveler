@@ -3,14 +3,14 @@
   position: fixed;
   inset: 0;
   z-index: 65;
-  width: min(1080px, calc(100vw - 72px), calc((100dvh - 56px) * 16 / 9));
+  width: min(1080px, calc(100vw - 72px), calc((100dvh - 112px) * 16 / 9));
   aspect-ratio: 16 / 9;
   margin: auto;
-  overflow: hidden;
+  overflow: visible;
   color: var(--ink);
   text-align: center;
   background:
-    url("/terraveler-welcome-engraving.webp") center / 100% 100% no-repeat,
+    url("/terraveler-welcome-engraving.webp") center / cover no-repeat,
     var(--parchment-raised);
   border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
@@ -19,8 +19,8 @@
   isolation: isolate;
 }
 
-/* The artwork already contains the frame, ships, winds, compass roses and sea
-   creature. A faint central wash protects type without bleaching the drawing. */
+/* The artwork contains the engraved scene; a very light central wash protects
+   type without bleaching ships, winds or sea creatures near the edges. */
 .welcome-cart::after {
   content: "";
   position: absolute;
@@ -29,11 +29,26 @@
   pointer-events: none;
   background: radial-gradient(
     ellipse at 50% 45%,
-    rgba(248,240,222,.18) 0%,
-    rgba(248,240,222,.12) 36%,
-    rgba(248,240,222,.04) 62%,
-    transparent 78%
+    rgba(248,240,222,.16) 0%,
+    rgba(248,240,222,.10) 35%,
+    rgba(248,240,222,.03) 62%,
+    transparent 79%
   );
+}
+
+/* The top compass is deliberately independent of the raster background so it
+   can break the frame like an eighteenth-century engraved cartouche. */
+.welcome-compass {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 5;
+  width: clamp(92px, 10.5vw, 132px);
+  height: auto;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 5px 5px rgba(43,33,23,.24));
 }
 
 .welcome-copy {
@@ -44,23 +59,23 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 6.5% 12% 5.5%;
+  padding: 7.4% 12% 5.3%;
 }
 
 .welcome-x {
   position: absolute;
-  top: 6.6%;
-  right: 6.1%;
-  z-index: 3;
+  top: 5.8%;
+  right: 5.7%;
+  z-index: 6;
   width: 32px;
   height: 32px;
   border: 0;
-  background: rgba(248,240,222,.58);
+  background: rgba(248,240,222,.62);
   color: var(--ink-faint);
   font: 400 1.4rem/1 var(--font-display);
   cursor: pointer;
 }
-.welcome-x:hover { color: var(--ink); background: rgba(248,240,222,.82); }
+.welcome-x:hover { color: var(--ink); background: rgba(248,240,222,.86); }
 
 .welcome-kicker {
   font-family: var(--font-ui);
@@ -238,12 +253,13 @@
 [data-layout="phone"] .welcome-cart {
   width: calc(100vw - 18px);
   aspect-ratio: auto;
-  min-height: min(540px, calc(100dvh - 22px));
-  max-height: calc(100dvh - 22px);
+  min-height: min(540px, calc(100dvh - 64px));
+  max-height: calc(100dvh - 64px);
   background-size: cover;
   background-position: center;
 }
-[data-layout="phone"] .welcome-copy { padding: 42px 26px 28px; justify-content: center; }
+[data-layout="phone"] .welcome-compass { width: 82px; transform: translate(-50%, -48%); }
+[data-layout="phone"] .welcome-copy { padding: 48px 26px 28px; justify-content: center; }
 [data-layout="phone"] .welcome-x { top: 18px; right: 18px; }
 [data-layout="phone"] .welcome-kicker { font-size: .58rem; }
 [data-layout="phone"] .welcome-title { max-width: 94%; font-size: clamp(2.1rem, 9.6vw, 3rem); }
