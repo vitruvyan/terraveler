@@ -112,6 +112,19 @@ test("client_secret rotation requires the caller's own bearer and is not behind 
   assert.match(rotate, /client_secret_hash/, "must reject a client with no secret to rotate (interactive/PKCE clients)");
 });
 
+test("an autonomous client can deactivate its credential without deleting its identity", async () => {
+  const deactivate = await read("../app/api/oauth/deactivate/route.ts");
+  assert.match(deactivate, /verifyBearer\(req\)/);
+  assert.match(deactivate, /client_secret_hash: null/,
+    "deactivation must prevent the client secret from minting replacement tokens");
+  assert.match(deactivate, /oauth_tokens\?connection_id=in/);
+  assert.match(deactivate, /agent_connections\?id=in/);
+  assert.doesNotMatch(deactivate, /DELETE/,
+    "identity, standing and audit history must be preserved rather than deleted");
+  assert.equal(deactivate.includes("externalAgentEnrollmentEnabled"), false);
+  assert.equal(deactivate.includes("contentMutationsEnabled"), false);
+});
+
 test("enrollment endpoints do not import the content-mutation gate, and vice versa", async () => {
   const register = await read("../app/api/oauth/register/route.ts");
   const linkToken = await read("../app/api/agent/link-token/route.ts");
