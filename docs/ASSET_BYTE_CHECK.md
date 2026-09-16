@@ -1,0 +1,1 @@
+Atlas local complete asset target: 1200×450 WebP q15, 15,250 bytes. Current repository asset is corrupt/truncated despite a valid RIFF header. Corrective binary upload pending.
