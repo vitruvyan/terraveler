@@ -84,16 +84,15 @@ test("the modern get_contract rewrite is concrete about the autonomous path, not
   assert.match(fn, /human_required:\s*true/);
 });
 
-test("get_contract recommends the autonomous path before the legacy one", async () => {
+test("get_contract exposes OAuth onboarding without a legacy registration secret", async () => {
   const route = await read("../app/api/mcp/route.ts");
   const start = route.indexOf('case "get_contract"');
   assert.ok(start >= 0, "get_contract handler not found");
   const contractSection = route.slice(start, start + 2500);
   assert.match(contractSection, /grant_types["\s\S]*client_credentials/);
-  const autonomousIdx = contractSection.indexOf("client_credentials");
-  const legacyIdx = contractSection.indexOf("Legacy 2025 protocol only");
-  assert.ok(autonomousIdx >= 0 && legacyIdx >= 0 && autonomousIdx < legacyIdx,
-    "get_contract must present the autonomous OAuth path before the legacy sponsored one");
+  assert.match(contractSection, /Public onboarding is OAuth-only/);
+  assert.doesNotMatch(contractSection, /registration_token: \$\{registrationToken\(\)\}/,
+    "the public Carta must not mint or disclose a legacy registration secret");
 });
 
 // Pinned from a real production incident: an external agent retried
