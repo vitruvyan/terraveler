@@ -12,6 +12,8 @@ import MapTop from "@/components/map/MapTop";
 import MapNote from "@/components/map/MapNote";
 import TransportBar from "@/components/map/TransportBar";
 import ContributePanel from "@/components/ContributePanel";
+import VoyageEngraving from "@/components/VoyageEngraving";
+import { illustrationForVoyage } from "@/lib/voyageIllustrations";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasBrowser from "@/components/AtlasBrowser";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
@@ -1022,13 +1024,18 @@ export default function VoyageExperience({
               </>
             ) : (
               <>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
-                    Landfall {current.seq}
-                  </span>
-                  <span className="conf-badge">{current.confidence}</span>
+                <div className={lens === "log" ? "tv-log-panel-head" : undefined}>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                        Landfall {current.seq}
+                      </span>
+                      <span className="conf-badge">{current.confidence}</span>
+                    </div>
+                    <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
+                  </div>
+                  {lens === "log" && <VoyageEngraving theme={illustrationForVoyage(voyage)} compact />}
                 </div>
-                <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
 
                 {lens === "log" ? (
               <>

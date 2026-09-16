@@ -50,7 +50,7 @@
   bottom: 0;
   width: 22rem;
   height: 13rem;
-  background: url("/specimen/illustration/atlas-cartography.webp") center / cover no-repeat;
+  background: url("/media/specimen-illustration/atlas-cartography.webp") left 24% / 350% auto no-repeat;
   opacity: .055;
   filter: sepia(1) contrast(.8);
   mix-blend-mode: multiply;
@@ -343,7 +343,7 @@
   bottom: -2rem;
   width: 18rem;
   height: 10rem;
-  background: url("/specimen/illustration/mythic-seas.webp") center / cover no-repeat;
+  background: url("/media/specimen-illustration/mythic-seas.webp") right 24% / 350% auto no-repeat;
   opacity: .055;
   mix-blend-mode: screen;
   pointer-events: none;
