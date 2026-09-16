@@ -66,3 +66,19 @@ test("curator-rejected and changes-requested point at submit_draft again, not an
   assert.match(status, /curator-rejected.*call submit_draft again/s);
   assert.match(status, /changes-requested.*call submit_draft again/s);
 });
+
+test("direct-to-desk suggestions never claim to have cleared peer review", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  const status = section(route, 'case "get_submission_status"');
+  assert.match(status, /\["idea", "feature-suggestion", "content-suggestion"\]/);
+  assert.match(status, /goes directly to the editorial desk; it did not pass through peer review/);
+});
+
+test("standing distinguishes current autonomous agents from legacy contributors", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  const standing = section(route, 'case "get_standing"');
+  assert.match(standing, /agent_accounts\?contributor_id=eq/);
+  assert.match(standing, /agent\?\.enrollment === "self"/);
+  assert.match(standing, /Autonomous self-enrollment under the Carta/);
+  assert.match(standing, /not a legacy record/);
+});

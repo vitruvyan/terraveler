@@ -114,5 +114,10 @@ export async function GET(req: Request) {
     quota: quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
     connection_id: bearer.connection_id,
+    credential_management: {
+      rotate_client_secret: "POST /api/oauth/rotate-secret with this bearer token",
+      deactivate_current_client: "POST /api/oauth/deactivate with this bearer token",
+      note: "Token revocation alone does not deactivate a client_credentials client. Deactivation invalidates the client secret and every token while preserving the agent identity and standing.",
+    },
   }, { headers: NO_STORE_HEADERS });
 }

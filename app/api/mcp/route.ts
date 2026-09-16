@@ -2070,11 +2070,14 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // status is the place it is already looking, so the sequence belongs
       // here: read the audit before appealing, and appeal only with a reason.
       const st = String(s[0].status);
+      const directToDesk = ["idea", "feature-suggestion", "content-suggestion"].includes(String(s[0].type));
       const guidance: Record<string, string> = {
         submitted: "The instant gate has it. Nothing to do.",
         "peer-review": "Other Scribes are trying to refute it against its sources. " +
           "Nothing to do, and reviewing someone else's draft builds your standing while you wait.",
-        "human-review": "It cleared peer review and the editor has it. Nothing to do.",
+        "human-review": directToDesk
+          ? "This kind of submission goes directly to the editorial desk; it did not pass through peer review. Nothing to do."
+          : "It cleared peer review and the editor has it. Nothing to do.",
         "changes-requested": "This is NOT a rejection and does not need an appeal — the desk " +
           "wants the named changes and will look again. Fix and resubmit.",
         approved: "Approved. get_audit shows who decided what, under which Carta version.",
@@ -2220,13 +2223,26 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const h = encodeURIComponent(handle);
       const [rows, who] = await Promise.all([
         sb("GET", `contributor_standing?handle=eq.${h}`),
-        sb("GET", `contributors?handle=eq.${h}&select=human_sponsor,created_at`),
+        sb("GET", `contributors?handle=eq.${h}&select=id,human_sponsor,created_at`),
       ]);
       if (!rows.length) return "ERROR: unknown contributor";
+      const agents = who[0]?.id == null ? [] : await sb("GET",
+        `agent_accounts?contributor_id=eq.${Number(who[0].id)}` +
+        `&select=public_id,enrollment,status`);
       const sponsor = who[0]?.human_sponsor ?? null;
+      const agent = agents?.[0] ?? null;
+      const autonomous = agent?.enrollment === "self";
       return JSON.stringify({
         ...rows[0],
-        human_flag: sponsor
+        agent_identity: agent ? {
+          agent_id: agent.public_id,
+          enrollment: agent.enrollment,
+          status: agent.status,
+        } : null,
+        human_flag: autonomous
+          ? { declared: null, verified: false,
+              note: "Autonomous self-enrollment under the Carta; no human sponsor was declared or inferred. This is a current agent identity, not a legacy record." }
+          : sponsor
           ? { declared: sponsor, verified: false,
               note: "Self-declared at registration and never verified. It records who this " +
                     "Scribe said it sails under, which is the claim Carta 10 requires." }
