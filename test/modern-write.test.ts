@@ -45,6 +45,44 @@ test("modern unauthorised protected tools surface a real HTTP challenge", async 
   assert.match(middleware, /\? 401\s*:\s*upstream\.status/);
 });
 
+test("standard MCP is not mistaken for the retired API-key lane", async () => {
+  const middleware = await read("../middleware.ts");
+  assert.match(middleware, /usesLegacyCredentials/);
+  assert.match(middleware, /isLegacyIdentityOperation/);
+  assert.doesNotMatch(
+    middleware,
+    /if \(LEGACY_MUTATIONS\.has\(legacyName\) && !legacyMutationsEnabled\(\)\)/,
+    "a standard protected call must reach the OAuth challenge instead of a legacy 503",
+  );
+});
+
+test("standard MCP exposes capability discovery before onboarding", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  assert.match(route, /\{ name: "get_capabilities"/);
+  assert.match(route, /params\?\.name === "get_capabilities"/);
+  assert.match(route, /\/api\/agent\/capabilities/);
+  assert.match(route, /tools: PUBLIC_TOOLS/);
+  assert.match(route, /LEGACY_ONLY_TOOLS\.has\(tool\.name\)/);
+  assert.match(route, /delete properties\.handle/);
+  assert.match(route, /delete properties\.api_key/);
+});
+
+test("standard onboarding instructions describe both OAuth paths", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  const initialize = route.slice(route.indexOf('if (method === "initialize")'));
+  assert.match(initialize, /unattended agent can self-enrol with client_credentials/);
+  assert.match(initialize, /authorization_code \+ PKCE/);
+  assert.doesNotMatch(initialize, /WRITING needs your human's consent/);
+});
+
+test("standard protected calls return an HTTP 401 with OAuth metadata", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  const challenge = route.slice(route.indexOf("const challenge ="), route.indexOf("if (need && bearer", route.indexOf("const challenge =")));
+  assert.match(challenge, /status: 401/);
+  assert.match(challenge, /"WWW-Authenticate": challenge/);
+  assert.match(challenge, /"mcp\/www_authenticate": \[challenge\]/);
+});
+
 test("the modern Carta never sends an OAuth client back to legacy registration", async () => {
   const middleware = await read("../middleware.ts");
   assert.match(middleware, /moderniseContract/);

@@ -333,12 +333,20 @@ export async function middleware(req: NextRequest) {
   const msg = parsed.value;
   const method = req.headers.get("mcp-method");
 
-  // External beta is OAuth-native. The 2025 API-key write lane remains readable
-  // for compatibility but its mutations are a separate, explicitly disabled
-  // operator surface rather than a second public write path.
+  // No Mcp-Method header does not mean "legacy credentials". Standard
+  // Streamable HTTP clients negotiate 2025-06-18 in initialize and route the
+  // JSON-RPC method in the body; they do not send Terraveler's 2026 envelope
+  // headers. Let those clients reach the route below, where protected tools
+  // return the normal OAuth challenge. Only calls that actually select the
+  // retired API-key lane are governed by MCP_LEGACY_MUTATIONS_ENABLED.
   if (!method) {
     const legacyName = msg?.method === "tools/call" ? String(msg?.params?.name ?? "") : "";
-    if (LEGACY_MUTATIONS.has(legacyName) && !legacyMutationsEnabled()) {
+    const legacyArgs = msg?.params?.arguments;
+    const usesLegacyCredentials = Boolean(
+      legacyArgs && (legacyArgs.api_key != null || legacyArgs.registration_token != null || legacyArgs.invite_code != null),
+    );
+    const isLegacyIdentityOperation = legacyName === "register" || legacyName === "rotate_key";
+    if (LEGACY_MUTATIONS.has(legacyName) && (usesLegacyCredentials || isLegacyIdentityOperation) && !legacyMutationsEnabled()) {
       return legacyRpcError(msg?.id, -32003,
         "Legacy MCP mutations are disabled. Use the OAuth-native MCP connection for writes; public reads remain available.",
         503);
