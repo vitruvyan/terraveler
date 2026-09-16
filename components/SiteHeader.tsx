@@ -24,10 +24,10 @@ import AccountPanel from "@/components/AccountPanel";
 /* The destinations themselves live in lib/nav, because the map's compass menu
  * offers the same doors and used to keep its own copy — which went stale
  * through two reforms without anyone noticing. */
-import { ATLAS, PRIMARY, PROJECT, ALL } from "@/lib/nav";
+import { ATLAS, CHARTROOM, PRIMARY, PROJECT, ALL } from "@/lib/nav";
 
 const CHARTROOM_MOBILE = [
-  { href: "/contribute", label: "Ongoing Projects" },
+  { href: CHARTROOM.href, label: "Ongoing Projects" },
   { href: "/contribute?mode=propose#chartroom", label: "Propose" },
   { href: "/contribute?mode=sources#chartroom", label: "Sources" },
   { href: "/contribute?mode=agent-quick#chartroom", label: "Quick connect" },
@@ -49,7 +49,7 @@ export default function SiteHeader() {
 
   const here = (href: string) => pathname === href || pathname.startsWith(href + "/");
   const inProject = PROJECT.some((l) => here(l.href));
-  const inChartroom = pathname === "/contribute" || pathname.startsWith("/contribute/");
+  const inChartroom = pathname === CHARTROOM.href || pathname.startsWith(CHARTROOM.href + "/");
 
   useEffect(() => {
     if (searching) field.current?.focus();
