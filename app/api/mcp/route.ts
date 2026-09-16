@@ -505,6 +505,153 @@ const AUTH_PROPS = {
 const OAUTH = (scope: string) => [{ type: "oauth2", scopes: [scope] }];
 const OPEN = [{ type: "noauth" }];
 
+// Stable output contracts for the atlas reads most likely to be cited by an
+// agent. They deliberately describe only fields the server itself emits. A
+// client can now distinguish an absent fact from one it is tempted to infer,
+// while older clients still receive the same JSON in TextContent.
+const SEARCH_ATLAS_OUTPUT = {
+  type: "object",
+  additionalProperties: false,
+  required: ["query", "found"],
+  properties: {
+    query: { type: "string" }, found: { type: "number" }, note: { type: "string" },
+    next: { type: "string" },
+    results: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["type", "label", "context", "url"],
+        properties: {
+          type: { type: "string" }, label: { type: "string" },
+          context: { type: "string" }, url: { type: "string" }, voyage: { type: "string" },
+        },
+      },
+    },
+  },
+};
+
+const VOYAGE_OUTPUT = {
+  type: "object",
+  additionalProperties: false,
+  required: ["slug", "title", "navigator", "years", "url", "licence"],
+  properties: {
+    slug: { type: "string" }, title: { type: "string" }, navigator: { type: "string" },
+    ships: { type: "string" }, sponsor: { type: "string" }, years: { type: "string" },
+    summary: { type: "string" },
+    evidence_basis: {
+      anyOf: [
+        { type: "null" },
+        { type: "object", additionalProperties: false, required: ["tier", "means"],
+          properties: { tier: { type: "string" }, means: { type: "string" } } },
+      ],
+    },
+    what_was_lost: { anyOf: [{ type: "string" }, { type: "null" }] },
+    url: { type: "string" }, licence: { type: "string" },
+    stages: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["seq", "place", "confidence", "excerpt"],
+        properties: {
+          seq: { type: "number" }, place: { type: "string" }, today: { type: "string" },
+          arrived: { type: "string" }, date_note: { type: "string" },
+          confidence: { type: "string" }, event: { type: "string" },
+          excerpt: { anyOf: [{ type: "string" }, { type: "null" }] },
+          source: {
+            type: "object", additionalProperties: false, required: ["citation", "url"],
+            properties: {
+              citation: { anyOf: [{ type: "string" }, { type: "null" }] },
+              url: { anyOf: [{ type: "string" }, { type: "null" }] },
+            },
+          },
+          plates: {
+            type: "array",
+            items: {
+              type: "object", additionalProperties: false,
+              required: ["url", "caption", "credit", "license", "source_url", "date"],
+              properties: {
+                url: { type: "string" },
+                caption: { anyOf: [{ type: "string" }, { type: "null" }] },
+                credit: { anyOf: [{ type: "string" }, { type: "null" }] },
+                license: { anyOf: [{ type: "string" }, { type: "null" }] },
+                source_url: { anyOf: [{ type: "string" }, { type: "null" }] },
+                date: { anyOf: [{ type: "string" }, { type: "null" }] },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
+const PLACE_OUTPUT = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    query: { type: "string" }, found: { type: "number" },
+    place: { type: "string" }, description: { type: "string" },
+    coordinates: {
+      type: "object", additionalProperties: false, required: ["latitude", "longitude"],
+      properties: { latitude: { type: "number" }, longitude: { type: "number" } },
+    },
+    also_known_as: { type: "array", items: { type: "string" } },
+    identified_as: { type: "string" },
+    visited_by: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["voyage", "navigator", "stage", "confidence", "excerpt", "citation", "url"],
+        properties: {
+          voyage: { type: "string" }, navigator: { type: "string" }, years: { type: "string" },
+          called_it: { type: "string" }, stage: { type: "number" }, confidence: { type: "string" },
+          excerpt: { anyOf: [{ type: "string" }, { type: "null" }] },
+          citation: { anyOf: [{ type: "string" }, { type: "null" }] }, url: { type: "string" },
+        },
+      },
+    },
+    note: { type: "string" },
+  },
+};
+
+const CONTEXT_EVENTS_OUTPUT = {
+  type: "object",
+  additionalProperties: false,
+  required: ["slug", "found"],
+  properties: {
+    slug: { type: "string" }, title: { type: "string" }, navigator: { type: "string" },
+    years: { type: "string" }, found: { type: "number" }, note: { type: "string" },
+    catalogue: {
+      anyOf: [
+        { type: "null" },
+        { type: "object", additionalProperties: false,
+          required: ["generated_at", "source", "attribution"],
+          properties: {
+            generated_at: { type: "string" }, source: { type: "string" },
+            attribution: { type: "string" },
+          } },
+      ],
+    },
+    events: {
+      type: "array",
+      items: {
+        type: "object", additionalProperties: false,
+        required: ["date", "date_precision", "title", "summary", "category", "region",
+          "relevance_class", "relevance_score", "why", "source_language", "retrieved_at", "confidence"],
+        properties: {
+          date: { type: "string" }, date_precision: { type: "string" }, title: { type: "string" },
+          summary: { type: "string" }, category: { type: "string" }, region: { type: "string" },
+          relevance_class: { type: "string" }, relevance_score: { type: "number" },
+          why: { type: "string" }, qid: { type: "string" }, wikipedia: { type: "string" },
+          wikidata: { type: "string" }, source_language: { type: "string" },
+          retrieved_at: { type: "string" }, source_revision: { type: "string" },
+          confidence: { type: "string" },
+        },
+      },
+    },
+  },
+};
+
 const TOOL_DEFINITIONS = [
   { name: "get_capabilities",
     annotations: {
@@ -532,7 +679,8 @@ const TOOL_DEFINITIONS = [
       "atlas holds and, when it holds nothing, says so — an honest gap is the most useful " +
       "answer this server gives.",
     inputSchema: { type: "object", required: ["query"],
-      properties: { query: { type: "string" }, limit: { type: "number" } } } },
+      properties: { query: { type: "string" }, limit: { type: "number" } } },
+    outputSchema: SEARCH_ATLAS_OUTPUT },
   { name: "get_voyage",
     annotations: {
       readOnlyHint: true,
@@ -546,7 +694,8 @@ const TOOL_DEFINITIONS = [
       "citations, what kind of record it survives through, and what was lost. Excerpts are " +
       "verbatim from public-domain sources or absent — never reconstructed.",
     inputSchema: { type: "object", required: ["slug"],
-      properties: { slug: { type: "string" }, stages: { type: "boolean" } } } },
+      properties: { slug: { type: "string" }, stages: { type: "boolean" } } },
+    outputSchema: VOYAGE_OUTPUT },
   { name: "get_place",
     annotations: {
       readOnlyHint: true,
@@ -560,7 +709,8 @@ const TOOL_DEFINITIONS = [
       "called it, and what they wrote. Voyages are joined by coordinate-verified identity, not " +
       "by name — so Tahiti under Cook and under Bougainville are one place.",
     inputSchema: { type: "object", required: ["query"],
-      properties: { query: { type: "string" } } } },
+      properties: { query: { type: "string" } } },
+    outputSchema: PLACE_OUTPUT },
   { name: "get_context_events",
     annotations: {
       readOnlyHint: true,
@@ -576,7 +726,8 @@ const TOOL_DEFINITIONS = [
       "precision, source revision and links; no date or fact is invented. An empty result is " +
       "a real answer — the voyage then has no validated context yet.",
     inputSchema: { type: "object", required: ["slug"],
-      properties: { slug: { type: "string" }, limit: { type: "number" } } } },
+      properties: { slug: { type: "string" }, limit: { type: "number" } } },
+    outputSchema: CONTEXT_EVENTS_OUTPUT },
   { name: "list_event_gaps",
     annotations: {
       readOnlyHint: true,
@@ -1041,8 +1192,45 @@ const PUBLIC_TOOLS = TOOLS
     const properties = { ...(tool.inputSchema?.properties ?? {}) } as Record<string, unknown>;
     delete properties.handle;
     delete properties.api_key;
-    return { ...tool, inputSchema: { ...tool.inputSchema, properties } };
+    return {
+      ...tool,
+      inputSchema: { ...tool.inputSchema, properties, additionalProperties: false },
+    };
   });
+
+const PUBLIC_TOOL_BY_NAME = new Map(PUBLIC_TOOLS.map((tool) => [tool.name, tool]));
+
+function invalidPublicArguments(name: string, args: unknown): string | null {
+  const tool = PUBLIC_TOOL_BY_NAME.get(name);
+  if (!tool || args === undefined) return null;
+  if (!args || typeof args !== "object" || Array.isArray(args))
+    return `Invalid arguments for ${name}: expected an object.`;
+  const allowed = new Set(Object.keys(tool.inputSchema.properties ?? {}));
+  // Unadvertised compatibility bridge for handles created before OAuth.
+  allowed.add("handle");
+  allowed.add("api_key");
+  const unexpected = Object.keys(args as Record<string, unknown>).filter((key) => !allowed.has(key));
+  return unexpected.length
+    ? `Invalid arguments for ${name}: unexpected ${unexpected.join(", ")}.`
+    : null;
+}
+
+function resultFromText(text: string) {
+  const isError = text.startsWith("ERROR:");
+  let structuredContent: Record<string, unknown> | undefined;
+  if (!isError) {
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+        structuredContent = parsed as Record<string, unknown>;
+    } catch { /* Some guide tools intentionally return prose. */ }
+  }
+  return {
+    content: [{ type: "text", text }],
+    ...(structuredContent ? { structuredContent } : {}),
+    isError,
+  };
+}
 
 
 async function callTool(name: string, args: any, bearer?: Bearer | null): Promise<string> {
@@ -2364,6 +2552,8 @@ export async function POST(req: Request) {
   if (method === "tools/list") return rpcResult(id, { tools: PUBLIC_TOOLS });
   if (method === "tools/call") {
     try {
+      const argumentError = invalidPublicArguments(String(params?.name ?? ""), params?.arguments);
+      if (argumentError) return rpcError(id, -32602, argumentError);
       if (params?.name === "get_capabilities") {
         const headers = new Headers();
         const authorization = req.headers.get("authorization");
@@ -2418,7 +2608,7 @@ export async function POST(req: Request) {
       if (need && bearer && !bearer.scopes.includes(need))
         return insufficientScope(need, bearer.scopes);
       const text = await callTool(params?.name, params?.arguments ?? {}, bearer);
-      return rpcResult(id, { content: [{ type: "text", text }], isError: text.startsWith("ERROR:") });
+      return rpcResult(id, resultFromText(text));
     } catch (e: any) {
       return rpcResult(id, { content: [{ type: "text", text: `ERROR: ${String(e?.message || e)}` }], isError: true });
     }
