@@ -29,4 +29,6 @@ test("the probe is read-only and discovers relational identifiers", () => {
   assert.doesNotMatch(probe, /name:\s*"(?:claim_gap|propose_idea|submit_draft|suggest_feature|suggest_content|suggest_source|submit_review|appeal)"/);
   assert.match(probe, /sha256/);
   assert.match(probe, /structuredContent is missing/);
+  assert.match(probe, /application\/json, text\/event-stream/);
+  assert.match(probe, /"mcp-protocol-version": protocolVersion/);
 });
