@@ -12,7 +12,6 @@ import MapTop from "@/components/map/MapTop";
 import MapNote from "@/components/map/MapNote";
 import TransportBar from "@/components/map/TransportBar";
 import ContributePanel from "@/components/ContributePanel";
-import { illustrationForVoyage } from "@/lib/voyageIllustrations";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasBrowser from "@/components/AtlasBrowser";
 import { OTHER_COLOR, empireColorExpression, epochFor } from "@/lib/historical-maps";
@@ -1032,7 +1031,7 @@ export default function VoyageExperience({
                 <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
 
                 {lens === "log" ? (
-              <div className="tv-map-log-art" data-theme={illustrationForVoyage(voyage) ?? undefined}>
+              <div>
                 {signedIn && (
                   <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 4px" }}>
                     <button

@@ -103,6 +103,7 @@ export default async function VoyageLog({
   // can check. Computed for the whole voyage at once so an explanation that
   // would read identically on forty stages is asked only on the first.
   const marginalia = notesForVoyage(voyage, navigator, wps);
+  const illustration = illustrationForVoyage(voyage);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`
@@ -115,7 +116,7 @@ export default async function VoyageLog({
           open answers into. The prose keeps its own readable measure via
           .tv-log-prose; only the stage rows use the full width. */}
       <main className="prose tv-voyage-log" style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
-        <VoyageEngraving theme={illustrationForVoyage(voyage)} />
+        <div className={`tv-log-opening${illustration?.opener ? " has-engraving" : ""}`}>
         <div className="tv-log-prose">
         <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
           The log
@@ -127,6 +128,12 @@ export default async function VoyageLog({
           {voyage.ships ? ` · ${voyage.ships}` : ""}
         </p>
         {voyage.summary && <p style={{ margin: "14px 0" }}>{voyage.summary}</p>}
+        </div>
+
+        {illustration?.opener && <VoyageEngraving scene={illustration.opener} />}
+        </div>
+
+        <div className="tv-log-prose">
 
         {/* How we know this. Deliberately placed above the itinerary rather
             than in a footnote: for a voyage whose records were destroyed, what
@@ -218,6 +225,9 @@ export default async function VoyageLog({
                   )}
                 </div>
                 {w.event && <p style={{ margin: "0 0 8px" }}>{w.event}</p>}
+                {illustration?.encounter?.stage === w.seq && (
+                  <VoyageEngraving scene={illustration.encounter.scene} className="tv-encounter-figure" />
+                )}
                 {anyW.diary_excerpt ? (
                   <figure style={{ margin: "8px 0 0" }}>
                     {/* The provenance travels with the text: selecting inside

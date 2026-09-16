@@ -4050,68 +4050,50 @@ main.prose {
 /* The log's prose keeps a readable measure even though the page is wide
    enough to hold a margin: only the stage rows use the full width. */
 .tv-log-prose { max-width: 700px; }
+.tv-log-opening.has-engraving {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  gap: var(--space-6);
+  align-items: start;
+}
+[data-layout="phone"] .tv-log-opening.has-engraving { display: block; }
+[data-layout="phone"] .tv-log-opening .tv-editorial-figure { margin-block: var(--space-5); }
 
-/* Engravings sit in unused paper or below the log's ink, as atmosphere only.
-   Their source is a specimen sheet, never a plate documenting a landfall. */
-.tv-voyage-log { position: relative; }
-.tv-voyage-engraving,
-.tv-map-log-art::before {
-  background-image: var(--engraving-image);
-  background-size: 500% auto;
+/* One selected cell of an original HQ sheet, mounted in the reading flow.
+   The full sheets remain untouched. A caption explicitly separates this
+   editorial imaginary from the sourced plates attached to landfalls. */
+.tv-editorial-figure { margin: var(--space-5) 0 var(--space-6); max-width: 42rem; }
+.tv-log-opening .tv-editorial-figure { margin: 0; }
+.tv-editorial-mount {
+  padding: var(--space-2);
+  background: var(--parchment-raised);
+  border: 1px solid var(--rule-hair);
+}
+.tv-editorial-crop {
+  aspect-ratio: 16 / 9;
   background-repeat: no-repeat;
-  background-position: var(--engraving-x) var(--engraving-y);
-  filter: sepia(.28);
-  pointer-events: none;
+  background-size: 300% auto;
+  background-position: 0 0;
 }
-.tv-voyage-engraving[data-theme="sea"],
-.tv-map-log-art[data-theme="sea"] {
-  --engraving-image: url("/media/specimen-illustration/mariners.webp");
-  --engraving-x: 50%;
-  --engraving-y: 24%;
+.tv-editorial-crop[data-sheet="atlas-cartography"] { background-image: url("/media/specimen-illustration/atlas-cartography.webp"); }
+.tv-editorial-crop[data-sheet="new-worlds"] { background-image: url("/media/specimen-illustration/new-worlds.webp"); }
+.tv-editorial-crop[data-sheet="mariners"] {
+  background-image: url("/media/specimen-illustration/mariners.webp");
+  aspect-ratio: 4 / 3;
 }
-.tv-voyage-engraving[data-theme="conquest"],
-.tv-map-log-art[data-theme="conquest"] {
-  --engraving-image: url("/media/specimen-illustration/mariners.webp");
-  --engraving-x: 0%;
-  --engraving-y: 31%;
-}
-.tv-voyage-engraving[data-theme="americas"],
-.tv-map-log-art[data-theme="americas"] {
-  --engraving-image: url("/media/specimen-illustration/new-worlds.webp");
-  --engraving-x: 87%;
-  --engraving-y: 96%;
-}
-.tv-voyage-engraving[data-theme="land"],
-.tv-map-log-art[data-theme="land"] {
-  --engraving-image: url("/media/specimen-illustration/atlas-cartography.webp");
-  --engraving-x: 0%;
-  --engraving-y: 24%;
-}
-.tv-voyage-log > .tv-voyage-engraving {
-  position: absolute;
-  top: var(--space-5);
-  right: 0;
+.tv-editorial-crop[data-column="1"] { background-position-x: 50%; }
+.tv-editorial-crop[data-column="2"] { background-position-x: 100%; }
+.tv-editorial-crop[data-row="1"] { background-position-y: 100%; }
+.tv-editorial-figure figcaption { padding: var(--space-2) var(--space-2) 0; }
+.tv-editorial-figure figcaption p { margin: 0 0 var(--space-1); font-family: var(--font-body); color: var(--ink); }
+.tv-editorial-figure figcaption span {
   display: block;
-  width: 20rem;
-  height: 14rem;
-  opacity: .12;
-  mask-image: linear-gradient(90deg, transparent, #000 20% 76%, transparent);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums lining-nums;
 }
-.tv-map-log-art { position: relative; isolation: isolate; }
-.tv-map-log-art::before {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  top: -2rem;
-  right: -.75rem;
-  width: 11rem;
-  height: 8rem;
-  opacity: .09;
-  mask-image: linear-gradient(90deg, transparent, #000 32%);
-}
-@media (max-width: 1050px) {
-  .tv-voyage-log > .tv-voyage-engraving { display: none; }
-}
+.tv-encounter-figure { max-width: 32rem; margin-block: var(--space-4); }
 
 /* --- Making the annotation layer findable -------------------------------
    The question chips are deliberately rare: an explanation repeated on forty
