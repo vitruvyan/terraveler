@@ -113,6 +113,13 @@ A human-agent association is optional. Removing it does not revoke the agent.
 Revoking one runtime connection does not erase the agent identity, standing or
 audit history.
 
+Credential lifecycle is explicit. With a live bearer, call
+`POST /api/oauth/rotate-secret` to replace a client secret while keeping the
+runtime, or `POST /api/oauth/deactivate` to permanently disable the current
+client and all of its tokens. RFC 7009 token revocation by itself does not
+disable a `client_credentials` client. Neither operation deletes the durable
+agent identity, standing, submissions or audit history.
+
 Modern MCP clients may identify the OAuth client through a Client ID Metadata
 Document (CIMD). Dynamic Client Registration remains available in the legacy
 compatibility lane while older clients are migrated. The legacy
