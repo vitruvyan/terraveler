@@ -4,6 +4,7 @@ import "./illustration.css";
 import Chapters from "../Chapters";
 import BackToTop from "../BackToTop";
 import Ornament from "@/components/Ornament";
+import IllustrationPlate from "./IllustrationPlate";
 
 export const metadata: Metadata = {
   title: "Illustration specimen · Terraveler",
@@ -16,7 +17,7 @@ const FAMILIES = [
     title: "Atlas & Cartography",
     plates: "plates 01–06",
     kicker: "mountains · coasts · compass rose · astrolabe · allegory",
-    preview: "atlas",
+    src: "/specimen/illustration/atlas-cartography.webp",
     copy:
       "Foundational views of the terrestrial world: orography, coasts and islands, the ship, the instrument and the allegorical figure. These are environmental marks before they are illustrations.",
     note: "Use when geography itself is speaking — a horizon, a route, an instrument, a threshold.",
@@ -27,7 +28,7 @@ const FAMILIES = [
     title: "Mythic Seas & Allegories",
     plates: "plates 07–12",
     kicker: "kraken · sea dragon · Neptune · winds · Urania · ruins",
-    preview: "mythic",
+    src: "/specimen/illustration/mythic-seas.webp",
     copy:
       "Creatures, deities and symbolic figures from the unknown sea. Their job is not fantasy decoration: they mark uncertainty, passage, danger, knowledge and the edge of the chart.",
     note: "The mythical register is a historical voice: it belongs at the edge of knowledge, never as generic fantasy wallpaper.",
@@ -38,7 +39,7 @@ const FAMILIES = [
     title: "New Worlds & American Imaginaries",
     plates: "plates 13–24",
     kicker: "sirens · cyclops · Arcadia · Maya · masks · colonial architecture",
-    preview: "newworlds",
+    src: "/specimen/illustration/new-worlds.webp",
     copy:
       "Landscapes, peoples, myths and built worlds across the Americas. This family carries encounter and cultural context, and must always be used with historical specificity rather than as a generic exotic register.",
     note: "Context before spectacle. A Maya city, a colonial square and an Arcadian allegory are not interchangeable visual shorthand.",
@@ -49,7 +50,7 @@ const FAMILIES = [
     title: "Mariners, Captains & Roles",
     plates: "plates 25–30",
     kicker: "conquistador · sailor · cabin boy · captain · navigator · helmsman",
-    preview: "mariners",
+    src: "/specimen/illustration/mariners.webp",
     copy:
       "The people behind the journeys. Portrait-like engravings for narrative passages, ranks, labour, command, apprenticeship and moments in which a voyage becomes a human decision.",
     note: "Use the role to explain the story: command, labour, navigation and apprenticeship should remain visibly distinct.",
@@ -89,7 +90,13 @@ export default function IllustrationSpecimenPage() {
               Engravings, allegories and cartographic marks for a world that should feel printed before it feels rendered.
             </p>
           </div>
-          <div className="illus-hero-art" aria-hidden="true" />
+          <div className="illus-hero-art">
+            <IllustrationPlate
+              src="/specimen/illustration/atlas-cartography.webp"
+              alt="Atlas & Cartography engraving family"
+              className="is-hero"
+            />
+          </div>
         </header>
 
         <section className="illus-prologue" aria-label="Illustration principles">
@@ -128,7 +135,7 @@ export default function IllustrationSpecimenPage() {
               </header>
 
               <figure className="illus-plate">
-                <div className={`illus-preview ${family.preview}`} role="img" aria-label={`${family.title} engraved plate preview`} />
+                <IllustrationPlate src={family.src} alt={`${family.title} engraved plate`} />
                 <figcaption>
                   <span>{family.plates}</span>
                   <span>use · {family.use}</span>
