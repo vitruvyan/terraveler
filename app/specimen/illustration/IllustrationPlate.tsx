@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./lightbox.css";
 
 type IllustrationPlateProps = {
@@ -11,6 +11,10 @@ type IllustrationPlateProps = {
 
 export default function IllustrationPlate({ src, alt, className = "" }: IllustrationPlateProps) {
   const [open, setOpen] = useState(false);
+  const resolvedSrc = useMemo(
+    () => src.replace(/^\/specimen\/illustration\//, "/media/specimen-illustration/"),
+    [src],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +39,7 @@ export default function IllustrationPlate({ src, alt, className = "" }: Illustra
         aria-label={`Open ${alt} full screen`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={alt} className="illus-preview-image" />
+        <img src={resolvedSrc} alt={alt} className="illus-preview-image" />
         <span className="illus-expand-hint" aria-hidden="true">open plate ↗</span>
       </button>
 
@@ -46,7 +50,7 @@ export default function IllustrationPlate({ src, alt, className = "" }: Illustra
           </button>
           <div className="illus-lightbox-stage" onClick={(event) => event.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={alt} />
+            <img src={resolvedSrc} alt={alt} />
           </div>
         </div>
       )}
