@@ -199,13 +199,15 @@ held, then decide deliberately whether you actually want both open at once.
 3. For a full incident shutdown, set both to `false` and redeploy. Rollback is
    the same procedure in reverse, one gate at a time, re-smoking after each
    step per the enable runbook above.
-4. Revoke a compromised connection/client through the existing OAuth revoke
-   path. A connection revocation must not delete its agent identity or standing.
-   Revoking kills live tokens but does not invalidate `client_secret_hash`; a
-   leaked secret can still mint new `client_credentials` tokens until the agent
-   calls `POST /api/oauth/rotate-secret` (bearer-authenticated, self-service —
-   not behind either gate, since it neither enrolls a new identity nor writes
-   content) to replace it.
+4. For a compromised autonomous credential, choose one of the two
+   bearer-authenticated self-service operations. `POST /api/oauth/rotate-secret`
+   replaces `client_secret_hash` while keeping the runtime connected.
+   `POST /api/oauth/deactivate` permanently invalidates that client secret plus
+   every connection and token issued to the client. Deactivation preserves the
+   durable agent identity, standing, submissions and audit trail. Do not rely on
+   RFC 7009 token revocation alone: it kills the presented token, but a live
+   client secret can mint a replacement. Neither credential operation is behind
+   the enrollment or content gates.
 5. Query `mcp_security_audit` by time/action/agent. Do not export raw source
    identifiers beyond the incident need.
 6. If database guard RPCs are unavailable, leave the beta disabled. Do not
