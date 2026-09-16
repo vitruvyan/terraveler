@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 const endpoint = process.env.MCP_PROBE_URL || "https://www.terraveler.com/api/mcp";
 const startedAt = new Date().toISOString();
 let requestId = 0;
+let protocolVersion = null;
 const operations = [];
 
 const digest = (value) => createHash("sha256").update(value).digest("hex");
@@ -13,7 +14,11 @@ async function post(payload, label) {
   const started = performance.now();
   const response = await fetch(endpoint, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json" },
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      ...(protocolVersion ? { "mcp-protocol-version": protocolVersion } : {}),
+    },
     body: JSON.stringify(payload),
   });
   const raw = await response.text();
@@ -53,6 +58,7 @@ async function main() {
     clientInfo: { name: "terraveler-read-only-probe", version: "1.0.0" },
   });
   assert(initialized?.protocolVersion === "2025-06-18", "initialize: protocol negotiation failed");
+  protocolVersion = initialized.protocolVersion;
 
   const notification = await post({ jsonrpc: "2.0", method: "notifications/initialized" }, "initialized");
   assert(notification.response.status === 202, "initialized: expected HTTP 202");
