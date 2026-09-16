@@ -1,0 +1,124 @@
+.illus-hero-art {
+  min-height: 0;
+  background: none;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+.illus-preview-button {
+  position: relative;
+  display: block;
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--rule-mid);
+  border-bottom: 1px solid var(--rule-mid);
+  background: var(--parchment-deep);
+  color: inherit;
+  cursor: zoom-in;
+  overflow: hidden;
+  text-align: inherit;
+}
+
+.illus-preview-button.is-hero {
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
+.illus-preview-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: sepia(.12) contrast(1.04);
+  mix-blend-mode: multiply;
+  transition: opacity var(--dur-1) var(--ease), transform var(--dur-2) var(--ease);
+}
+
+.illus-preview-button:hover .illus-preview-image,
+.illus-preview-button:focus-visible .illus-preview-image {
+  opacity: .9;
+  transform: scale(1.006);
+}
+
+.illus-expand-hint {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: .28rem .45rem;
+  background: color-mix(in srgb, var(--parchment-raised) 90%, transparent);
+  border: 1px solid var(--rule-mid);
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease);
+}
+
+.illus-preview-button:hover .illus-expand-hint,
+.illus-preview-button:focus-visible .illus-expand-hint {
+  opacity: 1;
+}
+
+.illus-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 3vw, 3rem);
+  background: rgba(17, 23, 34, .96);
+  cursor: zoom-out;
+}
+
+.illus-lightbox-stage {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  cursor: default;
+}
+
+.illus-lightbox-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 5rem);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: none;
+  box-shadow: 0 0 0 1px rgba(242, 230, 207, .18);
+}
+
+.illus-lightbox-close {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 10000;
+  padding: .5rem .7rem;
+  border: 1px solid rgba(242, 230, 207, .28);
+  background: transparent;
+  color: var(--parchment-raised);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+[data-layout="phone"] .illus-expand-hint {
+  opacity: 1;
+}
+
+[data-layout="phone"] .illus-lightbox {
+  padding: .75rem;
+}
+
+[data-layout="phone"] .illus-lightbox-stage img {
+  max-height: calc(100dvh - 4rem);
+}
