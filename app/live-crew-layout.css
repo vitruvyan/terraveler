@@ -1,65 +1,288 @@
-/* Live Crew density refinement.
-   One active agent deserves the whole reading measure; a watch with several
-   agents should read like a ship's roster, not a wall of dashboard cards. */
+/* Live Crew — editorial register.
+   The Crew is an index page, not a dashboard. It uses the width of an atlas
+   spread while keeping prose at reading measure; rules and typography carry
+   hierarchy, and the audit stream is the one deliberately dark instrument. */
 
-/* A single agent always spans the complete Live Crew column. */
-.lc-agent-grid {
-  grid-template-columns: minmax(0, 1fr);
+/* The Chartroom shell normally keeps TitlePage deliberately narrow. Crew is
+   the exception because its content is comparative: roster, projects and the
+   audit stream need to be seen together. */
+.tv-page-main .tp-page:has(.lc-dashboard) {
+  width: min(100%, 88rem);
+  max-width: 88rem;
+  margin-inline: auto;
+}
+.tp-page:has(.lc-dashboard) .tp-head,
+.tp-page:has(.lc-dashboard) .ed-body,
+.tp-page.is-wide .tp-head,
+.tp-page.is-wide .ed-body {
+  max-width: none;
+}
+.tp-page:has(.lc-dashboard) .tp-head {
+  width: min(58rem, 100%);
+  margin-inline: auto;
+  text-align: center;
+}
+.tp-page:has(.lc-dashboard) .tp-dek {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+.tp-page:has(.lc-dashboard) .tp-rule {
+  margin-inline: auto;
+}
+.tp-page:has(.lc-dashboard) .ed-body > .ed-muted:first-child {
+  max-width: 52rem !important;
+  margin: 0 auto var(--space-6) !important;
+  text-align: center;
 }
 
-/* When more than one agent is on watch, turn the card stack into a compact
-   roster/table while preserving the specimen's paper, rules and sigils. */
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) {
-  gap: 0;
-  border-top: 1px solid var(--rule-mid);
-}
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
+.lc-dashboard {
   display: grid;
-  grid-template-columns: minmax(250px, 1.35fr) minmax(190px, 1fr) minmax(180px, .85fr) auto;
-  column-gap: var(--space-5);
+  gap: 0;
+  width: 100%;
+  position: relative;
+}
+
+/* A faint cartographic plate at the lower left: atmosphere, never content. */
+.lc-dashboard::before {
+  content: "";
+  position: absolute;
+  left: -8rem;
+  bottom: 0;
+  width: 22rem;
+  height: 13rem;
+  background: url("/specimen/illustration/atlas-cartography.webp") center / cover no-repeat;
+  opacity: .055;
+  filter: sepia(1) contrast(.8);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  mask-image: linear-gradient(120deg, #000 0 38%, transparent 86%);
+}
+
+.lc-overview {
+  padding: var(--space-4) 0 0;
+  border-top: 1px solid var(--rule-mid);
+  border-bottom: 1px solid var(--rule-mid);
+}
+.lc-live-label {
+  display: flex;
   align-items: center;
-  padding: var(--space-4) 0;
-  background: transparent;
-  border: 0;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: var(--space-3);
+}
+.lc-live-dot {
+  width: .45rem;
+  height: .45rem;
+  border-radius: var(--radius-pill);
+  background: var(--state-ok);
+}
+.lc-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.lc-metrics > div {
+  min-width: 0;
+  padding: var(--space-3) var(--space-5) var(--space-5);
+  border-left: 1px solid var(--rule-hair);
+  text-align: center;
+}
+.lc-metrics > div:first-child { border-left: 0; }
+.lc-metrics strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(2.3rem, 4vw, 3.8rem);
+  font-weight: 400;
+  line-height: .92;
+  color: var(--ink);
+  font-variant-numeric: oldstyle-nums proportional-nums;
+}
+.lc-metrics > div:nth-child(1) strong { color: var(--brass-text); }
+.lc-metrics > div:nth-child(2) strong { color: var(--state-review); }
+.lc-metrics > div:nth-child(3) strong { color: var(--state-desk); }
+.lc-metrics > div:nth-child(4) strong { color: var(--state-changes); }
+.lc-metrics > div:nth-child(5) strong { color: var(--state-ok); }
+.lc-metrics span {
+  display: block;
+  margin-top: var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--step--2);
+  font-variant-caps: all-small-caps;
+  letter-spacing: .12em;
+  color: var(--ink-soft);
+}
+
+.lc-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.82fr) minmax(19rem, .88fr);
+  align-items: stretch;
+  border-bottom: 1px solid var(--rule-mid);
+}
+.lc-main-register { min-width: 0; padding-right: var(--space-6); }
+.lc-section {
+  min-width: 0;
+  padding: var(--space-6) 0;
   border-bottom: 1px solid var(--rule-hair);
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card::before {
-  display: none;
+.lc-main-register > .lc-section:last-child { border-bottom: 0; }
+.lc-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
+.lc-section-head h2 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--step-2);
+  line-height: 1.05;
+  font-weight: 500;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+.lc-section-head p {
+  margin: var(--space-1) 0 0;
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.lc-kicker {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--brass-text);
+}
+.lc-section-count {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+.lc-empty { color: var(--ink-soft); font-style: italic; }
 
+/* On watch — rows in a ship's register, never cards. */
+.lc-agent-grid,
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-top: 1px solid var(--rule-hair);
+}
+.lc-agent-card,
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(13rem, 1.3fr) minmax(12rem, 1.08fr) minmax(10rem, .75fr) minmax(7rem, .6fr);
+  gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule-hair);
+  background: transparent;
+  box-shadow: none;
+}
+.lc-agent-card::before,
+.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card::before { display: none; }
+.lc-agent-top,
 .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top {
+  display: grid;
   grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top .lc-status-chip {
-  display: none;
+.lc-avatar {
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 1px solid var(--rule-mid);
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  position: relative;
+  background: var(--parchment-deep);
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  color: var(--ink);
 }
-
+.lc-avatar.tone-1, .lc-avatar.tone-4 { background: color-mix(in srgb, var(--state-review) 13%, var(--parchment)); }
+.lc-avatar.tone-2, .lc-avatar.tone-5 { background: color-mix(in srgb, var(--state-desk) 14%, var(--parchment)); }
+.lc-avatar.tone-3 { background: color-mix(in srgb, var(--state-changes) 13%, var(--parchment)); }
+.lc-avatar.is-live i {
+  position: absolute;
+  right: -.08rem;
+  bottom: .1rem;
+  width: .42rem;
+  height: .42rem;
+  border-radius: var(--radius-pill);
+  background: var(--state-ok);
+  outline: 2px solid var(--parchment);
+}
+.lc-agent-id h3 {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--step-0);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.lc-agent-id > span,
+.lc-agent-card footer,
+.lc-assignment-meta {
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  color: var(--ink-soft);
+}
+.lc-status-chip { display: none; }
+.lc-assignment,
 .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment {
   margin: 0;
   padding: 0;
   border: 0;
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment strong {
-  margin-top: 3px;
+.lc-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.lc-assignment strong {
+  display: block;
+  margin-top: .1rem;
+  font-family: var(--font-ui);
   font-size: var(--step-0);
+  font-weight: 500;
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-stats {
-  min-width: 0;
+.lc-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin: 0;
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-stats dd {
-  font-size: var(--step-1);
+.lc-stats div { text-align: center; }
+.lc-stats dt {
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  color: var(--ink-faint);
+  text-transform: uppercase;
 }
-
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-badges {
-  display: none;
+.lc-stats dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink);
 }
-
+.lc-badges { display: none; }
+.lc-agent-card footer,
 .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer {
   display: block;
   margin: 0;
@@ -67,64 +290,155 @@
   border: 0;
   text-align: right;
 }
+.lc-agent-card footer span { display: block; }
 
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span {
-  display: block;
-  max-width: 150px;
+/* Projects — compact horizontal records. */
+.lc-project-list { list-style: none; padding: 0; margin: 0; border-top: 1px solid var(--rule-hair); }
+.lc-project-list li { padding: var(--space-3) 0; border-bottom: 1px solid var(--rule-hair); }
+.lc-project-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); align-items: baseline; }
+.lc-project-row strong { display: block; font-family: var(--font-ui); font-size: var(--step-0); font-weight: 500; }
+.lc-project-row > div > span { display: block; font-family: var(--font-mono); font-size: var(--step--3); color: var(--ink-soft); }
+.lc-project-stage { font-family: var(--font-mono); font-size: var(--step--3); text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.lc-project-stage.is-submitted { color: var(--state-wait); }
+.lc-project-stage.is-peer-review { color: var(--state-review); }
+.lc-project-stage.is-human-review { color: var(--state-desk); }
+.lc-track { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: min(18rem, 55%); margin-top: var(--space-2); }
+.lc-track i { height: 2px; background: var(--rule-mid); }
+.lc-track i.is-done { background: var(--accent); }
+
+/* Roster — quiet until the reader needs it. */
+.lc-roster-table { border-top: 1px solid var(--rule-hair); }
+.lc-roster-row {
+  display: grid;
+  grid-template-columns: auto minmax(11rem, 1.25fr) minmax(11rem, 1fr) minmax(7rem, .7fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+.lc-roster-row .lc-avatar { width: 1.7rem; height: 1.7rem; font-size: var(--step--3); }
+.lc-roster-name strong { display: block; font-family: var(--font-ui); font-size: var(--step--1); font-weight: 500; }
+.lc-roster-name span,
+.lc-roster-stats,
+.lc-roster-state { font-family: var(--font-mono); font-size: var(--step--3); color: var(--ink-soft); }
+.lc-roster-state { text-align: right; }
+
+/* The audit stream is the machine speaking. A dark telegraph panel creates the
+   chromatic counterweight Davide chose from the palette specimen. */
+.lc-log-wrap {
+  align-self: stretch;
+  margin: 0;
+  padding: var(--space-6) var(--space-5);
+  border: 0;
+  border-left: 1px solid var(--rule-firm);
+  background: var(--ink);
+  color: var(--parchment-raised);
+  position: relative;
+  overflow: hidden;
+}
+.lc-log-wrap::after {
+  content: "";
+  position: absolute;
+  right: -5rem;
+  bottom: -2rem;
+  width: 18rem;
+  height: 10rem;
+  background: url("/specimen/illustration/mythic-seas.webp") center / cover no-repeat;
+  opacity: .055;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  mask-image: linear-gradient(135deg, transparent 5%, #000 78%);
+}
+.lc-log-wrap .lc-kicker,
+.lc-log-wrap .lc-section-count { color: var(--brass-on-dark); }
+.lc-log-wrap .lc-section-head { border-bottom: 1px solid color-mix(in srgb, var(--parchment) 20%, transparent); padding-bottom: var(--space-4); }
+.lc-log-wrap .lc-section-head h2 { color: var(--parchment-raised); font-size: var(--step-2); }
+.lc-log-wrap .lc-section-head p { color: color-mix(in srgb, var(--parchment) 72%, transparent); }
+.lc-log { list-style: none; padding: 0; margin: 0; position: relative; z-index: 1; }
+.lc-log li {
+  display: grid;
+  grid-template-columns: 4.7rem minmax(0, 1fr);
+  gap: var(--space-3);
+  position: relative;
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  border-bottom: 1px solid color-mix(in srgb, var(--parchment) 12%, transparent);
+}
+.lc-log li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.05rem;
+  width: .45rem;
+  height: .45rem;
+  border-radius: var(--radius-pill);
+  background: var(--brass-on-dark);
+}
+.lc-log li.is-review::before { background: var(--state-review); }
+.lc-log li.is-approved::before,
+.lc-log li.is-approve::before { background: var(--state-ok); }
+.lc-log li.is-rejected::before,
+.lc-log li.is-reject::before { background: var(--state-no); }
+.lc-log li.is-changes::before { background: var(--state-changes); }
+.lc-log li > span {
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  color: var(--brass-on-dark);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.lc-log li p { margin: 0; font-family: var(--font-ui); font-size: var(--step--1); line-height: 1.35; color: var(--parchment-raised); }
+.lc-log li p strong { font-weight: 500; color: var(--parchment-raised); }
+.lc-log-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  align-items: baseline;
+  margin-top: var(--space-7);
+  padding-top: var(--space-4);
+  border-top: 1px solid color-mix(in srgb, var(--parchment) 22%, transparent);
+  position: relative;
+  z-index: 1;
+}
+.lc-log-foot em { font-family: var(--font-body); color: var(--parchment-raised); }
+.lc-log-foot span { font-family: var(--font-mono); font-size: var(--step--3); color: var(--brass-on-dark); text-transform: uppercase; letter-spacing: .08em; }
+
+.lc-refresh {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--3);
+  color: var(--ink-faint);
 }
 
-.lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span + span {
-  margin-top: 3px;
+[data-layout="phone"] .tp-page:has(.lc-dashboard) .tp-head { text-align: left; }
+[data-layout="phone"] .tp-page:has(.lc-dashboard) .tp-dek { margin-inline: 0; }
+[data-layout="phone"] .tp-page:has(.lc-dashboard) .ed-body > .ed-muted:first-child { text-align: left; margin-inline: 0 !important; }
+[data-layout="phone"] .lc-dashboard { gap: 0; }
+[data-layout="phone"] .lc-dashboard::before { display: none; }
+[data-layout="phone"] .lc-metrics { grid-template-columns: repeat(2, 1fr); }
+[data-layout="phone"] .lc-metrics > div { border-bottom: 1px solid var(--rule-hair); }
+[data-layout="phone"] .lc-metrics > div:nth-child(odd) { border-left: 0; }
+[data-layout="phone"] .lc-metrics > div:last-child { grid-column: 1 / -1; }
+[data-layout="phone"] .lc-workspace { grid-template-columns: 1fr; }
+[data-layout="phone"] .lc-main-register { padding-right: 0; }
+[data-layout="phone"] .lc-agent-card,
+[data-layout="phone"] .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
 }
+[data-layout="phone"] .lc-stats { width: min(18rem, 100%); }
+[data-layout="phone"] .lc-agent-card footer,
+[data-layout="phone"] .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer { text-align: left; }
+[data-layout="phone"] .lc-log-wrap { border-left: 0; border-top: 1px solid var(--rule-firm); padding-inline: var(--space-4); margin-inline: calc(-1 * var(--space-4)); }
+[data-layout="phone"] .lc-roster-row { grid-template-columns: auto minmax(0, 1fr) auto; }
+[data-layout="phone"] .lc-roster-stats { display: none; }
+[data-layout="phone"] .lc-track { width: 100%; }
 
-/* On smaller editorial widths, keep the single-card treatment. A cramped
-   pseudo-table would be worse than the cards it replaces. */
-@media (max-width: 900px) {
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) {
-    gap: var(--space-4);
-    border-top: 0;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card {
-    display: block;
-    padding: var(--space-5);
-    background: color-mix(in srgb, var(--parchment-raised) 66%, transparent);
-    border: 1px solid var(--rule-hair);
-    border-top-color: var(--rule-mid);
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card::before {
-    display: block;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-top .lc-status-chip {
-    display: inline;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-assignment {
-    margin: var(--space-5) 0 var(--space-4);
-    padding: var(--space-4) 0;
-    border-top: 1px solid var(--rule-hair);
-    border-bottom: 1px solid var(--rule-hair);
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-badges {
-    display: flex;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer {
-    display: flex;
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--rule-hair);
-    text-align: initial;
-  }
-
-  .lc-agent-grid:has(> .lc-agent-card + .lc-agent-card) .lc-agent-card footer span {
-    max-width: none;
-  }
+@media (max-width: 980px) {
+  .lc-workspace { grid-template-columns: 1fr; }
+  .lc-main-register { padding-right: 0; }
+  .lc-log-wrap { border-left: 0; border-top: 1px solid var(--rule-firm); }
 }
