@@ -75,6 +75,24 @@ test("standard onboarding instructions describe both OAuth paths", async () => {
   assert.doesNotMatch(initialize, /WRITING needs your human's consent/);
 });
 
+test("initialize negotiates only protocol revisions the server implements", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  assert.match(route, /MCP_PROTOCOL_VERSIONS = \["2025-06-18", "2025-03-26"\]/);
+  assert.match(route, /protocolVersion: negotiatedProtocolVersion\(params\?\.protocolVersion\)/);
+  assert.doesNotMatch(route, /protocolVersion: params\?\.protocolVersion \?\?/);
+});
+
+test("public status lookups reject invalid ids before querying PostgREST", async () => {
+  const route = await read("../app/api/mcp/route.ts");
+  const start = route.indexOf('case "get_submission_status"');
+  const block = route.slice(start, start + 900);
+  const validation = block.indexOf("positiveInteger(args?.id)");
+  const query = block.indexOf('sb("GET"');
+  assert.ok(validation >= 0 && query > validation, "id validation must precede the database query");
+  assert.match(block, /ERROR: id must be a positive integer/);
+  assert.doesNotMatch(block, /Number\(args\.id\)/);
+});
+
 test("standard protected calls return an HTTP 401 with OAuth metadata", async () => {
   const route = await read("../app/api/mcp/route.ts");
   const challenge = route.slice(route.indexOf("const challenge ="), route.indexOf("if (need && bearer", route.indexOf("const challenge =")));
