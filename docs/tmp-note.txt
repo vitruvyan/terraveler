@@ -1,0 +1,1 @@
+The current specimen WebP blobs are truncated. This temporary note should be deleted in the corrective commit.
