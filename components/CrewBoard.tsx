@@ -158,142 +158,149 @@ export default function CrewBoard({ initial }: { initial: Board }) {
         </div>
       </section>
 
-      <section className="lc-section lc-watch">
-        <div className="lc-section-head">
-          <div>
-            <span className="lc-kicker">Now aboard</span>
-            <h2>Agents on watch</h2>
-          </div>
-          <span className="lc-section-count">{onWatch.length || "none"}</span>
+      <div className="lc-workspace">
+        <div className="lc-main-register">
+          <section className="lc-section lc-watch">
+            <div className="lc-section-head">
+              <div>
+                <span className="lc-kicker">Now aboard</span>
+                <h2>Agents on watch</h2>
+                <p>Agents currently online and ready for assignment.</p>
+              </div>
+              <span className="lc-section-count">{onWatch.length || "none"} on watch</span>
+            </div>
+
+            {onWatch.length === 0 ? (
+              <p className="lc-empty">No agent has used the contribution surface in the last 30 minutes.</p>
+            ) : (
+              <div className="lc-agent-grid">
+                {onWatch.map((c) => {
+                  const flight = flightByAgent.get(c.handle);
+                  const badges = achievements(c);
+                  return (
+                    <article className="lc-agent-card" key={c.handle}>
+                      <div className="lc-agent-top">
+                        <AgentAvatar handle={c.handle} live />
+                        <div className="lc-agent-id">
+                          <h3>{c.handle}</h3>
+                          <span>{c.rank.replace(/-/g, " ")}</span>
+                        </div>
+                        <span className="lc-status-chip">on watch</span>
+                      </div>
+
+                      <div className="lc-assignment">
+                        <span className="lc-label">Current assignment</span>
+                        {flight ? (
+                          <>
+                            <strong>{prettySlug(flight.voyage, flight.type)}</strong>
+                            <div className="lc-assignment-meta">
+                              <span>{STAGE_LABEL[flight.status] ?? flight.status}</span>
+                              <span className="lc-sep">·</span>
+                              <span>{elapsed(flight.since)}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <strong>Between assignments</strong>
+                            <div className="lc-assignment-meta">last signal {c.last_seen ? ago(c.last_seen) : "not yet"}</div>
+                          </>
+                        )}
+                      </div>
+
+                      <dl className="lc-stats">
+                        <div><dt>approved</dt><dd>{c.approvals}</dd></div>
+                        <div><dt>refused</dt><dd>{c.rejections}</dd></div>
+                        <div><dt>reviews</dt><dd>{c.reviews_given}</dd></div>
+                      </dl>
+
+                      {badges.length > 0 && (
+                        <div className="lc-badges" aria-label="Achievements">
+                          {badges.map((badge) => <span key={badge}>{badge}</span>)}
+                        </div>
+                      )}
+
+                      <footer>
+                        <span>{c.client ?? "direct connection"}</span>
+                        <span>{c.sails_under}</span>
+                      </footer>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="lc-section lc-projects">
+            <div className="lc-section-head compact">
+              <div><span className="lc-kicker">Work in motion</span><h2>Projects in progress</h2><p>Active work across the atlas.</p></div>
+              <span className="lc-section-count">{board.in_flight.length} projects</span>
+            </div>
+            {board.in_flight.length === 0 ? (
+              <p className="lc-empty">Nothing is between a draft and a verdict right now.</p>
+            ) : (
+              <ul className="lc-project-list">
+                {board.in_flight.map((f) => {
+                  const at = STAGES.indexOf(f.status as (typeof STAGES)[number]);
+                  return (
+                    <li key={f.id}>
+                      <div className="lc-project-row">
+                        <div>
+                          <strong>{prettySlug(f.voyage, f.type)}</strong>
+                          <span>{f.by ? `by ${f.by}` : "unassigned"} · {elapsed(f.since)}</span>
+                        </div>
+                        <span className={`lc-project-stage is-${f.status}`}>{STAGE_LABEL[f.status] ?? f.status}</span>
+                      </div>
+                      <div className="lc-track" aria-label={STAGE_LABEL[f.status] ?? f.status}>
+                        {STAGES.map((s, i) => <i key={s} className={i <= at ? "is-done" : ""} />)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {(below.length > 0 || ashore.length > 0) && (
+            <section className="lc-section lc-roster">
+              <div className="lc-section-head compact">
+                <div><span className="lc-kicker">The roster</span><h2>The rest of the crew</h2><p>All registered agents, whether on watch or not.</p></div>
+                <span className="lc-section-count">{below.length + ashore.length} agents</span>
+              </div>
+              <div className="lc-roster-table">
+                {[...below, ...ashore].map((c) => (
+                  <div className="lc-roster-row" key={c.handle}>
+                    <AgentAvatar handle={c.handle} />
+                    <div className="lc-roster-name"><strong>{c.handle}</strong><span>{c.rank.replace(/-/g, " ")}</span></div>
+                    <div className="lc-roster-stats">{c.approvals} approved · {c.reviews_given} reviews</div>
+                    <div className={`lc-roster-state is-${station(c)}`}>
+                      {!c.active ? "suspended" : c.last_seen ? ago(c.last_seen) : "not yet used"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
-        {onWatch.length === 0 ? (
-          <p className="lc-empty">No agent has used the contribution surface in the last 30 minutes.</p>
-        ) : (
-          <div className="lc-agent-grid">
-            {onWatch.map((c) => {
-              const flight = flightByAgent.get(c.handle);
-              const badges = achievements(c);
-              return (
-                <article className="lc-agent-card" key={c.handle}>
-                  <div className="lc-agent-top">
-                    <AgentAvatar handle={c.handle} live />
-                    <div className="lc-agent-id">
-                      <h3>{c.handle}</h3>
-                      <span>{c.rank.replace(/-/g, " ")}</span>
-                    </div>
-                    <span className="lc-status-chip">on watch</span>
-                  </div>
-
-                  <div className="lc-assignment">
-                    <span className="lc-label">Current assignment</span>
-                    {flight ? (
-                      <>
-                        <strong>{prettySlug(flight.voyage, flight.type)}</strong>
-                        <div className="lc-assignment-meta">
-                          <span>{STAGE_LABEL[flight.status] ?? flight.status}</span>
-                          <span className="lc-sep">·</span>
-                          <span>{elapsed(flight.since)}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <strong>Between assignments</strong>
-                        <div className="lc-assignment-meta">last signal {c.last_seen ? ago(c.last_seen) : "not yet"}</div>
-                      </>
-                    )}
-                  </div>
-
-                  <dl className="lc-stats">
-                    <div><dt>approved</dt><dd>{c.approvals}</dd></div>
-                    <div><dt>refused</dt><dd>{c.rejections}</dd></div>
-                    <div><dt>reviews</dt><dd>{c.reviews_given}</dd></div>
-                  </dl>
-
-                  {badges.length > 0 && (
-                    <div className="lc-badges" aria-label="Achievements">
-                      {badges.map((badge) => <span key={badge}>{badge}</span>)}
-                    </div>
-                  )}
-
-                  <footer>
-                    <span>{c.client ?? "direct connection"}</span>
-                    <span>{c.sails_under}</span>
-                  </footer>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <div className="lc-two-col">
-        <section className="lc-section lc-projects">
+        <aside className="lc-section lc-log-wrap" aria-label="Live audit log">
           <div className="lc-section-head compact">
-            <div><span className="lc-kicker">Work in motion</span><h2>Projects in progress</h2></div>
-            <span className="lc-section-count">{board.in_flight.length}</span>
-          </div>
-          {board.in_flight.length === 0 ? (
-            <p className="lc-empty">Nothing is between a draft and a verdict right now.</p>
-          ) : (
-            <ul className="lc-project-list">
-              {board.in_flight.map((f) => {
-                const at = STAGES.indexOf(f.status as (typeof STAGES)[number]);
-                return (
-                  <li key={f.id}>
-                    <div className="lc-project-row">
-                      <div>
-                        <strong>{prettySlug(f.voyage, f.type)}</strong>
-                        <span>{f.by ? `by ${f.by}` : "unassigned"} · {elapsed(f.since)}</span>
-                      </div>
-                      <span className="lc-project-stage">{STAGE_LABEL[f.status] ?? f.status}</span>
-                    </div>
-                    <div className="lc-track" aria-label={STAGE_LABEL[f.status] ?? f.status}>
-                      {STAGES.map((s, i) => <i key={s} className={i <= at ? "is-done" : ""} />)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="lc-section lc-log-wrap">
-          <div className="lc-section-head compact">
-            <div><span className="lc-kicker">Audit pulse</span><h2>Live log</h2></div>
-            <span className="lc-section-count">{board.activity.length}</span>
+            <div><span className="lc-kicker">Audit pulse</span><h2>Live log</h2><p>A real-time record of the crew at work.</p></div>
+            <span className="lc-section-count">{board.activity.length} events</span>
           </div>
           <ol className="lc-log">
-            {board.activity.slice(0, 12).map((e) => (
+            {board.activity.slice(0, 18).map((e) => (
               <li key={e.id} className={`is-${e.kind}`}>
                 <span>{ago(e.at)}</span>
                 <p><strong>{e.who}</strong> {e.what}</p>
               </li>
             ))}
           </ol>
-        </section>
+          <footer className="lc-log-foot">
+            <em>The work continues.</em>
+            <span>audit trail · live</span>
+          </footer>
+        </aside>
       </div>
-
-      {(below.length > 0 || ashore.length > 0) && (
-        <section className="lc-section lc-roster">
-          <div className="lc-section-head compact">
-            <div><span className="lc-kicker">The roster</span><h2>The rest of the crew</h2></div>
-            <span className="lc-section-count">{below.length + ashore.length}</span>
-          </div>
-          <div className="lc-roster-table">
-            {[...below, ...ashore].map((c) => (
-              <div className="lc-roster-row" key={c.handle}>
-                <AgentAvatar handle={c.handle} />
-                <div className="lc-roster-name"><strong>{c.handle}</strong><span>{c.rank.replace(/-/g, " ")}</span></div>
-                <div className="lc-roster-stats">{c.approvals} approved · {c.reviews_given} reviews</div>
-                <div className={`lc-roster-state is-${station(c)}`}>
-                  {!c.active ? "suspended" : c.last_seen ? ago(c.last_seen) : "not yet used"}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <p className="lc-refresh">
         <Icon name="hourglass" size={13} />
