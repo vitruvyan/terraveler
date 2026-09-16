@@ -19,6 +19,7 @@ const FAMILIES = [
     preview: "atlas",
     copy:
       "Foundational views of the terrestrial world: orography, coasts and islands, the ship, the instrument and the allegorical figure. These are environmental marks before they are illustrations.",
+    note: "Use when geography itself is speaking — a horizon, a route, an instrument, a threshold.",
     use: "margins / hero / chapter opener",
   },
   {
@@ -29,6 +30,7 @@ const FAMILIES = [
     preview: "mythic",
     copy:
       "Creatures, deities and symbolic figures from the unknown sea. Their job is not fantasy decoration: they mark uncertainty, passage, danger, knowledge and the edge of the chart.",
+    note: "The mythical register is a historical voice: it belongs at the edge of knowledge, never as generic fantasy wallpaper.",
     use: "backgrounds / dividers / thematic pages",
   },
   {
@@ -39,6 +41,7 @@ const FAMILIES = [
     preview: "newworlds",
     copy:
       "Landscapes, peoples, myths and built worlds across the Americas. This family carries encounter and cultural context, and must always be used with historical specificity rather than as a generic exotic register.",
+    note: "Context before spectacle. A Maya city, a colonial square and an Arcadian allegory are not interchangeable visual shorthand.",
     use: "regional pages / cultural sections",
   },
   {
@@ -49,6 +52,7 @@ const FAMILIES = [
     preview: "mariners",
     copy:
       "The people behind the journeys. Portrait-like engravings for narrative passages, ranks, labour, command, apprenticeship and moments in which a voyage becomes a human decision.",
+    note: "Use the role to explain the story: command, labour, navigation and apprenticeship should remain visibly distinct.",
     use: "characters / narrative pages",
   },
 ] as const;
@@ -74,48 +78,70 @@ const NEXT = [
 export default function IllustrationSpecimenPage() {
   return (
     <div className="spec illus-spec">
-      <main className="spec-sheet">
+      <main className="spec-sheet illus-sheet">
         <Chapters current="/specimen/illustration" />
 
         <header className="illus-hero">
           <div className="illus-hero-copy">
-            <span className="spec-eyebrow">Specimen library · phase one</span>
-            <h1>Illustration<br />Specimen</h1>
-            <p>
-              Background engravings and allegorical assets for the Terraveler atlas —
-              a visual vocabulary for margins, chapter openings, fields and thresholds.
+            <span className="spec-eyebrow">VI · the illustrated atlas</span>
+            <h1>Illustration<br /><em>Specimen</em></h1>
+            <p className="spec-lede">
+              Engravings, allegories and cartographic marks for a world that should feel printed before it feels rendered.
             </p>
           </div>
           <div className="illus-hero-art" aria-hidden="true" />
         </header>
 
-        <div className="illus-intro">
-          <p>
-            The illustration library is a growing collection of original engravings made for
-            Terraveler. The rule is the same as the type specimen: ornament must carry meaning.
-            An image may establish place, period, uncertainty or voice; it may not merely fill
-            an empty corner. Phase one fixes the terrestrial register. Space comes next.
-          </p>
-          <span className="spec-margin-note illus-phase">4 families · 30 plates · v1</span>
+        <section className="illus-prologue" aria-label="Illustration principles">
+          <div className="illus-prologue-copy">
+            <p className="spec-prose has-dropcap">
+              The illustration library is a growing collection of original engravings made for Terraveler. The rule is the same as the type specimen: ornament must carry meaning. An image may establish place, period, uncertainty or voice; it may not merely fill an empty corner.
+            </p>
+            <p className="spec-prose">
+              Phase one fixes the terrestrial register. The image is treated like a plate from an atlas: given room, accompanied by provenance, and never forced into the geometry of a software card.
+            </p>
+          </div>
+          <aside className="illus-prologue-margin">
+            <span className="spec-margin-note">phase one</span>
+            <strong>4 families</strong>
+            <span className="spec-machine">30 plates · v1</span>
+          </aside>
+        </section>
+
+        <Ornament name="break" className="ornament-break illus-break" />
+
+        <div className="illus-thesis">
+          <span className="spec-eyebrow">The governing rule</span>
+          <blockquote>“The engraving is a voice, not wallpaper.”</blockquote>
+          <p>Its scale, placement and density should tell the reader why it is present before the caption has to explain it.</p>
         </div>
 
-        <Ornament name="break" className="ornament-break" />
+        <section aria-label="Illustration families" className="illus-catalogue">
+          {FAMILIES.map((family, index) => (
+            <article className={`illus-family${index % 2 ? " is-reverse" : ""}`} key={family.n}>
+              <div className="illus-family-number" aria-hidden="true">{family.n}</div>
 
-        <section aria-label="Illustration families" className="illus-grid">
-          {FAMILIES.map((family) => (
-            <article className="illus-family" key={family.n}>
-              <div className="illus-family-head">
-                <span className="illus-family-num">{family.n}</span>
+              <header className="illus-family-heading">
+                <span className="spec-eyebrow">Plate family {family.n}</span>
                 <h2>{family.title}</h2>
-                <span className="illus-plate-count">{family.plates}</span>
-              </div>
-              <p className="illus-family-kicker">{family.kicker}</p>
-              <div className={`illus-preview ${family.preview}`} role="img" aria-label={`${family.title} engraved plate preview`} />
-              <p className="illus-family-copy">{family.copy}</p>
-              <div className="illus-meta">
-                <span>{family.plates}</span>
-                <span>use · {family.use}</span>
-                <strong>status · active</strong>
+                <p className="illus-family-kicker">{family.kicker}</p>
+              </header>
+
+              <figure className="illus-plate">
+                <div className={`illus-preview ${family.preview}`} role="img" aria-label={`${family.title} engraved plate preview`} />
+                <figcaption>
+                  <span>{family.plates}</span>
+                  <span>use · {family.use}</span>
+                  <strong>active</strong>
+                </figcaption>
+              </figure>
+
+              <div className="illus-family-text">
+                <p className="illus-family-copy">{family.copy}</p>
+                <div className="illus-use-note">
+                  <span className="spec-margin-note">editorial use</span>
+                  <p>{family.note}</p>
+                </div>
               </div>
             </article>
           ))}
@@ -125,20 +151,20 @@ export default function IllustrationSpecimenPage() {
           <div className="illus-next-head">
             <div>
               <span className="spec-eyebrow">Coming next</span>
-              <h2 id="coming-next">Further realms, further wonders.</h2>
+              <h2 id="coming-next">Further realms,<br /><em>further wonders.</em></h2>
             </div>
-            <span className="spec-margin-note">phase two · in development</span>
+            <p>
+              Phase two leaves the terrestrial register behind without abandoning the house style: observation, instrument, terrain and wonder — translated into a colder visual language.
+            </p>
           </div>
           <div className="illus-next-grid">
-            {NEXT.map((item) => (
+            {NEXT.map((item, index) => (
               <article className="illus-next-card" key={item.title}>
-                <div className="illus-family-head">
-                  <h3>{item.title}</h3>
-                  <span />
-                  <span className="illus-plate-count">in development</span>
-                </div>
+                <span className="spec-machine">0{index + 5}</span>
+                <h3>{item.title}</h3>
                 <div className={item.className} aria-hidden="true" />
                 <p>{item.copy}</p>
+                <span className="spec-margin-note">in development</span>
               </article>
             ))}
           </div>
