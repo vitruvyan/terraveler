@@ -1,0 +1,1 @@
+HQ illustration assets are stored under public/specimen/illustration. The illustration specimen renders the actual files in <img> elements and opens each plate in a full-screen lightbox.
