@@ -1,0 +1,83 @@
+/* Final desktop refinement for The Crew at Work.
+   The Chartroom stays narrow by default; only the live Crew register opens to
+   an atlas-spread width. The audit rail gets a taller, quieter scroll surface. */
+
+.tv-page-shell:has(.lc-dashboard) {
+  width: min(1480px, calc(100% - 64px));
+  grid-template-columns: 11.25rem minmax(0, 1fr);
+  gap: clamp(2.5rem, 4.5vw, 5rem);
+}
+
+.tv-page-shell:has(.lc-dashboard) .tv-page-main,
+.tv-page-shell:has(.lc-dashboard) .tp-page,
+.tv-page-shell:has(.lc-dashboard) .ed-body {
+  width: 100%;
+  max-width: none;
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-workspace {
+  grid-template-columns: minmax(0, 2fr) minmax(23rem, 1fr);
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-main-register {
+  padding-right: var(--space-7);
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log-wrap {
+  min-height: 46rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log {
+  height: min(64vh, 43rem);
+  min-height: 32rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--space-3);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--brass-on-dark) 58%, transparent) transparent;
+  overscroll-behavior: contain;
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--brass-on-dark) 48%, transparent);
+  border-radius: var(--radius-pill);
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--brass-on-dark) 72%, transparent);
+}
+
+.tv-page-shell:has(.lc-dashboard) .lc-log-foot {
+  margin-top: auto;
+  padding-top: var(--space-5);
+}
+
+[data-layout="phone"] .tv-page-shell:has(.lc-dashboard) {
+  width: 100%;
+  display: block;
+}
+
+[data-layout="phone"] .tv-page-shell:has(.lc-dashboard) .lc-main-register {
+  padding-right: 0;
+}
+
+[data-layout="phone"] .tv-page-shell:has(.lc-dashboard) .lc-log-wrap {
+  min-height: 0;
+}
+
+[data-layout="phone"] .tv-page-shell:has(.lc-dashboard) .lc-log {
+  height: auto;
+  min-height: 0;
+  max-height: 34rem;
+}

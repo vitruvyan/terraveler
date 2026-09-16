@@ -5,6 +5,7 @@ import PageviewBeacon from "@/components/PageviewBeacon";
 import "./globals.css";
 import "./editorial-shell.css";
 import "./live-crew-layout.css";
+import "./live-crew-wide-fix.css";
 import "./welcome-invitation.css";
 import "./map-vintage-controls.css";
 

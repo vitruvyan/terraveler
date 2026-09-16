@@ -27,6 +27,7 @@ export default function TitlePage({
   background,
   actions = [],
   meta = [],
+  wide = false,
   beforePlate,
   platePosition = "before",
   children,
@@ -74,7 +75,7 @@ export default function TitlePage({
   ) : null;
 
   return (
-    <div className="tp-page">
+    <div className={`tp-page${wide ? " is-wide" : ""}`}>
       <header className="tp-head">
         <span className="tp-eyebrow">{eyebrow}</span>
         <h1 className="tp-title">{title}</h1>
