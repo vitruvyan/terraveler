@@ -1,30 +1,27 @@
 import type { Voyage } from "./types";
 import { isVoyageSlug, type VoyageSlug } from "./voyages";
 
-/** Original editorial composites, not likenesses, historical views or waypoint evidence.
- * The coordinates select one cell of an HQ specimen sheet without altering it. */
+/** Coordinates identify motifs on the original, unchanged HQ sheets. */
 export const illustrationScenes = {
-  ship: { sheet: "atlas-cartography", column: 2, row: 0, label: "A ship under sail", context: "A maritime chapter opener; an imagined vessel, not this expedition's ship." },
-  coast: { sheet: "atlas-cartography", column: 1, row: 0, label: "Coasts and islands", context: "A cartographic threshold, not a chart of this landfall." },
-  astrolabe: { sheet: "atlas-cartography", column: 0, row: 1, label: "The astrolabe", context: "An instrument of navigation, not an object recorded on this voyage." },
-  navigator: { sheet: "mariners", column: 1, row: 1, label: "The navigator", context: "An imagined role, not a portrait of the traveller." },
-  captain: { sheet: "mariners", column: 0, row: 1, label: "The captain", context: "An imagined command role, not a portrait of the traveller." },
-  sailor: { sheet: "mariners", column: 1, row: 0, label: "The sailor", context: "The labour of a sea passage; an imagined figure, not a crew record." },
-  conquistador: { sheet: "mariners", column: 0, row: 0, label: "The conquistador", context: "An imagined colonial role, not a portrait of Cortés." },
-  maya: { sheet: "new-worlds", column: 0, row: 0, label: "A Maya city", context: "A regional editorial imaginary for the Cozumel encounter; not a view of Cozumel or Tenochtitlan." },
-  andes: { sheet: "new-worlds", column: 0, row: 1, label: "Andean realms", context: "An imagined Andean landscape, not a view of Cajamarca or Cusco." },
+  ship: { sheet: "atlas-cartography", column: 2, row: 0 },
+  coast: { sheet: "atlas-cartography", column: 1, row: 0 },
+  astrolabe: { sheet: "atlas-cartography", column: 0, row: 1 },
+  navigator: { sheet: "mariners", column: 1, row: 1 },
+  captain: { sheet: "mariners", column: 0, row: 1 },
+  sailor: { sheet: "mariners", column: 1, row: 0 },
+  maya: { sheet: "new-worlds", column: 0, row: 0 },
+  andes: { sheet: "new-worlds", column: 0, row: 1 },
 } as const;
 
 export type IllustrationScene = keyof typeof illustrationScenes;
-type Assignment = { opener: IllustrationScene | null; encounter?: { stage: number; scene: IllustrationScene } };
+type Assignment = { opener: IllustrationScene | null };
 
-// A null is an editorial decision: no available sheet portrays these journeys
-// faithfully. Never substitute a Maya city for the Andes, or a sail for Asia.
+// A null is deliberate: an unrelated image would mislead even as an ornament.
 const assignments: Record<VoyageSlug, Assignment> = {
   "boudeuse-1766": { opener: "ship" },
   "boussole-1785": { opener: "navigator" },
   "cook-1768": { opener: "astrolabe" },
-  "cortes-1519": { opener: "conquistador", encounter: { stage: 2, scene: "maya" } },
+  "cortes-1519": { opener: "maya" }, // Regional context, not a depiction of a particular landfall.
   "voyager-2": { opener: null },
   "apollo-11": { opener: null },
   "darwin-1831": { opener: null },

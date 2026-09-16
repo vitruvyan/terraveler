@@ -15,13 +15,11 @@ test("the published atlas has deliberate editorial assignments", () => {
   }
 });
 
-test("Maya is limited to Cortés's documented Cozumel stage, never Pizarro", () => {
+test("regional ornaments follow the voyage, without treating them as stage evidence", () => {
   const cortes = illustrationForVoyage({ slug: "cortes-1519", kind: "earth", body: "earth" });
   const pizarro = illustrationForVoyage({ slug: "pizarro-1532", kind: "earth", body: "earth" });
-  assert.deepEqual(cortes?.encounter, { stage: 2, scene: "maya" });
-  assert.equal(cortes?.opener, "conquistador");
+  assert.equal(cortes?.opener, "maya");
   assert.equal(pizarro?.opener, "andes");
-  assert.equal(pizarro?.encounter, undefined);
 });
 
 test("unknown voyages and journeys without fitting art stay unillustrated", () => {

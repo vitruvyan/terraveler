@@ -225,9 +225,6 @@ export default async function VoyageLog({
                   )}
                 </div>
                 {w.event && <p style={{ margin: "0 0 8px" }}>{w.event}</p>}
-                {illustration?.encounter?.stage === w.seq && (
-                  <VoyageEngraving scene={illustration.encounter.scene} className="tv-encounter-figure" />
-                )}
                 {anyW.diary_excerpt ? (
                   <figure style={{ margin: "8px 0 0" }}>
                     {/* The provenance travels with the text: selecting inside

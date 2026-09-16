@@ -4047,53 +4047,66 @@ main.prose {
   a { color: #000; text-decoration: none; }
 }
 
-/* The log's prose keeps a readable measure even though the page is wide
-   enough to hold a margin: only the stage rows use the full width. */
+/* The log reads like a printed page: a cropped engraving inhabits the margin,
+   never a card, picture plate, caption or layer beneath the words. */
 .tv-log-prose { max-width: 700px; }
-.tv-log-opening.has-engraving {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
-  gap: var(--space-6);
-  align-items: start;
-}
-[data-layout="phone"] .tv-log-opening.has-engraving { display: block; }
-[data-layout="phone"] .tv-log-opening .tv-editorial-figure { margin-block: var(--space-5); }
-
-/* One selected cell of an original HQ sheet, mounted in the reading flow.
-   The full sheets remain untouched. A caption explicitly separates this
-   editorial imaginary from the sourced plates attached to landfalls. */
-.tv-editorial-figure { margin: var(--space-5) 0 var(--space-6); max-width: 42rem; }
-.tv-log-opening .tv-editorial-figure { margin: 0; }
-.tv-editorial-mount {
-  padding: var(--space-2);
-  background: var(--parchment-raised);
-  border: 1px solid var(--rule-hair);
-}
-.tv-editorial-crop {
-  aspect-ratio: 16 / 9;
-  background-repeat: no-repeat;
-  background-size: 300% auto;
-  background-position: 0 0;
-}
-.tv-editorial-crop[data-sheet="atlas-cartography"] { background-image: url("/media/specimen-illustration/atlas-cartography.webp"); }
-.tv-editorial-crop[data-sheet="new-worlds"] { background-image: url("/media/specimen-illustration/new-worlds.webp"); }
-.tv-editorial-crop[data-sheet="mariners"] {
-  background-image: url("/media/specimen-illustration/mariners.webp");
-  aspect-ratio: 4 / 3;
-}
-.tv-editorial-crop[data-column="1"] { background-position-x: 50%; }
-.tv-editorial-crop[data-column="2"] { background-position-x: 100%; }
-.tv-editorial-crop[data-row="1"] { background-position-y: 100%; }
-.tv-editorial-figure figcaption { padding: var(--space-2) var(--space-2) 0; }
-.tv-editorial-figure figcaption p { margin: 0 0 var(--space-1); font-family: var(--font-body); color: var(--ink); }
-.tv-editorial-figure figcaption span {
+.tv-log-opening.has-engraving { position: relative; min-height: 12rem; }
+.tv-log-opening.has-engraving .tv-log-prose { max-width: min(700px, calc(100% - 21rem)); }
+.tv-page-engraving {
+  position: absolute;
+  top: var(--space-3);
+  right: 0;
   display: block;
-  font-family: var(--font-mono);
-  font-size: var(--step--2);
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums lining-nums;
+  width: 20rem;
+  height: var(--engraving-height, 7.5rem);
+  background-image: var(--engraving-sheet);
+  background-size: 300% auto;
+  background-position: var(--engraving-x, 0%) var(--engraving-y, -4rem);
+  background-repeat: no-repeat;
+  opacity: 0.62;
+  filter: grayscale(1) contrast(1.45) brightness(1.45);
+  mix-blend-mode: multiply;
+  mask-image: radial-gradient(ellipse 62% 54% at 50% 50%, #000 34%, transparent 100%);
+  pointer-events: none;
 }
-.tv-encounter-figure { max-width: 32rem; margin-block: var(--space-4); }
+.tv-page-engraving[data-scene="ship"],
+.tv-page-engraving[data-scene="coast"],
+.tv-page-engraving[data-scene="astrolabe"] { --engraving-sheet: url("/media/specimen-illustration/atlas-cartography.webp"); }
+.tv-page-engraving[data-scene="astrolabe"] { opacity: 0.72; filter: grayscale(1) contrast(1.7) brightness(1.25); }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"],
+.tv-page-engraving[data-scene="sailor"] { --engraving-sheet: url("/media/specimen-illustration/mariners.webp"); --engraving-height: 9rem; }
+.tv-page-engraving[data-scene="maya"],
+.tv-page-engraving[data-scene="andes"] { --engraving-sheet: url("/media/specimen-illustration/new-worlds.webp"); }
+.tv-page-engraving[data-scene="ship"] { --engraving-x: 100%; }
+.tv-page-engraving[data-scene="coast"] { --engraving-x: 50%; }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="sailor"] { --engraving-x: 50%; }
+.tv-page-engraving[data-scene="astrolabe"],
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"],
+.tv-page-engraving[data-scene="andes"] { --engraving-y: -13rem; }
+.tv-page-engraving[data-scene="maya"] { --engraving-y: -4rem; }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"] { --engraving-y: -18rem; }
+.tv-page-engraving[data-scene="sailor"] { --engraving-y: -5rem; }
+
+[data-layout="phone"] .tv-log-opening.has-engraving { min-height: 0; }
+[data-layout="phone"] .tv-log-opening.has-engraving .tv-log-prose { max-width: 100%; }
+[data-layout="phone"] .tv-page-engraving {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 12rem;
+  height: 4.5rem;
+  margin: var(--space-3) 0 var(--space-5) auto;
+  --engraving-y: -2.3rem;
+}
+[data-layout="phone"] .tv-page-engraving[data-scene="astrolabe"],
+[data-layout="phone"] .tv-page-engraving[data-scene="andes"] { --engraving-y: -8rem; }
+[data-layout="phone"] .tv-page-engraving[data-scene="navigator"],
+[data-layout="phone"] .tv-page-engraving[data-scene="captain"] { --engraving-y: -11rem; }
+[data-layout="phone"] .tv-page-engraving[data-scene="sailor"] { --engraving-y: -3rem; }
 
 /* --- Making the annotation layer findable -------------------------------
    The question chips are deliberately rare: an explanation repeated on forty
