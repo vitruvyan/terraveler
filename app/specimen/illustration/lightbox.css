@@ -1,11 +1,3 @@
-.illus-hero-art {
-  min-height: 0;
-  background: none;
-  filter: none;
-  mix-blend-mode: normal;
-  opacity: 1;
-}
-
 .illus-preview-button {
   position: relative;
   display: block;
@@ -24,8 +16,9 @@
 
 .illus-preview-button.is-hero {
   width: 100%;
-  border: 0;
-  background: transparent;
+  padding: var(--space-3);
+  border: 1px solid var(--rule-mid);
+  background: var(--parchment-raised);
 }
 
 .illus-preview-image {
@@ -87,7 +80,7 @@
 .illus-lightbox-stage img {
   display: block;
   max-width: 100%;
-  max-height: calc(100vh - 5rem);
+  max-height: calc(100dvh - 5rem);
   width: auto;
   height: auto;
   object-fit: contain;

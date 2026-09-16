@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import "./lightbox.css";
 
 type IllustrationPlateProps = {
@@ -43,7 +44,7 @@ export default function IllustrationPlate({ src, alt, className = "" }: Illustra
         <span className="illus-expand-hint" aria-hidden="true">open plate ↗</span>
       </button>
 
-      {open && (
+      {open && createPortal(
         <div className="illus-lightbox" role="dialog" aria-modal="true" aria-label={alt} onClick={() => setOpen(false)}>
           <button type="button" className="illus-lightbox-close" onClick={() => setOpen(false)} aria-label="Close full screen image">
             close ×
@@ -52,7 +53,8 @@ export default function IllustrationPlate({ src, alt, className = "" }: Illustra
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={resolvedSrc} alt={alt} />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

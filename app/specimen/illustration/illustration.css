@@ -15,10 +15,9 @@
 
 .illus-hero {
   display: grid;
-  grid-template-columns: minmax(0, .82fr) minmax(30rem, 1.18fr);
+  grid-template-columns: minmax(0, .82fr) minmax(0, 1.18fr);
   gap: var(--space-8);
   align-items: center;
-  min-height: 34rem;
   padding: var(--space-8) 0 var(--space-8);
   border-bottom: 1px solid var(--rule-mid);
 }
@@ -49,17 +48,7 @@
 }
 
 .illus-hero-art {
-  min-height: 28rem;
-  background-image:
-    linear-gradient(90deg, var(--parchment) 0%, transparent 11%, transparent 86%, var(--parchment) 100%),
-    linear-gradient(0deg, var(--parchment) 0%, transparent 9%, transparent 91%, var(--parchment) 100%),
-    var(--illus-atlas);
-  background-size: auto, auto, contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  filter: sepia(.2) contrast(1.03);
-  mix-blend-mode: multiply;
-  opacity: .9;
+  min-width: 0;
 }
 
 .illus-prologue {
@@ -406,11 +395,6 @@
 
 [data-layout="phone"] .illus-hero h1 {
   font-size: clamp(3.5rem, 18vw, 5.6rem);
-}
-
-[data-layout="phone"] .illus-hero-art {
-  min-height: 12rem;
-  background-size: contain;
 }
 
 [data-layout="phone"] .illus-prologue {
