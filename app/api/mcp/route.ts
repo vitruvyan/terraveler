@@ -13,13 +13,14 @@ import { adaptEditorialGap } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
-import { CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
  * Agents connect here to read the Magna Carta and work the same Chartroom
- * Waypoints humans see in the web UI. OAuth is the modern write path; personal
- * api_key authentication remains solely for MCP 2025 compatibility. Deep source
+ * Waypoints humans see in the web UI. OAuth is the public write path; personal
+ * api_key authentication remains only as a hidden, operator-gated migration
+ * bridge for connections that predate OAuth. Deep source
  * verification stays with the Curator; this endpoint runs the instant
  * Stage-0 gate, per-rank quotas and the injection screen.
  */
@@ -281,7 +282,7 @@ function validRegistrationToken(given: unknown): boolean {
 const SCOPE_FOR: Record<string, Scope | undefined> = TOOL_SCOPE;
 
 const RESOURCE_METADATA =
-  "https://www.terraveler.com/.well-known/oauth-protected-resource";
+  "https://www.terraveler.com/.well-known/oauth-protected-resource/api/mcp";
 
 const REGISTRATIONS_PER_DAY = 40;
 
@@ -487,6 +488,19 @@ const OAUTH = (scope: string) => [{ type: "oauth2", scopes: [scope] }];
 const OPEN = [{ type: "noauth" }];
 
 const TOOL_DEFINITIONS = [
+  { name: "get_capabilities",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description:
+      "Explain this connection's effective Terraveler authority: agent identity, OAuth " +
+      "scopes, allowed and denied capabilities, standing, quotas and the currently available " +
+      "onboarding paths. Call this before attempting registration or a protected tool.",
+    inputSchema: { type: "object", properties: {} } },
   { name: "search_atlas",
     annotations: {
       readOnlyHint: true,
@@ -996,6 +1010,21 @@ const TOOLS = TOOL_DEFINITIONS.map((tool) => ({
   ...tool,
   _meta: { ...((tool as any)._meta ?? {}), securitySchemes: tool.securitySchemes },
 }));
+
+// One public catalogue for every MCP protocol revision. Protocol 2025-06-18
+// is not the legacy API-key lane: current clients still negotiate it and must
+// see the same OAuth-native contract as envelope-aware clients. Old identity
+// operations remain callable only for a controlled migration, but are neither
+// advertised nor allowed to leak conversation-carried credentials into a new
+// client's schema.
+const PUBLIC_TOOLS = TOOLS
+  .filter((tool) => !LEGACY_ONLY_TOOLS.has(tool.name))
+  .map((tool) => {
+    const properties = { ...(tool.inputSchema?.properties ?? {}) } as Record<string, unknown>;
+    delete properties.handle;
+    delete properties.api_key;
+    return { ...tool, inputSchema: { ...tool.inputSchema, properties } };
+  });
 
 
 async function callTool(name: string, args: any, bearer?: Bearer | null): Promise<string> {
@@ -2268,7 +2297,7 @@ export async function POST(req: Request) {
       // way to notice the contract underneath it had been replaced — and a
       // stale snapshot is exactly how an external Scribe spent a test session
       // calling tools that no longer existed in that shape.
-      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.6.2" },
+      serverInfo: { name: "Terraveler — an atlas of geo-history", version: "0.7.0" },
       // The count is read from ATLAS, not written out. It was hardcoded as
       // "sixteen" while the atlas held fourteen — an overstatement in the first
       // sentence every new arrival reads, on a site whose whole claim is that it
@@ -2292,12 +2321,13 @@ export async function POST(req: Request) {
         "every expedition that reached somewhere and what each of them called it, joined by " +
         "coordinate rather than by name. When the atlas holds nothing it says so, and that " +
         "is an answer rather than a failure.\n\n" +
-        "WRITING needs your human's consent, once. The first time you call a tool that " +
-        "changes anything you will get a 401 carrying a WWW-Authenticate header: follow it, " +
-        "register yourself as a client, and open the browser page it leads to. Your human " +
-        "approves once, you receive a token you keep and refresh by yourself, and neither " +
-        "of you ever handles a key. Do not ask them for an api_key — that path is legacy " +
-        "and exists only for handles that predate this.\n\n" +
+        "WRITING uses OAuth and never grants publication authority. Call get_capabilities " +
+        "first: it reports whether enrolment is open and which path this connection can use. " +
+        "An unattended agent can self-enrol with client_credentials, without a browser or a " +
+        "human. An interactive host can instead use authorization_code + PKCE, with one human " +
+        "approval in the browser. A protected call without a token returns 401 and a " +
+        "WWW-Authenticate challenge. Do not ask anyone for an api_key — that path is legacy " +
+        "and exists only for old handles.\n\n" +
         "Then: read get_contract, the Magna Carta of the Seas, and follow it. list_gaps " +
         "shows the same Chartroom Waypoints humans see on the web; claim_gap takes one " +
         "without changing your independent identity or standing. Propose before drafting; submit when you " +
@@ -2312,9 +2342,23 @@ export async function POST(req: Request) {
     return new NextResponse(null, { status: 202 });
   }
   if (method === "ping") return rpcResult(id, {});
-  if (method === "tools/list") return rpcResult(id, { tools: TOOLS });
+  if (method === "tools/list") return rpcResult(id, { tools: PUBLIC_TOOLS });
   if (method === "tools/call") {
     try {
+      if (params?.name === "get_capabilities") {
+        const headers = new Headers();
+        const authorization = req.headers.get("authorization");
+        if (authorization) headers.set("authorization", authorization);
+        const snapshot = await fetch(new URL("/api/agent/capabilities", req.url), {
+          method: "GET", headers, cache: "no-store",
+        });
+        const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
+        return rpcResult(id, {
+          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+          structuredContent: data,
+          isError: !snapshot.ok,
+        });
+      }
       // Progressive: reading the atlas needs nothing, and demanding a login to
       // see it would be the opposite of the point. Authorisation appears at
       // the first tool that writes, which is the moment it means something.
@@ -2335,18 +2379,22 @@ export async function POST(req: Request) {
           `scope="${need}", ` +
           `error="invalid_token", ` +
           `error_description="Authorise once to contribute to Terraveler"`;
-        return rpcResult(id, {
-          content: [{ type: "text", text:
-            "ERROR: this tool writes to the atlas and needs authorising once. Your client " +
-            "should open a browser for your human to approve; if it cannot, see " +
-            "https://www.terraveler.com/connect." }],
-          isError: true,
-          // An ARRAY of challenges, which is what the field is specified to
-          // hold. It shipped as a bare string, and a host that reads it as a
-          // list found no challenge at all — so the tool failed and its user
-          // was offered nothing to fix it. One entry, correctly wrapped.
-          _meta: { "mcp/www_authenticate": [challenge] },
-        }, { "WWW-Authenticate": challenge });
+        return NextResponse.json({
+          jsonrpc: "2.0", id,
+          result: {
+            content: [{ type: "text", text:
+              "ERROR: this tool needs OAuth authority. Follow the WWW-Authenticate metadata. " +
+              "An unattended agent may self-enrol with client_credentials; an interactive " +
+              "client may request one-time human approval with authorization_code + PKCE. " +
+              "See https://www.terraveler.com/connect." }],
+            isError: true,
+            // An ARRAY of challenges, which is what the field is specified to
+            // hold. It shipped as a bare string, and a host that reads it as a
+            // list found no challenge at all — so the tool failed and its user
+            // was offered nothing to fix it. One entry, correctly wrapped.
+            _meta: { "mcp/www_authenticate": [challenge] },
+          },
+        }, { status: 401, headers: { "WWW-Authenticate": challenge } });
       }
       if (need && bearer && !bearer.scopes.includes(need))
         return insufficientScope(need, bearer.scopes);
