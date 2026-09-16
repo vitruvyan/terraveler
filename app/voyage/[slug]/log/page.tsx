@@ -114,22 +114,18 @@ export default async function VoyageLog({
       {/* Wider than a plain article, because the itinerary now has a margin to
           open answers into. The prose keeps its own readable measure via
           .tv-log-prose; only the stage rows use the full width. */}
-      <main className="prose" style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
+      <main className="prose tv-voyage-log" style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
+        <VoyageEngraving theme={illustrationForVoyage(voyage)} />
         <div className="tv-log-prose">
-        <div className="tv-log-intro-head">
-          <div>
-            <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-              The log
-            </span>
-            <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>{voyage.title}</h1>
-            <p style={{ color: "var(--ink-soft)", margin: "0 0 6px", fontSize: 15 }}>
-              {navigator.name}
-              {years ? ` · ${years}` : ""}
-              {voyage.ships ? ` · ${voyage.ships}` : ""}
-            </p>
-          </div>
-          <VoyageEngraving theme={illustrationForVoyage(voyage)} />
-        </div>
+        <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
+          The log
+        </span>
+        <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>{voyage.title}</h1>
+        <p style={{ color: "var(--ink-soft)", margin: "0 0 6px", fontSize: 15 }}>
+          {navigator.name}
+          {years ? ` · ${years}` : ""}
+          {voyage.ships ? ` · ${voyage.ships}` : ""}
+        </p>
         {voyage.summary && <p style={{ margin: "14px 0" }}>{voyage.summary}</p>}
 
         {/* How we know this. Deliberately placed above the itinerary rather

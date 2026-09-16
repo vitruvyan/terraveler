@@ -4051,59 +4051,66 @@ main.prose {
    enough to hold a margin: only the stage rows use the full width. */
 .tv-log-prose { max-width: 700px; }
 
-/* Illustration-library engravings are editorial atmosphere, never waypoint
-   plates. Crop below the specimen headings and keep them away from the text. */
-.tv-voyage-engraving {
-  display: block;
-  flex: none;
-  width: min(30%, 12rem);
-  height: 7rem;
-  background-size: 350% auto;
+/* Engravings sit in unused paper or below the log's ink, as atmosphere only.
+   Their source is a specimen sheet, never a plate documenting a landfall. */
+.tv-voyage-log { position: relative; }
+.tv-voyage-engraving,
+.tv-map-log-art::before {
+  background-image: var(--engraving-image);
+  background-size: 500% auto;
   background-repeat: no-repeat;
   background-position: var(--engraving-x) var(--engraving-y);
   filter: sepia(.28);
-  opacity: .68;
-  mask-image: linear-gradient(90deg, transparent, #000 15%, #000 82%, transparent);
   pointer-events: none;
 }
-.tv-voyage-engraving[data-theme="sea"] {
-  background-image: url("/media/specimen-illustration/mariners.webp");
+.tv-voyage-engraving[data-theme="sea"],
+.tv-map-log-art[data-theme="sea"] {
+  --engraving-image: url("/media/specimen-illustration/mariners.webp");
   --engraving-x: 50%;
   --engraving-y: 24%;
 }
-.tv-voyage-engraving[data-theme="conquest"] {
-  background-image: url("/media/specimen-illustration/mariners.webp");
+.tv-voyage-engraving[data-theme="conquest"],
+.tv-map-log-art[data-theme="conquest"] {
+  --engraving-image: url("/media/specimen-illustration/mariners.webp");
   --engraving-x: 0%;
-  --engraving-y: 24%;
+  --engraving-y: 31%;
 }
-.tv-voyage-engraving[data-theme="americas"] {
-  background-image: url("/media/specimen-illustration/new-worlds.webp");
-  background-size: 450% auto;
+.tv-voyage-engraving[data-theme="americas"],
+.tv-map-log-art[data-theme="americas"] {
+  --engraving-image: url("/media/specimen-illustration/new-worlds.webp");
   --engraving-x: 87%;
   --engraving-y: 96%;
 }
-.tv-voyage-engraving[data-theme="land"] {
-  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+.tv-voyage-engraving[data-theme="land"],
+.tv-map-log-art[data-theme="land"] {
+  --engraving-image: url("/media/specimen-illustration/atlas-cartography.webp");
   --engraving-x: 0%;
   --engraving-y: 24%;
 }
-.tv-log-intro-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-5);
+.tv-voyage-log > .tv-voyage-engraving {
+  position: absolute;
+  top: var(--space-5);
+  right: 0;
+  display: block;
+  width: 20rem;
+  height: 14rem;
+  opacity: .12;
+  mask-image: linear-gradient(90deg, transparent, #000 20% 76%, transparent);
 }
-.tv-log-intro-head > div { min-width: 0; }
-.tv-log-panel-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
+.tv-map-log-art { position: relative; isolation: isolate; }
+.tv-map-log-art::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -2rem;
+  right: -.75rem;
+  width: 11rem;
+  height: 8rem;
+  opacity: .09;
+  mask-image: linear-gradient(90deg, transparent, #000 32%);
 }
-.tv-log-panel-head > div { min-width: 0; flex: 1; }
-.tv-voyage-engraving--compact { width: 6.5rem; height: 4.5rem; opacity: .5; }
-@media (max-width: 500px) {
-  .tv-log-intro-head .tv-voyage-engraving { width: 6.5rem; height: 5.5rem; }
+@media (max-width: 1050px) {
+  .tv-voyage-log > .tv-voyage-engraving { display: none; }
 }
 
 /* --- Making the annotation layer findable -------------------------------

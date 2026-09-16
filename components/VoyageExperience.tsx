@@ -12,7 +12,6 @@ import MapTop from "@/components/map/MapTop";
 import MapNote from "@/components/map/MapNote";
 import TransportBar from "@/components/map/TransportBar";
 import ContributePanel from "@/components/ContributePanel";
-import VoyageEngraving from "@/components/VoyageEngraving";
 import { illustrationForVoyage } from "@/lib/voyageIllustrations";
 import { voyageLogPath } from "@/lib/voyages";
 import AtlasBrowser from "@/components/AtlasBrowser";
@@ -1024,21 +1023,16 @@ export default function VoyageExperience({
               </>
             ) : (
               <>
-                <div className={lens === "log" ? "tv-log-panel-head" : undefined}>
-                  <div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
-                        Landfall {current.seq}
-                      </span>
-                      <span className="conf-badge">{current.confidence}</span>
-                    </div>
-                    <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
-                  </div>
-                  {lens === "log" && <VoyageEngraving theme={illustrationForVoyage(voyage)} compact />}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "var(--brass)", letterSpacing: "0.08em" }}>
+                    Landfall {current.seq}
+                  </span>
+                  <span className="conf-badge">{current.confidence}</span>
                 </div>
+                <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
 
                 {lens === "log" ? (
-              <>
+              <div className="tv-map-log-art" data-theme={illustrationForVoyage(voyage) ?? undefined}>
                 {signedIn && (
                   <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 4px" }}>
                     <button
@@ -1099,7 +1093,7 @@ export default function VoyageExperience({
                 <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
                   <Icon name="scroll" size={16} /> Read the whole log as text →
                 </a>
-              </>
+              </div>
             ) : (
               <>
                 <div style={{ color: "var(--ink-soft)", fontSize: 13, margin: "2px 0 4px" }}>
