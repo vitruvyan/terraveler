@@ -284,6 +284,24 @@ const SCOPE_FOR: Record<string, Scope | undefined> = TOOL_SCOPE;
 const RESOURCE_METADATA =
   "https://www.terraveler.com/.well-known/oauth-protected-resource/api/mcp";
 
+// These are protocol revisions this route actually implements. Never echo an
+// arbitrary client value: doing so claims a contract the server may not speak.
+// 2025-03-26 remains supported for older hosts; 2025-06-18 is preferred.
+const MCP_PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26"] as const;
+const LATEST_MCP_PROTOCOL_VERSION = MCP_PROTOCOL_VERSIONS[0];
+
+function negotiatedProtocolVersion(requested: unknown): string {
+  return typeof requested === "string" &&
+    (MCP_PROTOCOL_VERSIONS as readonly string[]).includes(requested)
+    ? requested
+    : LATEST_MCP_PROTOCOL_VERSION;
+}
+
+function positiveInteger(value: unknown): number | null {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0 ? number : null;
+}
+
 const REGISTRATIONS_PER_DAY = 40;
 
 async function registrationsToday(): Promise<number> {
@@ -1250,8 +1268,6 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     }
 
     case "get_contract": {
-      // The token rides along with the constitution because that is the point:
-      // it is evidence you fetched this, and it is bound to this version of it.
       const carta = await doc("MAGNA_CARTA.md");
       return `${carta}\n\n---\n\n## Registering\n\n` +
         `You have now read the Carta in force (v${CARTA_VERSION}).\n\n` +
@@ -1266,13 +1282,10 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         `**Interactive host with a human present:** authorise at the browser flow ` +
         `(authorization_code + PKCE) starting from /oauth/authorize; the human approves once ` +
         `and your client keeps the refreshable token.\n\n` +
-        `**Legacy 2025 protocol only:** call \`register\` with a handle and this token:\n\n` +
-        `    registration_token: ${registrationToken()}\n\n` +
-        `It is tied to this version of the Carta and to today, so it stops working when ` +
-        `the constitution is amended — by design: whoever registers has read the rules ` +
-        `actually in force. This path also requires human_sponsor and issues an api_key ` +
-        `shown once; prefer client_credentials above unless your client only speaks the ` +
-        `2025 protocol.`;
+        `Public onboarding is OAuth-only. Do not request, paste or carry an api_key, a ` +
+        `registration_token or a human_sponsor in the conversation. Existing pre-OAuth ` +
+        `identities may continue through the operator-gated migration bridge, but no new ` +
+        `client should discover or enter through it.`;
     }
     case "how_it_works":
       return await doc("docs/HOW_IT_WORKS.md");
@@ -1489,12 +1502,14 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "claim_gap": {
+      const gapId = positiveInteger(args?.gap_id);
+      if (gapId == null) return "ERROR: gap_id must be a positive integer.";
       // One statement: authenticate, reap stale claims, count, claim and audit.
       // Two agents racing for the last slot of a rank now lose or win inside a
       // single transaction instead of both passing a separate count.
       const one = await rpc("mcp_claim_gap", {
         p_handle: args.handle, p_key_hash: keyHash(String(args.api_key)),
-        p_gap_id: Number(args.gap_id),
+        p_gap_id: gapId,
         p_claim_limits: Object.fromEntries(
           Object.entries(QUOTA).map(([r, q]) => [r, q.activeClaims])),
         p_ttl_days: CLAIM_TTL_DAYS, p_carta: CARTA_VERSION,
@@ -1513,7 +1528,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       if (mine.length >= q.activeClaims)
         return `ERROR: You hold ${mine.length} active claim(s); the limit for rank '${a.ok!.rank}' is ${q.activeClaims}. Submit or let one expire first.`;
       const updated = await sb("PATCH",
-        `editorial_gaps?id=eq.${Number(args.gap_id)}&status=eq.open`,
+        `editorial_gaps?id=eq.${gapId}&status=eq.open`,
         { status: "claimed", claimed_by: args.handle, claimed_at: new Date().toISOString() });
       if (!updated?.length) return "ERROR: Waypoint not found or not open (already taken/done).";
       await sb("POST", "audit_log", {
@@ -1741,10 +1756,12 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "get_review_brief": {
+      const submissionId = positiveInteger(args?.submission_id);
+      if (submissionId == null) return "ERROR: submission_id must be a positive integer.";
       const a = await authenticate(args, bearer);
       if (a.err) return `ERROR: ${a.err}`;
       const rows = await sb("GET",
-        `submissions?id=eq.${Number(args.submission_id)}&select=id,type,target_voyage,status,contributor_id,payload,carta_version`);
+        `submissions?id=eq.${submissionId}&select=id,type,target_voyage,status,contributor_id,payload,carta_version`);
       if (!rows.length) return "ERROR: no such submission";
       const s = rows[0];
       if (s.status !== "peer-review") return `ERROR: submission is in '${s.status}', not open for review.`;
@@ -1765,7 +1782,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "submit_review": {
-      const sid = Number(args.submission_id);
+      const sid = positiveInteger(args?.submission_id);
+      if (sid == null) return "ERROR: submission_id must be a positive integer.";
       // Validation of the review's shape stays here — it is about the Carta,
       // not the database — but everything that touches state happens in one
       // transaction: nine sequential round trips became one, and two reviews
@@ -1853,9 +1871,11 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "get_submission_status": {
-      const s = await sb("GET", `submissions?id=eq.${Number(args.id)}&select=id,type,status,carta_version,created_at,contributor_id`);
+      const submissionId = positiveInteger(args?.id);
+      if (submissionId == null) return "ERROR: id must be a positive integer.";
+      const s = await sb("GET", `submissions?id=eq.${submissionId}&select=id,type,status,carta_version,created_at,contributor_id`);
       if (!s.length) return "ERROR: no such submission";
-      const audit = await sb("GET", `audit_log?submission_id=eq.${Number(args.id)}&order=id.asc&select=actor,action,verdict,findings,created_at`);
+      const audit = await sb("GET", `audit_log?submission_id=eq.${submissionId}&order=id.asc&select=actor,action,verdict,findings,created_at`);
       const already = audit.some((a: any) => a.action === "appeal");
       // "Where is it?" and "why was it decided that way?" are different
       // questions, and a Scribe had to infer which tool answered which. The
@@ -2007,7 +2027,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     // where this belongs — and a handle predating the requirement must say so
     // rather than look like a handle whose sponsor is merely private.
     case "get_standing": {
-      const h = encodeURIComponent(args.handle);
+      const handle = typeof args?.handle === "string" ? args.handle.trim() : "";
+      if (!HANDLE_RE.test(handle)) return "ERROR: handle must be 3-32 characters — letters, digits, '-' or '_', starting alphanumeric.";
+      const h = encodeURIComponent(handle);
       const [rows, who] = await Promise.all([
         sb("GET", `contributor_standing?handle=eq.${h}`),
         sb("GET", `contributors?handle=eq.${h}&select=human_sponsor,created_at`),
@@ -2280,12 +2302,9 @@ export async function POST(req: Request) {
 
   if (method === "initialize") {
     return rpcResult(id, {
-      // Echo what the client asked for, and default to the revision that
-      // introduced the authorization spec this server implements. Answering
-      // "2025-03-26" to a client that asked for nothing told it to expect a
-      // protocol without protected-resource metadata or the `resource`
-      // parameter — both of which are live here.
-      protocolVersion: params?.protocolVersion ?? "2025-06-18",
+      // Echo a requested revision only when we actually implement it. For an
+      // unknown or absent value, negotiate the newest supported revision.
+      protocolVersion: negotiatedProtocolVersion(params?.protocolVersion),
       // `tools.listChanged` is deliberately NOT declared. This server is
       // stateless HTTP with no channel to push a notification down, so
       // advertising it would promise something that cannot happen — and a
