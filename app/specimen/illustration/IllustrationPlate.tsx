@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import "./lightbox.css";
 
 type IllustrationPlateProps = {
   src: string;
