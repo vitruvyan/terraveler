@@ -3,137 +3,469 @@
 @import "./plate-newworlds.css";
 @import "./plate-mariners.css";
 
-/* Illustration specimen: local to /specimen/illustration. */
-.illus-spec {
-  --illus-dark: #111722;
-  --illus-dark-soft: #8b96b3;
-  --illus-dark-faint: #8c7c63;
-  --illus-brass: #d8b25c;
+/* --------------------------------------------------------------------------
+   ILLUSTRATION SPECIMEN
+   This chapter is a printed catalogue, not a gallery grid. The image has the
+   status of an atlas plate; the type specimen supplies the voices around it.
+   ----------------------------------------------------------------------- */
+
+.illus-sheet {
+  max-width: 82rem;
 }
 
 .illus-hero {
-  display:grid;
-  grid-template-columns:minmax(0, .92fr) minmax(24rem, 1.08fr);
-  gap:var(--space-8);
-  align-items:center;
-  padding:var(--space-7) 0 var(--space-8);
-  border-bottom:1px solid var(--rule-mid);
+  display: grid;
+  grid-template-columns: minmax(0, .82fr) minmax(30rem, 1.18fr);
+  gap: var(--space-8);
+  align-items: center;
+  min-height: 34rem;
+  padding: var(--space-8) 0 var(--space-8);
+  border-bottom: 1px solid var(--rule-mid);
 }
+
+.illus-hero-copy {
+  position: relative;
+  z-index: 2;
+}
+
 .illus-hero h1 {
-  font-family:var(--font-cartouche), Georgia, serif;
-  font-weight:300;
-  font-size:clamp(3.4rem,7vw,6.8rem);
-  line-height:.9;
-  letter-spacing:-.025em;
-  margin:0 0 var(--space-4);
+  margin: 0 0 var(--space-5);
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(4.6rem, 8vw, 8.4rem);
+  font-weight: 300;
+  line-height: .78;
+  letter-spacing: -.035em;
 }
-.illus-hero-copy { max-width:30rem; }
-.illus-hero-copy p { margin:0; color:var(--ink-soft); font-style:italic; font-size:var(--step-2); line-height:1.45; }
+
+.illus-hero h1 em {
+  display: inline-block;
+  margin-left: .28em;
+  font-weight: 300;
+}
+
+.illus-hero .spec-lede {
+  max-width: 26rem;
+  font-size: var(--step-2);
+}
+
 .illus-hero-art {
-  min-height:22rem;
-  border-left:1px solid var(--rule-hair);
-  background:
-    linear-gradient(90deg, var(--parchment) 0%, transparent 16%, transparent 84%, var(--parchment) 100%),
+  min-height: 28rem;
+  background-image:
+    linear-gradient(90deg, var(--parchment) 0%, transparent 11%, transparent 86%, var(--parchment) 100%),
+    linear-gradient(0deg, var(--parchment) 0%, transparent 9%, transparent 91%, var(--parchment) 100%),
     var(--illus-atlas);
-  background-size:auto, cover;
-  background-position:center;
-  filter:sepia(.18) contrast(.96);
-  mix-blend-mode:multiply;
-  opacity:.82;
+  background-size: auto, auto, contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: sepia(.2) contrast(1.03);
+  mix-blend-mode: multiply;
+  opacity: .9;
 }
-.illus-intro {
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:var(--space-7);
-  align-items:end;
-  padding:var(--space-5) 0 var(--space-7);
-  border-bottom:1px solid var(--rule-hair);
-}
-.illus-intro p { margin:0; max-width:46rem; }
-.illus-phase { white-space:nowrap; }
 
-.illus-grid {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  border-top:1px solid var(--rule-mid);
-  border-left:1px solid var(--rule-hair);
-  margin-top:var(--space-7);
+.illus-prologue {
+  display: grid;
+  grid-template-columns: minmax(0, 38rem) 9rem;
+  gap: var(--space-8);
+  justify-content: center;
+  align-items: start;
+  padding: var(--space-8) 0 var(--space-7);
 }
+
+.illus-prologue-copy {
+  font-size: var(--step-1);
+}
+
+.illus-prologue-copy .spec-prose + .spec-prose {
+  margin-top: var(--space-4);
+}
+
+.illus-prologue-margin {
+  padding-top: var(--space-2);
+  border-left: 1px solid var(--rule-hair);
+  padding-left: var(--space-4);
+}
+
+.illus-prologue-margin strong {
+  display: block;
+  margin: var(--space-3) 0 var(--space-1);
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: var(--step-3);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.illus-break {
+  margin-block: var(--space-5) var(--space-8);
+}
+
+.illus-thesis {
+  width: min(52rem, 100%);
+  margin: 0 auto var(--space-9);
+  text-align: center;
+}
+
+.illus-thesis blockquote {
+  margin: 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(2.8rem, 6vw, 5.6rem);
+  font-weight: 300;
+  font-style: italic;
+  line-height: .98;
+  letter-spacing: -.02em;
+}
+
+.illus-thesis p {
+  width: min(34rem, 100%);
+  margin: var(--space-4) auto 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-style: italic;
+}
+
+.illus-catalogue {
+  border-top: 1px solid var(--rule-firm);
+}
+
 .illus-family {
-  padding:var(--space-6);
-  border-right:1px solid var(--rule-hair);
-  border-bottom:1px solid var(--rule-hair);
-  min-width:0;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(14rem, .72fr) minmax(0, 1.65fr);
+  grid-template-areas:
+    "head plate"
+    "text plate";
+  column-gap: var(--space-8);
+  row-gap: var(--space-6);
+  padding: var(--space-9) 0;
+  border-bottom: 1px solid var(--rule-mid);
 }
-.illus-family-head {
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  gap:var(--space-3);
-  align-items:baseline;
-  margin-bottom:var(--space-3);
+
+.illus-family.is-reverse {
+  grid-template-columns: minmax(0, 1.65fr) minmax(14rem, .72fr);
+  grid-template-areas:
+    "plate head"
+    "plate text";
 }
-.illus-family-num { font-family:var(--font-machine),ui-monospace,monospace; color:var(--brass-text); font-size:var(--step--1); }
-.illus-family h2 { font-family:var(--font-cartouche),Georgia,serif; font-weight:400; font-size:var(--step-4); line-height:1; margin:0; }
-.illus-plate-count { font-family:var(--font-machine),ui-monospace,monospace; font-size:var(--step--2); color:var(--ink-soft); letter-spacing:.08em; text-transform:uppercase; }
-.illus-family-kicker { font-family:var(--font-machine),ui-monospace,monospace; text-transform:uppercase; letter-spacing:.14em; font-size:var(--step--2); color:var(--ink-soft); margin:0 0 var(--space-4); }
+
+.illus-family-number {
+  position: absolute;
+  top: var(--space-7);
+  right: 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(7rem, 14vw, 13rem);
+  font-weight: 300;
+  line-height: .75;
+  color: var(--brass);
+  opacity: .11;
+  pointer-events: none;
+}
+
+.illus-family.is-reverse .illus-family-number {
+  right: auto;
+  left: 0;
+}
+
+.illus-family-heading {
+  grid-area: head;
+  align-self: end;
+  position: relative;
+  z-index: 1;
+}
+
+.illus-family-heading h2 {
+  margin: 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(3rem, 5.3vw, 5.1rem);
+  font-weight: 300;
+  line-height: .92;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+
+.illus-family-kicker {
+  margin: var(--space-4) 0 0;
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--2);
+  line-height: 1.65;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.illus-plate {
+  grid-area: plate;
+  margin: 0;
+  align-self: center;
+}
+
 .illus-preview {
-  aspect-ratio:16/7;
-  width:100%;
-  border-top:1px solid var(--rule-hair);
-  border-bottom:1px solid var(--rule-hair);
-  background-color:var(--parchment-deep);
-  background-repeat:no-repeat;
-  background-position:center;
-  background-size:cover;
-  filter:sepia(.16) contrast(.96);
-  mix-blend-mode:multiply;
-  margin-bottom:var(--space-4);
-}
-.illus-preview.atlas { background-image:var(--illus-atlas); }
-.illus-preview.mythic { background-image:var(--illus-mythic); }
-.illus-preview.newworlds { aspect-ratio:16/9; background-image:var(--illus-newworlds); }
-.illus-preview.mariners { aspect-ratio:16/8; background-image:var(--illus-mariners); }
-.illus-family-copy { margin:0 0 var(--space-4); max-width:34rem; }
-.illus-meta {
-  display:flex;
-  flex-wrap:wrap;
-  gap:var(--space-2) var(--space-4);
-  padding-top:var(--space-3);
-  border-top:1px solid var(--rule-hair);
-  font-family:var(--font-machine),ui-monospace,monospace;
-  font-size:var(--step--2);
-  text-transform:uppercase;
-  letter-spacing:.06em;
-  color:var(--ink-soft);
-}
-.illus-meta strong { color:var(--brass-text); font-weight:500; }
-
-.illus-next { padding-top:var(--space-8); }
-.illus-next-head { display:flex; justify-content:space-between; gap:var(--space-6); align-items:baseline; margin-bottom:var(--space-5); }
-.illus-next-head h2 { font-family:var(--font-cartouche),Georgia,serif; font-weight:400; font-size:var(--step-4); margin:0; }
-.illus-next-grid { display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--rule-mid); }
-.illus-next-card { padding:var(--space-5) var(--space-5) var(--space-6) 0; border-bottom:1px solid var(--rule-hair); }
-.illus-next-card + .illus-next-card { padding-left:var(--space-5); border-left:1px solid var(--rule-hair); }
-.illus-next-card h3 { font-family:var(--font-cartouche),Georgia,serif; font-weight:400; font-size:var(--step-3); margin:0 0 var(--space-2); }
-.illus-next-card p { margin:0; color:var(--ink-soft); font-style:italic; }
-.illus-orbit { height:7.5rem; margin:var(--space-4) 0; position:relative; overflow:hidden; opacity:.65; }
-.illus-orbit::before { content:""; position:absolute; inset:18% 8%; border:1px solid var(--rule-mid); border-radius:50%; transform:rotate(-8deg); }
-.illus-orbit::after { content:""; position:absolute; width:.8rem; height:.8rem; border-radius:50%; background:var(--brass); top:48%; left:64%; box-shadow:-6rem -1rem 0 .2rem var(--ink-faint), 4.5rem 1.2rem 0 .1rem var(--ink-soft); }
-.illus-moon::before { inset:4% 24%; border-radius:50%; background:radial-gradient(circle at 34% 35%, transparent 0 8%, rgba(43,33,23,.12) 9% 12%, transparent 13% 100%), radial-gradient(circle at 65% 62%, rgba(43,33,23,.14) 0 7%, transparent 8% 100%), var(--parchment-deep); }
-.illus-moon::after { display:none; }
-.illus-mars::before { inset:16% 12% 8%; border:0; border-radius:0; transform:none; background:linear-gradient(165deg,transparent 0 45%,rgba(43,33,23,.14) 46% 48%,transparent 49%), linear-gradient(15deg,transparent 0 48%,rgba(43,33,23,.11) 49% 51%,transparent 52%); }
-.illus-mars::after { width:2.8rem;height:2.8rem;left:auto;right:12%;top:10%;background:var(--accent);opacity:.22;box-shadow:none; }
-
-@media (max-width: 900px) {
-  .illus-hero { grid-template-columns:1fr; gap:var(--space-6); }
-  .illus-hero-art { min-height:14rem; border-left:0; border-top:1px solid var(--rule-hair); }
-  .illus-intro { grid-template-columns:1fr; gap:var(--space-3); }
-  .illus-grid { grid-template-columns:1fr; }
-  .illus-next-grid { grid-template-columns:1fr; }
-  .illus-next-card + .illus-next-card { padding-left:0; border-left:0; }
+  width: min(100%, 42rem);
+  aspect-ratio: 16 / 6;
+  margin-inline: auto;
+  background-color: var(--parchment-deep);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: sepia(.17) contrast(1.04);
+  mix-blend-mode: multiply;
+  border-top: 1px solid var(--rule-mid);
+  border-bottom: 1px solid var(--rule-mid);
 }
 
-[data-layout="phone"] .illus-spec .spec-sheet { padding-inline:var(--space-4); }
-[data-layout="phone"] .illus-hero { padding-top:var(--space-6); }
-[data-layout="phone"] .illus-family { padding:var(--space-5) 0; border-right:0; }
-[data-layout="phone"] .illus-grid { border-left:0; }
+.illus-preview.atlas { background-image: var(--illus-atlas); }
+.illus-preview.mythic { background-image: var(--illus-mythic); }
+.illus-preview.newworlds { background-image: var(--illus-newworlds); aspect-ratio: 16 / 9; }
+.illus-preview.mariners { background-image: var(--illus-mariners); aspect-ratio: 16 / 8; }
+
+.illus-plate figcaption {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  width: min(100%, 42rem);
+  margin: var(--space-3) auto 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule-hair);
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.illus-plate figcaption span:nth-child(2) {
+  text-align: center;
+}
+
+.illus-plate figcaption strong {
+  color: var(--brass-text);
+  font-weight: 500;
+}
+
+.illus-family-text {
+  grid-area: text;
+  align-self: start;
+}
+
+.illus-family-copy {
+  margin: 0;
+  font-size: var(--step-1);
+  line-height: 1.55;
+  max-width: 29rem;
+}
+
+.illus-use-note {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--rule-hair);
+  max-width: 27rem;
+}
+
+.illus-use-note p {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+.illus-next {
+  padding: var(--space-9) 0 var(--space-6);
+}
+
+.illus-next-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, .72fr);
+  gap: var(--space-8);
+  align-items: end;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule-firm);
+}
+
+.illus-next-head h2 {
+  margin: 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(3.4rem, 6vw, 6rem);
+  font-weight: 300;
+  line-height: .86;
+  letter-spacing: -.025em;
+}
+
+.illus-next-head h2 em {
+  font-weight: 300;
+}
+
+.illus-next-head > p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: var(--step-0);
+  line-height: 1.55;
+}
+
+.illus-next-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.illus-next-card {
+  position: relative;
+  min-width: 0;
+  padding: var(--space-6) var(--space-6) var(--space-6) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+
+.illus-next-card + .illus-next-card {
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--rule-hair);
+}
+
+.illus-next-card h3 {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: var(--step-4);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.illus-next-card > p {
+  margin: var(--space-4) 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-style: italic;
+}
+
+.illus-orbit {
+  height: 8.5rem;
+  margin: var(--space-5) 0;
+  position: relative;
+  overflow: hidden;
+  opacity: .68;
+}
+
+.illus-orbit::before {
+  content: "";
+  position: absolute;
+  inset: 18% 8%;
+  border: 1px solid var(--rule-mid);
+  border-radius: 50%;
+  transform: rotate(-8deg);
+}
+
+.illus-orbit::after {
+  content: "";
+  position: absolute;
+  width: .8rem;
+  height: .8rem;
+  border-radius: 50%;
+  background: var(--brass);
+  top: 48%;
+  left: 64%;
+  box-shadow: -6rem -1rem 0 .2rem var(--ink-faint), 4.5rem 1.2rem 0 .1rem var(--ink-soft);
+}
+
+.illus-moon::before {
+  inset: 4% 24%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 35%, transparent 0 8%, rgba(43,33,23,.12) 9% 12%, transparent 13% 100%),
+    radial-gradient(circle at 65% 62%, rgba(43,33,23,.14) 0 7%, transparent 8% 100%),
+    var(--parchment-deep);
+}
+.illus-moon::after { display: none; }
+
+.illus-mars::before {
+  inset: 16% 12% 8%;
+  border: 0;
+  border-radius: 0;
+  transform: none;
+  background:
+    linear-gradient(165deg, transparent 0 45%, rgba(43,33,23,.14) 46% 48%, transparent 49%),
+    linear-gradient(15deg, transparent 0 48%, rgba(43,33,23,.11) 49% 51%, transparent 52%);
+}
+.illus-mars::after {
+  width: 2.8rem;
+  height: 2.8rem;
+  left: auto;
+  right: 12%;
+  top: 10%;
+  background: var(--accent);
+  opacity: .22;
+  box-shadow: none;
+}
+
+[data-layout="phone"] .illus-sheet {
+  padding-inline: var(--space-4);
+}
+
+[data-layout="phone"] .illus-hero {
+  grid-template-columns: 1fr;
+  min-height: auto;
+  gap: var(--space-6);
+  padding-top: var(--space-6);
+}
+
+[data-layout="phone"] .illus-hero h1 {
+  font-size: clamp(3.5rem, 18vw, 5.6rem);
+}
+
+[data-layout="phone"] .illus-hero-art {
+  min-height: 12rem;
+  background-size: contain;
+}
+
+[data-layout="phone"] .illus-prologue {
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+  padding-top: var(--space-6);
+}
+
+[data-layout="phone"] .illus-prologue-margin {
+  border-left: 0;
+  border-top: 1px solid var(--rule-hair);
+  padding: var(--space-4) 0 0;
+}
+
+[data-layout="phone"] .illus-thesis {
+  margin-bottom: var(--space-8);
+}
+
+[data-layout="phone"] .illus-family,
+[data-layout="phone"] .illus-family.is-reverse {
+  display: block;
+  padding: var(--space-8) 0;
+}
+
+[data-layout="phone"] .illus-family-heading,
+[data-layout="phone"] .illus-plate,
+[data-layout="phone"] .illus-family-text {
+  margin-bottom: var(--space-5);
+}
+
+[data-layout="phone"] .illus-family-number {
+  top: var(--space-6);
+  font-size: 8rem;
+}
+
+[data-layout="phone"] .illus-family-heading h2 {
+  font-size: clamp(2.8rem, 13vw, 4.2rem);
+}
+
+[data-layout="phone"] .illus-preview,
+[data-layout="phone"] .illus-plate figcaption {
+  width: 100%;
+}
+
+[data-layout="phone"] .illus-next-head {
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+[data-layout="phone"] .illus-next-grid {
+  grid-template-columns: 1fr;
+}
+
+[data-layout="phone"] .illus-next-card,
+[data-layout="phone"] .illus-next-card + .illus-next-card {
+  padding: var(--space-5) 0;
+  border-left: 0;
+}
