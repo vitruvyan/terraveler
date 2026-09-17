@@ -173,6 +173,8 @@
   /* ---- MEASURE ----------------------------------------------------------- */
   --measure: 33em;
   --measure-narrow: 26em;
+  --log-page-width: 66.25rem;
+  --log-page-padding: 1.375rem;
 
   /* ---- MOTION ------------------------------------------------------------ */
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -4052,6 +4054,99 @@ main.prose {
 .tv-log-prose { max-width: 700px; }
 .tv-log-opening.has-engraving { position: relative; min-height: 12rem; }
 .tv-log-opening.has-engraving .tv-log-prose { max-width: min(700px, calc(100% - 21rem)); }
+.tv-voyage-log.is-illuminated { position: relative; z-index: 1; }
+.tv-voyage-log.is-illuminated .tv-log-opening.has-engraving { min-height: 0; }
+.tv-voyage-log.is-illuminated .tv-log-opening.has-engraving .tv-log-prose { max-width: 700px; }
+.tv-voyage-log.is-illuminated .tv-page-engraving { display: none; }
+.tv-log-kicker { display: inline-flex; align-items: center; gap: var(--space-2); }
+.tv-log-kicker svg { color: var(--accent); }
+.tv-log-section-heading { display: flex; align-items: baseline; gap: var(--space-2); }
+.tv-log-section-mark { color: var(--accent); }
+
+/* The engraved page is a composition, not a picture beside a paragraph.
+   Fixed art stays outside the log's ink measure. Cortés has a continuous
+   vertical engraving; the remaining crops still use unchanged HQ sheets. */
+.tv-log-illumination {
+  --log-gutter: max(0px, calc((100vw - var(--log-page-width)) / 2 + var(--log-page-padding)));
+  position: fixed;
+  inset: var(--space-8) 0 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tv-log-illumination-piece {
+  position: absolute;
+  display: block;
+  width: min(var(--log-gutter), 16rem);
+  background-repeat: no-repeat;
+  filter: grayscale(1) contrast(1.65) brightness(1.25);
+  mix-blend-mode: multiply;
+  mask-image: radial-gradient(ellipse 75% 64% at 50% 50%, #000 30%, transparent 100%);
+}
+.tv-log-illumination[data-composition="mesoamerica"] .tv-log-illumination-piece:not([data-motif="vertical-terrain"]):not([data-motif="instrument"]) {
+  display: none;
+}
+.tv-log-illumination-piece[data-motif="vertical-terrain"] {
+  inset: 0 auto 0 0;
+  height: 100%;
+  width: min(var(--log-gutter), 17rem);
+  isolation: isolate;
+  background: var(--parchment);
+  filter: none;
+  mix-blend-mode: normal;
+  mask-image: linear-gradient(to right, #000 0%, #000 60%, transparent 100%);
+}
+.tv-log-illumination-piece[data-motif="vertical-terrain"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/media/voyage-illumination/cortes-vertical.webp") 55% center / 160% 100% no-repeat;
+  filter: grayscale(1) contrast(1.65) brightness(1.25);
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+}
+.tv-log-illumination-piece[data-motif="orography"] {
+  top: 2%; left: 0; height: 9rem; opacity: 0.54;
+  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+  background-size: 72rem auto;
+  background-position: -3rem -5rem;
+}
+.tv-log-illumination-piece[data-motif="charted-coast"] {
+  top: 41%; left: 0; height: 8rem; opacity: 0.35;
+  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+  background-size: 72rem auto;
+  background-position: -25rem -6rem;
+}
+.tv-log-illumination-piece[data-motif="regional-scene"] {
+  bottom: 0; left: 0; height: 9rem; opacity: 0.64;
+  background-image: url("/media/specimen-illustration/new-worlds.webp");
+  background-size: 88rem auto;
+  background-position: -11rem -8rem;
+}
+.tv-log-illumination-piece[data-motif="mask"] {
+  top: 11%; right: 0; height: 9rem; opacity: 0.57;
+  background-image: url("/media/specimen-illustration/new-worlds.webp");
+  background-size: 88rem auto;
+  background-position: 50% -6rem;
+}
+.tv-log-illumination-piece[data-motif="instrument"] {
+  bottom: 4%; right: 0; height: 11rem; opacity: 0.49;
+  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+  background-size: 88rem auto;
+  background-position: 50% -19rem;
+}
+.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="regional-scene"] {
+  height: 10rem;
+  background-position: -11rem -20rem;
+}
+.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="charted-coast"] {
+  top: 52%; left: auto; right: 0;
+}
+.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="instrument"] {
+  top: 10%; bottom: auto;
+}
+[data-layout="phone"] .tv-log-illumination { display: none; }
+[data-layout="phone"] .tv-voyage-log.is-illuminated .tv-page-engraving { display: block; }
 .tv-page-engraving {
   position: absolute;
   top: var(--space-3);

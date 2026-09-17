@@ -19,7 +19,9 @@ test("regional ornaments follow the voyage, without treating them as stage evide
   const cortes = illustrationForVoyage({ slug: "cortes-1519", kind: "earth", body: "earth" });
   const pizarro = illustrationForVoyage({ slug: "pizarro-1532", kind: "earth", body: "earth" });
   assert.equal(cortes?.opener, "maya");
+  assert.equal(cortes?.pageComposition, "mesoamerica");
   assert.equal(pizarro?.opener, "andes");
+  assert.equal(pizarro?.pageComposition, "andes");
 });
 
 test("unknown voyages and journeys without fitting art stay unillustrated", () => {

@@ -14,19 +14,20 @@ export const illustrationScenes = {
 } as const;
 
 export type IllustrationScene = keyof typeof illustrationScenes;
-type Assignment = { opener: IllustrationScene | null };
+export type PageComposition = "mesoamerica" | "andes";
+type Assignment = { opener: IllustrationScene | null; pageComposition?: PageComposition };
 
 // A null is deliberate: an unrelated image would mislead even as an ornament.
 const assignments: Record<VoyageSlug, Assignment> = {
   "boudeuse-1766": { opener: "ship" },
   "boussole-1785": { opener: "navigator" },
   "cook-1768": { opener: "astrolabe" },
-  "cortes-1519": { opener: "maya" }, // Regional context, not a depiction of a particular landfall.
+  "cortes-1519": { opener: "maya", pageComposition: "mesoamerica" }, // Regional context, not a particular landfall.
   "voyager-2": { opener: null },
   "apollo-11": { opener: null },
   "darwin-1831": { opener: null },
   "magellan-1519": { opener: "sailor" },
-  "pizarro-1532": { opener: "andes" },
+  "pizarro-1532": { opener: "andes", pageComposition: "andes" },
   "columbus-1492": { opener: "ship" },
   "shackleton-1914": { opener: null },
   "xuanzang-629": { opener: null },
