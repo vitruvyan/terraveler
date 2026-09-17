@@ -4093,18 +4093,11 @@ main.prose {
    Fixed art stays outside the log's ink measure, always on the left. */
 .tv-log-illumination {
   --log-gutter: max(0px, calc((100vw - var(--log-page-width)) / 2 + var(--log-page-padding)));
-  --illumination-image: url("/media/voyage-illumination/cortes-vertical.webp");
   position: fixed;
   inset: var(--space-8) 0 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-}
-.tv-log-illumination[data-composition="andes"] {
-  --illumination-image: url("/media/voyage-illumination/andes-vertical.webp");
-}
-.tv-log-illumination[data-composition="marine-chart"] {
-  --illumination-image: url("/media/voyage-illumination/marine-chart-vertical.webp");
 }
 .tv-log-illumination-piece {
   position: absolute;

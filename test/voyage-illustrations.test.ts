@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import test from "node:test";
-import { illustrationForVoyage, illustrationScenes } from "../lib/voyageIllustrations";
+import { illuminationBackgrounds, illustrationForVoyage, illustrationScenes, visualAssets } from "../lib/voyageIllustrations";
 import { ATLAS } from "../lib/voyages";
 
 test("every published entry carries the visual class used for automatic selection", () => {
@@ -32,4 +34,16 @@ test("same profile reuses matching assets; unknown context stays unillustrated",
     illustrationForVoyage({ slug: "new-1700", kind: "earth", body: "earth" }, "marine-chart"));
   assert.equal(illustrationForVoyage({ slug: "new-1700", kind: "earth", body: "earth" }, "unillustrated")?.opener, null);
   assert.equal(illustrationForVoyage({ slug: "pizarro-1532", kind: "surface", body: "moon" }, "andes"), null);
+});
+
+test("the Specimen shows every production page ground from the same curated catalogue", () => {
+  const specimen = readFileSync(resolve("app/specimen/illustration/page.tsx"), "utf8");
+  assert.match(specimen, /Object\.values\(illuminationBackgrounds\)/);
+  for (const family of Object.values(visualAssets)) {
+    for (const composition of family.backgrounds) {
+      const ground = illuminationBackgrounds[composition];
+      assert.ok(existsSync(resolve("public", ground.src.slice(1))), `missing ${ground.src}`);
+      assert.ok(ground.context && ground.caution && ground.example.href);
+    }
+  }
 });

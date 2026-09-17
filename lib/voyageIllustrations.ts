@@ -16,7 +16,43 @@ export const illustrationScenes = {
 } as const;
 
 export type IllustrationScene = keyof typeof illustrationScenes;
-export type PageComposition = "mesoamerica" | "andes" | "marine-chart";
+
+/** The curated, production-used page grounds. The log and the Specimen both
+ * read this catalogue, so a new ground cannot quietly disappear from it. */
+export const illuminationBackgrounds = {
+  mesoamerica: {
+    title: "Mesoamerican terrain",
+    src: "/media/voyage-illumination/cortes-vertical.webp",
+    alt: "A vertical engraved landscape of relief, paths and Mesoamerican motifs",
+    context: "Mesoamerican land routes",
+    use: "Fixed left margin · voyage log",
+    caution: "Atmosphere, not a depiction of Tenochtitlan or a documented landfall.",
+    example: { label: "Cortés · 1519", href: "/voyage/cortes-1519/log" },
+    origin: "Terraveler original · generated 2026",
+  },
+  andes: {
+    title: "Andean highlands",
+    src: "/media/voyage-illumination/andes-vertical.webp",
+    alt: "A vertical engraved landscape of Andean relief, river and terraces",
+    context: "Andean highland routes",
+    use: "Fixed left margin · voyage log",
+    caution: "A regional motif, not an identified Inca site or stage of the journey.",
+    example: { label: "Pizarro · 1532", href: "/voyage/pizarro-1532/log" },
+    origin: "Terraveler original · generated 2026",
+  },
+  "marine-chart": {
+    title: "Marine chart",
+    src: "/media/voyage-illumination/marine-chart-vertical.webp",
+    alt: "A vertical engraved chart with compass, coasts, islands and a vessel",
+    context: "Seafaring and cartographic journeys",
+    use: "Fixed left margin · voyage log",
+    caution: "An imaginary chart, never a map of the voyage's verified route.",
+    example: { label: "Cook · 1768", href: "/voyage/cook-1768/log" },
+    origin: "Terraveler original · generated 2026",
+  },
+} as const;
+
+export type PageComposition = keyof typeof illuminationBackgrounds;
 export type IllustrationAssignment = {
   opener: IllustrationScene | null;
   pageComposition?: PageComposition;

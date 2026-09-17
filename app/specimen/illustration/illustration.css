@@ -257,6 +257,115 @@
   line-height: 1.5;
 }
 
+/* Production page grounds: a catalogue leaf, never a grid of picture cards. */
+.illus-grounds {
+  padding: var(--space-9) 0 var(--space-6);
+}
+
+.illus-grounds-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .75fr);
+  gap: var(--space-8);
+  align-items: end;
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--rule-firm);
+}
+
+.illus-grounds-heading h2 {
+  margin: 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: clamp(3rem, 5vw, 5rem);
+  font-weight: 300;
+  line-height: .9;
+}
+
+.illus-grounds-heading p {
+  margin: 0;
+  max-width: var(--measure-narrow);
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-style: italic;
+}
+
+.illus-grounds-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--rule-mid);
+}
+
+.illus-ground {
+  min-width: 0;
+  padding: var(--space-6) var(--space-6) var(--space-7) 0;
+}
+
+.illus-ground + .illus-ground {
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--rule-hair);
+}
+
+.illus-ground h3 {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-cartouche), Georgia, serif;
+  font-size: var(--step-4);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.illus-ground header p {
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--step-0);
+  font-style: italic;
+}
+
+.illus-ground figure {
+  margin: var(--space-5) 0;
+}
+
+.illus-ground .illus-preview-button.is-ground {
+  width: min(100%, 12rem);
+  border: 0;
+  background: var(--parchment);
+}
+
+.illus-ground figure figcaption {
+  margin-top: var(--space-3);
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.illus-ground-notes {
+  margin: 0;
+  border-top: 1px solid var(--rule-hair);
+}
+
+.illus-ground-notes div {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+
+.illus-ground-notes dt {
+  font-family: var(--font-machine), ui-monospace, monospace;
+  font-size: var(--step--3);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.illus-ground-notes dd {
+  margin: var(--space-1) 0 0;
+  font-size: var(--step-0);
+  line-height: 1.45;
+}
+
+.illus-ground-example {
+  display: inline-block;
+  margin-top: var(--space-4);
+  color: var(--accent-deep);
+  font-family: var(--font-ui), Georgia, serif;
+  font-size: var(--step-0);
+}
+
 .illus-next {
   padding: var(--space-9) 0 var(--space-6);
 }
@@ -442,6 +551,25 @@
 [data-layout="phone"] .illus-next-head {
   grid-template-columns: 1fr;
   gap: var(--space-4);
+}
+
+[data-layout="phone"] .illus-grounds-heading,
+[data-layout="phone"] .illus-grounds-list {
+  grid-template-columns: 1fr;
+}
+
+[data-layout="phone"] .illus-grounds-heading {
+  gap: var(--space-4);
+}
+
+[data-layout="phone"] .illus-ground,
+[data-layout="phone"] .illus-ground + .illus-ground {
+  padding: var(--space-6) 0;
+  border-left: 0;
+}
+
+[data-layout="phone"] .illus-ground + .illus-ground {
+  border-top: 1px solid var(--rule-hair);
 }
 
 [data-layout="phone"] .illus-next-grid {

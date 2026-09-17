@@ -4,6 +4,7 @@ import "./illustration.css";
 import Chapters from "../Chapters";
 import BackToTop from "../BackToTop";
 import Ornament from "@/components/Ornament";
+import { illuminationBackgrounds } from "@/lib/voyageIllustrations";
 import IllustrationPlate from "./IllustrationPlate";
 
 export const metadata: Metadata = {
@@ -76,6 +77,8 @@ const NEXT = [
   },
 ] as const;
 
+const PAGE_GROUNDS = Object.values(illuminationBackgrounds);
+
 export default function IllustrationSpecimenPage() {
   return (
     <div className="spec illus-spec">
@@ -105,13 +108,13 @@ export default function IllustrationSpecimenPage() {
               The illustration library is a growing collection of original engravings made for Terraveler. The rule is the same as the type specimen: ornament must carry meaning. An image may establish place, period, uncertainty or voice; it may not merely fill an empty corner.
             </p>
             <p className="spec-prose">
-              Phase one fixes the terrestrial register. The image is treated like a plate from an atlas: given room, accompanied by provenance, and never forced into the geometry of a software card.
+              Phase one fixes the terrestrial register. The horizontal plate and the vertical page ground have different jobs: the ground belongs to the margin, while the plate can mark a break in the article. Neither is forced into the geometry of a software card.
             </p>
           </div>
           <aside className="illus-prologue-margin">
             <span className="spec-margin-note">phase one</span>
             <strong>4 families</strong>
-            <span className="spec-machine">30 plates · v1</span>
+            <span className="spec-machine">30 plates · {PAGE_GROUNDS.length} page grounds</span>
           </aside>
         </section>
 
@@ -152,6 +155,41 @@ export default function IllustrationSpecimenPage() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section className="illus-grounds" aria-labelledby="page-grounds-heading">
+          <header className="illus-grounds-heading">
+            <div>
+              <span className="spec-eyebrow">The page as a plate</span>
+              <h2 id="page-grounds-heading">Vertical grounds<br /><em>in use.</em></h2>
+            </div>
+            <p>
+              These continuous engravings live in the fixed left margin of a voyage log. The article does not explain them; this catalogue records their subject, limits and actual use.
+            </p>
+          </header>
+
+          <div className="illus-grounds-list">
+            {PAGE_GROUNDS.map((ground, index) => (
+              <article className="illus-ground" key={ground.src}>
+                <header>
+                  <span className="spec-machine">ground 0{index + 1} · in use</span>
+                  <h3>{ground.title}</h3>
+                  <p>{ground.context}</p>
+                </header>
+                <figure>
+                  <IllustrationPlate src={ground.src} alt={ground.alt} className="is-ground" />
+                  <figcaption className="spec-machine">{ground.origin}</figcaption>
+                </figure>
+                <dl className="illus-ground-notes">
+                  <div><dt>Placement</dt><dd>{ground.use}</dd></div>
+                  <div><dt>Editorial limit</dt><dd>{ground.caution}</dd></div>
+                </dl>
+                <a className="illus-ground-example" href={ground.example.href}>
+                  See on {ground.example.label} <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="illus-next" aria-labelledby="coming-next">

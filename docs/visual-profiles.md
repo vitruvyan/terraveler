@@ -23,8 +23,10 @@ This is an explicit absence, not permission to use generic art.
 | `unillustrated` | Unclear, unrelated, or non-Earth subject | None | None |
 
 The renderer reads that class from the published Atlas entry, even when the
-voyage record comes from PostgREST rather than bundled JSON. The catalogue in
-`lib/voyageIllustrations.ts` maps class to eligible assets; CSS in
+voyage record comes from PostgREST rather than bundled JSON. The curated
+catalogue in `lib/voyageIllustrations.ts` maps class to eligible assets and
+records each page ground's subject, usage limit and example; the
+`/specimen/illustration` chapter reads that same catalogue. CSS in
 `app/globals.css` places them. A catalogue may contain multiple vertical
 backgrounds for one class. Selection is stable per voyage slug, so adding a
 variant rotates motifs across relevant articles without random changes during
