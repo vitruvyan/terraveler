@@ -5,12 +5,15 @@ import type { PageComposition } from "@/lib/voyageIllustrations";
 export default function VoyagePageIllumination({ composition }: { composition: PageComposition }) {
   return (
     <div className="tv-log-illumination" data-composition={composition} aria-hidden="true">
-      {composition === "mesoamerica" && <span className="tv-log-illumination-piece" data-motif="vertical-terrain" />}
-      <span className="tv-log-illumination-piece" data-motif="orography" />
-      <span className="tv-log-illumination-piece" data-motif="charted-coast" />
-      <span className="tv-log-illumination-piece" data-motif="regional-scene" />
-      {composition === "mesoamerica" && <span className="tv-log-illumination-piece" data-motif="mask" />}
-      <span className="tv-log-illumination-piece" data-motif="instrument" />
+      {composition === "mesoamerica" ? (
+        <span className="tv-log-illumination-piece" data-motif="vertical-terrain" />
+      ) : (
+        <>
+          <span className="tv-log-illumination-piece" data-motif="orography" />
+          <span className="tv-log-illumination-piece" data-motif="charted-coast" />
+          <span className="tv-log-illumination-piece" data-motif="regional-scene" />
+        </>
+      )}
     </div>
   );
 }
