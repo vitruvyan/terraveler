@@ -4063,17 +4063,48 @@ main.prose {
 .tv-log-kicker svg { color: var(--accent); }
 .tv-log-section-heading { display: flex; align-items: baseline; gap: var(--space-2); }
 .tv-log-section-mark { color: var(--accent); }
+.tv-log-article-ornament {
+  height: 7rem;
+  margin: 0 0 var(--space-6);
+  background-image: var(--article-engraving);
+  background-repeat: no-repeat;
+  background-size: 300% auto;
+  background-position: var(--article-x, 0%) var(--article-y, -10rem);
+  opacity: 0.27;
+  filter: grayscale(1) contrast(1.5) brightness(1.3);
+  mix-blend-mode: multiply;
+  mask-image: radial-gradient(ellipse 68% 76% at 50% 50%, #000 20%, transparent 100%);
+  pointer-events: none;
+}
+.tv-log-article-ornament[data-scene="maya"],
+.tv-log-article-ornament[data-scene="andes"] {
+  --article-engraving: url("/media/specimen-illustration/new-worlds.webp");
+}
+.tv-log-article-ornament[data-scene="andes"] { --article-y: -29rem; }
+.tv-log-article-ornament[data-scene="coast"],
+.tv-log-article-ornament[data-scene="ship"] {
+  --article-engraving: url("/media/specimen-illustration/atlas-cartography.webp");
+}
+.tv-log-article-ornament[data-scene="coast"] { --article-x: 50%; }
+.tv-log-article-ornament[data-scene="ship"] { --article-x: 100%; }
+[data-layout="phone"] .tv-log-article-ornament { display: none; }
 
 /* The engraved page is a composition, not a picture beside a paragraph.
-   Fixed art stays outside the log's ink measure. Cortés has a continuous
-   vertical engraving; the remaining crops still use unchanged HQ sheets. */
+   Fixed art stays outside the log's ink measure, always on the left. */
 .tv-log-illumination {
   --log-gutter: max(0px, calc((100vw - var(--log-page-width)) / 2 + var(--log-page-padding)));
+  --illumination-image: url("/media/voyage-illumination/cortes-vertical.webp");
   position: fixed;
   inset: var(--space-8) 0 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+}
+.tv-log-illumination[data-composition="andes"] {
+  --illumination-image: url("/media/voyage-illumination/andes-vertical.webp");
+}
+.tv-log-illumination[data-composition="marine-chart"] {
+  --illumination-image: url("/media/voyage-illumination/marine-chart-vertical.webp");
 }
 .tv-log-illumination-piece {
   position: absolute;
@@ -4098,34 +4129,11 @@ main.prose {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/media/voyage-illumination/cortes-vertical.webp") 55% center / 160% 100% no-repeat;
+  background: var(--illumination-image) 55% center / 160% 100% no-repeat;
   filter: grayscale(1) contrast(1.65) brightness(1.25);
   mix-blend-mode: multiply;
-  opacity: 0.42;
+  opacity: 0.35;
 }
-.tv-log-illumination-piece[data-motif="orography"] {
-  top: 2%; left: 0; height: 9rem; opacity: 0.54;
-  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
-  background-size: 72rem auto;
-  background-position: -3rem -5rem;
-}
-.tv-log-illumination-piece[data-motif="charted-coast"] {
-  top: 41%; left: 0; height: 8rem; opacity: 0.35;
-  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
-  background-size: 72rem auto;
-  background-position: -25rem -6rem;
-}
-.tv-log-illumination-piece[data-motif="regional-scene"] {
-  bottom: 0; left: 0; height: 9rem; opacity: 0.64;
-  background-image: url("/media/specimen-illustration/new-worlds.webp");
-  background-size: 88rem auto;
-  background-position: -11rem -8rem;
-}
-.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="regional-scene"] {
-  height: 10rem;
-  background-position: -11rem -20rem;
-}
-.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="charted-coast"] { top: 52%; }
 [data-layout="phone"] .tv-log-illumination { display: none; }
 [data-layout="phone"] .tv-voyage-log.is-illuminated .tv-page-engraving { display: block; }
 .tv-page-engraving {

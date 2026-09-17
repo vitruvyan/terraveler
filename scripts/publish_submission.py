@@ -48,6 +48,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 ATLAS_TS = ROOT / "lib" / "voyages.ts"
+VISUAL_PROFILES = ("mesoamerica", "andes", "marine-chart", "mariner", "unillustrated")
+
+
+def visual_profile(voyage: dict, waypoints: list) -> str:
+    """Conservative, reviewable default from structured geography and vessel.
+
+    A place can be on a multi-region route, so a single coordinate never
+    licenses a regional engraving. Unknown contexts stay unillustrated.
+    The editor may override this suggestion before committing the bundle.
+    """
+    if voyage.get("kind") in ("space", "surface") or voyage.get("body") not in (None, "earth"):
+        return "unillustrated"
+
+    positions = []
+    for waypoint in waypoints:
+        try:
+            positions.append((float(waypoint["latitude"]), float(waypoint["longitude"])))
+        except (KeyError, TypeError, ValueError):
+            continue
+    if len(positions) >= 2:
+        mesoamerican = sum(10 <= lat <= 33 and -118 <= lon <= -86 for lat, lon in positions)
+        andean = sum(-24 <= lat <= 6 and -82 <= lon <= -66 for lat, lon in positions)
+        if mesoamerican >= 2 and mesoamerican / len(positions) >= 0.6:
+            return "mesoamerica"
+        if andean >= 2 and andean / len(positions) >= 0.6:
+            return "andes"
+    if voyage.get("ships"):
+        return "marine-chart"
+    return "unillustrated"
 
 
 def slugify(name: str) -> str:
@@ -240,12 +269,13 @@ def to_bundle(payload: dict, spans: dict, provenance: dict) -> dict:
             "provenance": provenance}
 
 
-def atlas_entry(bundle: dict, blurb: str) -> str:
+def atlas_entry(bundle: dict, blurb: str, profile: str) -> str:
     v, n = bundle["voyage"], bundle["navigator"]
     years = f'{v["start_date"]}–{v["end_date"]}' if v["start_date"] else ""
     return (
         "  {\n"
         f'    slug: "{v["slug"]}",\n'
+        f'    visualProfile: "{profile}",\n'
         f'    href: "/voyage/{v["slug"]}",\n'
         f'    title: {json.dumps(v["title"])},\n'
         f'    navigator: {json.dumps(n["name"])},\n'
@@ -260,6 +290,8 @@ def main():
     ap.add_argument("submission_id", type=int)
     ap.add_argument("--file", help="bundle filename stem (default: the slug)")
     ap.add_argument("--blurb", default="", help="one line for the atlas index")
+    ap.add_argument("--visual-profile", choices=VISUAL_PROFILES,
+                    help="editorial override of the automatically inferred illustration class")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--force", action="store_true",
                     help="publish a submission that is not approved (records why in the output)")
@@ -303,6 +335,7 @@ def main():
     meta = (row["payload"].get("meta")) or {}
     provenance = fetch_provenance(args.submission_id, meta)
     bundle = to_bundle(row["payload"], spans, provenance)
+    profile = args.visual_profile or visual_profile(bundle["voyage"], bundle["waypoints"])
 
     if spans:
         # spans is non-empty, so the submission WAS verified — a quotation
@@ -348,6 +381,7 @@ def main():
     print(f"  years     {bundle['voyage']['start_date']}–{bundle['voyage']['end_date']}")
     print(f"  waypoints {len(bundle['waypoints'])}, {quoted} with a verified excerpt")
     print(f"  bundle    {path.relative_to(ROOT)}")
+    print(f"  visual    {profile}{' (editorial override)' if args.visual_profile else ' (inferred)'}")
     print(f"  provenance ideator={provenance['ideator']!r} "
           f"scribe_model={provenance['scribe_model']!r} carta={provenance['carta_version']!r}")
 
@@ -357,7 +391,7 @@ def main():
 
     if args.dry_run:
         print("\ndry run — nothing written\n")
-        print(atlas_entry(bundle, blurb))
+        print(atlas_entry(bundle, blurb, profile))
         return
 
     path.write_text(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -369,8 +403,8 @@ def main():
         marker = "] as const satisfies readonly AtlasEntry[];"
         if marker not in atlas:
             sys.exit(f"could not find the end of ATLAS_ENTRIES in {ATLAS_TS} — "
-                     f"add the entry by hand:\n\n{atlas_entry(bundle, blurb)}")
-        atlas = atlas.replace(marker, atlas_entry(bundle, blurb) + marker)
+                     f"add the entry by hand:\n\n{atlas_entry(bundle, blurb, profile)}")
+        atlas = atlas.replace(marker, atlas_entry(bundle, blurb, profile) + marker)
         ATLAS_TS.write_text(atlas, encoding="utf-8")
 
     record_publication(args.submission_id, slug, provenance["carta_version"] or "unknown",

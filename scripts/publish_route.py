@@ -41,6 +41,8 @@ import sys
 import unicodedata
 from pathlib import Path
 
+from publish_submission import VISUAL_PROFILES, visual_profile
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 ATLAS_TS = ROOT / "lib" / "voyages.ts"
@@ -158,6 +160,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
     ap.add_argument("--blurb", default="")
+    ap.add_argument("--visual-profile", choices=VISUAL_PROFILES,
+                    help="editorial override of the automatically inferred illustration class")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -165,6 +169,7 @@ def main():
     validate(route)
     bundle = to_bundle(route)
     v = bundle["voyage"]
+    profile = args.visual_profile or visual_profile(v, bundle["waypoints"])
     conf = {}
     for w in bundle["waypoints"]:
         conf[w["confidence"]] = conf.get(w["confidence"], 0) + 1
@@ -174,6 +179,7 @@ def main():
     print(f"  stages  {len(bundle['waypoints'])}, no excerpts by design")
     print(f"  each    {', '.join(f'{n} {k}' for k, n in sorted(conf.items()))}")
     print(f"  route from  {route['voyage']['route_source']}")
+    print(f"  visual  {profile}{' (editorial override)' if args.visual_profile else ' (inferred)'}")
 
     if args.dry_run:
         print("dry run — nothing written")
@@ -187,6 +193,7 @@ def main():
         years = f'{v["start_date"]}–{v["end_date"]}' if v["start_date"] else ""
         entry = ("  {\n"
                  f'    slug: "{v["slug"]}",\n'
+                 f'    visualProfile: "{profile}",\n'
                  f'    href: "/voyage/{v["slug"]}",\n'
                  f'    title: {json.dumps(v["title"])},\n'
                  f'    navigator: {json.dumps(bundle["navigator"]["name"])},\n'

@@ -104,7 +104,8 @@ export default async function VoyageLog({
   // can check. Computed for the whole voyage at once so an explanation that
   // would read identically on forty stages is asked only on the first.
   const marginalia = notesForVoyage(voyage, navigator, wps);
-  const illustration = illustrationForVoyage(voyage);
+  const visualProfile = ATLAS.find((entry) => entry.slug === slug)?.visualProfile ?? "unillustrated";
+  const illustration = illustrationForVoyage(voyage, visualProfile);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`
@@ -185,6 +186,10 @@ export default async function VoyageLog({
             <Icon name="map" size={16} /> Sail this voyage on the map
           </a>
         </p>
+
+        {illustration?.articleOrnament && (
+          <div className="tv-log-article-ornament" data-scene={illustration.articleOrnament} aria-hidden="true" />
+        )}
 
         <h2 className="tv-log-section-heading" style={{ fontSize: "1.25rem", margin: "0 0 4px" }}>
           {illustration?.pageComposition && <span className="tv-log-section-mark"><Icon name="map" size={18} /></span>}
