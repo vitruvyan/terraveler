@@ -173,6 +173,8 @@
   /* ---- MEASURE ----------------------------------------------------------- */
   --measure: 33em;
   --measure-narrow: 26em;
+  --log-page-width: 66.25rem;
+  --log-page-padding: 1.375rem;
 
   /* ---- MOTION ------------------------------------------------------------ */
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -4047,9 +4049,141 @@ main.prose {
   a { color: #000; text-decoration: none; }
 }
 
-/* The log's prose keeps a readable measure even though the page is wide
-   enough to hold a margin: only the stage rows use the full width. */
+/* The log reads like a printed page: a cropped engraving inhabits the margin,
+   never a card, picture plate, caption or layer beneath the words. */
+.tv-voyage-log { --log-gutter: max(0px, calc((100vw - var(--log-page-width)) / 2 + var(--log-page-padding))); }
 .tv-log-prose { max-width: 700px; }
+.tv-log-opening.has-engraving { position: relative; min-height: 12rem; }
+.tv-log-opening.has-engraving .tv-log-prose { max-width: 700px; }
+.tv-voyage-log.is-illuminated { position: relative; z-index: 1; }
+.tv-voyage-log.is-illuminated .tv-log-opening.has-engraving { min-height: 0; }
+.tv-voyage-log.is-illuminated .tv-log-opening.has-engraving .tv-log-prose { max-width: 700px; }
+.tv-voyage-log.is-illuminated .tv-page-engraving { display: none; }
+.tv-log-kicker { display: inline-flex; align-items: center; gap: var(--space-2); }
+.tv-log-kicker svg { color: var(--accent); }
+.tv-log-section-heading { display: flex; align-items: baseline; gap: var(--space-2); }
+.tv-log-section-mark { color: var(--accent); }
+
+/* The engraved page is a composition, not a picture beside a paragraph.
+   Fixed art stays outside the log's ink measure. Cortés has a continuous
+   vertical engraving; the remaining crops still use unchanged HQ sheets. */
+.tv-log-illumination {
+  --log-gutter: max(0px, calc((100vw - var(--log-page-width)) / 2 + var(--log-page-padding)));
+  position: fixed;
+  inset: var(--space-8) 0 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.tv-log-illumination-piece {
+  position: absolute;
+  display: block;
+  width: min(var(--log-gutter), 16rem);
+  background-repeat: no-repeat;
+  filter: grayscale(1) contrast(1.65) brightness(1.25);
+  mix-blend-mode: multiply;
+  mask-image: radial-gradient(ellipse 75% 64% at 50% 50%, #000 30%, transparent 100%);
+}
+.tv-log-illumination-piece[data-motif="vertical-terrain"] {
+  inset: 0 auto 0 0;
+  height: 100%;
+  width: min(var(--log-gutter), 17rem);
+  isolation: isolate;
+  background: var(--parchment);
+  filter: none;
+  mix-blend-mode: normal;
+  mask-image: linear-gradient(to right, #000 0%, #000 60%, transparent 100%);
+}
+.tv-log-illumination-piece[data-motif="vertical-terrain"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/media/voyage-illumination/cortes-vertical.webp") 55% center / 160% 100% no-repeat;
+  filter: grayscale(1) contrast(1.65) brightness(1.25);
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+}
+.tv-log-illumination-piece[data-motif="orography"] {
+  top: 2%; left: 0; height: 9rem; opacity: 0.54;
+  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+  background-size: 72rem auto;
+  background-position: -3rem -5rem;
+}
+.tv-log-illumination-piece[data-motif="charted-coast"] {
+  top: 41%; left: 0; height: 8rem; opacity: 0.35;
+  background-image: url("/media/specimen-illustration/atlas-cartography.webp");
+  background-size: 72rem auto;
+  background-position: -25rem -6rem;
+}
+.tv-log-illumination-piece[data-motif="regional-scene"] {
+  bottom: 0; left: 0; height: 9rem; opacity: 0.64;
+  background-image: url("/media/specimen-illustration/new-worlds.webp");
+  background-size: 88rem auto;
+  background-position: -11rem -8rem;
+}
+.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="regional-scene"] {
+  height: 10rem;
+  background-position: -11rem -20rem;
+}
+.tv-log-illumination[data-composition="andes"] .tv-log-illumination-piece[data-motif="charted-coast"] { top: 52%; }
+[data-layout="phone"] .tv-log-illumination { display: none; }
+[data-layout="phone"] .tv-voyage-log.is-illuminated .tv-page-engraving { display: block; }
+.tv-page-engraving {
+  position: absolute;
+  top: 6rem;
+  left: calc(-1 * var(--log-gutter));
+  display: block;
+  width: min(var(--log-gutter), 20rem);
+  height: var(--engraving-height, 7.5rem);
+  background-image: var(--engraving-sheet);
+  background-size: 60rem auto;
+  background-position: var(--engraving-x, 0%) var(--engraving-y, -4rem);
+  background-repeat: no-repeat;
+  opacity: 0.62;
+  filter: grayscale(1) contrast(1.45) brightness(1.45);
+  mix-blend-mode: multiply;
+  mask-image: radial-gradient(ellipse 62% 54% at 50% 50%, #000 34%, transparent 100%);
+  pointer-events: none;
+}
+.tv-page-engraving[data-scene="ship"],
+.tv-page-engraving[data-scene="coast"],
+.tv-page-engraving[data-scene="astrolabe"] { --engraving-sheet: url("/media/specimen-illustration/atlas-cartography.webp"); }
+.tv-page-engraving[data-scene="astrolabe"] { opacity: 0.72; filter: grayscale(1) contrast(1.7) brightness(1.25); }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"],
+.tv-page-engraving[data-scene="sailor"] { --engraving-sheet: url("/media/specimen-illustration/mariners.webp"); --engraving-height: 9rem; }
+.tv-page-engraving[data-scene="maya"],
+.tv-page-engraving[data-scene="andes"] { --engraving-sheet: url("/media/specimen-illustration/new-worlds.webp"); }
+.tv-page-engraving[data-scene="ship"] { --engraving-x: 100%; }
+.tv-page-engraving[data-scene="coast"] { --engraving-x: 50%; }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="sailor"] { --engraving-x: 50%; }
+.tv-page-engraving[data-scene="astrolabe"],
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"],
+.tv-page-engraving[data-scene="andes"] { --engraving-y: -13rem; }
+.tv-page-engraving[data-scene="maya"] { --engraving-y: -4rem; }
+.tv-page-engraving[data-scene="navigator"],
+.tv-page-engraving[data-scene="captain"] { --engraving-y: -18rem; }
+.tv-page-engraving[data-scene="sailor"] { --engraving-y: -5rem; }
+
+[data-layout="phone"] .tv-log-opening.has-engraving { min-height: 0; }
+[data-layout="phone"] .tv-log-opening.has-engraving .tv-log-prose { max-width: 100%; }
+[data-layout="phone"] .tv-page-engraving {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: 12rem;
+  height: 4.5rem;
+  margin: var(--space-3) auto var(--space-5) 0;
+  background-size: 300% auto;
+  --engraving-y: -2.3rem;
+}
+[data-layout="phone"] .tv-page-engraving[data-scene="astrolabe"],
+[data-layout="phone"] .tv-page-engraving[data-scene="andes"] { --engraving-y: -8rem; }
+[data-layout="phone"] .tv-page-engraving[data-scene="navigator"],
+[data-layout="phone"] .tv-page-engraving[data-scene="captain"] { --engraving-y: -11rem; }
+[data-layout="phone"] .tv-page-engraving[data-scene="sailor"] { --engraving-y: -3rem; }
 
 /* --- Making the annotation layer findable -------------------------------
    The question chips are deliberately rare: an explanation repeated on forty

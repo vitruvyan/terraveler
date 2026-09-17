@@ -1031,7 +1031,7 @@ export default function VoyageExperience({
                 <h2 style={{ margin: "4px 0 2px", fontSize: "1.3rem" }}>{placeName}</h2>
 
                 {lens === "log" ? (
-              <>
+              <div>
                 {signedIn && (
                   <div style={{ display: "flex", justifyContent: "flex-end", margin: "0 0 4px" }}>
                     <button
@@ -1092,7 +1092,7 @@ export default function VoyageExperience({
                 <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
                   <Icon name="scroll" size={16} /> Read the whole log as text →
                 </a>
-              </>
+              </div>
             ) : (
               <>
                 <div style={{ color: "var(--ink-soft)", fontSize: 13, margin: "2px 0 4px" }}>

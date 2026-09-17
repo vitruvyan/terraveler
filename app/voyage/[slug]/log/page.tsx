@@ -12,6 +12,9 @@ import { notesForVoyage } from "@/lib/marginalia";
 import StageNotes from "@/components/StageNotes";
 import Notebook from "@/components/Notebook";
 import LogHint from "@/components/LogHint";
+import VoyageEngraving from "@/components/VoyageEngraving";
+import VoyagePageIllumination from "@/components/VoyagePageIllumination";
+import { illustrationForVoyage } from "@/lib/voyageIllustrations";
 import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "@/lib/types";
 
 /** The voyage as text: the itinerary, the dates and the verbatim journal
@@ -101,6 +104,7 @@ export default async function VoyageLog({
   // can check. Computed for the whole voyage at once so an explanation that
   // would read identically on forty stages is asked only on the first.
   const marginalia = notesForVoyage(voyage, navigator, wps);
+  const illustration = illustrationForVoyage(voyage);
   const years =
     voyage.start_date && voyage.end_date
       ? `${voyage.start_date.slice(0, 4)}–${voyage.end_date.slice(0, 4)}`
@@ -109,13 +113,15 @@ export default async function VoyageLog({
   return (
     <>
       <SiteHeader />
+      {illustration?.pageComposition && <VoyagePageIllumination composition={illustration.pageComposition} />}
       {/* Wider than a plain article, because the itinerary now has a margin to
           open answers into. The prose keeps its own readable measure via
           .tv-log-prose; only the stage rows use the full width. */}
-      <main className="prose" style={{ maxWidth: 1060, margin: "0 auto", padding: "40px 22px 80px", lineHeight: 1.65 }}>
+      <main className={`prose tv-voyage-log${illustration?.pageComposition ? " is-illuminated" : ""}`} style={{ maxWidth: "var(--log-page-width)", margin: "0 auto", padding: "40px var(--log-page-padding) 80px", lineHeight: 1.65 }}>
+        <div className={`tv-log-opening${illustration?.opener ? " has-engraving" : ""}`}>
         <div className="tv-log-prose">
-        <span style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass)" }}>
-          The log
+        <span className="tv-log-kicker" style={{ letterSpacing: "0.2em", textTransform: "uppercase", fontSize: 12, color: "var(--brass-text)" }}>
+          {illustration?.pageComposition && <Icon name="compass" size={16} />} The log
         </span>
         <h1 style={{ margin: "6px 0 4px", fontSize: "2rem" }}>{voyage.title}</h1>
         <p style={{ color: "var(--ink-soft)", margin: "0 0 6px", fontSize: 15 }}>
@@ -124,6 +130,12 @@ export default async function VoyageLog({
           {voyage.ships ? ` · ${voyage.ships}` : ""}
         </p>
         {voyage.summary && <p style={{ margin: "14px 0" }}>{voyage.summary}</p>}
+        </div>
+
+        {illustration?.opener && <VoyageEngraving scene={illustration.opener} />}
+        </div>
+
+        <div className="tv-log-prose">
 
         {/* How we know this. Deliberately placed above the itinerary rather
             than in a footnote: for a voyage whose records were destroyed, what
@@ -174,7 +186,10 @@ export default async function VoyageLog({
           </a>
         </p>
 
-        <h2 style={{ fontSize: "1.25rem", margin: "0 0 4px" }}>The itinerary</h2>
+        <h2 className="tv-log-section-heading" style={{ fontSize: "1.25rem", margin: "0 0 4px" }}>
+          {illustration?.pageComposition && <span className="tv-log-section-mark"><Icon name="map" size={18} /></span>}
+          The itinerary
+        </h2>
         <p style={{ color: "var(--ink-soft)", fontSize: 14, margin: "0 0 20px" }}>
           {wps.length} stages. Journal excerpts are verbatim from public-domain
           sources, each with its citation; where no verified quote exists, the
