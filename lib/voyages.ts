@@ -1,4 +1,5 @@
 import type { VoyageKind } from "./types";
+import type { VisualProfile } from "./voyageIllustrations";
 
 /**
  * Resolves which renderer a voyage uses. Explicit `render` wins; otherwise
@@ -20,6 +21,8 @@ export function resolveRender(v: {
  *  voyage picker, the cartouche, and the /voyages page. */
 export interface AtlasEntry {
   slug: string;
+  /** Required editorial context: publication cannot omit image eligibility. */
+  visualProfile: VisualProfile;
   href: string;
   title: string;
   navigator: string;
@@ -38,6 +41,7 @@ export interface AtlasEntry {
 const ATLAS_ENTRIES = [
   {
     slug: "boudeuse-1766",
+    visualProfile: "mariner",
     href: "/",
     title: "The First French Circumnavigation of the Globe",
     navigator: "Louis-Antoine de Bougainville",
@@ -47,6 +51,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "boussole-1785",
+    visualProfile: "mariner",
     href: "/voyage/boussole-1785",
     title: "The Voyage of La Pérouse",
     navigator: "Jean-François de Galaup, comte de La Pérouse",
@@ -56,6 +61,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "cook-1768",
+    visualProfile: "marine-chart",
     href: "/voyage/cook-1768",
     title: "The First Voyage of Captain Cook",
     navigator: "Lieutenant James Cook",
@@ -65,6 +71,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "cortes-1519",
+    visualProfile: "mesoamerica",
     href: "/voyage/cortes-1519",
     title: "The Conquest of Mexico by Hernán Cortés",
     navigator: "Hernán Cortés",
@@ -74,6 +81,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "voyager-2",
+    visualProfile: "unillustrated",
     href: "/voyage/voyager-2",
     title: "Voyager 2: The Grand Tour of the Giant Planets",
     navigator: "Voyager 2 (NASA / JPL)",
@@ -84,6 +92,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "apollo-11",
+    visualProfile: "unillustrated",
     href: "/voyage/apollo-11",
     title: "Apollo 11: The First Moonwalk",
     navigator: "Apollo 11 (NASA)",
@@ -94,6 +103,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "darwin-1831",
+    visualProfile: "unillustrated",
     href: "/voyage/darwin-1831",
     title: "The Second Voyage of HMS Beagle (1831-1836)",
     navigator: "Charles Darwin",
@@ -103,6 +113,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "magellan-1519",
+    visualProfile: "mariner",
     href: "/voyage/magellan-1519",
     title: "The First Circumnavigation: Magellan and Elcano (1519-1522)",
     navigator: "Ferdinand Magellan",
@@ -112,6 +123,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "pizarro-1532",
+    visualProfile: "andes",
     href: "/voyage/pizarro-1532",
     title: "Pizarro and the Fall of Tawantinsuyu (1532-1533)",
     navigator: "Francisco Pizarro",
@@ -121,6 +133,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "columbus-1492",
+    visualProfile: "mariner",
     href: "/voyage/columbus-1492",
     title: "The Voyages of Christopher Columbus (1492-1504)",
     navigator: "Christopher Columbus",
@@ -130,6 +143,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "shackleton-1914",
+    visualProfile: "unillustrated",
     href: "/voyage/shackleton-1914",
     title: "The Imperial Trans-Antarctic Expedition (1914-1917)",
     navigator: "Ernest Shackleton",
@@ -139,6 +153,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "xuanzang-629",
+    visualProfile: "unillustrated",
     href: "/voyage/xuanzang-629",
     title: "Xuanzang's Journey to the Western Regions (629-645)",
     navigator: "Xuanzang",
@@ -148,6 +163,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "cartier-1534",
+    visualProfile: "marine-chart",
     href: "/voyage/cartier-1534",
     title: "Jacques Cartier and the St Lawrence (1534-1542)",
     navigator: "Jacques Cartier",
@@ -157,6 +173,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "dias-1487",
+    visualProfile: "marine-chart",
     href: "/voyage/dias-1487",
     title: "Bartolomeu Dias Rounds the Cape (1487-1488)",
     navigator: "Bartolomeu Dias",
@@ -166,6 +183,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "gama-1497",
+    visualProfile: "marine-chart",
     href: "/voyage/gama-1497",
     title: "Vasco da Gama and the Sea Road to India (1497-1499)",
     navigator: "Vasco da Gama",
@@ -175,6 +193,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "drake-1577",
+    visualProfile: "mariner",
     href: "/voyage/drake-1577",
     title: "Drake's Circumnavigation (1577-1580)",
     navigator: "Francis Drake",
@@ -184,6 +203,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "leoafricanus-1510",
+    visualProfile: "unillustrated",
     href: "/voyage/leoafricanus-1510",
     title: "Leo Africanus in Africa (c. 1510-1520)",
     navigator: "al-Hasan ibn Muhammad al-Wazzan (Leo Africanus)",
@@ -193,6 +213,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "faxian-399",
+    visualProfile: "unillustrated",
     href: "/voyage/faxian-399",
     title: "Faxian's Journey to the Buddhist Kingdoms (399-414)",
     navigator: "Faxian",
@@ -202,6 +223,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "polo-1271",
+    visualProfile: "unillustrated",
     href: "/voyage/polo-1271",
     title: "The Travels of Marco Polo (1271-1295)",
     navigator: "Marco Polo",
@@ -211,6 +233,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "lewisclark-1804",
+    visualProfile: "unillustrated",
     href: "/voyage/lewisclark-1804",
     title: "Lewis and Clark: the Corps of Discovery (1804-1806)",
     navigator: "Meriwether Lewis and William Clark",
@@ -220,6 +243,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "mungopark-1795",
+    visualProfile: "unillustrated",
     href: "/voyage/mungopark-1795",
     title: "Mungo Park on the Niger (1795-1797)",
     navigator: "Mungo Park",
@@ -229,6 +253,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "ibnbattuta-1325",
+    visualProfile: "unillustrated",
     href: "/voyage/ibnbattuta-1325",
     title: "The Rihla of Ibn Battuta (1325-1354)",
     navigator: "Ibn Battuta",
@@ -238,6 +263,7 @@ const ATLAS_ENTRIES = [
   },
   {
     slug: "cabot-1497",
+    visualProfile: "mariner",
     href: "/voyage/cabot-1497",
     title: "John Cabot's Atlantic Landfall (1497)",
     navigator: "John Cabot",

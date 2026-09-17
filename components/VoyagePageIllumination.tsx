@@ -1,19 +1,17 @@
-import type { PageComposition } from "@/lib/voyageIllustrations";
+import type { CSSProperties } from "react";
+import { illuminationBackgrounds, type PageComposition } from "@/lib/voyageIllustrations";
 
-/** Fixed page furniture: a continuous engraving for Cortés, restrained HQ-sheet
- * crops elsewhere. These are atmospheric marks, not historical evidence. */
+/** Fixed left-margin furniture. An atmospheric mark, not historical evidence. */
 export default function VoyagePageIllumination({ composition }: { composition: PageComposition }) {
+  const artwork = illuminationBackgrounds[composition];
   return (
-    <div className="tv-log-illumination" data-composition={composition} aria-hidden="true">
-      {composition === "mesoamerica" ? (
-        <span className="tv-log-illumination-piece" data-motif="vertical-terrain" />
-      ) : (
-        <>
-          <span className="tv-log-illumination-piece" data-motif="orography" />
-          <span className="tv-log-illumination-piece" data-motif="charted-coast" />
-          <span className="tv-log-illumination-piece" data-motif="regional-scene" />
-        </>
-      )}
+    <div
+      className="tv-log-illumination"
+      data-composition={composition}
+      style={{ "--illumination-image": `url("${artwork.src}")` } as CSSProperties}
+      aria-hidden="true"
+    >
+      <span className="tv-log-illumination-piece" data-motif="vertical-terrain" />
     </div>
   );
 }
