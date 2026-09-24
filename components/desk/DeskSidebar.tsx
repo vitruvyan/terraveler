@@ -11,7 +11,10 @@
 
 export type Section = "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
-export type SourcesSub = "pending" | "flagged" | "drift" | "resolved";
+/* Replaces the old four (pending/flagged/drift/resolved), which were
+ * organised by which source table held the row rather than by the editor's
+ * actual question. See SourceGovernance.tsx's header comment. */
+export type SourcesSub = "pending" | "dossier" | "reverify";
 export type UsersSub = "humans" | "agents";
 
 export type DeskSidebarCounts = {
@@ -19,9 +22,9 @@ export type DeskSidebarCounts = {
   peerReview: number;
   history: number;
   pending: number;
+  /** Endpoints needs_human_review or quarantined — the old `flagged` tab's
+   *  own badge, now surfaced on the Dossier that folded that tab in. */
   flagged: number;
-  drift: number;
-  resolved: number;
   claimed: number;
   claimedOverdue: number;
   humans: number;
@@ -99,26 +102,18 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, users
         <button
           type="button"
           className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "flagged"}
-          onClick={() => onNavigate?.("sources", "flagged")}
+          aria-current={section === "sources" && sourcesSub === "dossier"}
+          onClick={() => onNavigate?.("sources", "dossier")}
         >
-          Flagged endpoints <Badge n={counts.flagged} alarm />
+          Source dossier <Badge n={counts.flagged} alarm />
         </button>
         <button
           type="button"
           className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "drift"}
-          onClick={() => onNavigate?.("sources", "drift")}
+          aria-current={section === "sources" && sourcesSub === "reverify"}
+          onClick={() => onNavigate?.("sources", "reverify")}
         >
-          Material drift <Badge n={counts.drift} alarm />
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "resolved"}
-          onClick={() => onNavigate?.("sources", "resolved")}
-        >
-          Resolved decisions <Badge n={counts.resolved} />
+          Reverification
         </button>
       </div>
 

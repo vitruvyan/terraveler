@@ -6,7 +6,7 @@ import BackToTop from "./BackToTop";
 import Ornament from "@/components/Ornament";
 import { DeskHeading, DeskStanding, ShipsLog, type LogEntry } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
-import { PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts } from "@/components/desk/SourceGovernance";
+import { PendingSourceProposals, SourceDossier, ReverificationStatus } from "@/components/desk/SourceGovernance";
 import DeskSidebar from "@/components/desk/DeskSidebar";
 import { PromptEditor } from "@/components/desk/PromptRegistry";
 import AccountWorkspace from "@/components/AccountWorkspace";
@@ -442,17 +442,113 @@ export default function SpecimenPage() {
                   suggested_trust_mode: "domain_trusted", suggested_rights_class: "public_domain",
                 }],
               },
+              {
+                // Two intents on one proposal: mcp_resolve_source_proposal
+                // refuses to resolve this — the verdict form below is
+                // disabled with an explanation instead of letting the
+                // editor discover that from a failed POST.
+                id: 4, target_url: "https://archive.org/", proposed_by_actor_type: "agent",
+                proposed_by_actor_id: 2, endpoint_id: 10,
+                source_proposal_intents: [
+                  {
+                    voyage: "boudeuse-1766", waypoint: 11, region: null, person: null,
+                    reason: "Carries a scanned edition of the Port Praslin log entry cited at stage 11.",
+                    suggested_trust_mode: "item_verified", suggested_rights_class: "public_domain",
+                  },
+                  {
+                    voyage: "magellan-1519", waypoint: 3, region: null, person: null,
+                    reason: "Also carries a digitised copy of Pigafetta's own account, relevant to stage 3.",
+                    suggested_trust_mode: "domain_trusted", suggested_rights_class: "public_domain",
+                  },
+                ],
+              },
             ]}
             busy={false}
-          />
-          <ResolvedSourceDecisions
-            decisions={[
-              {
-                id: 10, decision_outcome: "approve", trust_mode: "item_verified", rights_class: "mixed",
-                reason: "Institutional archive, per-item rights vary — verify at use rather than trust the whole domain.",
-                timestamp: "2026-09-14T09:00:00Z", proposal_id: 3, endpoint_id: 10,
-                source_endpoints: { host_pattern: "ctext.org" }, source_proposals: null,
+            endpointContext={{
+              // S1c made visible before the click: proposal #4 above is
+              // deduped onto an endpoint already active under a narrower
+              // trust_mode than either intent suggests.
+              "10": {
+                host_pattern: "archive.org", trust_mode: "item_verified", status: "active",
+                last_decision: {
+                  id: 10, decision_outcome: "approve", trust_mode: "item_verified",
+                  rights_class: "mixed", reason: "Institutional archive, per-item rights vary.",
+                  timestamp: "2026-09-14T09:00:00Z",
+                },
               },
+            }}
+          />
+
+          <div className="spec-note">
+            <b>Un agente propose cinque archivi reali</b> — olandese, cinese, giapponese,
+            arabo, portoghese — e nessuno vide mai dove giudicarli: l&rsquo;intake
+            (<code>suggest_source</code>) esisteva, la coda umana no. Stessa disciplina
+            del riquadro sopra — <b>cosa si sta decidendo</b>, ricavato, non il JSON —
+            applicata a un giudizio diverso: non &ldquo;questo testo è pubblicabile&rdquo;
+            ma &ldquo;questo dominio è affidabile, e quanto&rdquo;. La seconda proposta ha
+            due richieste distinte sotto un solo URL: l&rsquo;RPC rifiuta di risolverla così,
+            e ora lo dice <i>prima</i> del click, non dopo un POST fallito.
+          </div>
+
+          <h3 className="dk-section-title">Source dossier — one row per endpoint</h3>
+          <SourceDossier
+            endpoints={[
+              { id: 10, host_pattern: "archive.org", match_type: "domain", status: "active", trust_mode: "item_verified", last_verified_at: null },
+              { id: 5, host_pattern: "archive-mirror.example.org", match_type: "suffix", status: "quarantined", trust_mode: "domain_trusted", last_verified_at: "2026-06-02T00:00:00Z" },
+            ]}
+            dossier={{
+              "10": {
+                proposals: [
+                  {
+                    id: 3, target_url: "https://archive.org/details/verrazzano-letter", status: "resolved", endpoint_id: 10,
+                    source_proposal_intents: [{
+                      voyage: null, waypoint: null, region: null, person: null,
+                      reason: "Institutional archive, per-item rights vary — verify at use rather than trust the whole domain.",
+                      suggested_trust_mode: "item_verified", suggested_rights_class: "mixed",
+                    }],
+                  },
+                  {
+                    // Deduped onto the same endpoint by a later proposal,
+                    // never itself resolved — this is the intent that used
+                    // to disappear silently once #3 above settled the
+                    // endpoint's trust_mode.
+                    id: 4, target_url: "https://archive.org/", status: "submitted", endpoint_id: 10,
+                    source_proposal_intents: [
+                      {
+                        voyage: "boudeuse-1766", waypoint: 11, region: null, person: null,
+                        reason: "Carries a scanned edition of the Port Praslin log entry cited at stage 11.",
+                        suggested_trust_mode: "item_verified", suggested_rights_class: "public_domain",
+                      },
+                      {
+                        voyage: "magellan-1519", waypoint: 3, region: null, person: null,
+                        reason: "Also carries a digitised copy of Pigafetta's own account, relevant to stage 3.",
+                        suggested_trust_mode: "domain_trusted", suggested_rights_class: "public_domain",
+                      },
+                    ],
+                  },
+                ],
+                decisions: [
+                  {
+                    id: 10, decision_outcome: "approve", trust_mode: "item_verified", rights_class: "mixed",
+                    reason: "Institutional archive, per-item rights vary — verify at use rather than trust the whole domain.",
+                    timestamp: "2026-09-14T09:00:00Z", proposal_id: null, endpoint_id: 10,
+                    evidence_snapshot: { proposal_id: 3 },
+                  },
+                ],
+              },
+              "5": {
+                proposals: [],
+                decisions: [
+                  {
+                    id: 6, decision_outcome: "approve", trust_mode: "domain_trusted", rights_class: "public_domain",
+                    reason: "Full-text mirror of a public-domain collection, licence confirmed at intake.",
+                    timestamp: "2026-05-01T00:00:00Z", proposal_id: null, endpoint_id: 5,
+                    evidence_snapshot: { proposal_id: 1 },
+                  },
+                ],
+              },
+            }}
+            unattachedDecisions={[
               {
                 id: 11, decision_outcome: "reject", trust_mode: null, rights_class: "unknown",
                 reason: "No stated licence or rights information found on the site.",
@@ -463,39 +559,32 @@ export default function SpecimenPage() {
           />
 
           <div className="spec-note">
-            <b>Un agente propose cinque archivi reali</b> — olandese, cinese, giapponese,
-            arabo, portoghese — e nessuno vide mai dove giudicarli: l&rsquo;intake
-            (<code>suggest_source</code>) esisteva, la coda umana no. Stessa disciplina
-            del riquadro sopra — <b>cosa si sta decidendo</b>, ricavato, non il JSON —
-            applicata a un giudizio diverso: non &ldquo;questo testo è pubblicabile&rdquo;
-            ma &ldquo;questo dominio è affidabile, e quanto&rdquo;. Le due zone restano
-            fisicamente separate: in attesa, sopra e aperta; risolte, sotto e chiuse.
+            <b>Una riga per endpoint, non per decisione.</b> archive.org qui porta due
+            proposte: la #3, che un editore ha risolto, e la #4, dedotta sullo stesso
+            endpoint dopo — mai giudicata di per sé, e prima d&rsquo;ora invisibile perché
+            l&rsquo;endpoint aveva già un verdetto. Ora porta il segno <b>not evaluated</b>{" "}
+            invece di sparire. Il badge dell&rsquo;endpoint quarantinato (ex tab
+            &ldquo;flagged&rdquo;, sempre vuota) vive ora dentro la riga che descrive, non
+            in una tab a parte.
           </div>
 
-          <h3 className="dk-section-title">Flagged endpoints &amp; material drift</h3>
-          <FlaggedEndpoints
+          <h3 className="dk-section-title">Reverification — a zero that says which zero it is</h3>
+          <ReverificationStatus
             endpoints={[
-              { id: 5, host_pattern: "archive-mirror.example.org", match_type: "suffix", status: "quarantined", trust_mode: "domain_trusted", last_verified_at: "2026-06-02T00:00:00Z" },
-              { id: 9, host_pattern: "shifting-collection.example.org", match_type: "exact", status: "needs_human_review", trust_mode: "collection_trusted", last_verified_at: null },
+              { id: 10, host_pattern: "archive.org", match_type: "domain", status: "active", trust_mode: "item_verified", last_verified_at: null },
+              { id: 5, host_pattern: "archive-mirror.example.org", match_type: "suffix", status: "quarantined", trust_mode: "domain_trusted", last_verified_at: null },
             ]}
-          />
-          <MaterialDrifts
-            drifts={[
-              {
-                id: 3, reverification_id: 1, subject_type: "endpoint", subject_id: 5,
-                drift_class: "content_substitution", drift_codes: ["LICENSE_CHANGED", "OWNERSHIP_CHANGED"],
-                old_material_fingerprint: "a1b2", new_material_fingerprint: "c3d4",
-                recommended_action: "QUARANTINE_AND_REEVALUATE", created_at: "2026-06-02T00:00:00Z",
-              },
-            ]}
+            drifts={[]}
+            evidence={{ any_reverifications: false, any_drift_evaluations: false }}
           />
 
           <div className="spec-note">
-            <code>/api/desk/governance</code> calcolava già entrambe — <code>review_required_endpoints</code>{" "}
-            e <code>recent_material_drifts</code> — e il desk non le ha mai mostrate: la
-            fiducia in un dominio non è per sempre, ma senza queste due il declino non
-            aveva dove diventare visibile. Nessuna azione dal desk qui, ancora: sono
-            trovate della pipeline di riverifica, non decisioni da prendere in un tap.
+            <code>source_reverifications</code> e <code>source_drift_evaluations</code> non
+            hanno mai scritto una riga in produzione. La vecchia tab &ldquo;drift&rdquo;
+            filtrava <code>drift_detected=eq.true</code> e mostrava &ldquo;no drift
+            detected&rdquo; a zero righe — indistinguibile da un passaggio che ha
+            controllato e trovato tutto pulito. Qui la distinzione è esplicita: la
+            pipeline non gira, non &ldquo;ha girato e va tutto bene&rdquo;.
           </div>
 
           <h3 className="dk-section-title">The desk&rsquo;s own index</h3>
@@ -505,7 +594,7 @@ export default function SpecimenPage() {
               submissionsSub="needs_verdict"
               sourcesSub="pending"
               usersSub="humans"
-              counts={{ needsVerdict: 3, peerReview: 5, history: 42, pending: 2, flagged: 1, drift: 1, resolved: 14, claimed: 2, claimedOverdue: 1, humans: 9, agents: 6 }}
+              counts={{ needsVerdict: 3, peerReview: 5, history: 42, pending: 2, flagged: 1, claimed: 2, claimedOverdue: 1, humans: 9, agents: 6 }}
             />
             <div className="dk-content">
               <p className="dk-empty">

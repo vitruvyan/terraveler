@@ -6328,6 +6328,86 @@ main.prose {
 .conf-badge.is-reject { border-color: var(--state-no); color: var(--state-no); }
 .conf-badge.is-review { border-color: var(--state-desk); color: var(--state-desk); }
 
+/* ---- a proposal carrying more than one intent ---------------------------
+   PR-4 made intent order deterministic; this is what showing all of them
+   rather than intents[0] looks like — each request set off from the next
+   by a hairline, not by repeating the .sb card around every one. */
+.src-intent {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule-hair);
+}
+.src-intent:first-of-type { margin-top: var(--space-2); border-top: none; padding-top: 0; }
+.src-intent-head {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The endpoint a pending proposal would dedupe onto, and what is already
+   true of it (bug S1c) — surfaced before the verdict, not discovered after
+   a POST. A fact to weigh, not a supporting aside, so unlike .sb-note it
+   is not italic. */
+.src-context { font-style: normal; color: var(--state-desk); }
+
+/* mcp_resolve_source_proposal's own refusal (more than one intent), stated
+   before the click instead of after a failed one. Same weight as
+   .sb-appeal: a claim on the editor's attention. */
+.src-refusal {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--state-alarm);
+  background: var(--parchment-raised);
+  border-radius: var(--radius-2);
+  color: var(--state-alarm);
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  line-height: 1.5;
+}
+
+/* ---- the dossier: one row per endpoint, not one row per decision -------
+   Replaces the old resolved + flagged tabs. Each <details> is the endpoint;
+   opening it shows the decision chain and every proposal that ever named
+   it, intents included — an intent nobody ruled on stays visible as
+   "not evaluated" instead of disappearing once the endpoint had any
+   decision at all. */
+.src-dossier { display: flex; flex-direction: column; gap: var(--space-3); }
+.src-dossier-row {
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-2);
+  padding: var(--space-3) var(--space-4);
+}
+.src-dossier-summary {
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  list-style: none;
+}
+.src-dossier-summary::-webkit-details-marker { display: none; }
+.src-dossier-host { font-family: var(--font-display); font-weight: 500; font-size: var(--step-1); }
+.src-dossier-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--step--2);
+  color: var(--ink-faint);
+}
+.src-dossier-body { margin-top: var(--space-4); }
+.src-dossier-proposals { margin-top: var(--space-5); }
+.src-dossier-proposal {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule-hair);
+}
+.src-dossier-proposal:first-of-type { border-top: none; padding-top: 0; }
+.src-dossier-intent { margin-left: var(--space-4); }
+.src-in-force { color: var(--state-ok); }
+.src-dossier-loose { margin-top: var(--space-6); }
+
 /* ============================================================================
    CONTRIBUTE — the handoff, in the order the paths actually work
    ----------------------------------------------------------------------------
