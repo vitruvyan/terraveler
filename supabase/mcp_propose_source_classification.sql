@@ -7,6 +7,22 @@
 -- function's identity on its parameter list, defaults included or not.
 -- The old 10-arg signature is dropped explicitly first.
 --
+-- Source-governance remediation PR-2 (2026-09-24): two fixes riding along
+-- because they touch the same dedup query and the same missing hardening.
+--
+-- 1. search_path. This was SECURITY DEFINER without set search_path, unlike
+--    quarantine_source_subject and apply_source_policy_decision. Added.
+-- 2. The "is there already a pending proposal for this host" dedup check
+--    used `status != 'resolved'`. mcp_resolve_source_proposal now writes
+--    'approved'/'rejected' instead of the old generic 'resolved' (see that
+--    file's own comment) -- left as `!= 'resolved'`, this would have judged
+--    every newly-approved or newly-rejected proposal "still open" and
+--    silently attached the next agent's intent to a proposal a human
+--    editor already ruled on, instead of opening a fresh one. Changed to
+--    the positive form, `status = 'submitted'`: the one status that has
+--    ever meant "still open," true for both the historical 'resolved' rows
+--    and the new terminal values alike.
+--
 -- Apply to the canonical PostgreSQL database on the Terraveler VPS.
 
 begin;
@@ -28,7 +44,7 @@ create or replace function mcp_propose_source(
   p_suggested_trust_mode text default null,
   p_suggested_rights_class text default null
 )
-returns jsonb language plpgsql security definer as $$
+returns jsonb language plpgsql security definer set search_path = pg_catalog, public as $$
 declare
   v_host text;
   v_endpoint_id bigint;
@@ -54,7 +70,7 @@ begin
 
   select id into v_proposal_id
   from source_proposals
-  where status != 'resolved' and (
+  where status = 'submitted' and (
     (v_endpoint_id is not null and endpoint_id = v_endpoint_id) or
     (v_endpoint_id is null and lower(substring(target_url from '^(?:https?://)?([^:/]+)')) = v_host)
   )
