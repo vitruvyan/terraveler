@@ -124,7 +124,9 @@ DISCOVERY_SPEC = GraphSpec.from_dict({
     "entry": "discover",
     "nodes": [
         {"name": "discover", "effect_class": "recorded_effect",
-         "reads_declared": [], "writes_declared": ["candidates", "discovery"]},
+         "reads_declared": [],
+         "writes_declared": ["candidates", "discovery", "search_adapters",
+                             "adapters_gap", "search_coverage", "dropped_by_cap"]},
         # The curator judges, so it is its own node and its verdicts are the
         # audit this graph exists to produce.
         {"name": "curate", "effect_class": "recorded_effect",
@@ -560,6 +562,15 @@ def make_discovery_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
     subject = cfg.subject or cfg.voyage
 
     def discover(state: State, ctx) -> State:
+        # Loaded once per RUN, not once per subject: this node executes
+        # exactly once per process (the ingest container is one-shot — see
+        # docker-compose.yml `profiles: ["jobs"]`), and `SR.get_registry()`
+        # caches per-process on top of that, so a second discovery in the
+        # same process (there isn't one today) would not re-hit the DB
+        # either. Deliberately NOT loaded at `make_discovery_nodes`
+        # construction time: that function also hands out the `codex_*`
+        # nodes on their own (see test_codex.py), and those callers have no
+        # reason to pay a registry load for nodes that never touch it.
         now = ctx.now()
         found = oculus.discover(subject, cfg.lang)
         candidates = found["candidates"]
@@ -572,11 +583,47 @@ def make_discovery_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
             effect_class=RECORDED,
             description=f"oculus proposed {len(candidates)} on-whitelist "
                         f"candidate(s) for {subject!r}"))
-        return (state
-                .with_fact(Fact("candidates", len(candidates), "discover", now))
-                .with_decision(Decision(
-                    "discovery", "found" if candidates else "empty", now,
-                    reason=f"{len(candidates)} on-whitelist candidate(s)")))
+        state = (state
+                 .with_fact(Fact("candidates", len(candidates), "discover", now))
+                 .with_decision(Decision(
+                     "discovery", "found" if candidates else "empty", now,
+                     reason=f"{len(candidates)} on-whitelist candidate(s)")))
+
+        # Once per run: which adapters ran, and which active endpoints have
+        # no adapter at all — the gap is cheap (already-computed set
+        # difference) and answers "why didn't this run search ctext.org"
+        # from the trace alone, without anyone needing to read this file.
+        state = state.with_decision(Decision(
+            "search_adapters", found["registry_source"], now,
+            reason=(f"{len(found['adapters_used'])} adapter(s) loaded from "
+                    f"{found['registry_source']} — {found['registry_note']}")))
+        if found["adapters_gap"]:
+            gap_hosts = ", ".join(g["host_pattern"] for g in found["adapters_gap"])
+            state = state.with_fact(Fact(
+                "adapters_gap", [g["host_pattern"] for g in found["adapters_gap"]],
+                "discover", now))
+            state = state.with_decision(Decision(
+                "search_coverage", "partial", now,
+                reason=f"active endpoint(s) with no search adapter: {gap_hosts}"))
+        for name in found["adapters_unimplemented"]:
+            state = state.with_rejection(Rejection(
+                f"adapter: {name}",
+                f"adapter {name!r} is registered in source_search_adapters but "
+                f"not implemented in this build of ingest (source_registry.ADAPTERS)",
+                now))
+        for failure in found["adapters_failed"]:
+            state = state.with_rejection(Rejection(
+                f"adapter: {failure['adapter']}", failure["why"], now))
+        if found["dropped_by_cap"]:
+            state = state.with_fact(Fact(
+                "dropped_by_cap", found["dropped_by_cap"], "discover", now))
+        for adapter_name, n in found["dropped_by_cap"].items():
+            state = state.with_rejection(Rejection(
+                f"adapter: {adapter_name}",
+                f"{n} candidate(s) dropped by the global candidate cap "
+                f"({oculus.DEFAULT_CANDIDATE_CAP}) after merging all adapters "
+                f"by priority", now))
+        return state
 
     def curate_node(state: State, ctx) -> State:
         """The gate. Every drop is written down with the score that caused it."""
@@ -615,8 +662,7 @@ def make_discovery_nodes(cfg: IngestConfig, run_id: str) -> dict[str, Any]:
 
         for c in kept:
             try:
-                body = (F.fetch_gutenberg(c["url"]) if c["kind"] == "gutenberg"
-                        else F.fetch_wikipedia(c["lang"], c["title"]))
+                body = F.fetch_by_kind(c)
             except Exception as exc:
                 failed += 1
                 state = state.with_rejection(Rejection(
