@@ -13,6 +13,41 @@ export const dynamic = "force-dynamic";
  * POSTGREST_SERVICE_KEY via lib/backendConfig, which sb()/rpc() already use)
  * and never queried source_proposals at all — an agent could suggest a
  * source and it would sit at status='submitted', invisible here, forever.
+ *
+ * Visibility-only additions below (no authority change, nothing new is
+ * written — the writes still all live in POST, untouched here):
+ *
+ * 1. source_proposal_intents is embedded without an explicit order, and a
+ *    PostgREST embed's row order is not guaranteed without one — a
+ *    frontend reading intents[0] could get an arbitrary intent. Ordering a
+ *    *top-level* resource is `order=col.dir`; ordering an *embedded* one
+ *    needs the relation-qualified form `relation.order=col.dir` (verified
+ *    against the local PostgREST instance on a proposal with two intents:
+ *    it actually reorders the embed. The `select=...intents(...).
+ *    order(id.asc)` nested-call form is silently ignored by this
+ *    PostgREST version — same input, unordered output).
+ *
+ * 2. recent_decisions embeds source_proposals(target_url) via the
+ *    proposal_id FK, but source_policy_decisions_subject_check allows only
+ *    one of endpoint_id/collection_id/proposal_id non-null, so every
+ *    'approve' decision has proposal_id NULL and that embed comes back
+ *    empty — the desk falls back to source_endpoints.host_pattern, a
+ *    coarser fact ("archive.org" instead of the specific letter that was
+ *    approved). mcp_resolve_source_proposal.sql still stamps
+ *    evidence_snapshot->>'proposal_id' on both branches (approve and
+ *    reject), so it's resolvable without a migration: pull that id where
+ *    the embed is empty, batch-fetch source_proposals for the real
+ *    target_url, and attach it as resolved_target_url alongside the
+ *    existing fields (which are left as they are — nothing removed).
+ *
+ * 3. A pending proposal can carry a non-null endpoint_id (dedup onto an
+ *    aggregator domain already known, e.g. archive.org) with nothing in
+ *    the response saying so — the editor can't see they're deciding on an
+ *    endpoint that's already active, at what trust_mode, or its last
+ *    decision. endpoint_context adds that, keyed by endpoint id, using the
+ *    same "batch-fetch then take latest per key" shape already used in
+ *    app/api/sources/route.ts for the catalogue page's last-decision
+ *    lookup.
  */
 export async function GET(req: Request) {
   const auth = await requireEditor(req);
@@ -21,11 +56,12 @@ export async function GET(req: Request) {
   try {
     const pending = await sb("GET",
       "source_proposals?status=eq.submitted&select=id,target_url,proposed_by_actor_type," +
-      "proposed_by_actor_id,endpoint_id,source_proposal_intents(voyage,waypoint,region,person,reason,suggested_trust_mode,suggested_rights_class)");
+      "proposed_by_actor_id,endpoint_id,source_proposal_intents(voyage,waypoint,region,person,reason,suggested_trust_mode,suggested_rights_class)" +
+      "&source_proposal_intents.order=id.asc");
 
     const resolved = await sb("GET",
       "source_policy_decisions?order=timestamp.desc&limit=20&select=id,decision_outcome,trust_mode," +
-      "rights_class,reason,timestamp,proposal_id,endpoint_id," +
+      "rights_class,reason,timestamp,proposal_id,endpoint_id,evidence_snapshot," +
       "source_endpoints(host_pattern),source_proposals(target_url)");
 
     const endpoints = await sb("GET",
@@ -34,13 +70,66 @@ export async function GET(req: Request) {
     const drifts = await sb("GET",
       "source_drift_evaluations?drift_detected=eq.true&select=id,reverification_id,subject_type,subject_id,drift_class,drift_codes,old_material_fingerprint,new_material_fingerprint,recommended_action,created_at&order=created_at.desc&limit=20");
 
+    // (2) recover target_url for 'approve' decisions, whose embed above is
+    // always empty by the subject_check constraint — via the proposal id
+    // every decision's evidence_snapshot carries regardless of outcome.
+    const missingProposalIds = [...new Set(
+      (resolved ?? [])
+        .filter((d: any) => !d.source_proposals?.target_url && d.evidence_snapshot?.proposal_id != null)
+        .map((d: any) => Number(d.evidence_snapshot.proposal_id)),
+    )];
+    const resolvedProposals = missingProposalIds.length
+      ? await sb("GET", `source_proposals?id=in.(${missingProposalIds.join(",")})&select=id,target_url`)
+      : [];
+    const targetUrlByProposalId = new Map((resolvedProposals ?? []).map((p: any) => [Number(p.id), p.target_url]));
+    const resolvedWithTargetUrl = (resolved ?? []).map((d: any) => ({
+      ...d,
+      resolved_target_url:
+        d.source_proposals?.target_url ??
+        targetUrlByProposalId.get(Number(d.evidence_snapshot?.proposal_id)) ??
+        null,
+    }));
+
+    // (3) Surface the endpoint a pending proposal is deduped onto, if any.
+    // Filter on endpoint_id first, not after Number(): Number(null) is 0,
+    // which Number.isInteger() happily accepts, so a null endpoint_id
+    // (the common case — a brand-new domain) would otherwise leak a
+    // spurious id-0 lookup into the batch query below.
+    const pendingEndpointIds = [...new Set(
+      (pending ?? [])
+        .filter((p: any) => p.endpoint_id != null)
+        .map((p: any) => Number(p.endpoint_id)),
+    )];
+    const endpointContext: Record<string, any> = {};
+    if (pendingEndpointIds.length) {
+      const contextEndpoints = await sb("GET",
+        `source_endpoints?id=in.(${pendingEndpointIds.join(",")})&select=id,host_pattern,trust_mode,status`);
+      const contextDecisions = await sb("GET",
+        `source_policy_decisions?endpoint_id=in.(${pendingEndpointIds.join(",")})&decision_outcome=eq.approve` +
+        "&select=id,endpoint_id,decision_outcome,trust_mode,rights_class,reason,timestamp&order=timestamp.desc,id.desc");
+      const lastApproveByEndpoint = new Map<number, any>();
+      for (const d of contextDecisions ?? []) {
+        const endpointId = Number(d.endpoint_id);
+        if (!lastApproveByEndpoint.has(endpointId)) lastApproveByEndpoint.set(endpointId, d);
+      }
+      for (const e of contextEndpoints ?? []) {
+        endpointContext[String(e.id)] = {
+          host_pattern: e.host_pattern,
+          trust_mode: e.trust_mode,
+          status: e.status,
+          last_decision: lastApproveByEndpoint.get(Number(e.id)) ?? null,
+        };
+      }
+    }
+
     return NextResponse.json({
       success: true,
       queue: {
         pending_proposals: pending,
-        recent_decisions: resolved,
+        recent_decisions: resolvedWithTargetUrl,
         review_required_endpoints: endpoints,
         recent_material_drifts: drifts,
+        endpoint_context: endpointContext,
       },
     });
   } catch (e: any) {
