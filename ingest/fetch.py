@@ -54,12 +54,56 @@ def fetch_archive_text(url):
     return get_text(url).strip()
 
 
-def fetch_wikipedia(lang, title):
-    api = f"https://{lang}.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
+def fetch_mediawiki_extract(host, title):
+    """Plain-text extract via MediaWiki's `prop=extracts`, generalized over
+    HOST rather than hardcoded to wikipedia.org — Wikipedia and Wikisource
+    are the same API and the same response shape, so one function serves
+    both instead of `fetch_wikipedia` quietly assuming every MediaWiki
+    candidate is a Wikipedia one."""
+    api = f"https://{host}/w/api.php?" + urllib.parse.urlencode({
         "action": "query", "prop": "extracts", "explaintext": 1,
         "titles": title, "redirects": 1, "format": "json"})
     pages = get_json(api)["query"]["pages"]
     return " ".join((p.get("extract") or "") for p in pages.values()).strip()
+
+
+def fetch_wikipedia(lang, title):
+    return fetch_mediawiki_extract(f"{lang}.wikipedia.org", title)
+
+
+def fetch_wikisource(lang, title):
+    return fetch_mediawiki_extract(f"{lang}.wikisource.org", title)
+
+
+def fetch_by_kind(candidate: dict) -> str:
+    """The single dispatch every caller must use to turn a discovered/curated
+    candidate into its body text.
+
+    Replaces a bug that shipped twice, identically, in
+    `pipeline_native.py::fetch_node` and `scout.py`:
+
+        body = (fetch_gutenberg(c["url"]) if c["kind"] == "gutenberg"
+                else fetch_wikipedia(c["lang"], c["title"]))
+
+    Any candidate whose kind was not literally "gutenberg" fell into that
+    `else` and was fetched FROM WIKIPEDIA regardless of what it actually was
+    — a "wikisource" candidate downloaded Wikipedia's page of the same title
+    (or nothing, if none existed) and got stored under Wikisource's
+    provenance and licence anyway. Invisible to the trace: the fetch
+    "succeeded", just against the wrong source. An unrecognized kind here
+    raises instead of silently defaulting to Wikipedia — the whole point of
+    replacing this dispatch."""
+    kind = candidate.get("kind")
+    if kind == "gutenberg":
+        return fetch_gutenberg(candidate["url"])
+    if kind == "wikipedia":
+        return fetch_wikipedia(candidate["lang"], candidate["title"])
+    if kind == "wikisource":
+        return fetch_wikisource(candidate["lang"], candidate["title"])
+    if kind == "archive":
+        return fetch_archive_text(candidate["url"])
+    raise ValueError(f"fetch_by_kind: no fetcher registered for kind={kind!r} "
+                      f"(candidate: {candidate.get('title', '?')!r})")
 
 
 def commons_images(query, limit):
