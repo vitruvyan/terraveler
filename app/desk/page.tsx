@@ -5,8 +5,9 @@ import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionBrief from "@/components/desk/SubmissionBrief";
 import {
-  PendingSourceProposals, ResolvedSourceDecisions, FlaggedEndpoints, MaterialDrifts,
-  type PendingProposal, type ResolvedDecision, type FlaggedEndpoint, type MaterialDrift,
+  PendingSourceProposals, SourceDossier, ReverificationStatus,
+  type PendingProposal, type ResolvedDecision, type DossierEndpoint,
+  type EndpointDossierEntry, type EndpointContext, type MaterialDrift,
 } from "@/components/desk/SourceGovernance";
 import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub, type UsersSub } from "@/components/desk/DeskSidebar";
 import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
@@ -158,11 +159,16 @@ const SECTION_TITLE: Record<Section, string> = {
   waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
-const SOURCES_SUBS: SourcesSub[] = ["pending", "flagged", "drift", "resolved"];
+/* Three sections, not the old four organised by which source table happened
+ * to hold the row (pending/flagged/drift/resolved). `flagged` and `drift`
+ * read tables no writer populated in production — a generic empty state
+ * there read as "all clear" when the truth was "this pipeline never ran".
+ * See components/desk/SourceGovernance.tsx's own header comment. */
+const SOURCES_SUBS: SourcesSub[] = ["pending", "dossier", "reverify"];
 const USERS_SUBS: UsersSub[] = ["humans", "agents"];
 const SUB_LABEL: Record<string, string> = {
   needs_verdict: "Needs your verdict", peer_review: "In peer review", history: "History",
-  pending: "Pending proposals", flagged: "Flagged endpoints", drift: "Material drift", resolved: "Resolved decisions",
+  pending: "Pending proposals", dossier: "Source dossier", reverify: "Reverification",
   humans: "Humans", agents: "Agents",
 };
 
@@ -199,8 +205,14 @@ export default function Desk() {
   const [subGroups, setSubGroups] = useState<SubGroups>(EMPTY_SUB_GROUPS);
   const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
   const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
-  const [flaggedEndpoints, setFlaggedEndpoints] = useState<FlaggedEndpoint[]>([]);
+  const [flaggedEndpoints, setFlaggedEndpoints] = useState<DossierEndpoint[]>([]);
   const [materialDrifts, setMaterialDrifts] = useState<MaterialDrift[]>([]);
+  const [allEndpoints, setAllEndpoints] = useState<DossierEndpoint[]>([]);
+  const [endpointDossier, setEndpointDossier] = useState<Record<string, EndpointDossierEntry>>({});
+  const [endpointContext, setEndpointContext] = useState<Record<string, EndpointContext>>({});
+  const [reverificationEvidence, setReverificationEvidence] = useState<{ any_reverifications: boolean; any_drift_evaluations: boolean }>({
+    any_reverifications: false, any_drift_evaluations: false,
+  });
   const [humans, setHumans] = useState<HumanUser[]>([]);
   const [agentUsers, setAgentUsers] = useState<AgentUser[]>([]);
   const [claims, setClaims] = useState<ClaimedWaypoint[]>([]);
@@ -244,6 +256,10 @@ export default function Desk() {
       setResolvedSources(gov.queue?.recent_decisions ?? []);
       setFlaggedEndpoints(gov.queue?.review_required_endpoints ?? []);
       setMaterialDrifts(gov.queue?.recent_material_drifts ?? []);
+      setAllEndpoints(gov.queue?.all_endpoints ?? []);
+      setEndpointDossier(gov.queue?.endpoint_dossier ?? {});
+      setEndpointContext(gov.queue?.endpoint_context ?? {});
+      setReverificationEvidence(gov.queue?.reverification_evidence ?? { any_reverifications: false, any_drift_evaluations: false });
     }
   }
 
@@ -465,8 +481,6 @@ export default function Desk() {
             history: subGroups.history.length,
             pending: pendingSources.length,
             flagged: flaggedEndpoints.length,
-            drift: materialDrifts.length,
-            resolved: resolvedSources.length,
             claimed: claims.length,
             claimedOverdue: claims.filter((c) =>
               c.claimed_at && Date.now() - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000
@@ -694,10 +708,28 @@ export default function Desk() {
 
       {section === "sources" && (
         <div style={{ marginTop: 20 }}>
-          {sourcesSub === "pending" && <PendingSourceProposals proposals={pendingSources} busy={busy} onResolve={resolveSource} />}
-          {sourcesSub === "flagged" && <FlaggedEndpoints endpoints={flaggedEndpoints} />}
-          {sourcesSub === "drift" && <MaterialDrifts drifts={materialDrifts} />}
-          {sourcesSub === "resolved" && <ResolvedSourceDecisions decisions={resolvedSources} />}
+          {sourcesSub === "pending" && (
+            <PendingSourceProposals
+              proposals={pendingSources}
+              busy={busy}
+              onResolve={resolveSource}
+              endpointContext={endpointContext}
+            />
+          )}
+          {sourcesSub === "dossier" && (
+            <SourceDossier
+              endpoints={allEndpoints}
+              dossier={endpointDossier}
+              unattachedDecisions={resolvedSources.filter((d) => d.endpoint_id == null)}
+            />
+          )}
+          {sourcesSub === "reverify" && (
+            <ReverificationStatus
+              endpoints={allEndpoints}
+              drifts={materialDrifts}
+              evidence={reverificationEvidence}
+            />
+          )}
         </div>
       )}
 

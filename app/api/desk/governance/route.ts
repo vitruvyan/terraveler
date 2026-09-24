@@ -48,6 +48,28 @@ export const dynamic = "force-dynamic";
  *    same "batch-fetch then take latest per key" shape already used in
  *    app/api/sources/route.ts for the catalogue page's last-decision
  *    lookup.
+ *
+ * PR-5 additions (frontend reorg — desk/page.tsx and SourceGovernance.tsx
+ * group by endpoint now, not by source table; these are the fields that
+ * reorg needs and nothing else changes):
+ *
+ * 4. all_endpoints — the full source_endpoints roster, not only the
+ *    needs_human_review/quarantined subset review_required_endpoints (kept,
+ *    unchanged, for the badge that used to be the whole `flagged` tab). A
+ *    "one row per endpoint" Dossier has nothing to be a row for otherwise.
+ *
+ * 5. reverification_evidence — whether source_reverifications or
+ *    source_drift_evaluations carry ANY row, regardless of outcome. The
+ *    existing `drifts` query below filters drift_detected=eq.true, so a
+ *    pass that ran and found nothing looks identical, at that query, to a
+ *    pass that never ran. Design law: a zero is a finding, and these two
+ *    zeros are different findings.
+ *
+ * 6. endpoint_dossier — per endpoint (from all_endpoints), every proposal
+ *    ever filed against it with every intent those proposals carried, and
+ *    every decision ever recorded against it — not bounded by the 20-row
+ *    `resolved` window above, which is a recent-activity feed rather than
+ *    a per-endpoint history. Same batch-then-group shape as (3).
  */
 export async function GET(req: Request) {
   const auth = await requireEditor(req);
@@ -64,11 +86,26 @@ export async function GET(req: Request) {
       "rights_class,reason,timestamp,proposal_id,endpoint_id,evidence_snapshot," +
       "source_endpoints(host_pattern),source_proposals(target_url)");
 
-    const endpoints = await sb("GET",
-      "source_endpoints?status=in.(needs_human_review,quarantined)&select=id,host_pattern,match_type,status,trust_mode,last_verified_at");
+    // (4) The full roster, for the Dossier's "one row per endpoint" — not
+    // only the ones currently flagged. review_required_endpoints below is
+    // filtered from this in JS rather than queried separately, so the two
+    // can never drift out of step with each other the way two independent
+    // queries could.
+    const allEndpoints = await sb("GET",
+      "source_endpoints?select=id,host_pattern,match_type,status,trust_mode,last_verified_at&order=host_pattern.asc&limit=500");
+    const endpoints = (allEndpoints ?? []).filter((e: any) =>
+      e.status === "needs_human_review" || e.status === "quarantined");
 
     const drifts = await sb("GET",
       "source_drift_evaluations?drift_detected=eq.true&select=id,reverification_id,subject_type,subject_id,drift_class,drift_codes,old_material_fingerprint,new_material_fingerprint,recommended_action,created_at&order=created_at.desc&limit=20");
+
+    // (5) Existence, not a count and not filtered by outcome — "has this
+    // pipeline ever written a row" is a different question from "did the
+    // most recent pass find drift", and the Riverifica section needs to
+    // answer the first one honestly before it can say anything about the
+    // second.
+    const anyReverifications = await sb("GET", "source_reverifications?select=id&limit=1");
+    const anyDriftEvaluations = await sb("GET", "source_drift_evaluations?select=id&limit=1");
 
     // (2) recover target_url for 'approve' decisions, whose embed above is
     // always empty by the subject_check constraint — via the proposal id
@@ -122,6 +159,30 @@ export async function GET(req: Request) {
       }
     }
 
+    // (6) The Dossier's own thread per endpoint. Batched the same way (3)
+    // batches endpoint_context: gather every id the Dossier will render a
+    // row for, then two id=in.() queries rather than one per endpoint.
+    const dossierEndpointIds = (allEndpoints ?? []).map((e: any) => Number(e.id));
+    const endpointDossier: Record<string, { proposals: any[]; decisions: any[] }> = {};
+    for (const id of dossierEndpointIds) endpointDossier[String(id)] = { proposals: [], decisions: [] };
+    if (dossierEndpointIds.length) {
+      const dossierProposals = await sb("GET",
+        `source_proposals?endpoint_id=in.(${dossierEndpointIds.join(",")})&select=id,target_url,status,` +
+        "endpoint_id,proposed_by_actor_type,proposed_by_actor_id,source_proposal_intents(voyage,waypoint,region,person,reason,suggested_trust_mode,suggested_rights_class)" +
+        "&source_proposal_intents.order=id.asc");
+      const dossierDecisions = await sb("GET",
+        `source_policy_decisions?endpoint_id=in.(${dossierEndpointIds.join(",")})` +
+        "&select=id,decision_outcome,trust_mode,rights_class,reason,timestamp,proposal_id,endpoint_id,evidence_snapshot&order=timestamp.desc");
+      for (const p of dossierProposals ?? []) {
+        const key = String(p.endpoint_id);
+        if (endpointDossier[key]) endpointDossier[key].proposals.push(p);
+      }
+      for (const d of dossierDecisions ?? []) {
+        const key = String(d.endpoint_id);
+        if (endpointDossier[key]) endpointDossier[key].decisions.push(d);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       queue: {
@@ -130,6 +191,12 @@ export async function GET(req: Request) {
         review_required_endpoints: endpoints,
         recent_material_drifts: drifts,
         endpoint_context: endpointContext,
+        all_endpoints: allEndpoints,
+        endpoint_dossier: endpointDossier,
+        reverification_evidence: {
+          any_reverifications: (anyReverifications ?? []).length > 0,
+          any_drift_evaluations: (anyDriftEvaluations ?? []).length > 0,
+        },
       },
     });
   } catch (e: any) {
