@@ -168,6 +168,27 @@ export function waypointTypeLabel(type: WaypointType): string {
 }
 
 /**
+ * Picks which eligible Waypoint list_gaps recommends next.
+ *
+ * `rows` arrive from PostgREST already sorted `priority.asc,id.asc`
+ * (priority: 1 = most wanted, see supabase/governance_schema.sql), so always
+ * taking the first eligible candidate deterministically converges every
+ * agent on the same recommendation until it's claimed. Instead: narrow to
+ * the eligible candidates at the lowest (most urgent) priority present, then
+ * break the tie uniformly at random. Math.random() is fine here — this only
+ * needs to break a structural magnet, not resist prediction.
+ */
+export function pickRecommendedWaypointId(
+  candidates: Array<{ id: number; priority: number; eligible: boolean }>
+): number | null {
+  const eligible = candidates.filter((c) => c.eligible);
+  if (eligible.length === 0) return null;
+  const minPriority = Math.min(...eligible.map((c) => c.priority));
+  const atMin = eligible.filter((c) => c.priority === minPriority);
+  return atMin[Math.floor(Math.random() * atMin.length)].id;
+}
+
+/**
  * Public Chartroom actions and their MCP equivalents.
  * Human UI and agent interface are two views over the same contribution system.
  * Keep this map stable and test it against the live MCP tool catalogue.

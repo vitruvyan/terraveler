@@ -7,7 +7,9 @@ import {
   WAYPOINT_TYPES,
   adaptEditorialGap,
   legacyKindForWaypointType,
+  pickRecommendedWaypointId,
 } from "../lib/chartroom";
+import { knownVoyages, pickRandomVoyageSlug } from "../lib/data";
 
 const read = (path: string) => readFile(new URL(path, import.meta.url), "utf8");
 
@@ -69,6 +71,63 @@ test("context and requested Voyager survive the compatibility adapter", () => {
   });
   assert.equal(legacyKindForWaypointType("source"), "correction");
   assert.equal(legacyKindForWaypointType("map"), "waypoint");
+});
+
+test("pickRecommendedWaypointId breaks ties among eligible waypoints at the same priority", () => {
+  const candidates = [
+    { id: 1, priority: 1, eligible: true },
+    { id: 2, priority: 1, eligible: true },
+    { id: 3, priority: 1, eligible: true },
+  ];
+  const seen = new Set<number>();
+  for (let i = 0; i < 200; i++) seen.add(pickRecommendedWaypointId(candidates)!);
+  assert.ok(seen.size > 1,
+    "200 draws over 3 tied eligible candidates landing on a single id would be astronomically unlikely by chance");
+  for (const id of seen) assert.ok([1, 2, 3].includes(id));
+});
+
+test("pickRecommendedWaypointId never spills out of the minimum-priority tier", () => {
+  const candidates = [
+    { id: 10, priority: 1, eligible: true },
+    { id: 11, priority: 1, eligible: true },
+    { id: 50, priority: 5, eligible: true },
+    { id: 51, priority: 5, eligible: true },
+  ];
+  for (let i = 0; i < 200; i++) {
+    const picked = pickRecommendedWaypointId(candidates);
+    assert.ok(picked === 10 || picked === 11,
+      `expected only priority-1 candidates, got ${picked}`);
+  }
+});
+
+test("pickRecommendedWaypointId never chooses an ineligible waypoint, even at the lowest priority", () => {
+  const candidates = [
+    { id: 100, priority: 1, eligible: false },
+    { id: 101, priority: 2, eligible: true },
+    { id: 102, priority: 2, eligible: true },
+  ];
+  for (let i = 0; i < 200; i++) {
+    const picked = pickRecommendedWaypointId(candidates);
+    assert.ok(picked === 101 || picked === 102,
+      `ineligible priority-1 candidate must never be recommended, got ${picked}`);
+  }
+});
+
+test("pickRecommendedWaypointId returns null when nothing is eligible", () => {
+  assert.equal(pickRecommendedWaypointId([{ id: 1, priority: 1, eligible: false }]), null);
+  assert.equal(pickRecommendedWaypointId([]), null);
+});
+
+test("pickRandomVoyageSlug rotates across the atlas instead of always naming Bougainville", () => {
+  const pool = knownVoyages();
+  assert.ok(pool.length > 2, "the atlas pool must have room to rotate");
+  const seen = new Set<string>();
+  for (let i = 0; i < 200; i++) seen.add(pickRandomVoyageSlug(pool));
+  assert.ok(seen.size > 1,
+    "200 draws over the full atlas landing on a single slug would be astronomically unlikely by chance");
+  assert.ok(!(seen.size === 1 && seen.has("boudeuse-1766")),
+    "must not always converge on the Bougainville voyage");
+  for (const slug of seen) assert.ok(pool.includes(slug));
 });
 
 test("Chartroom migration is additive, contextual and actor-agnostic", async () => {
