@@ -70,6 +70,17 @@ export function knownVoyages(): readonly string[] {
   return ATLAS.map((v) => v.slug);
 }
 
+/**
+ * Picks one voyage slug uniformly at random from a pool (defaults to every
+ * published voyage). Used so list_gaps's voyage_completeness rotates across
+ * the atlas instead of always reporting on boudeuse-1766 — every bundled
+ * voyage's waypoints share the same editorial fields (seq, diary_excerpt,
+ * departure_date, confidence, media/media_url), so none needs excluding.
+ */
+export function pickRandomVoyageSlug(slugs: readonly string[] = knownVoyages()): string {
+  return slugs[Math.floor(Math.random() * slugs.length)];
+}
+
 // Bundled at build time — reliable on Vercel with no runtime filesystem access.
 function fromJson(slug: string): VoyageBundle {
   const bundle = isVoyageSlug(slug) ? LOCAL[slug] : undefined;

@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
-import bougainville from "@/data/bougainville.json";
 import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
 import { CARTA_VERSION } from "@/lib/carta";
 import { type Bearer, type Scope, insufficientScope, unauthorized, verifyBearer } from "@/lib/oauth";
 import { createAgentAccount, ensureAgentForConnection } from "@/lib/agentIdentity";
-import { getVoyageBundle } from "@/lib/data";
+import { getVoyageBundle, knownVoyages, pickRandomVoyageSlug } from "@/lib/data";
 import { allPlaces } from "@/lib/gazetteer";
 import { searchIndex, rank, normalize as norm } from "@/lib/search-index";
 import { evidenceBasisOf, evidenceCopy } from "@/lib/evidence";
-import { adaptEditorialGap } from "@/lib/chartroom";
+import { adaptEditorialGap, pickRecommendedWaypointId } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
@@ -1606,8 +1605,12 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const rows = await sb("GET", "editorial_gaps?status=eq.open&order=priority.asc,id.asc&select=" +
         "id,title,description,kind,priority,waypoint_type,claimed_by,claimed_at," +
         "context_type,context_voyage,context_waypoint_seq,context_place,requested_agent_account_id");
-      // Auto-computed completeness: what the existing voyage data actually lacks.
-      const b: any = bougainville;
+      // Auto-computed completeness: what the existing voyage data actually
+      // lacks. Rotated across the whole atlas — every bundled voyage's
+      // waypoints share the same editorial fields — so this never converges
+      // every agent onto the same voyage (it used to always be Bougainville).
+      const completenessSlug = pickRandomVoyageSlug(knownVoyages());
+      const b: any = await getVoyageBundle(completenessSlug);
       const wps: any[] = b.waypoints ?? [];
       const seqs = (pred: (w: any) => boolean) => wps.filter(pred).map((w) => w.seq);
       const completeness = [{
@@ -1648,8 +1651,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         };
       }
 
-      let recommendedWaypointId: number | null = null;
-      const waypoints = rows.map((gap: any) => {
+      // Pass 1: eligibility/reason, exactly as before — unchanged per waypoint.
+      const evaluated: Array<{ gap: any; w: any; eligible: boolean; reason: string }> = rows.map((gap: any) => {
         const w: any = adaptEditorialGap(gap);
         let eligible = true;
         let reason = "open and unclaimed";
@@ -1666,13 +1669,23 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
             reason = `you hold ${quotaState.heldClaims} active claim(s); the limit for rank '${quotaState.rank}' is ${quotaState.limit}`;
           }
         }
-        if (eligible && recommendedWaypointId == null) recommendedWaypointId = w.id;
-        return {
-          ...w, eligible, reason,
-          allowed_actions: eligible ? ["claim_gap"] : [],
-          blocked_actions: eligible ? [] : ["claim_gap"],
-        };
+        return { gap, w, eligible, reason };
       });
+
+      // Pass 2: recommend uniformly at random among the eligible waypoints
+      // at the lowest (most urgent) priority present, instead of always the
+      // first row PostgREST returns — that used to converge every agent on
+      // the same recommendation until someone claimed it.
+      const recommendedWaypointId = pickRecommendedWaypointId(
+        evaluated.map(({ gap, w, eligible }) => ({ id: w.id, priority: gap.priority, eligible }))
+      );
+
+      // Pass 3: shape the response, same as before.
+      const waypoints = evaluated.map(({ w, eligible, reason }) => ({
+        ...w, eligible, reason,
+        allowed_actions: eligible ? ["claim_gap"] : [],
+        blocked_actions: eligible ? [] : ["claim_gap"],
+      }));
 
       return JSON.stringify({
         waypoints,

@@ -67,6 +67,13 @@ test("every waypoint the eligibility projection marks eligible only allows claim
 test("recommended_next_action only ever names an already-eligible waypoint", async () => {
   const route = await read("../app/api/mcp/route.ts");
   const listGaps = section(route, 'case "list_gaps"');
-  assert.match(listGaps, /if \(eligible && recommendedWaypointId == null\) recommendedWaypointId = w\.id;/,
-    "the recommendation must be assigned inside the eligible branch, not computed independently of it");
+  // The recommendation is delegated to a pure helper (lib/chartroom.ts,
+  // unit-tested directly in test/chartroom.test.ts) fed only from the
+  // eligibility pass computed above — never independently recomputed —
+  // and its own `eligible` filter is what keeps ineligible waypoints out
+  // of the candidate pool.
+  assert.match(listGaps, /pickRecommendedWaypointId\(/,
+    "recommendation selection must go through the shared, testable helper");
+  assert.match(listGaps, /evaluated\.map\(\(\{\s*gap,\s*w,\s*eligible\s*\}\)\s*=>\s*\(\{\s*id:\s*w\.id,\s*priority:\s*gap\.priority,\s*eligible\s*\}\)\)/,
+    "the helper's candidates must come from the same evaluated eligibility pass, not a re-derived one");
 });
