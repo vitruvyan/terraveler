@@ -1,3 +1,20 @@
+-- NOT INSTALLED ON PRODUCTION (verified 2026-09-24, source-governance
+-- remediation PR-6): `select proname from pg_proc where proname =
+-- 'apply_source_policy_decision'` returns zero rows on the database behind
+-- terraveler.com. Nothing in app/, lib/, or scripts/ calls this RPC either
+-- -- source_policy_decisions is still written directly by
+-- mcp_resolve_source_proposal's plain INSERT, not through this function.
+-- This file, quarantine_source_subject.sql, and the Phase 3B tables it
+-- reads/writes (source_collections, source_assessments,
+-- source_policy_evaluations, source_verified_evidence,
+-- source_reverifications, source_reverification_events,
+-- source_drift_evaluations -- all confirmed empty on the same date) are
+-- infrastructure DECLARED in this repo but not ACTIVATED: prepared ahead of
+-- application code that hasn't been built yet, not a component silently
+-- failing in production today. Do not assume this function is live because
+-- the file exists. Remove this notice only once this migration has
+-- actually been applied to production and something calls it.
+--
 -- Phase 3B.2/3B.3: Atomic Policy Application and Lifecycle Engine RPC (Hardened Sealing)
 -- Enforces strict TOCTOU checks, database consistency checks,
 -- generation-binding staleness prevention, and atomic database-side lifecycle mutations.
