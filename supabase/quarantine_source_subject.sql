@@ -1,3 +1,18 @@
+-- NOT INSTALLED ON PRODUCTION (verified 2026-09-24, source-governance
+-- remediation PR-6): `select proname from pg_proc where proname =
+-- 'quarantine_source_subject'` returns zero rows on the database behind
+-- terraveler.com. Nothing in app/, lib/, or scripts/ calls this RPC. This
+-- file, apply_source_policy_decision.sql, and the Phase 3B tables they
+-- read/write (source_collections, source_assessments,
+-- source_policy_evaluations, source_verified_evidence,
+-- source_reverifications, source_reverification_events,
+-- source_drift_evaluations -- all confirmed empty on the same date) are
+-- infrastructure DECLARED in this repo but not ACTIVATED: prepared ahead of
+-- application code that hasn't been built yet, not a component silently
+-- failing in production today. Do not assume this function is live because
+-- the file exists. Remove this notice only once this migration has
+-- actually been applied to production and something calls it.
+--
 -- Phase 3B.3: Atomic Quarantine Transaction RPC (Hardened Sealing)
 -- Safely quarantines a subject when material drift is detected,
 -- clearing active trust_mode, incrementing reverification_generation,
