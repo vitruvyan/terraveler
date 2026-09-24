@@ -29,7 +29,7 @@ type Outcome = { toast: string; alert: boolean; outcome: string };
 
 async function handleSourceCallback(action: "approve" | "reject", proposalId: number): Promise<Outcome> {
   const rows = await sb("GET",
-    `source_proposals?id=eq.${proposalId}&select=id,target_url,status,` +
+    `source_proposals?id=eq.${proposalId}&select=id,target_url,status,endpoint_id,` +
     `source_proposal_intents(reason,suggested_trust_mode,suggested_rights_class)`);
   const proposal = rows[0];
   if (!proposal) return { toast: "Proposta non trovata.", alert: true, outcome: "not found" };
@@ -46,6 +46,28 @@ async function handleSourceCallback(action: "approve" | "reject", proposalId: nu
       toast: "L'agente non ha suggerito un trust_mode — serve una scelta manuale sul desk (bottone Rivedi).",
       alert: true, outcome: "needs manual trust_mode",
     };
+  }
+
+  // A proposal with an existing endpoint_id is a dedup: the URL landed on a
+  // domain that's already whitelisted. A tap here doesn't just approve the
+  // specific item proposed — mcp_resolve_source_proposal overwrites that
+  // endpoint's trust_mode unconditionally with whatever the proposing agent
+  // suggested (supabase/mcp_resolve_source_proposal.sql:55-58). If that
+  // suggestion widens trust beyond what's already active (or the endpoint
+  // isn't active at all), a single tap silently reclassifies an entire
+  // domain on an agent's say-so, with a reason line that reads as an
+  // informed decision the editor never actually saw. Block it here, the
+  // same way a missing trustMode is blocked above, and send it to the desk.
+  if (action === "approve" && proposal.endpoint_id) {
+    const endpointRows = await sb("GET",
+      `source_endpoints?id=eq.${proposal.endpoint_id}&select=trust_mode,status`);
+    const endpoint = endpointRows[0];
+    if (!endpoint || endpoint.status !== "active" || endpoint.trust_mode !== trustMode) {
+      return {
+        toast: "Questo cambierebbe la fiducia di un endpoint già attivo — serve una decisione esplicita sul desk (bottone Rivedi).",
+        alert: true, outcome: "needs explicit trust_mode change on desk",
+      };
+    }
   }
 
   const editorId = await editorPrincipalId();
@@ -114,6 +136,19 @@ export async function POST(req: Request) {
   const chatId = cq.message.chat.id;
   const messageId = cq.message.message_id;
   const originalText = String(cq.message.text ?? "");
+
+  // verifyWebhookSecret only proves the request came from Telegram, not that
+  // it came from the configured editor chat — the secret is the same for
+  // every chat the bot is in. Without this, anyone with access to that chat
+  // (or the bot added elsewhere) could tap Approve/Reject and have it
+  // attributed to the editor-in-capo. Ignored silently on Telegram's side
+  // (same pattern as the malformed-update guard above), logged server-side
+  // since this is exactly the kind of event that should leave a trace.
+  const expectedChatId = (process.env.TELEGRAM_CHAT_ID ?? "").trim();
+  if (expectedChatId && String(chatId) !== expectedChatId) {
+    console.warn(`telegram webhook: callback from unauthorized chat ${chatId}, expected ${expectedChatId}`);
+    return NextResponse.json({ ok: true });
+  }
 
   let result: Outcome | null = null;
   let resolveError: string | null = null;

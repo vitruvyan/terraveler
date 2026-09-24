@@ -178,6 +178,138 @@ test("Telegram webhook", async (t) => {
     assert.equal(calls[0].body.show_alert, true);
   });
 
+  await t.test("src:approve on a dedup proposal blocks when the suggested trust_mode would widen an active endpoint's trust", async () => {
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.20")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 20, target_url: "https://archive.org/details/some-item", status: "submitted", endpoint_id: 7,
+            source_proposal_intents: [{ reason: "specific item", suggested_trust_mode: "domain_trusted", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("source_endpoints?id=eq.7")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ trust_mode: "item_verified", status: "active" }]) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    await POST(req(telegramUpdate("src:approve:20")));
+
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.equal(rpcCall, undefined, "must not silently widen an already-active endpoint's trust_mode");
+    const answered = calls.find((c) => c.url.includes("answerCallbackQuery"));
+    assert.ok(answered, "must acknowledge the tap");
+    assert.equal(answered!.body.show_alert, true);
+    assert.match(answered!.body.text, /fiducia|trust/i);
+  });
+
+  await t.test("src:approve on a dedup proposal blocks when the existing endpoint isn't active", async () => {
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.21")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 21, target_url: "https://archive.org/details/other-item", status: "submitted", endpoint_id: 8,
+            source_proposal_intents: [{ reason: "specific item", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("source_endpoints?id=eq.8")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ trust_mode: "item_verified", status: "suspended" }]) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    await POST(req(telegramUpdate("src:approve:21")));
+
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.equal(rpcCall, undefined, "must not one-tap resolve onto a non-active endpoint");
+    const answered = calls.find((c) => c.url.includes("answerCallbackQuery"));
+    assert.equal(answered!.body.show_alert, true);
+  });
+
+  await t.test("src:approve on a dedup proposal proceeds when the suggested trust_mode matches the active endpoint's", async () => {
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.22")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 22, target_url: "https://archive.org/details/same-item", status: "submitted", endpoint_id: 9,
+            source_proposal_intents: [{ reason: "specific item", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("source_endpoints?id=eq.9")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ trust_mode: "item_verified", status: "active" }]) } as any;
+      }
+      if (url.includes("human_principals?email=eq.")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+      }
+      if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 9, proposal_id: 22, status: "resolved" }) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    const res = await POST(req(telegramUpdate("src:approve:22")));
+    assert.equal(res.status, 200);
+
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.ok(rpcCall, "no real trust change -- must proceed same as today");
+    assert.equal(rpcCall!.body.p_trust_mode, "item_verified");
+  });
+
+  await t.test("src:approve on a brand-new proposal (no endpoint_id) proceeds without checking source_endpoints", async () => {
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.23")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 23, target_url: "https://newdomain.example/", status: "submitted", endpoint_id: null,
+            source_proposal_intents: [{ reason: "brand new domain", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("human_principals?email=eq.")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+      }
+      if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 10, proposal_id: 23, status: "resolved" }) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    const res = await POST(req(telegramUpdate("src:approve:23")));
+    assert.equal(res.status, 200);
+
+    assert.equal(calls.some((c) => c.url.includes("source_endpoints?id=eq.")), false,
+      "no endpoint_id -- nothing to check on source_endpoints");
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.ok(rpcCall, "new endpoint -- must proceed same as today");
+  });
+
   await t.test("still returns 200 when the resolution succeeds but acknowledging Telegram fails", async () => {
     // A resolved governance decision must never turn into a 500 just because
     // the callback query expired before the ack landed — a 500 makes
@@ -209,5 +341,95 @@ test("Telegram webhook", async (t) => {
 
     const res = await POST(req(telegramUpdate("src:approve:12")));
     assert.equal(res.status, 200, "the RPC succeeded — the failing ack must not surface as a request failure");
+  });
+
+  await t.test("callback from a chat other than TELEGRAM_CHAT_ID is ignored when the chat is configured", async () => {
+    process.env.TELEGRAM_CHAT_ID = "555";
+    try {
+      const calls: { url: string; body: any }[] = [];
+      globalThis.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : (input as any).url;
+        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+        calls.push({ url, body });
+        return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      };
+
+      // telegramUpdate() puts the callback in chat.id 999, which doesn't
+      // match the configured 555.
+      const res = await POST(req(telegramUpdate("src:approve:12")));
+      assert.equal(res.status, 200);
+      assert.equal((await res.json()).ok, true);
+      assert.equal(calls.length, 0, "an unauthorized chat must not even get an answerCallbackQuery");
+    } finally {
+      delete process.env.TELEGRAM_CHAT_ID;
+    }
+  });
+
+  await t.test("callback from the configured TELEGRAM_CHAT_ID proceeds as normal", async () => {
+    process.env.TELEGRAM_CHAT_ID = "999";
+    try {
+      const calls: { url: string; body: any }[] = [];
+      globalThis.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : (input as any).url;
+        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+        calls.push({ url, body });
+        if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+        if (url.includes("source_proposals?id=eq.12")) {
+          return {
+            ok: true, status: 200,
+            text: async () => JSON.stringify([{
+              id: 12, target_url: "https://ctext.org/", status: "submitted",
+              source_proposal_intents: [{ reason: "classical texts", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+            }]),
+          } as any;
+        }
+        if (url.includes("human_principals?email=eq.")) {
+          return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+        }
+        if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+          return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 11, proposal_id: 12, status: "resolved" }) } as any;
+        }
+        return { ok: false, status: 404, text: async () => "unexpected" } as any;
+      };
+
+      const res = await POST(req(telegramUpdate("src:approve:12")));
+      assert.equal(res.status, 200);
+      const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+      assert.ok(rpcCall, "the matching chat must resolve exactly as it did before TELEGRAM_CHAT_ID existed");
+    } finally {
+      delete process.env.TELEGRAM_CHAT_ID;
+    }
+  });
+
+  await t.test("callback proceeds as normal when TELEGRAM_CHAT_ID isn't configured at all", async () => {
+    delete process.env.TELEGRAM_CHAT_ID;
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.12")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 12, target_url: "https://ctext.org/", status: "submitted",
+            source_proposal_intents: [{ reason: "classical texts", suggested_trust_mode: "item_verified", suggested_rights_class: "mixed" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("human_principals?email=eq.")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+      }
+      if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 12, proposal_id: 12, status: "resolved" }) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+
+    const res = await POST(req(telegramUpdate("src:approve:12")));
+    assert.equal(res.status, 200);
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.ok(rpcCall, "no TELEGRAM_CHAT_ID configured -- must not block, same as before this fix");
   });
 });
