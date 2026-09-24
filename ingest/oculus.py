@@ -1,81 +1,123 @@
 """terraveler_oculus (light) — trusted-source harvester.
 
-Given a subject, discovers candidate sources across the WHITELIST ONLY:
-Gutenberg (via the Gutendex index), Wikipedia, Wikimedia Commons. Every
-candidate is checked against whitelist.is_allowed and tagged with its licence;
-anything off-whitelist is dropped. No open-web spidering, ever.
+Given a subject, discovers candidate sources across the WHITELIST ONLY. Which
+sources it searches is data-driven off `source_registry` — a consultative
+capability registry, read from `source_search_adapters` in Postgres, of what
+each adapter can search and with what config — never off two hardcoded names.
+Every candidate URL an adapter proposes is still checked against
+`whitelist.is_allowed()` unchanged; a misconfigured adapter row can only
+shrink discovery, never widen what may be ingested. No open-web spidering,
+ever. See `source_registry.py` for the adapter functions and the trust/
+capability boundary.
 
 A lean echo of Vitruvyan's Oculus intake gateway — minus Redis streams and
 evidence packs (the Motus trace is our audit).
 """
-import re
 import urllib.parse
 
 import fetch as F
-import whitelist as W
+import source_registry as SR
 
-
-def gutendex_books(subject: str, limit: int = 3):
-    """Public-domain books from Project Gutenberg matching the subject."""
-    q = urllib.parse.urlencode({"search": subject})
-    data = F.get_json(f"https://gutendex.com/books/?{q}")
-    out = []
-    for b in data.get("results", []):
-        fmts = b.get("formats", {})
-        txt = None
-        for k, v in fmts.items():
-            if k.startswith("text/plain") and isinstance(v, str) and not v.endswith(".zip"):
-                txt = v
-                break
-        if not txt or not W.is_allowed(txt):
-            continue
-        title = b.get("title", "")
-        authors = ", ".join(a.get("name", "") for a in b.get("authors", []))
-        out.append({
-            "kind": "gutenberg",
-            "title": (f"{title} — {authors}").strip(" —"),
-            "url": txt,
-            "source_url": f"https://www.gutenberg.org/ebooks/{b.get('id')}",
-            "license": "Public domain",
-        })
-        if len(out) >= limit:
-            break
-    return out
-
-
-def wikipedia_candidates(subject: str, lang: str = "en", limit: int = 8):
-    api = f"https://{lang}.wikipedia.org/w/api.php?" + urllib.parse.urlencode({
-        "action": "query", "list": "search", "srsearch": subject,
-        "srlimit": limit, "format": "json"})
-    res = F.get_json(api).get("query", {}).get("search", [])
-    out = []
-    for t in res:
-        snippet = re.sub(r"<[^>]+>", "", t.get("snippet", ""))
-        out.append({"title": t["title"], "snippet": snippet})
-    return out
+# Candidates go to the curator LLM in a single prompt (curate.py). Before the
+# registry, discovery had exactly two adapters and topped out around 11
+# candidates/subject; four adapters at their configured max_candidates can
+# already exceed 40. Nobody decided to spend that many curator tokens per
+# subject, so the total is capped explicitly, after merging every adapter's
+# results and sorting by adapter priority — not left to however many adapters
+# happen to be enabled on a given day.
+DEFAULT_CANDIDATE_CAP = 24
 
 
 def discover(subject: str, lang: str = "en", max_books: int = 3,
-             max_articles: int = 8, image_terms=None):
+             max_articles: int = 8, image_terms=None,
+             registry: "SR.RegistrySnapshot | None" = None,
+             total_cap: int = DEFAULT_CANDIDATE_CAP):
     """Return a FLAT list of on-whitelist candidate sources for a subject,
-    each with a hint for the curator agent to judge relevance.
+    each with a hint for the curator agent to judge relevance, plus enough
+    bookkeeping for the caller to write an honest trace.
 
-    { "candidates": [ {id, kind, title, hint, license, ...} ], "image_terms": [...] }
+    `max_books`/`max_articles` are a legacy soft cap kept only so old callers
+    that still pass them get the old behaviour: they clamp the 'gutendex' and
+    the Wikipedia-kind 'mediawiki_search' adapter respectively, on top of
+    whatever `max_candidates` the DB row already configures. Every other
+    adapter is capped by its own DB row alone.
+
+    `registry`: an already-loaded `SR.RegistrySnapshot`, for a caller that
+    wants to inspect or reuse the same snapshot across more than one call
+    (e.g. a test). Left as the default `None`, `SR.get_registry()` is called
+    here instead, which loads at most once per process and per
+    `CACHE_TTL_SECONDS` after that — so every real caller (scout.py,
+    pipeline_native.py's `discover` node) still only pays the DB/snapshot
+    round-trip once per run, without needing to pass anything in explicitly.
+
+    Returns:
+      { "candidates": [...], "image_terms": [...],
+        "adapters_used": [...], "adapters_unimplemented": [...],
+        "adapters_failed": [...], "adapters_gap": [...],
+        "dropped_by_cap": {adapter: n}, "registry_source": "db"|"snapshot",
+        "registry_note": "..." }
     """
+    reg = registry if registry is not None else SR.get_registry()
+
+    search_adapters = sorted(
+        (a for a in reg.adapters if a.capability == "search"),
+        key=lambda a: (a.priority, a.id))
+
+    adapters_used = []
+    unimplemented = []
+    failed = []
+    pooled = []  # (priority, adapter_name, candidate_dict)
+
+    for a in search_adapters:
+        adapters_used.append({
+            "adapter": a.adapter, "priority": a.priority,
+            "endpoint_id": a.endpoint_id, "institution_id": a.institution_id,
+            "max_candidates": a.max_candidates})
+        fn = SR.ADAPTERS.get(a.adapter)
+        if fn is None:
+            unimplemented.append(a.adapter)
+            continue
+
+        effective_max = a.max_candidates
+        if a.adapter == "gutendex":
+            effective_max = min(effective_max, max_books)
+        elif a.adapter == "mediawiki_search" and a.config.get("kind") == "wikipedia":
+            effective_max = min(effective_max, max_articles)
+
+        try:
+            found = fn(subject, lang, a.config, effective_max) or []
+        except Exception as exc:
+            failed.append({"adapter": a.adapter,
+                           "why": f"{type(exc).__name__}: {str(exc)[:160]}"})
+            continue
+        for c in found[:effective_max]:
+            pooled.append((a.priority, a.adapter, c))
+
+    pooled.sort(key=lambda t: t[0])
+    kept, dropped = pooled[:total_cap], pooled[total_cap:]
+
+    dropped_by_cap: dict = {}
+    for _, adapter_name, _ in dropped:
+        dropped_by_cap[adapter_name] = dropped_by_cap.get(adapter_name, 0) + 1
+
     candidates = []
-    cid = 0
-    for b in gutendex_books(subject, max_books):
-        cid += 1
-        candidates.append({**b, "id": cid,
-                           "hint": f"Public-domain book: {b['title']}"})
-    for w in wikipedia_candidates(subject, lang, max_articles):
-        cid += 1
-        candidates.append({"id": cid, "kind": "wikipedia", "lang": lang,
-                           "title": w["title"], "hint": w["snippet"],
-                           "license": "CC BY-SA 4.0",
-                           "source_url": f"https://{lang}.wikipedia.org/wiki/"
-                                         + w["title"].replace(" ", "_")})
-    return {"candidates": candidates, "image_terms": image_terms or [subject]}
+    for cid, (_, _, c) in enumerate(kept, start=1):
+        c = dict(c)
+        c["id"] = cid
+        c.setdefault("hint", f"{c.get('kind', '?')}: {c.get('title', '')}")
+        candidates.append(c)
+
+    return {
+        "candidates": candidates,
+        "image_terms": image_terms or [subject],
+        "adapters_used": adapters_used,
+        "adapters_unimplemented": sorted(set(unimplemented)),
+        "adapters_failed": failed,
+        "adapters_gap": reg.gap,
+        "dropped_by_cap": dropped_by_cap,
+        "registry_source": reg.source,
+        "registry_note": reg.note,
+    }
 
 
 # ---------------------------------------------------------------- geo intake

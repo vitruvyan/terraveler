@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-09-23T22:44:24.196976+00:00",
+  "adapters": [
+    {
+      "id": 1,
+      "adapter": "gutendex",
+      "config": {},
+      "capability": "search",
+      "priority": 10,
+      "max_candidates": 3,
+      "endpoint_id": null,
+      "institution_id": 1,
+      "notes": "Covers gutenberg.org / www.gutenberg.org / gutendex.com with one institution-level hook: three endpoint rows, one search index."
+    },
+    {
+      "id": 2,
+      "adapter": "mediawiki_search",
+      "config": {
+        "kind": "wikisource",
+        "license": "Public domain",
+        "api_base_template": "https://{lang}.wikisource.org/w/api.php"
+      },
+      "capability": "search",
+      "priority": 20,
+      "max_candidates": 8,
+      "endpoint_id": 5,
+      "institution_id": null,
+      "notes": "Same MediaWiki search API as Wikipedia, generalized by host/kind/license instead of hardcoded to wikipedia.org."
+    },
+    {
+      "id": 3,
+      "adapter": "mediawiki_search",
+      "config": {
+        "kind": "wikipedia",
+        "license": "CC BY-SA 4.0",
+        "api_base_template": "https://{lang}.wikipedia.org/w/api.php"
+      },
+      "capability": "search",
+      "priority": 20,
+      "max_candidates": 8,
+      "endpoint_id": 6,
+      "institution_id": null,
+      "notes": "The existing wikipedia_candidates() behaviour from oculus.py, made declarative."
+    },
+    {
+      "id": 4,
+      "adapter": "archive_org_metadata",
+      "config": {},
+      "capability": "verify_only",
+      "priority": 90,
+      "max_candidates": 0,
+      "endpoint_id": null,
+      "institution_id": 4,
+      "notes": "Per-item verification only (whitelist.verify_archive_item / source_access_rules.verification_strategy). No search implemented in PR-1."
+    }
+  ],
+  "gap": [
+    {
+      "id": 13,
+      "host_pattern": "bndigital.bnportugal.gov.pt",
+      "match_type": "exact"
+    },
+    {
+      "id": 14,
+      "host_pattern": "ctext.org",
+      "match_type": "exact"
+    },
+    {
+      "id": 12,
+      "host_pattern": "dl.ndl.go.jp",
+      "match_type": "exact"
+    },
+    {
+      "id": 4,
+      "host_pattern": "runeberg.org",
+      "match_type": "exact"
+    },
+    {
+      "id": 10,
+      "host_pattern": "test-governance-verify.example.org",
+      "match_type": "exact"
+    },
+    {
+      "id": 7,
+      "host_pattern": ".wikimedia.org",
+      "match_type": "suffix"
+    },
+    {
+      "id": 11,
+      "host_pattern": "www.dbnl.org",
+      "match_type": "exact"
+    },
+    {
+      "id": 15,
+      "host_pattern": "www.wdl.org",
+      "match_type": "exact"
+    }
+  ]
+}
