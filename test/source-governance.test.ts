@@ -250,6 +250,102 @@ test("Source Governance Domain Model", async (t) => {
     );
   });
 
+  await t.test("mcp_resolve_source_proposal refuses multi-intent and collection-based proposals, and both SECURITY DEFINER functions set search_path", () => {
+    const resolveSql = readFileSync(join(__dirname, "../supabase/mcp_resolve_source_proposal.sql"), "utf8");
+
+    // S9: SECURITY DEFINER without search_path, same class of gap
+    // apply_source_policy_decision and quarantine_source_subject already close.
+    assert.match(
+      resolveSql,
+      /security\s+definer\s+set\s+search_path\s*=\s*pg_catalog\s*,\s*public/i,
+      "mcp_resolve_source_proposal MUST set search_path exactly to 'pg_catalog, public'"
+    );
+
+    // S1a: more than one source_proposal_intents row must block resolution
+    // outright -- for approve AND reject alike -- not resolve silently.
+    assert.match(
+      resolveSql,
+      /select\s+count\(\*\)\s+into\s+v_intent_count\s+from\s+source_proposal_intents\s+where\s+proposal_id\s*=\s*p_proposal_id/i,
+      "mcp_resolve_source_proposal MUST count this proposal's source_proposal_intents rows"
+    );
+    assert.match(
+      resolveSql,
+      /if\s+v_intent_count\s*>\s*1\s+then\s+return\s+jsonb_build_object\('error'/i,
+      "mcp_resolve_source_proposal MUST return an error (not proceed) when a proposal has more than one intent"
+    );
+    // The count check must sit before the approve/reject branch splits, so
+    // it guards both outcomes rather than just one.
+    const intentGuardAt = resolveSql.search(/if\s+v_intent_count\s*>\s*1/i);
+    const branchAt = resolveSql.search(/if\s+p_decision\s*=\s*'approve'\s+then/i);
+    assert.ok(intentGuardAt >= 0 && branchAt >= 0 && intentGuardAt < branchAt,
+      "the multi-intent guard MUST run before the approve/reject branch, so it blocks both");
+
+    // S4: collection_id was read via `select *` but never checked -- a
+    // collection-targeted proposal must not fall into the endpoint branch.
+    assert.match(
+      resolveSql,
+      /if\s+v_proposal\.collection_id\s+is\s+not\s+null\s+then\s+return\s+jsonb_build_object\('error'/i,
+      "mcp_resolve_source_proposal MUST reject proposals with a non-null collection_id instead of falling through to the endpoint branch"
+    );
+    const collectionGuardAt = resolveSql.search(/if\s+v_proposal\.collection_id\s+is\s+not\s+null/i);
+    assert.ok(collectionGuardAt >= 0 && collectionGuardAt < branchAt,
+      "the collection_id guard MUST also run before the approve/reject branch");
+
+    // S10: status='resolved' could not distinguish approved from rejected.
+    // Now the function writes the two outcomes as distinct terminal values
+    // instead of the old, ambiguous generic one.
+    assert.match(
+      resolveSql,
+      /update\s+source_proposals\s+set\s+status\s*=\s*'approved'/i,
+      "the approve branch MUST write status = 'approved'"
+    );
+    assert.match(
+      resolveSql,
+      /update\s+source_proposals\s+set\s+status\s*=\s*'rejected'/i,
+      "the reject branch MUST write status = 'rejected'"
+    );
+    assert.equal(
+      /update\s+source_proposals\s+set\s+status\s*=\s*'resolved'/i.test(resolveSql),
+      false,
+      "no branch should still write the old ambiguous status = 'resolved'"
+    );
+
+    const proposeSql = readFileSync(join(__dirname, "../supabase/mcp_propose_source_classification.sql"), "utf8");
+    assert.match(
+      proposeSql,
+      /security\s+definer\s+set\s+search_path\s*=\s*pg_catalog\s*,\s*public/i,
+      "mcp_propose_source MUST set search_path exactly to 'pg_catalog, public'"
+    );
+    // The dedup lookup used to read `status != 'resolved'`, which would
+    // treat every newly 'approved'/'rejected' proposal as still open once
+    // those became real values instead of the historical-only 'resolved'.
+    // It must key off the one status that has ever meant "still open."
+    assert.match(
+      proposeSql,
+      /where\s+status\s*=\s*'submitted'\s+and\s*\(/i,
+      "mcp_propose_source's dedup lookup MUST treat 'submitted' as the only open status, not '!= resolved'"
+    );
+    assert.equal(
+      /where\s+status\s*!=\s*'resolved'/i.test(proposeSql),
+      false,
+      "mcp_propose_source MUST NOT still key its open-proposal dedup off '!= resolved'"
+    );
+
+    // The additive CHECK constraint: 'resolved' stays valid for the 9
+    // historical rows, no backfill, alongside the two new terminal values.
+    const constraintSql = readFileSync(join(__dirname, "../supabase/source_proposal_resolution_authority.sql"), "utf8");
+    assert.match(
+      constraintSql,
+      /check\s*\(status\s+in\s*\('submitted',\s*'resolved',\s*'approved',\s*'rejected'\)\)/i,
+      "source_proposals.status CHECK constraint MUST permit 'submitted', 'resolved' (historical), 'approved', and 'rejected'"
+    );
+    assert.equal(
+      /drop\s+/i.test(constraintSql),
+      false,
+      "the resolution-authority migration MUST be additive -- no DROP"
+    );
+  });
+
   await t.test("Seed equivalence and Archivist dynamic provisioning verification", () => {
     const seedPath = join(__dirname, "../supabase/source_governance_seed.sql");
     const seedSql = readFileSync(seedPath, "utf8");
