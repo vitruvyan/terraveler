@@ -4,6 +4,7 @@ Adapted from the original Gemini ingestion script — same sources, same
 verbatim-safe policy (only PD/CC; copyrighted secondary sites are never
 ingested). Embedding + storage are handled downstream by the Axis nodes.
 """
+import html
 import re
 import json
 import urllib.request
@@ -54,12 +55,70 @@ def fetch_archive_text(url):
     return get_text(url).strip()
 
 
+_WS_STYLE_SCRIPT_RE = re.compile(r"<(style|script)\b[^>]*>.*?</\1>", re.I | re.S)
+_WS_BR_RE = re.compile(r"<br\s*/?>", re.I)
+_WS_BLOCK_CLOSE_RE = re.compile(r"</(p|div|li|h[1-6]|tr|table)\s*>", re.I)
+_WS_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _wikisource_render_to_text(raw_html: str) -> str:
+    """Turn Wikisource's rendered page HTML (from `action=parse&prop=text`,
+    which resolves the `<pages index=... />` transclusions that
+    `prop=extracts` never follows) into clean narrative text.
+
+    Order matters: `<style>`/`<script>` blocks are stripped WHOLESALE
+    first — a naive tag-strip alone leaves their CSS/JS behind as literal
+    text (e.g. ".mw-parser-output .wst-header..."), which would otherwise
+    get embedded as if it were prose. Block-level closing tags become
+    paragraph breaks before the remaining markup is stripped, so
+    downstream `chunk()` still sees real paragraphs instead of one giant
+    blob. Zero-width spaces (U+200B) are MediaWiki's invisible
+    page-boundary markers (`class="pagenum-inner ws-noexport"`) — they
+    carry no narrative meaning and are dropped outright. Everything else
+    (nav arrows, {{header}} title/notes chrome) is left alone: it wasn't
+    unambiguous enough in testing to strip with a regex without risking
+    losing real text.
+    """
+    text = _WS_STYLE_SCRIPT_RE.sub("", raw_html)
+    text = _WS_BR_RE.sub("\n", text)
+    text = _WS_BLOCK_CLOSE_RE.sub("\n\n", text)
+    text = _WS_TAG_RE.sub("", text)
+    text = html.unescape(text)
+    text = text.replace("​", "")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n[ \t]*(\n[ \t]*)+", "\n\n", text)
+    return text.strip()
+
+
 def fetch_mediawiki_extract(host, title):
-    """Plain-text extract via MediaWiki's `prop=extracts`, generalized over
-    HOST rather than hardcoded to wikipedia.org — Wikipedia and Wikisource
-    are the same API and the same response shape, so one function serves
-    both instead of `fetch_wikipedia` quietly assuming every MediaWiki
-    candidate is a Wikipedia one."""
+    """Plain-text extract, generalized over HOST rather than hardcoded to
+    wikipedia.org — but Wikipedia and Wikisource are NOT the same shape of
+    problem, so they no longer share one API call under the hood.
+
+    Wikipedia articles are self-contained prose and `prop=extracts` (a
+    plain-text rendering MediaWiki computes for us) works well there.
+    Wikisource "work" pages, though, are composed via transclusion: a
+    `{{header}}` template followed by `<pages index="....djvu"
+    include=N-M />` tags that pull the real text from the `Page:`
+    namespace at render time. `prop=extracts` does not follow that
+    transclusion and silently returns an empty (or near-empty,
+    header-only) extract — no error, just missing text. So Wikisource
+    hosts go through `action=parse&prop=text` instead, which renders the
+    page the way a reader sees it (transclusions resolved), and the
+    result is reduced to text by `_wikisource_render_to_text`.
+
+    Both branches are still reached through this one function (and
+    `fetch_wikipedia`/`fetch_wikisource` below still just pick the host)
+    because the dispatch — not the fetch mechanics — is what callers
+    depend on."""
+    if host.endswith(".wikisource.org"):
+        api = f"https://{host}/w/api.php?" + urllib.parse.urlencode({
+            "action": "parse", "prop": "text", "page": title,
+            "redirects": 1, "format": "json"})
+        parse = get_json(api).get("parse") or {}
+        raw_html = (parse.get("text") or {}).get("*") or ""
+        return _wikisource_render_to_text(raw_html)
+
     api = f"https://{host}/w/api.php?" + urllib.parse.urlencode({
         "action": "query", "prop": "extracts", "explaintext": 1,
         "titles": title, "redirects": 1, "format": "json"})
