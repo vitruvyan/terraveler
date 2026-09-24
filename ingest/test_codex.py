@@ -393,5 +393,87 @@ class FlawedButKeptTests(unittest.TestCase):
         self.assertEqual(fact.value, 0)
 
 
+class WikisourceTransclusionTests(unittest.TestCase):
+    """Wikisource "work" pages are composed via transclusion: a {{header}}
+    template followed by <pages index="....djvu" include=N-M /> tags that
+    pull the real text in at render time. `prop=extracts` never follows
+    that transclusion and silently returns an empty (or header-only)
+    extract — verified live against en.wikisource.org, see the fix commit.
+    These tests pin the fix offline, the same way GutenbergBoilerplateTests
+    pins fetch_gutenberg: monkeypatch F.get_json, feed it a canned API
+    response, restore it in finally."""
+
+    def _with_response(self, response, fn):
+        original = F.get_json
+        F.get_json = lambda url: response
+        try:
+            return fn()
+        finally:
+            F.get_json = original
+
+    def test_wikipedia_still_uses_prop_extracts_unchanged(self):
+        """The Wikipedia branch must stay bit-for-bit what it was before the
+        Wikisource fix: plain-text extracts, joined across pages."""
+        response = {"query": {"pages": {
+            "123": {"extract": "HMS Endeavour was a British Royal Navy research vessel."}
+        }}}
+        body = self._with_response(
+            response, lambda: F.fetch_wikipedia("en", "HMS Endeavour"))
+        self.assertEqual(
+            body, "HMS Endeavour was a British Royal Navy research vessel.")
+
+    def test_wikisource_resolves_transclusion_via_action_parse(self):
+        """Given the kind of rendered HTML `action=parse&prop=text` actually
+        returns for a transcluded work page (title-page markup plus a
+        <style> block MediaWiki inlines for the {{header}} template), the
+        Wikisource branch must recover the narrative text and drop the CSS
+        entirely — not leave it in as if it were prose."""
+        raw_html = (
+            '<div class="ws-noexport"><style data-mw-deduplicate="x">'
+            '.mw-parser-output .wst-header{border:1px solid #ACA}'
+            '</style></div>'
+            '<div class="prp-pages-output">'
+            '<p>We weighed anchor at daybreak and stood out to sea.</p>'
+            '<p>The coast of England sank slowly below the horizon.</p>'
+            '</div>'
+        )
+        response = {"parse": {"text": {"*": raw_html}}}
+        body = self._with_response(
+            response, lambda: F.fetch_wikisource("en", "A Journal"))
+        self.assertIn("We weighed anchor at daybreak and stood out to sea.", body)
+        self.assertIn("The coast of England sank slowly below the horizon.", body)
+        self.assertNotIn("mw-parser-output", body)
+        self.assertNotIn("<style", body)
+        self.assertNotIn("<p>", body)
+        self.assertNotIn("border:1px solid", body)
+
+    def test_wikisource_strips_script_blocks_too(self):
+        raw_html = ('<script>document.write("nav junk");</script>'
+                    '<p>Real narrative text survives.</p>')
+        response = {"parse": {"text": {"*": raw_html}}}
+        body = self._with_response(
+            response, lambda: F.fetch_wikisource("en", "A Journal"))
+        self.assertEqual(body, "Real narrative text survives.")
+
+    def test_wikisource_decodes_entities_and_drops_zero_width_spaces(self):
+        raw_html = ('<p>Fitzroy &amp; the crew sighted land'
+                    '​ at dawn.</p>')
+        response = {"parse": {"text": {"*": raw_html}}}
+        body = self._with_response(
+            response, lambda: F.fetch_wikisource("en", "A Journal"))
+        self.assertEqual(body, "Fitzroy & the crew sighted land at dawn.")
+        self.assertNotIn("​", body)
+        self.assertNotIn("&amp;", body)
+
+    def test_wikisource_missing_page_returns_empty_string(self):
+        """A missing/invalid title gets an `error` key instead of `parse` —
+        must fail soft to "", matching prop=extracts' existing behaviour on
+        an unresolvable title, not raise."""
+        response = {"error": {"code": "missingtitle", "info": "no such page"}}
+        body = self._with_response(
+            response, lambda: F.fetch_wikisource("en", "Nonexistent Page"))
+        self.assertEqual(body, "")
+
+
 if __name__ == "__main__":
     unittest.main()
