@@ -12,6 +12,31 @@
 -- (source_governance_immutability.sql already forbids UPDATE/DELETE on it)
 -- and resolve the proposal so it leaves the pending queue.
 --
+-- Source-governance remediation PR-2 (2026-09-24) closes two authority gaps
+-- found in this function and hardens it to match its siblings:
+--
+-- 1. Multi-intent blindness. A proposal can carry more than one
+--    source_proposal_intents row (propose_source_additional attaches a new
+--    intent to an existing pending proposal, app/api/mcp/route.ts). This
+--    function used to resolve the whole proposal on one verdict regardless
+--    of how many intents it held -- a real case (proposal #11) had an
+--    approved archive.org item intent silently carry a second, never-seen
+--    "Royal Geographical Society" search intent along with it. Now: more
+--    than one intent blocks resolution outright, for approve AND reject
+--    alike (a reject could just as wrongly sink a valid intent bundled with
+--    a bad one). Per-intent resolution is a separate, larger frontend/UX
+--    piece of future work -- this only refuses the ambiguity.
+-- 2. collection_id was read (select *) but never checked. A proposal aimed
+--    at a source_collections row would fall through to the endpoint-only
+--    branch below and approve/create the wrong thing. Now rejected
+--    explicitly; the collection path isn't implemented (nothing exercises
+--    it yet -- source_collections is empty).
+--
+-- It also gains set search_path, matching quarantine_source_subject and
+-- apply_source_policy_decision (both already SECURITY DEFINER + search_path
+-- guarded) -- this one and mcp_propose_source were the two SECURITY DEFINER
+-- functions in this area still missing it.
+--
 -- Apply to the canonical PostgreSQL database on the Terraveler VPS.
 
 begin;
@@ -26,12 +51,14 @@ create or replace function mcp_resolve_source_proposal(
   p_decided_by_actor_id bigint,
   p_carta_version text
 )
-returns jsonb language plpgsql security definer as $$
+returns jsonb language plpgsql security definer set search_path = pg_catalog, public as $$
 declare
   v_proposal record;
   v_host text;
   v_endpoint_id bigint;
   v_decision_id bigint;
+  v_intent_count integer;
+  v_final_status text;
 begin
   if p_decision not in ('approve', 'reject') then
     return jsonb_build_object('error', 'decision must be approve or reject');
@@ -45,6 +72,21 @@ begin
     return jsonb_build_object('error', format(
       'proposal #%s is %s, not submitted -- already resolved', p_proposal_id, v_proposal.status));
   end if;
+
+  if v_proposal.collection_id is not null then
+    return jsonb_build_object('error',
+      'collection-based proposals are not yet supported by this function -- resolve via the endpoint path or extend mcp_resolve_source_proposal first');
+  end if;
+
+  select count(*) into v_intent_count
+  from source_proposal_intents where proposal_id = p_proposal_id;
+  if v_intent_count > 1 then
+    return jsonb_build_object('error', format(
+      'proposal #%s carries %s distinct intents -- a single verdict cannot resolve them together; per-intent resolution is not yet supported',
+      p_proposal_id, v_intent_count));
+  end if;
+
+  v_final_status := case when p_decision = 'approve' then 'approved' else 'rejected' end;
 
   if p_decision = 'approve' then
     if p_trust_mode is null then
@@ -72,7 +114,7 @@ begin
        'human-v1', 'human-v1', p_carta_version, p_decided_by_actor_type, p_decided_by_actor_id, p_reason)
     returning id into v_decision_id;
 
-    update source_proposals set status = 'resolved', endpoint_id = v_endpoint_id
+    update source_proposals set status = 'approved', endpoint_id = v_endpoint_id
      where id = p_proposal_id;
   else
     insert into source_policy_decisions
@@ -85,12 +127,12 @@ begin
        'human-v1', 'human-v1', p_carta_version, p_decided_by_actor_type, p_decided_by_actor_id, p_reason)
     returning id into v_decision_id;
 
-    update source_proposals set status = 'resolved' where id = p_proposal_id;
+    update source_proposals set status = 'rejected' where id = p_proposal_id;
   end if;
 
   return jsonb_build_object(
     'decision_id', v_decision_id, 'proposal_id', p_proposal_id,
-    'endpoint_id', v_endpoint_id, 'status', 'resolved');
+    'endpoint_id', v_endpoint_id, 'status', v_final_status);
 end $$;
 
 revoke execute on function mcp_resolve_source_proposal from public, terraveler_anon;
