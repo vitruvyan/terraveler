@@ -60,7 +60,10 @@ export interface SourceProposal {
   proposed_by_actor_id: number;
   endpoint_id?: number;
   collection_id?: number;
-  status: "submitted" | "resolved";
+  // "resolved" is the historical terminal value (9 rows predating the
+  // approved/rejected split -- see source_proposal_resolution_authority.sql);
+  // mcp_resolve_source_proposal now writes "approved"/"rejected" instead.
+  status: "submitted" | "resolved" | "approved" | "rejected";
 }
 
 export interface SourcePolicyDecision {
