@@ -33,10 +33,7 @@ def main():
     print(f"\n── FETCH/CHUNK the KEPT sources ({len(kept)}) ──")
     for c in kept:
         try:
-            if c["kind"] == "gutenberg":
-                body = F.fetch_gutenberg(c["url"])
-            else:
-                body = F.fetch_wikipedia(c["lang"], c["title"])
+            body = F.fetch_by_kind(c)
             n = len(F.chunk(body))
         except Exception as e:
             n = 0
