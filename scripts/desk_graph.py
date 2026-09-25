@@ -78,6 +78,22 @@ EXTERNAL = EffectClass.EXTERNAL_EFFECT
 
 UA = "terraveler-desk/1.0 (contact: dbaldoni@gmail.com)"
 ACTOR = "curator-desk"
+# NOTE (human-anchored rank promotion, feat/human-anchored-rank-promotion):
+# _write() below is a second place — beside lib/deskVerdict.ts — where
+# submissions.status moves to 'approved'/'rejected', when the Curator rules
+# autonomously rather than escalating to the editor. lib/rankPromotion.ts's
+# recalculation is wired to the editor's path (lib/deskVerdict.ts) and to
+# review/link events, all reachable through the Next.js/PostgREST layer that
+# module already talks to; it is deliberately NOT wired here yet. As of this
+# note, curator-desk has issued 3 autonomous approvals ever, none for a
+# contributor with an active human_agent_links row — so the gap has no
+# observed effect — but a future autonomous approval of a human-linked
+# contributor would not trigger a recalculation until this is closed. Doing
+# so correctly needs a single implementation both this psycopg2-direct path
+# and the PostgREST-based one can call without duplicating the aggregation
+# rule in two languages (e.g. a shared SQL function) — left for follow-up
+# rather than adding a second, divergent copy of lib/rankPromotion.ts's logic
+# here under review-cycle pressure.
 # Cap on a single source fetch. Verification runs unattended under the
 # officers' watch; a djvu scan is tens of MB, a book is a few — anything
 # beyond this is not a source we can locate a span in at this scale.

@@ -10,6 +10,7 @@ import {
   enforceLimits, idempotencyKey, readLimitedJson, releaseMutationLease, requestSource, securityAudit,
 } from "@/lib/externalBetaSecurity";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
+import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -211,6 +212,7 @@ async function submitReview(c: Contributor, args: any): Promise<string> {
   });
   if (one) {
     if (one.error) return `ERROR: ${one.error}`;
+    await maybeRecalcRankForContributor(c.id);
     return JSON.stringify({
       ok: true,
       submission_id: sid,
@@ -246,6 +248,7 @@ async function submitReview(c: Contributor, args: any): Promise<string> {
     ]),
     carta_version: CARTA_VERSION,
   });
+  await maybeRecalcRankForContributor(c.id);
   const all = await sb("GET", `reviews?submission_id=eq.${sid}&select=id`);
   let advanced = false;
   if (all.length >= REVIEWS_TO_ADVANCE) {

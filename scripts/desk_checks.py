@@ -52,6 +52,13 @@ _VOCAB = json.loads((Path(__file__).resolve().parent.parent / "vocab" / "control
 EVIDENCE_BASIS = set(_VOCAB["evidence_basis"])
 CONFIDENCE = set(_VOCAB["confidence"])
 
+# Same pattern, second file: vocab/rank_thresholds.json holds the negative-signal
+# floor this pass shares with lib/rankPromotion.ts's human-anchored rank
+# calculation, and the 5-level rank scale that lives on the TypeScript side
+# alone (nothing here decides a human's rank — see that file).
+_VOCAB_RANK_THRESHOLDS = json.loads(
+    (Path(__file__).resolve().parent.parent / "vocab" / "rank_thresholds.json").read_text())
+
 # Reviews a draft needs before it may advance to a verdict. Mirrors
 # REVIEWS_TO_ADVANCE in app/api/mcp/route.ts:313 — this script has no import
 # path to the Next.js source at runtime, so the number is copied rather than
@@ -122,8 +129,16 @@ def reviewer_is_established(signal: dict) -> bool:
 # a pattern -- and a plain count for abandonment, where even a small number
 # repeated is itself the pattern (a Scribe who lets three claims lapse unworked
 # has shown something a single lapse does not).
-MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL = 3
-MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL = 3
+#
+# These two numbers used to be typed out here by hand. vocab/rank_thresholds.json
+# is now the one place they are written down — lib/rankPromotion.ts reads the
+# same file for the same "negative signal" concept, applied to a human's
+# aggregate history rather than one reviewer's. The two remain separate
+# functions (see reviewer_has_negative_signal's own docstring for why), but a
+# negative pattern means the same thing in both, so it is the same two numbers
+# rather than a second copy that could quietly drift.
+MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL = _VOCAB_RANK_THRESHOLDS["negative_signal"]["min_rejections"]
+MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL = _VOCAB_RANK_THRESHOLDS["negative_signal"]["min_abandoned_claims"]
 
 
 def reviewer_has_negative_signal(signal: dict) -> bool:
