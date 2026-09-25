@@ -1,4 +1,5 @@
 import { CARTA_VERSION } from "@/lib/carta";
+import CONTROLLED_VOCAB from "@/vocab/controlled.json";
 
 /**
  * The Stage-0 gate: the Carta's mechanical clauses, and nothing about HTTP.
@@ -55,7 +56,22 @@ export const LICENSE_OK = /public domain|no known copyright restrictions|^cc(0|[
 export const LICENSE_CLOSED = /\bnc\b|\bnd\b|non-?commercial|no-?deriv/i;
 export const licenceUsable = (lic: string) =>
   LICENSE_OK.test(lic ?? "") && !LICENSE_CLOSED.test(lic ?? "");
-export const CONFIDENCES = ["certain", "approximate", "reconstructed", "contested"];
+// evidence_basis, confidence and voyageless_types all live in vocab/controlled.json,
+// the one file scripts/desk_checks.py reads too (see its EVIDENCE_BASIS/CONFIDENCE/
+// VOYAGELESS_TYPES). Before that file existed this array was a second hand-typed
+// copy of Python's EVIDENCE_BASIS set — the exact shape of bug this gate exists to
+// close, just moved one field over. A draft with a `confidence` the Curator would
+// reject used to pass this gate too; it no longer can, because there is only one
+// list to have gotten out of step from.
+export const CONFIDENCES: string[] = CONTROLLED_VOCAB.confidence;
+export const EVIDENCE_BASES: string[] = CONTROLLED_VOCAB.evidence_basis;
+// Submission types that declare no voyage of their own (Carta 3.6 binds the
+// VOYAGE, not every submission that touches one) — an enrichment is not asked
+// to re-state evidence_basis/what_was_lost for a voyage it does not publish.
+// Mirrors scripts/desk_checks.py's VOYAGELESS_TYPES exactly, from the same file:
+// if the two ever disagreed, one side would silently accept what the other
+// silently requires — exactly the ambiguity this gate exists to remove.
+export const VOYAGELESS_TYPES: Set<string> = new Set(CONTROLLED_VOCAB.voyageless_types);
 export const INJECTION = [
   /ignore (all|any|previous|prior)/i, /disregard (the|all|previous)/i,
   /note to (the )?curator/i, /pre-?approved/i, /skip (the )?(verification|review|checks)/i,
@@ -139,6 +155,21 @@ export function stage0(sub: any): string[] {
   if (meta.carta_version !== CARTA_VERSION)
     fails.push(`carta_version is '${meta.carta_version}', current is '${CARTA_VERSION}' — call get_contract first`);
   for (const f of ["type", "ideator", "scribe_model"]) if (!meta[f]) fails.push(`meta.${f} missing`);
+  // Carta §3.6 binds the VOYAGE, not every submission — an enrichment adds
+  // stages to a voyage that already declared both fields when it was
+  // published, so it is not asked to re-state them (mirrors
+  // scripts/desk_checks.py's check_shape via the shared VOYAGELESS_TYPES).
+  // An unknown or missing meta.type is checked in full rather than waved
+  // through: Set.has(undefined) is false, so it falls into this branch.
+  if (!VOYAGELESS_TYPES.has(meta.type)) {
+    const voyage = sub?.voyage ?? {};
+    const basis = voyage.evidence_basis;
+    if (!basis) fails.push("voyage.evidence_basis missing (Carta 3.6)");
+    else if (!EVIDENCE_BASES.includes(basis))
+      fails.push(`voyage.evidence_basis '${basis}' is not one of: ${EVIDENCE_BASES.join(", ")} (Carta 3.6)`);
+    if (!(voyage.what_was_lost ?? "").toString().trim())
+      fails.push("voyage.what_was_lost missing or empty — say in one sentence what the archive does not hold (Carta 3.6)");
+  }
   const wps = sub?.waypoints ?? [];
   if (!Array.isArray(wps) || wps.length === 0) fails.push("no waypoints in submission");
   if (Array.isArray(wps) && wps.length > MAX_WAYPOINTS) return [`too many waypoints (max ${MAX_WAYPOINTS})`];

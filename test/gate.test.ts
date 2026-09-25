@@ -1,7 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { DOMAINS, LICENSE_OK, MAX_PLATES_PER_WAYPOINT, domainOk, licenceUsable, stage0 } from "../lib/gate";
+import {
+  CONFIDENCES, DOMAINS, EVIDENCE_BASES, LICENSE_OK, MAX_PLATES_PER_WAYPOINT,
+  VOYAGELESS_TYPES, domainOk, licenceUsable, stage0,
+} from "../lib/gate";
 import { CARTA_VERSION } from "../lib/carta";
 
 /**
@@ -228,4 +231,95 @@ test("nothing the ingestion pipeline may swallow is unciteable here", async () =
     const probe = `https://${h.startsWith(".") ? "any" + h : h}/x`;
     assert.ok(domainOk(probe), `${h} is ingestible but not citeable — the lists have drifted`);
   }
+});
+
+/**
+ * Carta §3.6 binds the voyage — evidence_basis and what_was_lost — and until
+ * now this gate did not know either field existed. scripts/desk_checks.py
+ * checked both, so a draft with an invented evidence_basis (an agent once
+ * typed `"contested-primary-letter"`, which is not one of the four the Carta
+ * recognises) sailed straight through this gate, sat in peer review, and was
+ * only turned back once it reached the Curator — a whole cycle spent on a
+ * value this gate could have named as wrong the instant it was offered.
+ *
+ * The vocabulary itself lives in vocab/controlled.json, read by both this
+ * gate and desk_checks.py, so there is one list to be wrong about rather than
+ * two that can quietly disagree.
+ */
+const voyageDraft = (voyage: any, type = "new-voyage") => ({
+  meta: { type, ideator: "a human", scribe_model: "a model", carta_version: CARTA_VERSION },
+  voyage,
+  waypoints: [{
+    seq: 1, place_historical: "Lisbon", latitude: 38.7, longitude: -9.1,
+    arrival_date: "1497-07-08", confidence: "certain",
+  }],
+});
+
+const GOOD_VOYAGE = {
+  evidence_basis: "contemporary-journal",
+  what_was_lost: "The ship's own log does not survive; this draft follows a companion's account.",
+};
+
+test("a voyage-bearing draft with an invented evidence_basis is refused, by name, with the allowed list", () => {
+  const got = failing(voyageDraft({ ...GOOD_VOYAGE, evidence_basis: "contested-primary-letter" }),
+    "is not one of");
+  assert.ok(got.length, "an invented evidence_basis must be refused");
+  for (const basis of EVIDENCE_BASES)
+    assert.ok(got[0].includes(basis), `the refusal must name the allowed values, missing ${basis}: ${got[0]}`);
+});
+
+test("evidence_basis missing entirely is refused with its own message, not folded into 'invalid'", () => {
+  const { evidence_basis: _drop, ...rest } = GOOD_VOYAGE;
+  assert.ok(failing(voyageDraft(rest), "evidence_basis missing").length);
+});
+
+test("what_was_lost missing or blank is refused (Carta 3.6)", () => {
+  assert.ok(failing(voyageDraft({ ...GOOD_VOYAGE, what_was_lost: "" }), "what_was_lost").length);
+  const { what_was_lost: _drop, ...rest } = GOOD_VOYAGE;
+  assert.ok(failing(voyageDraft(rest), "what_was_lost").length);
+});
+
+test("a voyage-bearing draft with a real evidence_basis and what_was_lost clears the §3.6 checks", () => {
+  assert.deepEqual(stage0(voyageDraft(GOOD_VOYAGE)).filter((f) => f.includes("Carta 3.6")), []);
+});
+
+/**
+ * Mirrors scripts/desk_checks.py's VOYAGELESS_TYPES exactly: an enrichment
+ * adds stages to a voyage that already declared evidence_basis/what_was_lost
+ * when IT was published, so asking an enrichment to restate them asks it for
+ * fields its own payload was never built with.
+ */
+test("a waypoint-enrichment draft is not asked for the voyage's own fields", () => {
+  const enrichment = voyageDraft({}, "waypoint-enrichment");
+  assert.deepEqual(stage0(enrichment).filter((f) => f.includes("Carta 3.6")), []);
+});
+
+test("an unknown meta.type is checked in full, not waved through like an enrichment", () => {
+  for (const type of ["something-invented-next-year", undefined]) {
+    const got = stage0(voyageDraft({}, type as any));
+    assert.ok(got.some((f) => f.includes("evidence_basis")), `type=${type}: ${JSON.stringify(got)}`);
+    assert.ok(got.some((f) => f.includes("what_was_lost")), `type=${type}: ${JSON.stringify(got)}`);
+  }
+});
+
+test("EVIDENCE_BASES, CONFIDENCES and VOYAGELESS_TYPES are read from vocab/controlled.json, not typed out again here", async () => {
+  const raw = await readFile(new URL("../vocab/controlled.json", import.meta.url), "utf8");
+  const vocab = JSON.parse(raw);
+  assert.deepEqual([...EVIDENCE_BASES].sort(), [...vocab.evidence_basis].sort());
+  assert.deepEqual([...CONFIDENCES].sort(), [...vocab.confidence].sort());
+  assert.deepEqual([...VOYAGELESS_TYPES].sort(), [...vocab.voyageless_types].sort());
+});
+
+/**
+ * The other direction of the same guarantee: scripts/desk_checks.py must read
+ * this exact file rather than a second hand-typed literal that merely agrees
+ * with it today. Checked by source text, the same way this file already
+ * checks ingest/whitelist.py above — there is no runtime bridge between the
+ * two languages, so the source is the only place a bridge to nowhere would
+ * show up.
+ */
+test("scripts/desk_checks.py reads the same shared vocab file, not a second copy", async () => {
+  const py = await readFile(new URL("../scripts/desk_checks.py", import.meta.url), "utf8");
+  assert.ok(/vocab["'\s/\\]+controlled\.json/.test(py),
+    "desk_checks.py must load vocab/controlled.json rather than hardcoding EVIDENCE_BASIS/CONFIDENCE/VOYAGELESS_TYPES again");
 });

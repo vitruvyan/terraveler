@@ -10,6 +10,17 @@ import {
   deniedCapabilities,
   quotaForRank,
 } from "@/lib/agentCapabilities";
+import { CONFIDENCES, EVIDENCE_BASES } from "@/lib/gate";
+
+// The controlled vocabularies validate_draft/submit_draft actually enforce
+// (lib/gate.ts's stage0(), backed by the one file it and scripts/desk_checks.py
+// both read: vocab/controlled.json). Answering "what values are allowed for
+// evidence_basis" here means an agent can ask before it ever drafts, rather
+// than learning the list from a rejection.
+const CONTROLLED_VOCABULARY = {
+  evidence_basis: EVIDENCE_BASES,
+  confidence: CONFIDENCES,
+};
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,6 +47,7 @@ export async function GET(req: Request) {
       external_mutations_enabled: writesEnabled,
       enrollment_enabled: enrollmentEnabled,
       carta_version: CARTA_VERSION,
+      vocab: CONTROLLED_VOCABULARY,
       enrollment: {
         unattended_agent: {
           supported: true,
@@ -113,6 +125,7 @@ export async function GET(req: Request) {
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
+    vocab: CONTROLLED_VOCABULARY,
     connection_id: bearer.connection_id,
     credential_management: {
       rotate_client_secret: "POST /api/oauth/rotate-secret with this bearer token",

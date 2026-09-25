@@ -1,0 +1,18 @@
+{
+  "$comment": "Controlled vocabularies and the one structural rule that gates on them, enforced on BOTH sides of the contribution pipeline: lib/gate.ts (the synchronous Stage-0 gate an agent can check before it acts) and scripts/desk_checks.py (the Curator's mechanical pass). Neither file hardcodes these values — both read this one. Change a value here and both sides change together; there is nothing left to keep in sync by hand. See lib/gate.ts and scripts/desk_checks.py for what each entry means and which Carta clause it enforces.",
+  "evidence_basis": [
+    "contemporary-journal",
+    "contemporary-testimony",
+    "later-chronicle",
+    "reconstructed"
+  ],
+  "confidence": [
+    "certain",
+    "approximate",
+    "reconstructed",
+    "contested"
+  ],
+  "voyageless_types": [
+    "waypoint-enrichment"
+  ]
+}
