@@ -823,5 +823,33 @@ class ShapeChecksKnowTheirType(unittest.TestCase):
             {"NO_WAYPOINTS"})
 
 
+class ControlledVocabularyIsSharedNotCopied(unittest.TestCase):
+    """evidence_basis, confidence and the voyage-less exemption used to be
+    typed out twice — once here, once in lib/gate.ts — with nothing checking
+    the two copies against each other. That is how an agent could once submit
+    `evidence_basis: "contested-primary-letter"` and have it pass the gate
+    (which did not check the field at all) only to be rejected here, a whole
+    submit/review/reject cycle later. vocab/controlled.json is now the only
+    place any of the three is written down. This does not re-test that the
+    checks behave correctly — ShapeChecksKnowTheirType already does that — it
+    tests that this file's constants actually ARE the shared file's content
+    and not a hardcoded literal that merely happens to agree with it today.
+    """
+
+    def test_the_vocabularies_come_from_the_shared_file_not_a_literal(self):
+        vocab = json.loads((HERE.parent / "vocab" / "controlled.json").read_text())
+        self.assertEqual(K.EVIDENCE_BASIS, set(vocab["evidence_basis"]))
+        self.assertEqual(K.CONFIDENCE, set(vocab["confidence"]))
+        self.assertEqual(K.VOYAGELESS_TYPES, set(vocab["voyageless_types"]))
+
+    def test_lib_gate_ts_reads_the_same_file_by_path_not_just_by_value(self):
+        """Reads gate.ts's own source rather than comparing values a second
+        time, so a change to WHICH file gate.ts imports — not just what is
+        currently in it — is what this actually guards against."""
+        gate_ts = (HERE.parent / "lib" / "gate.ts").read_text()
+        self.assertIn('from "@/vocab/controlled.json"', gate_ts,
+                       "lib/gate.ts must import the same vocab file this script reads")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
