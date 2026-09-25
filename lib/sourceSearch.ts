@@ -207,9 +207,43 @@ export class AdapterRejected extends Error {}
 
 const LANG_RE = /^[a-z]{2,3}(-[a-z]+)?$/;
 
+/**
+ * KNOWN PRODUCTION FAILURE MODE (investigated 2026-09-25, live collaudo):
+ * this adapter can — and, as of this writing, reliably does — fail with
+ * HTTP 403 when called from this route's live Vercel deployment, while the
+ * IDENTICAL request (same URL, same query, same `UA` string format, no
+ * extra headers Python sends that this doesn't) succeeds every time from
+ * `ingest/source_registry.py::gutendex()` running on the VPS, and from a
+ * plain `curl` off the VPS with the same custom User-Agent. This was
+ * confirmed NOT to be a header/logic mismatch: `getJson()` above sends
+ * `User-Agent` + `Accept: application/json`, `ingest/fetch.py::_get()` sends
+ * only `User-Agent` (via stdlib `urllib`, which follows redirects the same
+ * way `fetch()` does) — neither includes anything the other lacks that
+ * would explain a 403. gutendex.com's own response headers show
+ * `server: cloudflare`; Cloudflare's bot/IP-reputation heuristics are known
+ * to challenge or block shared cloud/serverless egress ranges (this
+ * includes Vercel's function IP pool) far more readily than a single,
+ * long-lived VPS host, REGARDLESS of a legitimate, identifying User-Agent —
+ * there is no request header this module can add that fixes an IP-based
+ * block from the inside. If this starts failing from the VPS/tests too,
+ * look elsewhere first; if it is ONLY the live MCP route, this is almost
+ * certainly the same known asymmetry, not a new regression. The adapter
+ * failing here must never fail the whole `search_sources` call — see the
+ * try/catch in `searchSources()` below, which already pools whatever the
+ * other adapters (e.g. `mediawiki_search`) found.
+ */
 export async function gutendexSearch(subject: string, lang: string, maxCandidates: number): Promise<Candidate[]> {
   const q = new URLSearchParams({ search: subject });
-  const data = await getJson(`https://gutendex.com/books/?${q.toString()}`);
+  let data: any;
+  try {
+    data = await getJson(`https://gutendex.com/books/?${q.toString()}`);
+  } catch (exc: any) {
+    const msg = String(exc?.message ?? exc);
+    if (/HTTP 403/.test(msg)) {
+      throw new Error(`${msg} (likely Cloudflare blocking Vercel's IP pool, not a code bug — see comment above gutendexSearch)`);
+    }
+    throw exc;
+  }
   const out: Candidate[] = [];
   for (const b of data?.results ?? []) {
     const fmts: Record<string, string> = b.formats ?? {};

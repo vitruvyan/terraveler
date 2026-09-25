@@ -1133,9 +1133,8 @@ const TOOL_DEFINITIONS = [
       "this before writing a waypoint's latitude/longitude — both required by submit_draft's gate " +
       "— instead of guessing or estimating one yourself. Returns found:false with no coordinate " +
       "when neither gazetteer resolves the name; never a made-up position. " +
-      "Sequence: propose_idea -> [search_sources -> fetch_source_text, a separate not-yet-merged " +
-      "phase] -> geocode_place (fill each waypoint's latitude/longitude) -> validate_draft -> " +
-      "submit_draft.",
+      "Sequence: propose_idea -> search_sources -> fetch_source_text -> geocode_place (fill each " +
+      "waypoint's latitude/longitude) -> validate_draft -> submit_draft.",
     inputSchema: { type: "object", required: ["place"],
       properties: {
         place: { type: "string",
