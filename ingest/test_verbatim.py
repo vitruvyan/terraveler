@@ -161,17 +161,51 @@ class SourceText(unittest.TestCase):
         self.assertEqual(source_text(book, ""), book,
                          "no Content-Type means no assumption")
 
-    def test_html_is_refused_rather_than_half_parsed(self):
-        """Five bypasses were demonstrated against the regex stripper in a
-        row — an unclosed <script>, a <template>, a hidden element, a crafted
-        comment, a quoted attribute — each putting text a reader cannot see
-        into the verifiable body. A regex cannot parse HTML, so it no longer
-        pretends to."""
+    def test_html_is_read_not_refused_but_hidden_text_still_cannot_surface(self):
+        """HTML used to be refused outright, which rejected genuine
+        Wikipedia/Wikisource quotations for no reason but the Content-Type
+        header. It is read now — but the five bypasses that made a blanket
+        refusal necessary in the first place (an unclosed <script>, a
+        <template>, a hidden element, a crafted comment, a quoted attribute)
+        must still not put invisible text into the verifiable body. See
+        test_html_text.py for these pinned individually against
+        html_text.visible_text; this just confirms source_text() actually
+        routes HTML through it."""
         for page in ("<script>QUOTE", "<template>QUOTE</template>",
                      "<p hidden>QUOTE</p>", "<!-- > QUOTE -->",
                      '<div data-x=">QUOTE">visible</div>'):
-            with self.assertRaises(UnverifiableSource):
-                source_text(page, "text/html; charset=utf-8")
+            self.assertNotIn(
+                "QUOTE", source_text(page, "text/html; charset=utf-8"))
+
+    def test_a_genuine_html_quotation_now_verifies(self):
+        """The whole point of the change: a real quotation on a real HTML
+        page, which the old blanket refusal rejected regardless of whether
+        a human had already read and confirmed it (submission #101 —
+        a genuine Verrazzano passage from a Wikisource chapter, refused only
+        because the page arrived as text/html)."""
+        page = ("<html><body><div id='content'>"
+                "<p>We sailed at dawn and the wind held all day.</p>"
+                "</div></body></html>")
+        text = source_text(page, "text/html; charset=utf-8")
+        self.assertEqual(
+            locate_in_source("we sailed at dawn", text)[1],
+            "We sailed at dawn")
+
+    def test_application_xhtml_xml_is_read_the_same_way_as_html(self):
+        page = "<p>We sailed at dawn.</p>"
+        self.assertEqual(
+            source_text(page, "application/xhtml+xml; charset=utf-8"),
+            "We sailed at dawn.")
+
+    def test_a_non_html_xml_source_is_still_refused(self):
+        """The surface widened is HTML, and only HTML — a generic XML feed
+        this module has no renderer for stays refused exactly as before,
+        rather than guessed at the way the old blanket rule guessed at
+        HTML."""
+        with self.assertRaises(UnverifiableSource):
+            source_text("<item>QUOTE</item>", "application/xml; charset=utf-8")
+        with self.assertRaises(UnverifiableSource):
+            source_text("<item>QUOTE</item>", "text/xml")
 
     def test_a_quotation_survives_a_source_with_brackets_in_it(self):
         book = "we sailed at dawn < and the wind held all day"

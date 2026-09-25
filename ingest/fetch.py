@@ -10,6 +10,8 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
+from html_text import visible_text as _visible_text
+
 UA = "terraveler-rag/2.0 (contact: dbaldoni@gmail.com)"
 
 
@@ -54,12 +56,53 @@ def fetch_archive_text(url):
     return get_text(url).strip()
 
 
+def _wikisource_render_to_text(raw_html: str) -> str:
+    """Turn Wikisource's rendered page HTML (from `action=parse&prop=text`,
+    which resolves the `<pages index=... />` transclusions that
+    `prop=extracts` never follows) into clean narrative text.
+
+    The cleaning itself now lives in `html_text.visible_text` — shared with
+    `verbatim.py::source_text`, which needs the same "strip markup down to
+    what a reader would see" reduction for a different reason (checking a
+    quotation against an HTML source safely, not just making one readable).
+    Was a private, module-local regex pipeline until that second use case
+    needed the exact same machine, hardened further; see `html_text.py`'s
+    module docstring for what changed and why. Zero-width spaces (U+200B,
+    MediaWiki's invisible page-boundary markers) and entity decoding are
+    handled inside `visible_text` now too.
+    """
+    return _visible_text(raw_html)
+
+
 def fetch_mediawiki_extract(host, title):
-    """Plain-text extract via MediaWiki's `prop=extracts`, generalized over
-    HOST rather than hardcoded to wikipedia.org — Wikipedia and Wikisource
-    are the same API and the same response shape, so one function serves
-    both instead of `fetch_wikipedia` quietly assuming every MediaWiki
-    candidate is a Wikipedia one."""
+    """Plain-text extract, generalized over HOST rather than hardcoded to
+    wikipedia.org — but Wikipedia and Wikisource are NOT the same shape of
+    problem, so they no longer share one API call under the hood.
+
+    Wikipedia articles are self-contained prose and `prop=extracts` (a
+    plain-text rendering MediaWiki computes for us) works well there.
+    Wikisource "work" pages, though, are composed via transclusion: a
+    `{{header}}` template followed by `<pages index="....djvu"
+    include=N-M />` tags that pull the real text from the `Page:`
+    namespace at render time. `prop=extracts` does not follow that
+    transclusion and silently returns an empty (or near-empty,
+    header-only) extract — no error, just missing text. So Wikisource
+    hosts go through `action=parse&prop=text` instead, which renders the
+    page the way a reader sees it (transclusions resolved), and the
+    result is reduced to text by `_wikisource_render_to_text`.
+
+    Both branches are still reached through this one function (and
+    `fetch_wikipedia`/`fetch_wikisource` below still just pick the host)
+    because the dispatch — not the fetch mechanics — is what callers
+    depend on."""
+    if host.endswith(".wikisource.org"):
+        api = f"https://{host}/w/api.php?" + urllib.parse.urlencode({
+            "action": "parse", "prop": "text", "page": title,
+            "redirects": 1, "format": "json"})
+        parse = get_json(api).get("parse") or {}
+        raw_html = (parse.get("text") or {}).get("*") or ""
+        return _wikisource_render_to_text(raw_html)
+
     api = f"https://{host}/w/api.php?" + urllib.parse.urlencode({
         "action": "query", "prop": "extracts", "explaintext": 1,
         "titles": title, "redirects": 1, "format": "json"})
