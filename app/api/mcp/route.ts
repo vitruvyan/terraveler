@@ -13,6 +13,7 @@ import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 import { CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { fetchSourceText, searchSources } from "@/lib/sourceSearch";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -1384,6 +1385,47 @@ const TOOL_DEFINITIONS = [
     description: "Gets detailed info for a specific source proposal by ID.",
     inputSchema: { type: "object", required: ["id"],
       properties: { ...AUTH_PROPS, id: { type: "number" } } } },
+  { name: "search_sources",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description:
+      "STEP 1 of writing a grounded draft: search INSIDE the sources Terraveler already trusts for a subject — " +
+      "the same Gutenberg/Wikisource/Wikipedia discovery the ingestion pipeline runs, reachable here for the first " +
+      "time from outside it. Every candidate is already on-whitelist and carries its own adapter, licence and lang, " +
+      "so you can cite it or pass its url/kind straight to fetch_source_text without guessing which field to use. " +
+      "Next: call fetch_source_text on the candidate you pick, then validate_draft, then submit_draft.",
+    inputSchema: { type: "object", required: ["subject"],
+      properties: {
+        subject: { type: "string", description: "what to search for — a person, ship, place or event" },
+        lang: { type: "string", description: "language subtag, e.g. 'en', 'fr', 'pt-br'. Defaults to 'en'." },
+      } } },
+  { name: "fetch_source_text",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description:
+      "STEP 2, after search_sources: fetch the full text of ONE candidate so you can read it and pick your own " +
+      "verbatim citations — pass the url, kind and lang exactly as search_sources returned them for that candidate. " +
+      "Refuses any url whose host is not an active Terraveler source endpoint, before making any request. Long " +
+      "texts are truncated with truncated:true and total_length reported, never silently cut. This does not verify " +
+      "your citations against the text — that stays the Curator's job when you call validate_draft, then " +
+      "submit_draft.",
+    inputSchema: { type: "object", required: ["url", "kind"],
+      properties: {
+        url: { type: "string", description: "the candidate's url (or source_url), exactly as search_sources returned it" },
+        kind: { type: "string", enum: ["gutenberg", "wikipedia", "wikisource", "archive"],
+          description: "the candidate's kind, exactly as search_sources returned it — an unrecognized kind is refused, never silently fetched from a fallback source" },
+        lang: { type: "string", description: "the candidate's lang, exactly as search_sources returned it (wikipedia/wikisource only — cross-checked against the url's own host)" },
+      } } },
 ];
 
 /**
@@ -2767,6 +2809,41 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const list = await sb("GET", `source_proposals?id=eq.${id}&select=id,target_url,proposed_by_actor_type,status`);
       if (!list.length) return "ERROR: unknown source proposal id.";
       return JSON.stringify(list[0], null, 2);
+    }
+    case "search_sources": {
+      const subject = String(args?.subject ?? "").trim();
+      if (!subject) return "ERROR: subject is required.";
+      if (subject.length > 300) return "ERROR: subject exceeds 300 characters.";
+      const lang = args?.lang != null ? String(args.lang) : "en";
+      const found = await searchSources(subject, lang);
+      return JSON.stringify({
+        candidates: found.candidates,
+        count: found.candidates.length,
+        adapters_used: found.adapters_used,
+        adapters_unimplemented: found.adapters_unimplemented,
+        adapters_failed: found.adapters_failed,
+        dropped_by_cap: found.dropped_by_cap,
+        note:
+          "Every candidate is already on-whitelist. Pick one and call fetch_source_text with its own " +
+          "url, kind and lang to read the full text, then validate_draft before submit_draft.",
+      }, null, 2);
+    }
+    case "fetch_source_text": {
+      const url = String(args?.url ?? "").trim();
+      const kind = String(args?.kind ?? "").trim();
+      if (!url) return "ERROR: url is required.";
+      if (!kind) return "ERROR: kind is required.";
+      const lang = args?.lang != null ? String(args.lang) : undefined;
+      const fetched = await fetchSourceText(url, kind, lang);
+      return JSON.stringify({
+        url, kind, lang: lang ?? null,
+        text: fetched.text,
+        truncated: fetched.truncated,
+        total_length: fetched.total_length,
+        note: fetched.truncated
+          ? `Truncated to ${fetched.text.length} of ${fetched.total_length} characters — this is NOT the full text.`
+          : "Full text. This tool does not verify your citations against it — the Curator does, at submit_draft review.",
+      }, null, 2);
     }
     default:
       throw new Error(`unknown tool: ${name}`);
