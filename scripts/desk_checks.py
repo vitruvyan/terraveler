@@ -36,11 +36,21 @@ and get it.
 """
 from __future__ import annotations
 
+import json
 import re
+from pathlib import Path
 
-EVIDENCE_BASIS = {"contemporary-journal", "contemporary-testimony",
-                  "later-chronicle", "reconstructed"}
-CONFIDENCE = {"certain", "approximate", "reconstructed", "contested"}
+# The controlled vocabularies below used to be typed out here by hand, a
+# second copy of lib/gate.ts's EVIDENCE_BASIS-shaped literal that nothing
+# checked against the other — which is exactly how an agent could submit
+# `evidence_basis: "contested-primary-letter"`, pass the gate (which did not
+# know the field existed at all), and only be told the value was wrong once
+# it reached this file. vocab/controlled.json is now the one place either
+# vocabulary is written down; lib/gate.ts reads the same file. Neither side
+# can drift from the other because there is only one list.
+_VOCAB = json.loads((Path(__file__).resolve().parent.parent / "vocab" / "controlled.json").read_text())
+EVIDENCE_BASIS = set(_VOCAB["evidence_basis"])
+CONFIDENCE = set(_VOCAB["confidence"])
 
 # Reviews a draft needs before it may advance to a verdict. Mirrors
 # REVIEWS_TO_ADVANCE in app/api/mcp/route.ts:313 — this script has no import
@@ -148,7 +158,12 @@ def reviewer_has_negative_signal(signal: dict) -> bool:
 # Stated as an exemption rather than as a list of the types that ARE checked,
 # so that a type nobody has thought of yet is checked rather than waved
 # through. Failing closed is the safer direction for a gate.
-VOYAGELESS_TYPES = {"waypoint-enrichment"}
+#
+# Also from vocab/controlled.json, and for the same reason as EVIDENCE_BASIS
+# above: lib/gate.ts's stage0() applies this exact exemption before a draft
+# ever reaches this file, and the two disagreeing would mean one side quietly
+# requires what the other quietly waives.
+VOYAGELESS_TYPES = set(_VOCAB["voyageless_types"])
 
 
 class Findings:

@@ -830,6 +830,112 @@ const CONTEXT_EVENTS_OUTPUT = {
   },
 };
 
+// Shared by submit_draft and validate_draft — the latter checks exactly this
+// shape (stage0() and nothing else) without writing anything, so the two
+// tools must describe the same submission or a draft that validates clean
+// could still arrive at submit_draft shaped differently than what was
+// checked.
+const DRAFT_SUBMISSION_SCHEMA = {
+  type: "object",
+  required: ["meta", "waypoints"],
+  properties: {
+    meta: {
+      type: "object",
+      required: ["type", "ideator", "scribe_model", "carta_version"],
+      properties: {
+        type: { type: "string", description: "new-voyage | waypoint-enrichment | correction" },
+        target_voyage: { type: "string", description: "voyage slug, when the draft touches one" },
+        ideator: { type: "string", description: "the human who asked for this (Carta 2)" },
+        scribe_model: { type: "string", description: "the model that drafted it" },
+        carta_version: { type: "string",
+          description: "must equal what get_contract returns, or the gate refuses the draft" },
+      },
+    },
+    voyage: {
+      type: "object",
+      description: "Required for type=new-voyage and any other type that declares a voyage " +
+        "of its own (everything except waypoint-enrichment, which enriches a voyage that " +
+        "already declared these fields when IT was published — Carta 3.6).",
+      properties: {
+        slug: { type: "string" }, title: { type: "string" }, navigator: { type: "string" },
+        ships: { type: "string" }, sponsor: { type: "string" }, summary: { type: "string" },
+        evidence_basis: { type: "string",
+          description: "contemporary-journal | contemporary-testimony | later-chronicle | reconstructed (Carta 3.6)" },
+        what_was_lost: { type: "string",
+          description: "one sentence: what is missing from the record and how it went" },
+      },
+    },
+    waypoints: {
+      type: "array",
+      description: "Ordered stages; each needs a place, a position, a date and a declared confidence.",
+      items: {
+        type: "object",
+        required: ["seq", "place_historical", "latitude", "longitude", "arrival_date", "confidence"],
+        properties: {
+          seq: { type: "number" },
+          place_historical: { type: "string", description: "as the source names it" },
+          place_modern: { type: "string" },
+          latitude: { type: "number" },
+          longitude: { type: "number" },
+          arrival_date: { type: "string", description: "YYYY, YYYY-MM or YYYY-MM-DD" },
+          date_note: { type: "string", description: "say so when the date is disputed" },
+          confidence: { type: "string",
+            description: "certain | approximate | reconstructed | contested (Carta 3.3)" },
+          plates: {
+            type: "array",
+            description: "Period images for this stage. A plate is held to a quotation's standard: five fields, four of them provenance. An image without them is refused (Carta 3.1–3.2).",
+            items: {
+              type: "object",
+              required: ["url", "caption", "credit", "license", "source_url", "date"],
+              properties: {
+                url: { type: "string",
+                  description: "the image itself — fetchable, on the source whitelist" },
+                caption: { type: "string",
+                  description: "what it shows, in the atlas's voice; not the file name" },
+                credit: { type: "string",
+                  description: "who made it and who holds it" },
+                license: { type: "string",
+                  description: "the licence of THE WORK, not of the scan. A faithful reproduction of a public-domain image does not create a new right; if the holder claims terms of its own, put those in rights_note (Carta 3.2)" },
+                source_url: { type: "string",
+                  description: "the record page a verifier can read, not the pixels" },
+                date: { type: "string",
+                  description: "when the image was MADE. Required, because it is frequently NOT the date of the stage — say 1787 for a view of a place reached in 1769, and let the page admit the gap" },
+                rights_note: { type: "string",
+                  description: "the holding institution's own terms, when they differ from the work's licence" },
+              },
+            },
+          },
+          claims: {
+            type: "array",
+            description: "A claim without evidence is refused outright (Carta 3.1).",
+            items: {
+              type: "object",
+              required: ["text", "evidence"],
+              properties: {
+                text: { type: "string" },
+                confidence: { type: "string" },
+                evidence: {
+                  type: "object",
+                  required: ["excerpt", "source_url"],
+                  properties: {
+                    quote: { type: "string",
+                      description: "VERBATIM from the source, or omitted — never paraphrased (Carta 3.4)" },
+                    excerpt: { type: "string" },
+                    source_url: { type: "string",
+                      description: "a fetchable URL a verifier can re-read; PD or CC only (Carta 3.2)" },
+                    source_title: { type: "string" },
+                    license: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+};
+
 const TOOL_DEFINITIONS = [
   { name: "get_capabilities",
     annotations: {
@@ -1027,12 +1133,31 @@ const TOOL_DEFINITIONS = [
       "— instead of guessing or estimating one yourself. Returns found:false with no coordinate " +
       "when neither gazetteer resolves the name; never a made-up position. " +
       "Sequence: propose_idea -> [search_sources -> fetch_source_text, a separate not-yet-merged " +
-      "phase] -> geocode_place (fill each waypoint's latitude/longitude) -> [validate_draft, same " +
-      "caveat] -> submit_draft.",
+      "phase] -> geocode_place (fill each waypoint's latitude/longitude) -> validate_draft -> " +
+      "submit_draft.",
     inputSchema: { type: "object", required: ["place"],
       properties: {
         place: { type: "string",
           description: "the place name as the source names it, e.g. 'Saint-Malo' or 'Tahiti'" } } } },
+  { name: "validate_draft",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+    securitySchemes: OPEN,
+    description: "Dry-run the instant Stage-0 gate against a draft submission — the step to " +
+      "take BEFORE submit_draft, not an alternative to it. Runs the exact same synchronous " +
+      "checks submit_draft runs (Carta shape, licences, whitelist domains, evidence_basis, " +
+      "confidence, the injection screen) and returns the same findings, but creates no " +
+      "submission and writes nothing: no row in submissions, no audit_log entry. Call it as " +
+      "many times as it takes to get a clean result — only submit_draft's own gate failures " +
+      "cost a submission record. It does NOT run deep source verification (fetching a source, " +
+      "matching a quotation against it): that only ever happens after a real submit_draft, " +
+      "under peer review and the Curator.",
+    inputSchema: { type: "object", required: ["submission"],
+      properties: { submission: DRAFT_SUBMISSION_SCHEMA } } },
   { name: "submit_draft",
     annotations: {
       readOnlyHint: false,
@@ -1041,7 +1166,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OAUTH("contribute"),
-    description: "Submit a structured draft (meta + waypoints with sourced claims, and plates where a stage has period imagery). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id. Call geocode_place first for each waypoint's latitude/longitude rather than estimating them.",
+    description: "Submit a structured draft (meta + waypoints with sourced claims, and plates where a stage has period imagery). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id. Call geocode_place first for each waypoint's latitude/longitude rather than estimating them, and validate_draft first: it runs the identical gate with no submission created, so iterating there costs nothing.",
     inputSchema: { type: "object", required: ["submission"],
       properties: { ...AUTH_PROPS,
         // "See how_it_works for the schema" is not a schema. An LLM connected
@@ -1049,104 +1174,7 @@ const TOOL_DEFINITIONS = [
         // guess the shape of the one call that matters. Every rule here cites
         // the Carta clause it comes from, so a Scribe learns the constitution
         // by filling the form.
-        submission: {
-          type: "object",
-          required: ["meta", "waypoints"],
-          properties: {
-            meta: {
-              type: "object",
-              required: ["type", "ideator", "scribe_model", "carta_version"],
-              properties: {
-                type: { type: "string", description: "new-voyage | waypoint-enrichment | correction" },
-                target_voyage: { type: "string", description: "voyage slug, when the draft touches one" },
-                ideator: { type: "string", description: "the human who asked for this (Carta 2)" },
-                scribe_model: { type: "string", description: "the model that drafted it" },
-                carta_version: { type: "string",
-                  description: "must equal what get_contract returns, or the gate refuses the draft" },
-              },
-            },
-            voyage: {
-              type: "object",
-              description: "Only for type=new-voyage.",
-              properties: {
-                slug: { type: "string" }, title: { type: "string" }, navigator: { type: "string" },
-                ships: { type: "string" }, sponsor: { type: "string" }, summary: { type: "string" },
-                evidence_basis: { type: "string",
-                  description: "contemporary-journal | contemporary-testimony | later-chronicle | reconstructed (Carta 3.6)" },
-                what_was_lost: { type: "string",
-                  description: "one sentence: what is missing from the record and how it went" },
-              },
-            },
-            waypoints: {
-              type: "array",
-              description: "Ordered stages; each needs a place, a position, a date and a declared confidence.",
-              items: {
-                type: "object",
-                required: ["seq", "place_historical", "latitude", "longitude", "arrival_date", "confidence"],
-                properties: {
-                  seq: { type: "number" },
-                  place_historical: { type: "string", description: "as the source names it" },
-                  place_modern: { type: "string" },
-                  latitude: { type: "number" },
-                  longitude: { type: "number" },
-                  arrival_date: { type: "string", description: "YYYY, YYYY-MM or YYYY-MM-DD" },
-                  date_note: { type: "string", description: "say so when the date is disputed" },
-                  confidence: { type: "string",
-                    description: "certain | approximate | reconstructed | contested (Carta 3.3)" },
-                  plates: {
-                    type: "array",
-                    description: "Period images for this stage. A plate is held to a quotation's standard: five fields, four of them provenance. An image without them is refused (Carta 3.1–3.2).",
-                    items: {
-                      type: "object",
-                      required: ["url", "caption", "credit", "license", "source_url", "date"],
-                      properties: {
-                        url: { type: "string",
-                          description: "the image itself — fetchable, on the source whitelist" },
-                        caption: { type: "string",
-                          description: "what it shows, in the atlas's voice; not the file name" },
-                        credit: { type: "string",
-                          description: "who made it and who holds it" },
-                        license: { type: "string",
-                          description: "the licence of THE WORK, not of the scan. A faithful reproduction of a public-domain image does not create a new right; if the holder claims terms of its own, put those in rights_note (Carta 3.2)" },
-                        source_url: { type: "string",
-                          description: "the record page a verifier can read, not the pixels" },
-                        date: { type: "string",
-                          description: "when the image was MADE. Required, because it is frequently NOT the date of the stage — say 1787 for a view of a place reached in 1769, and let the page admit the gap" },
-                        rights_note: { type: "string",
-                          description: "the holding institution's own terms, when they differ from the work's licence" },
-                      },
-                    },
-                  },
-                  claims: {
-                    type: "array",
-                    description: "A claim without evidence is refused outright (Carta 3.1).",
-                    items: {
-                      type: "object",
-                      required: ["text", "evidence"],
-                      properties: {
-                        text: { type: "string" },
-                        confidence: { type: "string" },
-                        evidence: {
-                          type: "object",
-                          required: ["excerpt", "source_url"],
-                          properties: {
-                            quote: { type: "string",
-                              description: "VERBATIM from the source, or omitted — never paraphrased (Carta 3.4)" },
-                            excerpt: { type: "string" },
-                            source_url: { type: "string",
-                              description: "a fetchable URL a verifier can re-read; PD or CC only (Carta 3.2)" },
-                            source_title: { type: "string" },
-                            license: { type: "string" },
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        } } } },
+        submission: DRAFT_SUBMISSION_SCHEMA } } },
   { name: "suggest_feature",
     annotations: {
       readOnlyHint: false,
@@ -1999,6 +2027,27 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         latitude: hit.lat, longitude: hit.lng,
         coord_provenance: `gazetteer:${hit.gazetteer}:${hit.provenance}`,
         matched: hit.matched, source_url: hit.source_url,
+      }, null, 2);
+    }
+    case "validate_draft": {
+      // Exactly what submit_draft's own gate check does, and nothing else in
+      // this case: no recordSubmission, no insertSubmission, no audit_log
+      // write. A submission id and an audit trail are what mark something as
+      // actually submitted; a dry run leaves neither behind, however many
+      // times it is called.
+      const fails = stage0(args.submission);
+      return JSON.stringify({
+        valid: fails.length === 0,
+        gate_failures: fails,
+        note: fails.length
+          ? "Fix every finding (each names the field and, where the field takes a fixed set of " +
+            "values, the allowed values) and call validate_draft again — this wrote nothing, so " +
+            "there is no submission to fix in place."
+          : "Passes the Stage-0 gate. This checked shape only: licences, whitelist domains, " +
+            "evidence_basis/confidence vocabulary, the injection screen. Deep source " +
+            "verification (does the quotation actually appear in the source) only happens " +
+            "after a real submit_draft. Nothing was written by this call — call submit_draft " +
+            "when ready.",
       }, null, 2);
     }
     case "submit_draft": {
