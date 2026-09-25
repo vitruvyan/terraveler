@@ -54,6 +54,30 @@ export interface Voyage {
   what_was_lost?: string | null;
 }
 
+/**
+ * Carta §3.5: "provenance recorded forever". One entry per publication that
+ * ever wrote to this voyage's bundle — the initial `new-voyage` publish and
+ * every `waypoint-enrichment` after it — never one block overwritten by the
+ * next. `ideator`/`scribe_model` are the submission's own declared meta;
+ * `carta_version` and `date` come from the approving verdict, not the
+ * submission's self-declared version (scripts/publish_submission.py's
+ * fetch_provenance() explains why). `waypoints` is the sorted list of seq
+ * numbers this publication wrote or touched — every one of them for a fresh
+ * new-voyage bundle, a subset for an enrichment. A bundle predating this
+ * mechanism, or authored outside the submission pipeline entirely, has no
+ * `provenance` field at all — absent, not empty, and never backfilled with
+ * a guess.
+ */
+export interface ProvenanceEntry {
+  submission_id: number;
+  type: "new-voyage" | "waypoint-enrichment";
+  ideator: string | null;
+  scribe_model: string | null;
+  carta_version: string | null;
+  date: string | null;
+  waypoints: number[];
+}
+
 export interface MediaItem {
   url: string;            // image URL (Wikimedia Commons / upload.wikimedia.org)
   caption: string;

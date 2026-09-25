@@ -1088,10 +1088,17 @@ export default function VoyageExperience({
                   </div>
                 )}
                 {/* The whole journal, as a plain readable page — the reader is
-                    already reading one entry; offer them all of them. */}
-                <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
-                  <Icon name="scroll" size={16} /> Read the whole log as text →
-                </a>
+                    already reading one entry; offer them all of them. And
+                    beside it, the provenance Carta §3.5 promises: who asked
+                    for this voyage and what drafted it. */}
+                <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16 }}>
+                  <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
+                    <Icon name="scroll" size={16} /> Read the whole log as text →
+                  </a>
+                  <a className="log-full-link" href={`/voyage/${voyage.slug}/attribution`}>
+                    <Icon name="quill" size={16} /> Who wrote this voyage →
+                  </a>
+                </div>
               </div>
             ) : (
               <>

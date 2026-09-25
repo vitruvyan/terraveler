@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
-import { ATLAS, isVoyageSlug, voyageLogPath } from "@/lib/voyages";
+import { ATLAS, isVoyageSlug, voyageLogPath, voyagePath } from "@/lib/voyages";
 import { CARTA_VERSION } from "@/lib/carta";
 import { type Bearer, type Scope, insufficientScope, unauthorized, verifyBearer } from "@/lib/oauth";
 import { createAgentAccount, ensureAgentForConnection } from "@/lib/agentIdentity";
@@ -2408,6 +2408,72 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // here: read the audit before appealing, and appeal only with a reason.
       const st = String(s[0].status);
       const directToDesk = ["idea", "feature-suggestion", "content-suggestion"].includes(String(s[0].type));
+
+      // A contributor who submitted work through submit_draft has had no way
+      // to learn where it ended up once it ships — get_submission_status is
+      // where they already check, so the public URL belongs here. Read-only:
+      // this never writes anything, only reports what scripts/
+      // publish_submission.py's record_publication() already recorded.
+      //
+      // Only a genuine 'publish'/'publish-forced' row in audit_log counts —
+      // never inferred from status='approved', which is a verdict, not a
+      // publication (the two are separate, manual steps: see main()'s own
+      // "deliberately not automatic" list). The slug is never taken from the
+      // submission's own free-text meta.target_voyage either; that only
+      // narrows which row to trust. It comes from what record_publication()
+      // itself was called with — submissions.target_voyage for a
+      // waypoint-enrichment (set by the same script, after it resolved and
+      // cross-checked the target), or the submission's own payload.voyage.slug
+      // for a new-voyage, exactly what to_bundle()/atlas_entry() publish
+      // under. A jsonb-path select rather than fetching the whole payload,
+      // since get_audit's own comment on why a draft's payload is never
+      // returned here applies just as much to a rejected draft's text.
+      const publishRow = [...audit].reverse()
+        .find((a: any) => a.action === "publish" || a.action === "publish-forced");
+      let publication: Record<string, unknown>;
+      if (!publishRow) {
+        const hint =
+          st === "approved"
+            ? " Approved, but publication is a separate, manual step the editorial desk still has to run."
+            : "";
+        publication = {
+          published: false, public_url: null,
+          note: `Not published yet (status: '${st}').${hint}`,
+        };
+      } else {
+        const type = String(s[0].type);
+        let slug: string | null = null;
+        if (type === "waypoint-enrichment" || type === "new-voyage") {
+          const slugRow = await sb("GET",
+            `submissions?id=eq.${submissionId}&select=target_voyage,new_voyage_slug:payload->voyage->>slug`);
+          slug = type === "waypoint-enrichment"
+            ? (slugRow[0]?.target_voyage ?? null)
+            : (slugRow[0]?.new_voyage_slug ?? null);
+        }
+        // isVoyageSlug checks ATLAS — the list the deployed site actually
+        // serves — not merely that the publish script ran. Committing the
+        // bundle, the ATLAS entry and deploying are the next, manual steps
+        // main()'s own printed instructions name; a submission can be
+        // 'published' in audit_log for a window before any of that has
+        // happened, and reporting a URL in that window is exactly the
+        // guessed-too-early link this tool must not hand out.
+        publication = (slug && isVoyageSlug(slug))
+          ? {
+              published: true,
+              public_url: `https://www.terraveler.com${voyagePath(slug)}`,
+              published_at: publishRow.created_at,
+              forced: publishRow.action === "publish-forced",
+            }
+          : {
+              published: true, public_url: null,
+              note: slug
+                ? `Recorded as published (audit_log) under slug '${slug}', but that voyage is not ` +
+                  `yet live on the site — the commit and deploy that follow a publish run are manual ` +
+                  `and have apparently not happened yet. Check back.`
+                : `Recorded as published (audit_log), but the target voyage could not be resolved ` +
+                  `from this submission's own record. Report this — it should not happen.`,
+            };
+      }
       const guidance: Record<string, string> = {
         submitted: "The instant gate has it. Nothing to do.",
         "peer-review": "Other Scribes are trying to refute it against its sources. " +
@@ -2472,6 +2538,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         audit,
         what_this_means: guidance[st] ?? "In progress.",
         workflow: { state: st, allowed_actions, blocked_actions, next_required_action },
+        publication,
         appeal: {
           available: appealAvailable,
           used: already,

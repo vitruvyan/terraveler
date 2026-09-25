@@ -310,7 +310,8 @@ export default async function VoyageLog({
           Published under{" "}
           <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="license noreferrer" target="_blank">CC BY-SA 4.0</a>.
           Sources keep their own open licences. See{" "}
-          <a href="/magna-carta">the Magna Carta of the Seas</a> for how this was verified.
+          <a href="/magna-carta">the Magna Carta of the Seas</a> for how this was verified, or{" "}
+          <a href={`/voyage/${slug}/attribution`}>who wrote this voyage</a>.
         </p>
       </main>
       <Notebook voyageTitle={voyage.title} />

@@ -1,6 +1,6 @@
 import { POSTGREST_URL, postgrestConfigured } from "./backendConfig";
 import { ATLAS, isVoyageSlug, type VoyageSlug } from "./voyages";
-import type { Navigator, SpaceWaypoint, Voyage, Waypoint } from "./types";
+import type { Navigator, ProvenanceEntry, SpaceWaypoint, Voyage, Waypoint } from "./types";
 import bougainville from "@/data/bougainville.json";
 import laperouse from "@/data/laperouse.json";
 import voyager2 from "@/data/voyager2.json";
@@ -85,6 +85,29 @@ export function pickRandomVoyageSlug(slugs: readonly string[] = knownVoyages()):
 function fromJson(slug: string): VoyageBundle {
   const bundle = isVoyageSlug(slug) ? LOCAL[slug] : undefined;
   return (bundle ?? bougainville) as VoyageBundle;
+}
+
+/**
+ * Carta §3.5's provenance chain, read straight from the checked-in bundle —
+ * never through getVoyageBundle()'s Postgres path. `voyages`/`waypoints` in
+ * Postgres mirror what scripts/load_bundles.py copies from data/*.json for
+ * fast reads on the map; "provenance" is not one of the columns it copies,
+ * so the JSON bundle is the only place this ever lived and stays the source
+ * of truth here regardless of which plane getVoyageBundle() served from.
+ *
+ * Normalizes the two legacy shapes a bundle may still carry — a lone object
+ * (every bundle published between the mechanism's introduction and the fix
+ * that made this a list) or nothing at all (bundles that predate §3.5, or
+ * were authored outside the submission pipeline) — into the current list
+ * shape, mirroring scripts/publish_submission.py's normalize_provenance().
+ * An absent field returns an empty list: nothing to show, not an error.
+ */
+export function getVoyageProvenance(slug: string): ProvenanceEntry[] {
+  const bundle = isVoyageSlug(slug) ? LOCAL[slug] : undefined;
+  const provenance = (bundle as { provenance?: unknown } | undefined)?.provenance;
+  if (provenance == null) return [];
+  if (Array.isArray(provenance)) return provenance as ProvenanceEntry[];
+  return [provenance as ProvenanceEntry];
 }
 
 async function postgrestRows(table: string, params: Record<string, string>): Promise<any[]> {

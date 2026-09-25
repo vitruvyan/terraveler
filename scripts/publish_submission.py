@@ -194,6 +194,42 @@ def fetch_provenance(submission_id: int, meta: dict) -> dict:
     }
 
 
+def normalize_provenance(existing) -> list:
+    """A bundle's "provenance" field has worn three shapes across this
+    project's history: absent entirely (everything published before
+    6457eab, and the handful — Bougainville among them — authored outside
+    this script altogether), a single object (every to_bundle() bundle from
+    6457eab until this fix, which is what a submission's OWN publication
+    overwrote), and now a list, one entry per publication that ever touched
+    the bundle. This is the one place that reconciles all three into the
+    list shape, so a caller never has to re-learn the history."""
+    if existing is None:
+        return []
+    if isinstance(existing, list):
+        return existing
+    return [existing]
+
+
+def provenance_entry(provenance: dict, submission_type: str, waypoints: list) -> dict:
+    """One publication's record, Carta §3.5 plus what it actually touched.
+    `waypoints` is the sorted list of seq numbers this publication wrote or
+    created — every one of them for a new-voyage bundle (there is nothing
+    else yet), a subset for a waypoint-enrichment. Kept as its own function
+    so the shape is defined once rather than duplicated between to_bundle()
+    and publish_waypoint_enrichment()."""
+    return {**provenance, "type": submission_type, "waypoints": waypoints}
+
+
+def append_provenance(bundle: dict, entry: dict) -> list:
+    """The accumulation itself: whatever the bundle already carries (in
+    any of the three shapes normalize_provenance() reconciles), plus this
+    publication's own entry. Additive always — a later publication's
+    provenance is recorded beside the earlier ones, never in place of them,
+    which is what §3.5's "recorded forever" actually requires once a voyage
+    can be published into more than once."""
+    return normalize_provenance(bundle.get("provenance")) + [entry]
+
+
 def record_publication(submission_id: int, slug: str, carta_version: str,
                        approved: bool) -> None:
     """Carta §3.5: the audit trail is where provenance lives forever, and
@@ -305,7 +341,11 @@ def to_bundle(payload: dict, spans: dict, provenance: dict) -> dict:
             # traceable back to the submission that carried it all. Additive at
             # the top level, next to voyage/waypoints rather than folded into
             # either — it describes the bundle's origin, not the voyage itself.
-            "provenance": provenance}
+            # A list from the start, of one entry, because a voyage is never
+            # published only once: publish_waypoint_enrichment() appends to
+            # this same list rather than overwriting it (see append_provenance).
+            "provenance": [provenance_entry(provenance, "new-voyage",
+                                             [w["seq"] for w in out_wps])]}
 
 
 def atlas_entry(bundle: dict, blurb: str, profile: str) -> str:
@@ -865,6 +905,16 @@ def publish_waypoint_enrichment(args, row: dict, meta: dict, spans: dict, proven
     enriched = sum(1 for _, _, is_new in matches if not is_new)
     appended = sum(1 for _, _, is_new in matches if is_new)
 
+    # The bug this fix exists for: apply_waypoint_enrichment() only ever
+    # touched "waypoints", so this publication's own provenance — the whole
+    # reason §3.5 exists — was computed above and then silently never written
+    # anywhere but audit_log. Recorded here as one entry alongside whatever
+    # the bundle already carried (a list, a lone pre-fix object, or nothing),
+    # never in its place.
+    touched_seqs = sorted({out_wp["seq"] for _, out_wp, _ in matches})
+    new_bundle["provenance"] = append_provenance(
+        bundle, provenance_entry(provenance, "waypoint-enrichment", touched_seqs))
+
     print(f"submission {args.submission_id}  status={row['status']}  type=waypoint-enrichment")
     print(f"  target    {target_slug}")
     print(f"  bundle    {path.relative_to(ROOT)}")
@@ -873,7 +923,9 @@ def publish_waypoint_enrichment(args, row: dict, meta: dict, spans: dict, proven
     for note in notes:
         print(note)
     print(f"  provenance ideator={provenance['ideator']!r} "
-          f"scribe_model={provenance['scribe_model']!r} carta={provenance['carta_version']!r}")
+          f"scribe_model={provenance['scribe_model']!r} carta={provenance['carta_version']!r} "
+          f"waypoints={touched_seqs} "
+          f"({len(normalize_provenance(bundle.get('provenance')))} prior publication(s) on record)")
     print(f"  ATLAS     unchanged — {target_slug} already has an entry")
 
     if args.dry_run:
