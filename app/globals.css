@@ -3764,6 +3764,52 @@ main.prose {
 }
 .space .log-full-link { color: #d8b25c; }
 
+/* --- Voyage attribution: the provenance chain, Carta §3.5 made visible ---
+   One entry per publication, oldest first. The type label and the waypoints
+   line are chrome describing the record (voice 4, the institution); the
+   facts themselves — who, what model, which Carta version, when, which
+   submission — are the machine speaking (voice 3), same discipline as a
+   plate's credit block below. */
+.tv-attribution-entry {
+  border-left: 2px solid var(--parchment-deep);
+  padding-left: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.tv-attribution-type {
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: var(--space-2);
+}
+.tv-attribution-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: var(--step--2);
+}
+.tv-attribution-facts dt {
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--step--3);
+  margin: 0 0 2px;
+}
+.tv-attribution-facts dd {
+  color: var(--ink-soft);
+  margin: 0;
+  word-break: break-word;
+}
+.tv-attribution-waypoints {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: var(--step--2);
+  color: var(--brass-text);
+}
+
 /* --- Atlas search: autocomplete + the "not yet in the atlas" funnel --- */
 .atlas-search { display: block; }
 .atlas-search-input { width: 100%; margin-bottom: 8px; }

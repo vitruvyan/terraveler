@@ -443,5 +443,25 @@
       "media_url": null,
       "media": null
     }
+  ],
+  "provenance": [
+    {
+      "ideator": "vitruvyan",
+      "scribe_model": "openrouter/deepseek/deepseek-v4.1-flash",
+      "carta_version": "0.7",
+      "date": "2026-09-24T20:14:02.851709+00:00",
+      "submission_id": 97,
+      "type": "waypoint-enrichment",
+      "waypoints": [
+        6,
+        7,
+        12,
+        15,
+        16,
+        17,
+        18,
+        19
+      ]
+    }
   ]
 }

@@ -290,6 +290,72 @@ class ApplyWaypointEnrichment(unittest.TestCase):
         self.assertEqual(kept, original_seqs_and_ids)
 
 
+class NormalizeProvenance(unittest.TestCase):
+    """The three shapes "provenance" has actually held in a checked-in bundle,
+    reconciled to one. See the function's own docstring for why there are
+    three rather than two."""
+
+    def test_absent_becomes_an_empty_list(self):
+        self.assertEqual(P.normalize_provenance(None), [])
+
+    def test_a_lone_object_from_before_this_fix_becomes_a_one_item_list(self):
+        block = {"ideator": "x", "submission_id": 24}
+        self.assertEqual(P.normalize_provenance(block), [block])
+
+    def test_a_list_passes_through_unchanged(self):
+        entries = [{"submission_id": 1}, {"submission_id": 2}]
+        self.assertEqual(P.normalize_provenance(entries), entries)
+
+
+class ProvenanceAccumulation(unittest.TestCase):
+    """Pins the bug this whole fix exists for: submission #97 (a
+    waypoint-enrichment) had its provenance computed and printed, then
+    dropped on the floor — apply_waypoint_enrichment() only ever touched
+    "waypoints", and nothing wrote a "provenance" key into the merged
+    bundle at all. This exercises the same append_provenance() +
+    provenance_entry() calls publish_waypoint_enrichment() makes, against
+    the real BUNDLE/SUBMISSION_97_LIKE fixtures above."""
+
+    def test_a_bundle_with_no_prior_provenance_gets_a_one_entry_list(self):
+        # BUNDLE, like the real bougainville.json before this fix, carries no
+        # "provenance" key at all — it was authored outside the submission
+        # pipeline, same as Bougainville's own original bundle.
+        bundle = {k: v for k, v in BUNDLE.items() if k != "provenance"}
+        provenance = {"ideator": "vitruvyan", "scribe_model": "deepseek", "carta_version": "0.7",
+                      "date": "2026-09-24T00:00:00Z", "submission_id": 97}
+        _, _, matches = P.apply_waypoint_enrichment(bundle, SUBMISSION_97_LIKE, spans={})
+        touched = sorted({out_wp["seq"] for _, out_wp, _ in matches})
+        entry = P.provenance_entry(provenance, "waypoint-enrichment", touched)
+        result = P.append_provenance(bundle, entry)
+        self.assertEqual(result, [{**provenance, "type": "waypoint-enrichment", "waypoints": touched}])
+        # Same merge ApplyWaypointEnrichment.test_full_submission_97_shape_...
+        # exercises: Tahiti (bundle seq 6) and Saint-Malo (bundle seq 15) are
+        # enriched, Paris and Fort Dauphin are appended as bundle seq 16/17.
+        # Bundle seq 1 (Brest) matches nothing and stays out of the list.
+        self.assertEqual(touched, [6, 15, 16, 17])
+
+    def test_a_second_publication_is_appended_beside_the_first_not_over_it(self):
+        first = {"ideator": "alice", "submission_id": 24, "type": "new-voyage", "waypoints": [1, 6, 15]}
+        bundle = {**BUNDLE, "provenance": [first]}
+        second = P.provenance_entry(
+            {"ideator": "vitruvyan", "submission_id": 97, "carta_version": "0.7", "date": None},
+            "waypoint-enrichment", [6, 16])
+        result = P.append_provenance(bundle, second)
+        self.assertEqual(result, [first, second])
+        # Alice's original authorship is still the first entry, unshortened —
+        # this is the data-loss the bug report was actually worried about.
+        self.assertEqual(result[0]["ideator"], "alice")
+
+    def test_a_pre_fix_lone_object_is_folded_into_the_list_rather_than_replaced(self):
+        # The shape every bundle published between 6457eab and this fix was
+        # left in: a single provenance object, not yet a list.
+        legacy = {"ideator": "alice", "submission_id": 24}
+        bundle = {**BUNDLE, "provenance": legacy}
+        second = P.provenance_entry({"ideator": "bob", "submission_id": 97}, "waypoint-enrichment", [6])
+        result = P.append_provenance(bundle, second)
+        self.assertEqual(result, [legacy, second])
+
+
 class ResolveDataFile(unittest.TestCase):
     """Read-only against the checked-out repo — no writes, just the mapping."""
 

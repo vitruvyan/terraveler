@@ -584,11 +584,40 @@
       "media": []
     }
   ],
-  "provenance": {
-    "ideator": "terraveler-implementer",
-    "scribe_model": "claude-sonnet-5",
-    "carta_version": "0.6",
-    "date": "2026-07-30T20:36:05.761690+00:00",
-    "submission_id": 26
-  }
+  "provenance": [
+    {
+      "ideator": "terraveler-implementer",
+      "scribe_model": "claude-sonnet-5",
+      "carta_version": "0.6",
+      "date": "2026-07-30T20:36:05.761690+00:00",
+      "submission_id": 26,
+      "type": "new-voyage",
+      "waypoints": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24
+      ]
+    }
+  ]
 }
