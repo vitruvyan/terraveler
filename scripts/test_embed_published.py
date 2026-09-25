@@ -99,6 +99,59 @@ class SpanDocs(unittest.TestCase):
         self.assertEqual(docs, [])
 
 
+BUNDLE = {
+    "navigator": {"name": "Bougainville"},
+    "voyage": {"slug": "boudeuse-1766", "title": "The First French Circumnavigation",
+               "summary": "A short account.", "what_was_lost": "The captain's own log."},
+    "waypoints": [
+        {"seq": 1, "place_historical": "Brest", "place_modern": "Brest, France",
+         "event": "Start of the expedition.",
+         "diary_excerpt": "The 5th at noon we got under sail.",
+         "diary_source_url": "https://example/1"},
+        {"seq": 6, "place_historical": "Taïti", "place_modern": "Tahiti, French Polynesia",
+         "event": "Bougainville claimed the island for France."},  # no verified excerpt
+    ],
+}
+
+
+class BundleDocs(unittest.TestCase):
+    """bundle_docs() is what scripts/publish_submission.py's run_embed() calls
+    after a real publish — including a waypoint-enrichment publish, whose own
+    submission payload only ever lists a fraction of the voyage. These tests
+    pin that it reads the full, merged bundle instead of any partial
+    payload, so a waypoint-enrichment embed never has the chance to wipe the
+    rest of the voyage's rows down to just what one submission touched."""
+
+    def test_header_and_every_waypoint_with_text_produce_a_doc(self):
+        docs = E.bundle_docs("boudeuse-1766", BUNDLE)
+        self.assertEqual(docs[0]["chunk_index"], 0)
+        self.assertIn("The First French Circumnavigation", docs[0]["content"])
+        titles = [d["title"] for d in docs]
+        self.assertTrue(any(f"{E.WAYPOINT_MARK}1" in t for t in titles))
+        self.assertTrue(any(f"{E.WAYPOINT_MARK}6" in t for t in titles))
+
+    def test_only_waypoints_with_a_diary_excerpt_get_a_span_doc(self):
+        docs = E.bundle_docs("boudeuse-1766", BUNDLE)
+        span_docs = [d for d in docs if d["title"].endswith(E.SPAN_MARK)]
+        self.assertEqual(len(span_docs), 1)
+        self.assertEqual(span_docs[0]["content"], "The 5th at noon we got under sail.")
+        self.assertEqual(span_docs[0]["source_url"], "https://example/1")
+        self.assertIn("wp1.claim1", span_docs[0]["title"])
+
+    def test_uses_the_waypoints_own_seq_not_its_list_position(self):
+        # Waypoint 6 is the second item in the list but must be titled by
+        # its seq (6), not its index (2) — otherwise re-embedding after an
+        # enrichment that appends waypoint 16..19 would collide with
+        # whatever the list position happens to be.
+        docs = E.bundle_docs("boudeuse-1766", BUNDLE)
+        titles = [d["title"] for d in docs if E.WAYPOINT_MARK in d["title"]]
+        self.assertTrue(any(t.endswith(f"{E.WAYPOINT_MARK}6") for t in titles))
+
+    def test_a_bundle_with_no_narrative_at_all_yields_no_docs(self):
+        bare = {"voyage": {}, "waypoints": [{"seq": 1}]}
+        self.assertEqual(E.bundle_docs("x", bare), [])
+
+
 class Ownership(unittest.TestCase):
     """upsert() shares rag_docs with ingest/pipeline_native.py's bulk
     ingestion. These titles are the entire contract between them: change one
