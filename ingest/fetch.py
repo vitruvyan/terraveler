@@ -4,12 +4,13 @@ Adapted from the original Gemini ingestion script — same sources, same
 verbatim-safe policy (only PD/CC; copyrighted secondary sites are never
 ingested). Embedding + storage are handled downstream by the Axis nodes.
 """
-import html
 import re
 import json
 import urllib.request
 import urllib.parse
 import urllib.error
+
+from html_text import visible_text as _visible_text
 
 UA = "terraveler-rag/2.0 (contact: dbaldoni@gmail.com)"
 
@@ -55,39 +56,22 @@ def fetch_archive_text(url):
     return get_text(url).strip()
 
 
-_WS_STYLE_SCRIPT_RE = re.compile(r"<(style|script)\b[^>]*>.*?</\1>", re.I | re.S)
-_WS_BR_RE = re.compile(r"<br\s*/?>", re.I)
-_WS_BLOCK_CLOSE_RE = re.compile(r"</(p|div|li|h[1-6]|tr|table)\s*>", re.I)
-_WS_TAG_RE = re.compile(r"<[^>]+>")
-
-
 def _wikisource_render_to_text(raw_html: str) -> str:
     """Turn Wikisource's rendered page HTML (from `action=parse&prop=text`,
     which resolves the `<pages index=... />` transclusions that
     `prop=extracts` never follows) into clean narrative text.
 
-    Order matters: `<style>`/`<script>` blocks are stripped WHOLESALE
-    first — a naive tag-strip alone leaves their CSS/JS behind as literal
-    text (e.g. ".mw-parser-output .wst-header..."), which would otherwise
-    get embedded as if it were prose. Block-level closing tags become
-    paragraph breaks before the remaining markup is stripped, so
-    downstream `chunk()` still sees real paragraphs instead of one giant
-    blob. Zero-width spaces (U+200B) are MediaWiki's invisible
-    page-boundary markers (`class="pagenum-inner ws-noexport"`) — they
-    carry no narrative meaning and are dropped outright. Everything else
-    (nav arrows, {{header}} title/notes chrome) is left alone: it wasn't
-    unambiguous enough in testing to strip with a regex without risking
-    losing real text.
+    The cleaning itself now lives in `html_text.visible_text` — shared with
+    `verbatim.py::source_text`, which needs the same "strip markup down to
+    what a reader would see" reduction for a different reason (checking a
+    quotation against an HTML source safely, not just making one readable).
+    Was a private, module-local regex pipeline until that second use case
+    needed the exact same machine, hardened further; see `html_text.py`'s
+    module docstring for what changed and why. Zero-width spaces (U+200B,
+    MediaWiki's invisible page-boundary markers) and entity decoding are
+    handled inside `visible_text` now too.
     """
-    text = _WS_STYLE_SCRIPT_RE.sub("", raw_html)
-    text = _WS_BR_RE.sub("\n", text)
-    text = _WS_BLOCK_CLOSE_RE.sub("\n\n", text)
-    text = _WS_TAG_RE.sub("", text)
-    text = html.unescape(text)
-    text = text.replace("​", "")
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r"\n[ \t]*(\n[ \t]*)+", "\n\n", text)
-    return text.strip()
+    return _visible_text(raw_html)
 
 
 def fetch_mediawiki_extract(host, title):

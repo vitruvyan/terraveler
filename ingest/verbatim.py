@@ -8,6 +8,9 @@ it audits is not a gate.
 
 Imports nothing outside the standard library on purpose — curator.py must run
 without psycopg2 or the AXIS package, which is why the duplication existed.
+`html_text` (below) is a sibling module in this same package with the same
+constraint — stdlib-only, no psycopg2, no AXIS — so pulling it in does not
+reopen the dependency the duplication was created to avoid.
 
 The contract, in one line: **a scribe chooses which passage matters; the source
 says what it contains.** Matching is deliberately generous, because a scan and a
@@ -21,6 +24,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
+
+from html_text import visible_text as _visible_text
 
 
 def _fold_punct(ch):
@@ -253,31 +258,50 @@ class UnverifiableSource(Exception):
 def source_text(body: str, content_type: str = "") -> str:
     """The text a quotation may be checked against.
 
-    Plain text passes through untouched. HTML is refused.
+    Plain text passes through untouched. HTML is reduced to what a reader
+    would actually see, by `html_text.visible_text` — NOT half-parsed by a
+    bare `<[^>]+>` regex, which is a different thing and was refused
+    outright for a long time because of it: stripping markup that way looks
+    like it works and does not. An unclosed <script>, a <template>, a
+    hidden element, a crafted HTML comment and a quoted attribute containing
+    its own '>' all survived it, so a quotation invisible on the page could
+    verify as though a reader had seen it — an external review demonstrated
+    five bypasses in a row. `visible_text()` closes each of those five
+    specifically (see its module docstring for how) rather than trying to
+    be a general HTML-to-text converter; anything it cannot classify with
+    confidence is left in, on the theory that extra haystack text costs
+    nothing (locate_in_source still needs an exact span match) while a
+    dropped one costs a genuine citation its verification.
 
-    Both halves of that were learned the hard way. Stripping markup with a
-    regex looks like it works and does not: an unclosed <script>, a <template>,
-    a hidden element, a crafted comment and a quoted attribute all survive it,
-    so a quotation invisible on the page verifies as though a reader could see
-    it — an external review demonstrated five bypasses in a row. And deciding
-    "this is markup" by looking for a "<" destroys plain text: eight stray
-    angle brackets in an OCR'd 1929 book cost 318,658 characters, forty per
-    cent of the volume, after which four genuine quotations were reported as
-    "fabricated or altered".
+    Refusing every HTML source outright, which this function used to do
+    unconditionally, was itself a defect: Wikipedia and Wikisource — the
+    atlas's two largest live sources — are served as `text/html` with no
+    plain-text alternative, so the old rule rejected genuine, hand-verified
+    quotations for no reason but the Content-Type header (submission #101:
+    a real Verrazzano passage from a Wikisource chapter, refused only
+    because the page arrived as HTML).
 
-    So neither guess is made. The Content-Type decides, and an HTML source is
-    declared unverifiable rather than half-parsed. Nothing is lost by this:
-    every source in the atlas is a Gutenberg .txt or an archive.org _djvu.txt,
-    which is what a citable edition looks like anyway. If an HTML source ever
-    matters, it needs a real parser and a real renderer, not this."""
+    And deciding "this is markup" by looking for a bare "<" — the OTHER
+    guess this function has always refused to make — destroys plain text:
+    eight stray angle brackets in an OCR'd 1929 book cost 318,658
+    characters, forty per cent of the volume, after which four genuine
+    quotations were reported as "fabricated or altered". So plain text
+    (empty Content-Type included) is still returned completely untouched,
+    and any OTHER markup family — a generic `application/xml` feed, say,
+    that is not also HTML — is still declared unverifiable rather than
+    guessed at: HTML is the one format this module now knows how to reduce
+    to reader-visible text, and that is the only guess being widened."""
     ct = content_type.lower()
-    if "html" in ct or "xml" in ct:
+    if "html" in ct:
+        # Also catches application/xhtml+xml ("xhtml" contains "html").
+        return _visible_text(body)
+    if "xml" in ct:
         raise UnverifiableSource(
             "the source is served as " + (content_type or "markup") + ". A quotation "
-            "cannot be verified against markup: text hidden in a script, a template, "
-            "an attribute or a comment is not on the page a reader opens, and no "
-            "regular expression can tell the difference. Cite the plain-text edition "
-            "— for Project Gutenberg the .txt, for archive.org the _djvu.txt.")
+            "cannot be verified against markup this module has no renderer for — only "
+            "HTML is reduced to reader-visible text today, and this is not that. Cite "
+            "the plain-text edition — for Project Gutenberg the .txt, for archive.org "
+            "the _djvu.txt.")
     return body
 
 
