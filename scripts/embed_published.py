@@ -153,6 +153,58 @@ def span_docs(slug: str, payload: dict, spans: dict) -> list[dict]:
     return docs
 
 
+def bundle_docs(slug: str, bundle: dict) -> list[dict]:
+    """The same rows narrative_docs()+span_docs() would produce, built from a
+    published bundle (data/<file>.json) instead of a raw submission payload.
+
+    Why this exists rather than reusing narrative_docs/span_docs directly: a
+    waypoint-enrichment submission's own payload only ever lists the
+    waypoints IT touches or adds — a fraction of the voyage, numbered in a
+    scope of its own (see scripts/publish_submission.py's
+    apply_waypoint_enrichment) — not the full, merged set the bundle now
+    holds. Handing that partial payload to upsert() would still delete every
+    existing waypoint/span row for the slug (its delete is unconditional on
+    voyage_slug) and replace them with only the submitted fraction, silently
+    erasing the rest of the voyage's embeddings. Reading from the bundle
+    instead means every call embeds the voyage exactly as published, in full,
+    regardless of which submission last touched it or how much it changed —
+    the same idempotence narrative_docs/span_docs already promised, just
+    measured against the file on disk rather than the payload that produced
+    it. narrative_docs/span_docs stay as they are (and stay covered by their
+    own tests below) for embed_published.py's original, standalone use
+    against a new-voyage payload.
+    """
+    voyage = bundle.get("voyage") or {}
+    docs = []
+    header = "\n\n".join(p for p in (
+        voyage.get("title"),
+        voyage.get("summary"),
+        f"What was lost: {voyage.get('what_was_lost')}" if voyage.get("what_was_lost") else None,
+    ) if p)
+    if header.strip():
+        docs.append({"voyage_slug": slug, "type": "text", "title": voyage.get("title") or slug,
+                     "content": header, "source_url": None, "license": NARRATIVE_LICENSE,
+                     "credit": None, "media_url": None, "chunk_index": 0})
+    for i, wp in enumerate(bundle.get("waypoints") or [], 1):
+        seq = wp.get("seq", i)
+        pieces = [p for p in (wp.get("place_historical"), wp.get("place_modern"), wp.get("event")) if p]
+        text = "\n".join(pieces)
+        if text.strip():
+            title = f"{voyage.get('title') or slug}{WAYPOINT_MARK}{seq}"
+            docs.append({"voyage_slug": slug, "type": "text", "title": title,
+                         "content": text, "source_url": None, "license": NARRATIVE_LICENSE,
+                         "credit": None, "media_url": None, "chunk_index": i})
+        excerpt = wp.get("diary_excerpt")
+        if excerpt:
+            url = wp.get("diary_source_url")
+            docs.append({"voyage_slug": slug, "type": "text",
+                         "title": f"wp{seq}.claim1{SPAN_MARK}",
+                         "content": excerpt, "source_url": url,
+                         "license": (license_for(url) if url else None),
+                         "credit": None, "media_url": None, "chunk_index": None})
+    return docs
+
+
 def embed(docs: list[dict]) -> list[dict]:
     out = []
     for start in range(0, len(docs), BATCH):

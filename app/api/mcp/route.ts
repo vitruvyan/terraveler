@@ -83,6 +83,184 @@ async function rpc(name: string, args: Record<string, unknown>): Promise<any> {
   return text ? JSON.parse(text) : null;
 }
 
+// ----------------------------------------------------------- gap -> source
+/**
+ * list_gaps' related_sources field, built entirely from a convention already
+ * present in real governance data: a human or agent proposing/approving a
+ * source writes "Gap ID <n>" in its `reason` when that source specifically
+ * answers gap <n> (see source_policy_decisions.id=18, approving the 1916
+ * Hall translation, whose reason reads "...directly resolves the issues in
+ * Gap ID 8" — mirrored in source_proposal_intents.id=9 for the same gap).
+ *
+ * This is MECHANICAL TEXT MATCHING ONLY — a regex over `reason`, word-bounded
+ * so "gap 8" never matches "gap 81" — and never a semantic/fuzzy guess at
+ * relevance. A gap with no explicit "Gap ID <n>" reference anywhere gets an
+ * empty array: a declared "no known link", not a suppressed field. Do not
+ * extend this with title/keyword similarity — that is a different, less
+ * certain kind of link and belongs in its own reviewed phase.
+ */
+const gapRefPattern = (gapId: number) =>
+  new RegExp(`\\bgap[\\s_-]*(?:id)?[\\s_-]*#?[\\s_-]*0*${gapId}\\b`, "i");
+
+/** Resolve a policy decision's or proposal's subject (it is always exactly
+ *  one of endpoint/collection/proposal, per source_policy_decisions' own
+ *  check constraint) down to a host pattern, a collection name and a url —
+ *  whichever of those the chain of foreign keys actually reaches. Read-only,
+ *  same as everything else in this function; never writes. */
+async function resolveSourceSubject(subject: {
+  endpoint_id?: number | null; collection_id?: number | null; proposal_id?: number | null;
+}): Promise<{ endpoint: string | null; collection: string | null; url: string | null }> {
+  let endpointId = subject.endpoint_id ?? null;
+  let collectionId = subject.collection_id ?? null;
+  let collectionName: string | null = null;
+  let url: string | null = null;
+
+  if (subject.proposal_id != null) {
+    const rows = await sb("GET",
+      `source_proposals?id=eq.${subject.proposal_id}&select=target_url,endpoint_id,collection_id`);
+    const p = rows?.[0];
+    if (p) {
+      url = p.target_url ?? null;
+      endpointId = endpointId ?? p.endpoint_id ?? null;
+      collectionId = collectionId ?? p.collection_id ?? null;
+    }
+  }
+  if (collectionId != null) {
+    const rows = await sb("GET", `source_collections?id=eq.${collectionId}&select=name,endpoint_id`);
+    const c = rows?.[0];
+    if (c) { collectionName = c.name; endpointId = endpointId ?? c.endpoint_id ?? null; }
+  }
+  let endpointHost: string | null = null;
+  if (endpointId != null) {
+    const rows = await sb("GET", `source_endpoints?id=eq.${endpointId}&select=host_pattern`);
+    endpointHost = rows?.[0]?.host_pattern ?? null;
+  }
+  return { endpoint: endpointHost, collection: collectionName, url };
+}
+
+/** For every open gap id, the set of governance records that mechanically
+ *  name it via "Gap ID <n>" — see gapRefPattern above. Fetches the (small)
+ *  governance decision/intent tables once, then matches per gap in memory;
+ *  subject resolution is memoized so a source referenced from more than one
+ *  gap, or found via both tables, is only looked up once. */
+async function relatedSourcesForGaps(gapIds: number[]): Promise<Map<number, any[]>> {
+  const out = new Map<number, any[]>(gapIds.map((id) => [id, []]));
+  if (gapIds.length === 0) return out;
+
+  const [decisions, intents] = await Promise.all([
+    sb("GET", "source_policy_decisions?select=id,reason,decision_outcome,endpoint_id,collection_id,proposal_id"),
+    sb("GET", "source_proposal_intents?select=id,reason,proposal_id"),
+  ]);
+
+  const subjectCache = new Map<string, Promise<{ endpoint: string | null; collection: string | null; url: string | null }>>();
+  const cachedResolve = (subject: { endpoint_id?: number | null; collection_id?: number | null; proposal_id?: number | null }) => {
+    const key = `${subject.endpoint_id ?? ""}|${subject.collection_id ?? ""}|${subject.proposal_id ?? ""}`;
+    if (!subjectCache.has(key)) subjectCache.set(key, resolveSourceSubject(subject));
+    return subjectCache.get(key)!;
+  };
+
+  for (const gapId of gapIds) {
+    const re = gapRefPattern(gapId);
+    const matches: any[] = [];
+
+    for (const d of (decisions ?? [])) {
+      if (!d.reason || !re.test(d.reason)) continue;
+      const { endpoint, collection, url } = await cachedResolve(d);
+      matches.push({
+        via: "source_policy_decisions", record_id: d.id, decision_outcome: d.decision_outcome,
+        endpoint, collection, url, reason: d.reason,
+      });
+    }
+    for (const it of (intents ?? [])) {
+      if (!it.reason || !re.test(it.reason)) continue;
+      const { endpoint, collection, url } = await cachedResolve(
+        { proposal_id: it.proposal_id });
+      matches.push({
+        via: "source_proposal_intents", record_id: it.id, proposal_id: it.proposal_id,
+        endpoint, collection, url, reason: it.reason,
+      });
+    }
+    out.set(gapId, matches);
+  }
+  return out;
+}
+
+// -------------------------------------------------------------- geocoding
+/**
+ * TypeScript port of ingest/oculus.py::geocode for the agent-facing MCP
+ * surface — the Python original is operator-side only, unreachable from an
+ * agent, and stays untouched (this is a new, parallel path). Same two-stage
+ * lookup and the same refusal to fabricate: Wikidata's P625 first (citable
+ * QID), Nominatim/OSM as fallback, `null` when neither resolves. The two
+ * implementations are not called into one another — no agent-reachable path
+ * to the operator-side Python process exists — so keep them in step by hand
+ * if this policy ever changes.
+ */
+const GEOCODE_UA = "terraveler-mcp/1.0 (contact: dbaldoni@gmail.com)";
+
+async function geocodeFetchJson(url: string): Promise<any> {
+  const r = await fetch(url, { headers: { "User-Agent": GEOCODE_UA, Accept: "application/json" } });
+  if (!r.ok) throw new Error(`geocode fetch ${r.status}`);
+  return r.json();
+}
+
+type GeocodeHit = {
+  lat: number; lng: number; gazetteer: "wikidata" | "nominatim"; provenance: string;
+  matched: string; source_url: string | null;
+};
+
+async function geocodePlace(place: string): Promise<GeocodeHit | null> {
+  const q = (place ?? "").trim();
+  if (!q) return null;
+
+  // 1) Wikidata: search the entity, read its P625 coordinate.
+  try {
+    const search = await geocodeFetchJson(
+      `https://www.wikidata.org/w/api.php?${new URLSearchParams({
+        action: "wbsearchentities", search: q, language: "en", format: "json", limit: "1", type: "item",
+      })}`);
+    const hit = search?.search?.[0];
+    if (hit?.id) {
+      const ent = await geocodeFetchJson(`https://www.wikidata.org/wiki/Special:EntityData/${hit.id}.json`);
+      const claims = ent?.entities?.[hit.id]?.claims ?? {};
+      const p625 = claims.P625?.[0]?.mainsnak?.datavalue?.value;
+      if (p625 && typeof p625.latitude === "number" && typeof p625.longitude === "number") {
+        return {
+          lat: Math.round(p625.latitude * 1e5) / 1e5,
+          lng: Math.round(p625.longitude * 1e5) / 1e5,
+          gazetteer: "wikidata",
+          provenance: `wikidata:${hit.id}`,
+          matched: hit.label ?? q,
+          source_url: `https://www.wikidata.org/wiki/${hit.id}`,
+        };
+      }
+    }
+  } catch {
+    // fall through to Nominatim, same as the Python original
+  }
+
+  // 2) Nominatim / OpenStreetMap fallback.
+  try {
+    const rows = await geocodeFetchJson(
+      `https://nominatim.openstreetmap.org/search?${new URLSearchParams({ q, format: "json", limit: "1" })}`);
+    const hit = rows?.[0];
+    if (hit) {
+      return {
+        lat: Math.round(parseFloat(hit.lat) * 1e5) / 1e5,
+        lng: Math.round(parseFloat(hit.lon) * 1e5) / 1e5,
+        gazetteer: "nominatim",
+        provenance: "nominatim",
+        matched: String(hit.display_name ?? q).slice(0, 60),
+        source_url: null,
+      };
+    }
+  } catch {
+    // unanchored — caller must not invent a coordinate
+  }
+
+  return null; // unanchored -> caller must mark confidence=reconstructed, not guess
+}
+
 const keyHash = (key: string) => createHash("sha256").update(key).digest("hex");
 
 /** Authenticate, check the daily quota, insert the submission and audit it —
@@ -498,8 +676,9 @@ const AUTH_PROPS = {
  * is how a read-only queue listing got refused by a client's own safety layer
  * before the request ever left the machine.
  *
- * `openWorldHint` is false throughout: every tool here touches Terraveler's own
- * atlas and nothing else.
+ * `openWorldHint` is false throughout, with one exception: every tool here
+ * touches Terraveler's own atlas and nothing else — except geocode_place,
+ * which reaches Wikidata/Nominatim and says so.
  */
 const OAUTH = (scope: string) => [{ type: "oauth2", scopes: [scope] }];
 const OPEN = [{ type: "noauth" }];
@@ -913,7 +1092,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OPEN,
-    description: "List open Chartroom Waypoints: the same shared work backlog humans see in the web UI. The legacy tool name remains for MCP 2025/2026 compatibility. Results include curated priorities plus auto-computed completeness work.",
+    description: "List open Chartroom Waypoints: the same shared work backlog humans see in the web UI. The legacy tool name remains for MCP 2025/2026 compatibility. Results include curated priorities plus auto-computed completeness work. Each waypoint also carries related_sources: governance decisions/proposals that MECHANICALLY name that gap ('Gap ID <n>' in their own reason text, e.g. an approved source whose reason says it resolves that gap) — never a fuzzy guess. Empty means no such reference exists yet, not that none was looked for.",
     inputSchema: { type: "object", properties: {} } },
   { name: "claim_gap",
     annotations: {
@@ -939,6 +1118,27 @@ const TOOL_DEFINITIONS = [
       properties: { ...AUTH_PROPS,
         title: { type: "string" }, description: { type: "string" },
         kind: { type: "string", enum: ["voyage", "waypoint", "media", "perspective", "translation", "correction"] } } } },
+  { name: "geocode_place",
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
+    securitySchemes: OPEN,
+    description:
+      "Resolve a place NAME to a coordinate — Wikidata's P625 first (citable QID), Nominatim/OSM " +
+      "as fallback, same order and same refusal to fabricate as the operator-side gazetteer. Call " +
+      "this before writing a waypoint's latitude/longitude — both required by submit_draft's gate " +
+      "— instead of guessing or estimating one yourself. Returns found:false with no coordinate " +
+      "when neither gazetteer resolves the name; never a made-up position. " +
+      "Sequence: propose_idea -> [search_sources -> fetch_source_text, a separate not-yet-merged " +
+      "phase] -> geocode_place (fill each waypoint's latitude/longitude) -> validate_draft -> " +
+      "submit_draft.",
+    inputSchema: { type: "object", required: ["place"],
+      properties: {
+        place: { type: "string",
+          description: "the place name as the source names it, e.g. 'Saint-Malo' or 'Tahiti'" } } } },
   { name: "validate_draft",
     annotations: {
       readOnlyHint: true,
@@ -966,7 +1166,7 @@ const TOOL_DEFINITIONS = [
       openWorldHint: false,
     },
     securitySchemes: OAUTH("contribute"),
-    description: "Submit a structured draft (meta + waypoints with sourced claims, and plates where a stage has period imagery). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id. Prefer calling validate_draft first: it runs the identical gate with no submission created, so iterating there costs nothing.",
+    description: "Submit a structured draft (meta + waypoints with sourced claims, and plates where a stage has period imagery). Runs the instant Stage-0 gate; deep source verification follows. Returns findings and a submission id. Call geocode_place first for each waypoint's latitude/longitude rather than estimating them, and validate_draft first: it runs the identical gate with no submission created, so iterating there costs nothing.",
     inputSchema: { type: "object", required: ["submission"],
       properties: { ...AUTH_PROPS,
         // "See how_it_works for the schema" is not a schema. An LLM connected
@@ -1708,9 +1908,15 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         evaluated.map(({ gap, w, eligible }) => ({ id: w.id, priority: gap.priority, eligible }))
       );
 
+      // Mechanical gap -> source linkage (see relatedSourcesForGaps): a
+      // real, verifiable "Gap ID <n>" reference in governance data, or an
+      // explicitly empty array — never a similarity guess.
+      const relatedByGap = await relatedSourcesForGaps(evaluated.map(({ w }) => w.id));
+
       // Pass 3: shape the response, same as before.
       const waypoints = evaluated.map(({ w, eligible, reason }) => ({
         ...w, eligible, reason,
+        related_sources: relatedByGap.get(w.id) ?? [],
         allowed_actions: eligible ? ["claim_gap"] : [],
         blocked_actions: eligible ? [] : ["claim_gap"],
       }));
@@ -1727,7 +1933,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           : quotaState
             ? "none eligible right now — submit or release an existing claim first"
             : "self-enrol: POST /api/oauth/register {\"grant_types\":[\"client_credentials\"]}, then retry",
-        note: "waypoints is the shared Chartroom contract, annotated with per-waypoint eligibility that mirrors claim_gap's own enforcement; curated_gaps is its MCP 2025 compatibility alias. voyage_completeness is auto-computed from live atlas data.",
+        note: "waypoints is the shared Chartroom contract, annotated with per-waypoint eligibility that mirrors claim_gap's own enforcement; curated_gaps is its MCP 2025 compatibility alias. voyage_completeness is auto-computed from live atlas data. related_sources is mechanical only — an explicit 'Gap ID <n>' reference found in a real governance record's own reason text, never a keyword/topic guess; empty means none was found, not that none was checked.",
       }, null, 2);
     }
     case "claim_gap": {
@@ -1803,6 +2009,25 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       return JSON.stringify({ submission_id: s[0].id, status: "human-review",
         cross_author_duplicates: crossAuthor,
         note: "Idea recorded. The editorial desk will assess scope and feasibility; check back with get_submission_status." });
+    }
+    case "geocode_place": {
+      const place = String(args?.place ?? "").trim();
+      if (!place) return JSON.stringify({ found: false, error: "place is required" }, null, 2);
+      const hit = await geocodePlace(place);
+      if (!hit) {
+        return JSON.stringify({
+          found: false, latitude: null, longitude: null, coord_provenance: null,
+          note: `No gazetteer hit for '${place}' in Wikidata or Nominatim/OSM — do not invent a ` +
+            "coordinate. Mark the waypoint confidence=reconstructed and leave latitude/longitude " +
+            "unset, or ask the desk.",
+        }, null, 2);
+      }
+      return JSON.stringify({
+        found: true,
+        latitude: hit.lat, longitude: hit.lng,
+        coord_provenance: `gazetteer:${hit.gazetteer}:${hit.provenance}`,
+        matched: hit.matched, source_url: hit.source_url,
+      }, null, 2);
     }
     case "validate_draft": {
       // Exactly what submit_draft's own gate check does, and nothing else in
