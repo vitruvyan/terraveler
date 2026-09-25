@@ -9,6 +9,7 @@
  */
 import { sb } from "@/lib/deskAuth";
 import { CARTA_VERSION } from "@/lib/carta";
+import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
 const STATUS: Record<string, string> = {
   approve: "approved",
@@ -30,7 +31,7 @@ export async function resolveVerdict(
   const status = STATUS[verdict];
   if (!status) return { ok: false, error: "verdict must be approve|reject|changes", status: 400 };
 
-  const rows = await sb("GET", `submissions?id=eq.${submissionId}&select=status,type`);
+  const rows = await sb("GET", `submissions?id=eq.${submissionId}&select=status,type,contributor_id`);
   if (!rows.length) return { ok: false, error: "no such submission", status: 404 };
   const from = String(rows[0].status);
 
@@ -65,6 +66,14 @@ export async function resolveVerdict(
       `${refutes} refuting. Reason: ${String(opts.override).slice(0, 500)}`]);
   }
   if (opts.origin) findings.push(["INFO", 4, `recorded via ${opts.origin}`]);
+
+  // A verdict is one of the trigger points a human's aggregate rank is
+  // recalculated at (lib/rankPromotion.ts) — 'changes-requested' is not, since
+  // it is not yet a ruling on the work. A no-op for a contributor with no
+  // linked human; never allowed to fail the verdict itself.
+  if (status === "approved" || status === "rejected") {
+    await maybeRecalcRankForContributor(Number(rows[0].contributor_id));
+  }
 
   // Carta §5: an appeal reaches the Editor-in-chief alone. Nothing before
   // this recorded that a verdict on an 'appealed' submission *was* the

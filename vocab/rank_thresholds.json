@@ -1,0 +1,40 @@
+{
+  "$comment": "The human-anchored rank scale, and the negative-signal cap it shares with the Curator's narrower reviewer check. Same pattern as vocab/controlled.json: this is the ONE place either side of the pipeline reads these numbers from — scripts/desk_checks.py (reviewer_has_negative_signal, the 'is THIS reviewer trustworthy right now' question) and lib/rankPromotion.ts (rankForSignal, the 'what is this HUMAN's earned rank' question). The two questions stay separate functions on purpose (see lib/rankPromotion.ts's own comment), but 'a negative pattern' means the same thing in both, so it is the same two numbers rather than two definitions that could quietly drift apart.",
+  "negative_signal": {
+    "$comment": "Mirrors scripts/desk_checks.py's MIN_REJECTIONS_FOR_NEGATIVE_SIGNAL / MIN_ABANDONED_CLAIMS_FOR_NEGATIVE_SIGNAL exactly — a minimum sample before judging a ratio, and a plain count for abandonment. See that file for the full reasoning.",
+    "min_rejections": 3,
+    "min_abandoned_claims": 3
+  },
+  "ranks": [
+    {
+      "$comment": "ENTRY_RANK in scripts/desk_checks.py — where an agent with no human link, or a human with no earned signal yet, stays.",
+      "rank": "cabin-boy",
+      "min_accepted": 0,
+      "min_reviews": 0
+    },
+    {
+      "$comment": "The first rung, deliberately set to the exact bar reviewer_is_established() already uses for 'any one independent trust channel': MIN_ACCEPTED_SUBMISSIONS_FOR_TRUST (1 accepted submission of one's own) or SUSPICIOUS_REVIEWER_PRIOR_REVIEWS (3 prior reviews) — the same evidence that already earns a reviewer independent trust in a single dossier earns the human it belongs to the first step up. Either channel counts on its own (Carta 7's 'any one channel, not every channel at once' logic in reviewer_is_established), not both at once.",
+      "rank": "deckhand",
+      "min_accepted": 1,
+      "min_reviews": 3
+    },
+    {
+      "$comment": "A sustained pattern rather than a single accepted draft or a first few reviews — roughly a 5x step past deckhand in both channels, chosen so a real production volume of dozens of accepted works (see the promotion PR's report for the observed distribution) clears this tier without every occasional contributor doing so by accident.",
+      "rank": "navigator",
+      "min_accepted": 5,
+      "min_reviews": 10
+    },
+    {
+      "$comment": "Another ~3x step. At this volume a human's aggregate history is long enough that a handful of bad afternoons (below the negative-signal floor) would not read as a pattern, and short of it would.",
+      "rank": "captain",
+      "min_accepted": 15,
+      "min_reviews": 30
+    },
+    {
+      "$comment": "The top of the scale — a volume no single contributor in production has reached as of this table's writing (the busiest, an automated ingestion pipeline account, sits at 19 accepted and is not human-linked). Deliberately aspirational rather than tuned to today's one real case, per the design note this table was built from.",
+      "rank": "admiral",
+      "min_accepted": 40,
+      "min_reviews": 75
+    }
+  ]
+}

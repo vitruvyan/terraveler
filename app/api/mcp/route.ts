@@ -14,6 +14,7 @@ import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 import { CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { fetchSourceText, searchSources } from "@/lib/sourceSearch";
+import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -2316,6 +2317,13 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       });
       if (one !== RPC_MISSING) {
         if (one?.error) return `ERROR: ${one.error}`;
+        // The RPC resolves the reviewer by handle internally and never hands
+        // its contributor_id back — one extra lookup here, rather than
+        // widening the RPC's return shape, to reach the same rank-promotion
+        // hook the fallback path below and the OAuth lane both use.
+        const reviewer = await sb("GET",
+          `contributors?handle=eq.${encodeURIComponent(String(args.handle))}&select=id&limit=1`);
+        if (reviewer?.[0]) await maybeRecalcRankForContributor(Number(reviewer[0].id));
         return JSON.stringify({
           ok: true, submission_id: sid, reviews_so_far: one.reviews_so_far,
           advanced_to_desk: one.advanced_to_desk,
@@ -2364,6 +2372,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         findings: findings.map((f: any) => ["REVIEW", 1, `${f.claim}: ${f.assessment}${f.evidence_url ? ` (${f.evidence_url})` : ""}`]),
         carta_version: CARTA_VERSION,
       });
+      await maybeRecalcRankForContributor(a.ok!.id);
       const all = await sb("GET", `reviews?submission_id=eq.${sid}&select=id`);
       let advanced = false;
       if (all.length >= REVIEWS_TO_ADVANCE) {

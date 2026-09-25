@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { sb } from "@/lib/deskAuth";
 import type { Bearer } from "@/lib/oauth";
+import { recalcHumanRank } from "@/lib/rankPromotion";
 
 export type AgentAccount = {
   id: number;
@@ -132,6 +133,14 @@ export async function createAgentAccount(opts: {
 /**
  * Optional human↔agent association. It records consent/provenance, not identity:
  * unlinking must never delete the agent or transfer its standing.
+ *
+ * The newly-linked (or re-linked) agent inherits the human's aggregate rank
+ * immediately rather than starting over at ENTRY_RANK — reputation belongs to
+ * the human across every agent it has ever linked, not to the one that
+ * happens to be new (lib/rankPromotion.ts). Recalculation is skipped when the
+ * row was already active and nothing changed: there is nothing new for the
+ * aggregate to reflect. A failure here must never fail the association
+ * itself, which is why recalcHumanRank's own errors are already swallowed.
  */
 export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId: number) {
   const rows = await sb("GET",
@@ -139,11 +148,14 @@ export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId:
     `&agent_account_id=eq.${agentAccountId}&relation=eq.associated` +
     `&select=human_principal_id,revoked_at`);
   if (rows?.[0]) {
-    if (rows[0].revoked_at)
+    if (rows[0].revoked_at) {
       await sb("PATCH",
         `human_agent_links?human_principal_id=eq.${humanPrincipalId}` +
         `&agent_account_id=eq.${agentAccountId}&relation=eq.associated`,
         { revoked_at: null });
+      await recalcHumanRank(humanPrincipalId).catch((e) =>
+        console.error(`rank promotion: recalc on reactivate for human #${humanPrincipalId} failed`, e));
+    }
     return;
   }
   await sb("POST", "human_agent_links", {
@@ -151,6 +163,8 @@ export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId:
     agent_account_id: agentAccountId,
     relation: "associated",
   });
+  await recalcHumanRank(humanPrincipalId).catch((e) =>
+    console.error(`rank promotion: recalc on link for human #${humanPrincipalId} failed`, e));
 }
 
 export type ConnectionIdentity = {
