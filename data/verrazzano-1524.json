@@ -1,0 +1,132 @@
+{
+  "navigator": {
+    "id": 1,
+    "slug": "giovanni-da-verrazzano",
+    "name": "Giovanni da Verrazzano",
+    "nationality": null,
+    "birth_year": null,
+    "death_year": null,
+    "portrait_url": null,
+    "bio": null
+  },
+  "voyage": {
+    "id": 1,
+    "navigator_id": 1,
+    "slug": "verrazzano-1524",
+    "title": "Verrazzano's Survey of the North American Coast (1524)",
+    "ships": "La Dauphine",
+    "sponsor": "King Francis I of France",
+    "purpose": null,
+    "start_date": "1524",
+    "end_date": "1524",
+    "summary": "A single-ship reconnaissance of the North American coast from about 34 degrees North latitude to the approach to Newfoundland, commissioned by Francis I to find a passage to Cathay north of the routes the Portuguese held. Verrazzano's own letter to the king survives only in copies, and its authenticity has been disputed since the nineteenth century -- Terraveler carries this voyage at confidence 'contested' for that reason, not because the itinerary itself is in doubt.",
+    "evidence_basis": "contemporary-testimony",
+    "what_was_lost": "No autograph of Verrazzano's letter survives; what exists are copies (the Cellere Codex chief among them) and secondhand reports such as Bernardo Carli's letter to his father. This draft covers four of the roughly twenty stages the coast supports -- departure, landfall, the New York narrows, and Narragansett Bay -- leaving the run north to Newfoundland and the return for a later contribution rather than inferring dates the source does not give."
+  },
+  "waypoints": [
+    {
+      "id": 1,
+      "voyage_id": 1,
+      "seq": 1,
+      "place_historical": "the deserted rock near the island of Madeira",
+      "place_modern": "Ilheus Desertas, Madeira, Portugal (approximate)",
+      "latitude": 32.53,
+      "longitude": -16.52,
+      "arrival_date": "1524-01-17",
+      "departure_date": null,
+      "date_note": null,
+      "event": "Verrazzano departed from a deserted rock near Madeira on 17 January with the Dauphine, fifty men, and eight months of provisions, sailing west.",
+      "diary_excerpt": "we  departed,  sailing  westward  by  an  east-south-east  wind blowing  with  sweet  and  gentle  lenity",
+      "diary_excerpt_raw": "we  departed,  sailing  westward  by  an  east-south-east  wind \nblowing  with  sweet  and  gentle  lenity",
+      "diary_excerpt_transformations": [
+        "line-wrap-to-space"
+      ],
+      "diary_source_citation": "Verrazano's Voyage Along the Atlantic Coast of North America, 1524 (trans. Edward Hagaman Hall, 1916)",
+      "diary_source_url": "https://archive.org/download/verrazanosvoyage00verr/verrazanosvoyage00verr_djvu.txt",
+      "confidence": "certain",
+      "media_url": null
+    },
+    {
+      "id": 2,
+      "voyage_id": 1,
+      "seq": 2,
+      "place_historical": "The Land First Seen, in 34 degrees North Latitude",
+      "place_modern": "near Cape Fear, North Carolina, USA (approximate -- only a latitude is given)",
+      "latitude": 34.0,
+      "longitude": -77.9,
+      "arrival_date": "1524-03-21",
+      "departure_date": null,
+      "date_note": null,
+      "event": "Twenty-five days after a severe storm, the expedition sighted land never before seen, at a stated latitude of 34 degrees North -- the coast near present-day Cape Fear.",
+      "diary_excerpt": "In  XXV  more  days  we  sailed  more  than  400  leagues  where  there appeared  to  us  a  new  land  never  before  seen  by  anyone,  ancient or  modern",
+      "diary_excerpt_raw": "In  XXV  more  days  we  sailed  more  than  400  leagues  where  there \nappeared  to  us  a  new  land  never  before  seen  by  anyone,  ancient \nor  modern",
+      "diary_excerpt_transformations": [
+        "line-wrap-to-space"
+      ],
+      "diary_source_citation": "Verrazano's Voyage Along the Atlantic Coast of North America, 1524 (trans. Edward Hagaman Hall, 1916)",
+      "diary_source_url": "https://archive.org/download/verrazanosvoyage00verr/verrazanosvoyage00verr_djvu.txt",
+      "confidence": "approximate",
+      "media_url": null
+    },
+    {
+      "id": 3,
+      "voyage_id": 1,
+      "seq": 3,
+      "place_historical": "Land of Angouleme, Bay of Santa Margherita, River Vendome",
+      "place_modern": "New York Harbor and the Hudson River mouth, USA",
+      "latitude": 40.6,
+      "longitude": -74.04,
+      "arrival_date": "1524-04-17",
+      "departure_date": null,
+      "date_note": null,
+      "event": "Coasting north, the expedition found a great river flowing to the sea between two low hills, with an eight-foot tide -- the bay and river later charted as New York Harbor and the Hudson. The date given (17 April) follows the standard secondary chronology, not an explicit date in this excerpt.",
+      "diary_excerpt": "we  found  a  very  agreeable situation  located  within  two  small  prominent  hills,  in  the  midst  of which  flowed  to  the  sea  a  very  great  river",
+      "diary_excerpt_raw": "we  found  a  very  agreeable \nsituation  located  within  two  small  prominent  hills,  in  the  midst  of \nwhich  flowed  to  the  sea  a  very  great  river",
+      "diary_excerpt_transformations": [
+        "line-wrap-to-space"
+      ],
+      "diary_source_citation": "Verrazano's Voyage Along the Atlantic Coast of North America, 1524 (trans. Edward Hagaman Hall, 1916)",
+      "diary_source_url": "https://archive.org/download/verrazanosvoyage00verr/verrazanosvoyage00verr_djvu.txt",
+      "confidence": "approximate",
+      "media_url": null
+    },
+    {
+      "id": 4,
+      "voyage_id": 1,
+      "seq": 4,
+      "place_historical": "\"Refugio,\" the very beautiful port",
+      "place_modern": "Newport and Narragansett Bay, Rhode Island, USA",
+      "latitude": 41.49,
+      "longitude": -71.31,
+      "arrival_date": "1524-05-05",
+      "departure_date": null,
+      "date_note": null,
+      "event": "Fifteen leagues beyond an island, the expedition entered a beautiful port -- identified with Narragansett Bay -- where about twenty boats came out to meet the ship, among them two of the local rulers. The date given follows the standard secondary chronology, not an explicit date in this excerpt.",
+      "diary_excerpt": "we  found  a  very  beautiful  port,  and  before  we  entered  it, we  saw  about  XX  barges  of  the  people",
+      "diary_excerpt_raw": "we  found  a  very  beautiful  port,  and  before  we  entered  it, \nwe  saw  about  XX  barges  of  the  people",
+      "diary_excerpt_transformations": [
+        "line-wrap-to-space"
+      ],
+      "diary_source_citation": "Verrazano's Voyage Along the Atlantic Coast of North America, 1524 (trans. Edward Hagaman Hall, 1916)",
+      "diary_source_url": "https://archive.org/download/verrazanosvoyage00verr/verrazanosvoyage00verr_djvu.txt",
+      "confidence": "approximate",
+      "media_url": null
+    }
+  ],
+  "provenance": [
+    {
+      "ideator": "claude-pipeline-test-corrected",
+      "scribe_model": "claude-sonnet-5",
+      "carta_version": "0.7",
+      "date": "2026-09-25 21:11:10.653742+00",
+      "submission_id": 102,
+      "type": "new-voyage",
+      "waypoints": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}

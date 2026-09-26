@@ -130,6 +130,22 @@
    {
     "latitude": 48.6493,
     "longitude": -2.0257
+   },
+   {
+    "latitude": 48.8566,
+    "longitude": 2.3522
+   },
+   {
+    "latitude": 46.16,
+    "longitude": -1.15
+   },
+   {
+    "latitude": -20.1609,
+    "longitude": 57.5012
+   },
+   {
+    "latitude": -25.0325,
+    "longitude": 46.9982
    }
   ],
   "keywords": [
@@ -166,7 +182,15 @@
    "Cape of Good Hope (Table Bay)",
    "Cape Town, South Africa",
    "St. Maloes",
-   "Saint-Malo, France"
+   "Saint-Malo, France",
+   "Paris",
+   "Paris, France",
+   "Rochelle",
+   "La Rochelle, France",
+   "Isle de France",
+   "Port-Louis, Mauritius",
+   "Fort Dauphin",
+   "Tolanaro (Fort Dauphin), Madagascar"
   ]
  },
  "cabot-1497": {
@@ -3096,6 +3120,44 @@
    "Punta Arenas, Chile",
    "England",
    "England, United Kingdom"
+  ]
+ },
+ "verrazzano-1524": {
+  "slug": "verrazzano-1524",
+  "start_year": 1524,
+  "end_year": 1524,
+  "navigator_qid": "Q147676",
+  "place_qids": [],
+  "waypoints": [
+   {
+    "latitude": 32.53,
+    "longitude": -16.52
+   },
+   {
+    "latitude": 34.0,
+    "longitude": -77.9
+   },
+   {
+    "latitude": 40.6,
+    "longitude": -74.04
+   },
+   {
+    "latitude": 41.49,
+    "longitude": -71.31
+   }
+  ],
+  "keywords": [
+   "Giovanni da Verrazzano",
+   "La Dauphine",
+   "King Francis I of France",
+   "the deserted rock near the island of Madeira",
+   "Ilheus Desertas, Madeira, Portugal (approximate)",
+   "The Land First Seen, in 34 degrees North Latitude",
+   "near Cape Fear, North Carolina, USA (approximate -- only a latitude is given)",
+   "Land of Angouleme, Bay of Santa Margherita, River Vendome",
+   "New York Harbor and the Hudson River mouth, USA",
+   "\"Refugio,\" the very beautiful port",
+   "Newport and Narragansett Bay, Rhode Island, USA"
   ]
  },
  "voyager-2": {
