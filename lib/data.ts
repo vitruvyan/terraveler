@@ -24,6 +24,7 @@ import lewisclark_1804 from "@/data/lewisclark-1804.json";
 import mungopark_1795 from "@/data/mungopark-1795.json";
 import ibnbattuta_1325 from "@/data/ibnbattuta-1325.json";
 import cabot_1497 from "@/data/cabot-1497.json";
+import verrazzano_1524 from "@/data/verrazzano-1524.json";
 
 export interface VoyageBundle {
   navigator: Navigator;
@@ -64,6 +65,7 @@ const LOCAL: Record<VoyageSlug, unknown> = {
   "mungopark-1795": mungopark_1795,
   "ibnbattuta-1325": ibnbattuta_1325,
   "cabot-1497": cabot_1497,
+  "verrazzano-1524": verrazzano_1524,
 };
 
 export function knownVoyages(): readonly string[] {

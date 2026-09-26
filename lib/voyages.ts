@@ -271,6 +271,16 @@ const ATLAS_ENTRIES = [
     blurb:
       "Thirty-five days west from Bristol to a landfall in North America, a single going-ashore to plant a flag and take on water, and a fast run home \u2014 the voyage that gave England its\u2026",
   },
+  {
+    slug: "verrazzano-1524",
+    visualProfile: "marine-chart",
+    href: "/voyage/verrazzano-1524",
+    title: "Verrazzano's Survey of the North American Coast (1524)",
+    navigator: "Giovanni da Verrazzano",
+    years: "1524–1524",
+    blurb:
+      "A single-ship reconnaissance of the North American coast from about 34 degrees North latitude to the approach to Newfoundland, commissioned by Francis I to find a passage to\u2026",
+  },
 ] as const satisfies readonly AtlasEntry[];
 
 /** The atlas index as the rest of the app sees it. */
