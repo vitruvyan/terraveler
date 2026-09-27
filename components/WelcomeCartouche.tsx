@@ -136,14 +136,7 @@ export default function WelcomeCartouche() {
             <span>Always show this invitation on the homepage</span>
           </label>
           <span className="welcome-foot-mark" aria-hidden="true"><Fleuron /></span>
-          <button
-            type="button"
-            className="welcome-note"
-            onClick={dismiss}
-            style={{ border: "none", background: "none", padding: 0, font: "inherit", color: "inherit", cursor: "pointer", textDecoration: "underline" }}
-          >
-            Just exploring? Enter the atlas — no account required.
-          </button>
+          <span className="welcome-note">Explore freely. Register only when you want to contribute.</span>
         </div>
       </div>
     </aside>
