@@ -1,352 +1,192 @@
-/* The homepage invitation — a printed title-plate, not product chrome.
- *
- * Read components/WelcomeEngraving.tsx first: the ornament is drawn SVG, each
- * piece with its own viewBox, and this file only says where each one stands.
- * Nothing here stretches a drawing to fit a box.
- *
- * The plate carries its own ink tokens rather than reaching for --brass
- * directly, so a register can re-declare what the engraving is drawn in
- * without this file knowing a theme exists. */
+/* Homepage welcome invitation — a printed cartographic object, not product chrome. */
 .welcome-cart {
-  /* The engraving is a mark, so it is --brass's hue; taken to the darker end
-     because it has to survive being a hairline at a third of an em. */
-  --engrave: var(--brass-text);
-  --engrave-ink: 0.34;      /* the ocean: present, never competing with type */
-  --engrave-mark: 0.9;      /* the frame's roses and crests: printed, not faint */
-  --frame-rule: var(--brass-text);
-  --frame-hair: var(--brass);
-
-  /* The plate's own width, named once: its height is derived from it and the
-     two must not be able to disagree. */
-  --plate-w: min(1080px, calc(100vw - 72px), calc((100dvh - 56px) * 16 / 9));
-  /* The gap the plate keeps from the window, and its own top and bottom
-     margin. Both are named because the reading column has to subtract them to
-     know how tall it may be, and a percentage cannot: the plate's height is
-     fit-content, which is not a definite size, so `max-height: 100%` on the
-     column silently resolved to none. */
-  --plate-inset: 32px;
-  --plate-pad-y: clamp(34px, 4.3cqw, 48px);
-
   position: fixed;
   inset: 0;
   z-index: 65;
-  width: var(--plate-w);
-  /* Both offsets are 0, and an absolutely positioned box with an auto height
-     between them STRETCHES rather than hugging — so without this the plate
-     grew to the full window the moment the aspect ratio stopped locking it. */
-  height: fit-content;
+  width: min(1080px, calc(100vw - 72px), calc((100dvh - 112px) * 16 / 9));
+  aspect-ratio: 16 / 9;
   margin: auto;
   overflow: hidden;
-  display: grid;
-  place-items: center;
-  /* Everything inside is measured against THE PLATE, not the window. The plate
-     stops growing at 1080px and the window does not, so type set in vw kept
-     growing after its page had stopped: at 1180px the title fitted on fewer
-     lines, grew wider, and ran into the compass rose in the eastern ocean —
-     a collision that appeared at one viewport width and at no other. */
-  container-type: inline-size;
-  padding: var(--plate-pad-y) clamp(40px, 5.4cqw, 64px);
-  /* 16:9 is what the plate WANTS, not a promise it can keep, so it is a FLOOR
-     and not a lock. As `aspect-ratio` it was a lock: between the phone boundary
-     and about 1150px the ratio handed the plate less height than the words
-     need and overflow:hidden cut the two doors off the bottom — an invitation
-     with no way in. (`min-height: fit-content` alongside the ratio does not
-     rescue it; the ratio still wins.) */
-  min-height: calc(var(--plate-w) * 9 / 16);
-  max-height: calc(100dvh - var(--plate-inset));
   color: var(--ink);
   text-align: center;
-  background: var(--parchment-raised);
-  border: 1px solid var(--frame-rule);
+  background:
+    url("/terraveler-welcome-engraving.webp") center / cover no-repeat,
+    var(--parchment-raised);
+  border: 1px solid rgba(124, 87, 35, .58);
   box-shadow:
-    0 28px 74px rgba(43, 33, 23, .32),
-    0 0 0 100vmax rgba(43, 33, 23, .2);
+    0 30px 78px rgba(43, 33, 23, .34),
+    0 0 0 100vmax rgba(43, 33, 23, .18);
   isolation: isolate;
 }
 
-/* Two washes on the paper, in this order: a vignette that keeps the centre
-   clean enough for the title to sit on, and the same grain the title pages
-   carry, so the plate is the site's paper rather than a white box. */
-.welcome-cart::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse 62% 58% at 50% 46%,
-    rgba(var(--paper-rgb), .86) 0%,
-    rgba(var(--paper-rgb), .55) 46%,
-    rgba(var(--paper-rgb), 0) 78%);
-}
+/* The artwork itself now carries the frame, the compass language, ships,
+   winds and sea creatures. Keep the protective wash deliberately light. */
 .welcome-cart::after {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  opacity: .05;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-/* ---- THE OCEAN ----------------------------------------------------------
-   Everything in here is aria-hidden decoration living in the gutters either
-   side of the text column. Each piece is placed in per cent of the plate, so
-   the arrangement survives the plate being resized; none of them is given a
-   height, so none of them can be squashed. */
-.welcome-scene {
-  position: absolute;
-  inset: clamp(22px, 3cqw, 32px);
   z-index: 0;
   pointer-events: none;
-  color: var(--engrave);
-  opacity: var(--engrave-ink);
-}
-.welcome-scene > svg { position: absolute; height: auto; }
-
-/* A solid body — a hull, a cheek, a coil — takes the plate's own paper, so
-   what is behind it is hidden rather than showing through. A wave running
-   through a hull is the tell that a drawing is a wireframe. */
-.welcome-scene .eng-paper { fill: var(--parchment-raised); }
-
-.ws-wind { width: 13.5%; }
-.ws-wind-nw { top: 3%; left: 1%; }
-.ws-wind-ne { top: 7.5%; right: 1.5%; transform: scaleX(-1); }
-
-.ws-rose { top: 27%; right: 3.5%; width: 9%; }
-
-/* The ship and the serpent live in the gutters the text column leaves free.
-   Their widths and the width of .welcome-actions below are one decision: at
-   21% the carrack's stern ran under the "I'm human" button, which is the one
-   thing nothing on this plate may do. */
-.ws-ship { bottom: 3.5%; left: -0.5%; width: 17.5%; }
-.ws-serpent { bottom: 2.5%; right: -0.5%; width: 18%; }
-
-/* The two legends of an ocean nobody has crossed yet. Engraved caps, letter-
-   spaced the way an open ocean is labelled — wide, because there is nothing
-   else on that part of the chart. */
-.ws-inscription {
-  position: absolute;
-  top: 47%;
-  font-family: var(--font-display);
-  font-size: clamp(.7rem, 1.36cqw, .96rem);
-  font-weight: 500;
-  line-height: 1.34;
-  letter-spacing: .34em;
-  text-transform: uppercase;
-  color: var(--engrave);
-  opacity: .78;
-}
-.ws-west { left: 2%; text-align: left; }
-.ws-east { right: 2%; text-align: right; }
-
-/* ---- THE FRAME ----------------------------------------------------------
-   A heavy rule and a hairline inside it, broken at the four corners by a
-   compass rose and at head and foot by a crest. The breaks are parchment
-   discs and tabs sitting over the rules, which is how an engraver does it:
-   the rule stops because something is standing on it. */
-.welcome-frame {
-  position: absolute;
-  inset: clamp(11px, 1.4cqw, 15px);
-  z-index: 2;
-  pointer-events: none;
-  border: 2px solid var(--frame-rule);
-}
-.welcome-frame::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid var(--frame-hair);
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    rgba(248,240,222,.14) 0%,
+    rgba(248,240,222,.08) 36%,
+    rgba(248,240,222,.02) 62%,
+    transparent 80%
+  );
 }
 
-.wf-rose {
-  position: absolute;
-  width: clamp(34px, 4.8cqw, 52px);
-  height: auto;
-  padding: 3px;
-  color: var(--engrave);
-  opacity: var(--engrave-mark);
-  background: var(--parchment-raised);
-  border-radius: 50%;
-}
-.wf-nw { top: 0; left: 0; transform: translate(-50%, -50%); }
-.wf-ne { top: 0; right: 0; transform: translate(50%, -50%); }
-.wf-sw { bottom: 0; left: 0; transform: translate(-50%, 50%); }
-.wf-se { bottom: 0; right: 0; transform: translate(50%, 50%); }
-
-.wf-crest {
-  position: absolute;
-  left: 50%;
-  display: grid;
-  place-items: center;
-  width: clamp(48px, 6cqw, 64px);
-  padding: 4px 10px;
-  color: var(--engrave);
-  opacity: var(--engrave-mark);
-  background: var(--parchment-raised);
-}
-.wf-crest svg { width: 100%; height: auto; }
-.wf-north { top: 0; transform: translate(-50%, -52%); }
-.wf-south { bottom: 0; transform: translate(-50%, 52%); }
-
-/* ---- THE WORDS ---------------------------------------------------------- */
-.welcome-plate {
+.welcome-copy {
   position: relative;
-  z-index: 3;
-  width: 100%;
-  /* The words scroll; the plate does not. A landscape phone is "wide" by the
-     one boundary, and at 844x390 the sheet cannot hold the type at any size —
-     so rather than cut the two doors off the bottom, the reading column gets
-     its own scroll and the frame, the ocean and the washes stay where they are
-     printed. It shows no bar until it is needed. */
-  max-height: calc(100dvh - var(--plate-inset) - 2 * var(--plate-pad-y));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-/* Below about 820px of PLATE the gutters are too narrow to hold both the
-   ocean and a footer that runs the full width, and the carrack ended up under
-   the checkbox. The note is the line the footer can spare: it repeats what the
-   two doors already say. Measured on the plate, not the window — which is the
-   same correction the type sizes needed above. */
-@container (max-width: 820px) {
-  .welcome-note,
-  .welcome-foot-mark { display: none; }
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 6.5% 12% 5.5%;
 }
 
 .welcome-x {
   position: absolute;
-  top: clamp(20px, 2.6cqw, 28px);
-  right: clamp(24px, 3cqw, 32px);
-  z-index: 4;
+  top: 5.8%;
+  right: 5.7%;
+  z-index: 6;
   width: 32px;
   height: 32px;
   border: 0;
-  background: transparent;
+  background: rgba(248,240,222,.62);
   color: var(--ink-faint);
-  font: 400 1.45rem/1 var(--font-display);
+  font: 400 1.4rem/1 var(--font-display);
   cursor: pointer;
 }
-@media (hover: hover) {
-  .welcome-x:hover { color: var(--ink); }
-}
+.welcome-x:hover { color: var(--ink); background: rgba(248,240,222,.86); }
 
 .welcome-kicker {
   font-family: var(--font-ui);
   font-size: var(--step--2);
   font-weight: 600;
-  letter-spacing: .24em;
+  letter-spacing: .23em;
   text-transform: uppercase;
   color: var(--brass-text);
+  text-shadow: 0 1px 0 rgba(248,240,222,.96);
 }
 
-/* The kicker's fleuron, carried out to a rule on both sides — a printer's
-   break rather than a glyph on its own line. */
 .welcome-ornament {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 14px;
-  width: min(280px, 60%);
-  margin: 8px auto 2px;
-  color: var(--engrave);
+  margin: 5px 0 3px;
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1;
+  color: var(--accent);
 }
-.welcome-ornament svg { width: 15px; height: auto; }
-.welcome-ornament::before,
-.welcome-ornament::after {
-  content: "";
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--frame-hair));
-}
-.welcome-ornament::after { background: linear-gradient(90deg, var(--frame-hair), transparent); }
 
 .welcome-title {
-  max-width: min(820px, 76cqw);
+  max-width: 820px;
   margin: 0 auto;
   font-family: var(--font-display);
-  font-size: clamp(2.7rem, 5.9cqw, 4.6rem);
+  font-size: clamp(3rem, 4.7vw, 4.95rem);
   font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -.024em;
+  line-height: .92;
+  letter-spacing: -.027em;
   text-wrap: balance;
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
 .welcome-subtitle {
-  max-width: min(690px, 63cqw);
-  margin: 14px auto 0;
+  max-width: 690px;
+  margin: 10px auto 0;
   font-family: var(--font-display);
-  font-size: clamp(1.04rem, 2.16cqw, 1.4rem);
+  font-size: clamp(1.08rem, 1.7vw, 1.46rem);
   font-style: italic;
   line-height: 1.26;
   color: var(--ink-soft);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
 .welcome-rule {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
-  width: min(470px, 74%);
-  margin: 16px auto 14px;
-  color: var(--engrave);
+  gap: 12px;
+  width: min(440px, 68%);
+  margin: 12px auto 11px;
+  color: var(--brass-text);
 }
-.welcome-rule svg { width: 17px; height: auto; }
 .welcome-rule::before,
 .welcome-rule::after {
   content: "";
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--frame-hair));
+  background: linear-gradient(90deg, transparent, rgba(124,87,35,.64));
 }
-.welcome-rule::after { background: linear-gradient(90deg, var(--frame-hair), transparent); }
+.welcome-rule::after { background: linear-gradient(90deg, rgba(124,87,35,.64), transparent); }
 
 .welcome-body {
-  max-width: min(740px, 64cqw);
+  max-width: 760px;
   margin: 0 auto;
   font-family: var(--font-ui);
-  font-size: clamp(.98rem, 1.55cqw, 1.1rem);
-  line-height: 1.44;
+  font-size: clamp(.98rem, 1.18vw, 1.1rem);
+  line-height: 1.4;
   color: var(--ink-soft);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 .welcome-body strong { color: var(--ink); font-weight: 600; }
 
 .welcome-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px;
-  width: min(660px, 61cqw, 100%);
-  margin: 20px auto 0;
+  gap: 16px;
+  width: min(760px, 100%);
+  margin: 18px auto 0;
 }
 
+/* Printed plaques: square-cut, double ruled, closer to an engraved invitation
+   than to web-product CTA chrome. */
 .welcome-choice {
-  min-height: 76px;
+  position: relative;
+  min-height: 78px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
   padding: 12px 18px;
-  border: 1px solid var(--frame-rule);
+  border: 1px solid rgba(124,87,35,.70);
   border-radius: var(--radius-1);
-  background: var(--parchment-raised);
+  background: rgba(248,240,222,.84);
   color: var(--ink);
   text-decoration: none;
   cursor: pointer;
+  box-shadow:
+    inset 0 0 0 3px rgba(248,240,222,.72),
+    inset 0 0 0 4px rgba(169,119,47,.34),
+    0 3px 8px rgba(43,33,23,.10);
   transition: transform .14s ease, background .14s ease, border-color .14s ease;
 }
-@media (hover: hover) {
-  .welcome-choice:hover {
-    transform: translateY(-1px);
-    background: var(--parchment);
-    border-color: var(--ink-soft);
-  }
-  .welcome-choice.primary:hover { background: var(--accent); border-color: var(--accent); }
+.welcome-choice::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(169,119,47,.24);
+  pointer-events: none;
+}
+.welcome-choice:hover {
+  transform: translateY(-1px);
+  background: rgba(248,240,222,.96);
+  border-color: var(--brass-text);
 }
 .welcome-choice.primary {
-  background: var(--accent-deep);
+  background: color-mix(in srgb, var(--accent-deep) 95%, var(--ink));
   border-color: var(--accent-deep);
   color: var(--parchment-raised);
+  box-shadow:
+    inset 0 0 0 3px rgba(88,21,34,.86),
+    inset 0 0 0 4px rgba(216,178,92,.40),
+    0 3px 8px rgba(43,33,23,.18);
 }
+.welcome-choice.primary::before { border-color: rgba(216,178,92,.30); }
+.welcome-choice.primary:hover { background: var(--accent); border-color: var(--accent); }
+.welcome-choice strong,
+.welcome-choice span { position: relative; z-index: 1; }
 .welcome-choice strong {
   font-family: var(--font-display);
   font-size: 1.46rem;
@@ -365,11 +205,9 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 8px 18px;
-  margin-top: 16px;
+  gap: 8px 16px;
+  margin-top: 13px;
 }
-.welcome-foot-mark { display: grid; place-items: center; color: var(--engrave); opacity: .7; }
-.welcome-foot-mark svg { width: 13px; height: auto; }
 .welcome-return {
   display: inline-flex;
   align-items: center;
@@ -379,6 +217,7 @@
   color: var(--ink-soft);
   cursor: pointer;
   user-select: none;
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 .welcome-return input {
   width: 14px;
@@ -391,43 +230,29 @@
   font-size: var(--step--2);
   line-height: 1.35;
   color: var(--ink-soft);
+  text-shadow: 0 1px 0 rgba(248,240,222,.98);
 }
 
-/* ---- PHONE --------------------------------------------------------------
-   The whole ocean goes. It lived in the gutters either side of the text
-   column and a phone has no gutters: kept as a bleed off the corners, the
-   carrack ran under the kicker and the serpent under the agent's button, which
-   is the one thing nothing on this plate may do. The frame, its corner roses
-   and the two crests stay — they are the plate, not its scenery. */
+/* Phone keeps the same engraved artwork but lets the card grow vertically so
+   the invitation remains readable without an inner scrollbar. */
 [data-layout="phone"] .welcome-cart {
-  --plate-inset: 22px;
-  --plate-pad-y: 28px;
-  width: calc(100vw - 22px);
-  /* Both offsets are 0 and the height is auto, which stretches an absolutely
-     positioned box to fill rather than letting it hug its content — so the
-     plate was 822px tall around 560px of type with the slack split above and
-     below it. fit-content still obeys the cap. */
-  height: fit-content;
-  min-height: 0;
-  padding: var(--plate-pad-y) 22px;
+  width: calc(100vw - 18px);
+  aspect-ratio: auto;
+  min-height: min(540px, calc(100dvh - 64px));
+  max-height: calc(100dvh - 64px);
+  background-size: cover;
+  background-position: center;
 }
-[data-layout="phone"] .welcome-scene { display: none; }
-[data-layout="phone"] .welcome-frame { inset: 9px; }
-[data-layout="phone"] .wf-rose { width: 28px; }
-[data-layout="phone"] .wf-crest { width: 40px; padding: 3px 8px; }
-[data-layout="phone"] .welcome-x { top: 14px; right: 16px; }
-[data-layout="phone"] .welcome-ornament { width: min(200px, 56%); margin-top: 7px; }
-/* The gutter-widths above are shares of the plate, and on a phone the column
-   IS the plate: at 368px, 64cqw left the body 235px wide and running to six
-   lines inside 324px of paper. Nothing here has to make room for an ocean. */
-[data-layout="phone"] .welcome-title { max-width: 100%; font-size: clamp(2.05rem, 9.4vw, 3.1rem); }
-[data-layout="phone"] .welcome-subtitle { max-width: 100%; margin-top: 10px; font-size: 1.02rem; }
-[data-layout="phone"] .welcome-rule { margin: 13px auto 11px; }
-[data-layout="phone"] .welcome-body { max-width: 100%; font-size: .95rem; line-height: 1.36; }
-[data-layout="phone"] .welcome-actions { width: 100%; grid-template-columns: 1fr; gap: 10px; margin-top: 16px; }
-[data-layout="phone"] .welcome-choice { min-height: 62px; }
-[data-layout="phone"] .welcome-foot { margin-top: 13px; gap: 6px; }
-[data-layout="phone"] .welcome-foot-mark,
+[data-layout="phone"] .welcome-copy { padding: 42px 26px 28px; justify-content: center; }
+[data-layout="phone"] .welcome-x { top: 18px; right: 18px; }
+[data-layout="phone"] .welcome-kicker { font-size: .58rem; }
+[data-layout="phone"] .welcome-title { max-width: 94%; font-size: clamp(2.1rem, 9.6vw, 3rem); }
+[data-layout="phone"] .welcome-subtitle { margin-top: 8px; font-size: 1rem; }
+[data-layout="phone"] .welcome-rule { margin: 11px auto 9px; }
+[data-layout="phone"] .welcome-body { font-size: .91rem; line-height: 1.3; }
+[data-layout="phone"] .welcome-actions { grid-template-columns: 1fr; gap: 8px; margin-top: 13px; }
+[data-layout="phone"] .welcome-choice { min-height: 60px; }
+[data-layout="phone"] .welcome-foot { margin-top: 10px; gap: 5px; }
 [data-layout="phone"] .welcome-note { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
