@@ -74,10 +74,14 @@ of office first; it is moored, and the mooring is logged.
    the code path, not by any officer's discretion.
 2. **Boundaries are executable or they are fiction.** Every constraint in a
    commission below must exist as a guard in code, not as prose an agent is
-   trusted to have read. (The current gap is known: the automatic desk pass
-   can approve from `peer-review` with zero reviews, which the web desk
-   forbids. That guard moves into the shared path before any officer stands
-   watch. See the audit findings.)
+   trusted to have read. (The gap this rule was written against — the
+   automatic desk pass could once approve from `peer-review` with zero
+   reviews, which the web desk forbade — closed in `57550d7` (2026-08-10,
+   "the verdict becomes a Motus graph"): both `scripts/desk_graph.py`'s
+   `decide` node and the shared `lib/deskVerdict.ts::resolveVerdict` now
+   read the same dossier and refuse `approve` below `REVIEWS_TO_ADVANCE`
+   clean reviews, override only with a recorded reason. Verified 2026-09-27.
+   The remaining brake from §8 is #3, audit_log immutability — see there.)
 
 ## 4. The commissions
 
@@ -391,18 +395,29 @@ either stops the action or it is not a rule.
 Standing watches over a system with inconsistent guards would automate the
 violations faster. Before any officer moves from A0:
 
-1. The §10.4 guard (no approval without the review dossier) moves into the
-   shared verdict path used by web desk and `desk_review.py` alike.
-2. `appealed` submissions and `escalate` findings become visible queues on
-   the desk — the states the mycelium will route *to* must exist.
+1. ~~The §10.4 guard (no approval without the review dossier) moves into
+   the shared verdict path used by web desk and `desk_review.py` alike.~~
+   **Done** (`57550d7`, 2026-08-10; verified still true 2026-09-27 — see
+   §3 rule 2).
+2. ~~`appealed` submissions and `escalate` findings become visible queues on
+   the desk — the states the mycelium will route *to* must exist.~~ **Done**
+   — `app/api/desk/submissions/route.ts` buckets both into `needs_verdict`,
+   distinct from ordinary `peer_review`. Verified 2026-09-27.
 3. `audit_log` becomes append-only at the database level (revoke
    UPDATE/DELETE, or a trigger) — three documents already claim it is.
-4. The standing view counts `curator-desk` approvals and excludes
+   **Migration written** (`supabase/audit_log_immutability.sql`, same
+   trigger pattern as `source_governance_immutability.sql`) but **not yet
+   applied to production** as of 2026-09-27 — checked directly against the
+   live grants and no trigger existed. Nothing in the app currently writes
+   UPDATE/DELETE to `audit_log`, so applying it is a pure hardening with no
+   known code to fix first. Still the one open item of the five.
+4. ~~The standing view counts `curator-desk` approvals and excludes
    `curator-gate` format rejections — the Purser must not automate a
-   miscount.
-5. `publish_submission.py` carries provenance (ideator, model,
+   miscount.~~ **Done** — `supabase/standing_correction.sql`. Verified
+   2026-09-27.
+5. ~~`publish_submission.py` carries provenance (ideator, model,
    carta_version, raw spans) into the bundle — the Publisher must not
-   automate the loss.
+   automate the loss.~~ **Done** (PR #76, `feat/attribution-and-publish-url`).
 
 ## 9. Draft amendment (for the Editor's consideration)
 
