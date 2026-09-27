@@ -28,6 +28,7 @@ import time
 import psycopg2
 import psycopg2.extras
 
+import telegram
 from relay import channel_for
 
 log = logging.getLogger("dispatcher")
@@ -312,6 +313,79 @@ def embedder_handler(cfg, conn, fields):
     time.sleep(cfg.EMBEDDER_COOLDOWN_SECONDS)
 
 
+DESK_URL = "https://www.terraveler.com/desk?tab=submissions"
+
+
+def _findings_text(findings) -> str:
+    """findings is the audit_log array-of-tuples shape,
+    [[level, priority, text], ...] — join the text a human should read.
+    Defensive on purpose: this composes a message for a human, and a
+    malformed or unexpected shape must produce a plainer message, never
+    an exception that drops the notification."""
+    if not findings:
+        return ""
+    lines = []
+    for row in findings:
+        if isinstance(row, (list, tuple)) and len(row) >= 3:
+            lines.append(str(row[2]))
+        elif row:
+            lines.append(str(row))
+    return " ".join(lines)
+
+
+def compose_herald_message(event_type: str, payload: dict) -> str | None:
+    """The Herald composes what the ledger already decided into something a
+    human can act on without opening a shell (§4.4) — it adds no judgment of
+    its own. Returns None for anything it does not yet have a form for,
+    which the handler treats as "nothing to deliver", not a failure."""
+    if event_type == "escalation.raised":
+        sid = payload.get("submission_id")
+        why = _findings_text(payload.get("findings")) or "no reason recorded"
+        return (f"\U0001F6A8 The Curator could not rule alone on submission "
+                f"#{sid}: {why}\n{DESK_URL}")
+    if event_type == "appeal.filed":
+        sid = payload.get("submission_id")
+        why = _findings_text(payload.get("findings")) or "no reason recorded"
+        return (f"⚖️ Submission #{sid} was appealed: {why}\n{DESK_URL}")
+    if event_type == "dlq.entry":
+        stream = payload.get("original_stream", "unknown stream")
+        reason = payload.get("failure_reason", "no reason recorded")
+        retries = payload.get("retry_count", "?")
+        return (f"☠️ An event on {stream} was dead-lettered after "
+                f"{retries} attempts: {reason}")
+    return None
+
+
+# -------------------------------------------------------------- the Herald
+def herald_handler(cfg, conn, fields):
+    """The Herald's watch (docs/SHIPS_OFFICERS.md §4.4): report only. The
+    judgment already happened in whatever ledger row produced this event —
+    this composes it into a message and delivers it, nothing more.
+
+    No idempotency guard against redelivery: a duplicate Telegram message on
+    a PEL replay is a minor nuisance, and the one failure mode a Herald may
+    never have is silently dropping a real escalation because a state check
+    disagreed with the event. telegram.notify() raises on delivery failure,
+    which is exactly what should leave this event unacked for the standard
+    retry-then-dead-letter path."""
+    payload = json.loads(fields.get("payload") or "{}")
+    event_type = fields.get("type", "")
+    text = compose_herald_message(event_type, payload)
+    if text is None:
+        log.info("herald: no message form for %s, skipping", event_type)
+        return
+    telegram.notify(cfg, text)
+    with conn.cursor() as cur:
+        cur.execute(
+            "insert into audit_log (submission_id, actor, action, findings, carta_version)"
+            " values (%s, 'herald', 'notify', %s, %s)",
+            (payload.get("submission_id"),
+             psycopg2.extras.Json([["INFO", 4, f"delivered {event_type}"]]),
+             fields.get("carta_version") or "unknown"))
+    conn.commit()
+    log.info("herald delivered %s", event_type)
+
+
 def watches(cfg):
     """The officers standing watch today. Growing this list is how the ship
     gains a watch — one Watch per commission in docs/SHIPS_OFFICERS.md §4,
@@ -319,4 +393,7 @@ def watches(cfg):
     return [
         Watch("curator-desk", "editorial", "reviews.advanced", curator_handler),
         Watch("archivist", "editorial", "submission.published", embedder_handler),
+        Watch("herald", "editorial", "escalation.raised", herald_handler),
+        Watch("herald", "editorial", "appeal.filed", herald_handler),
+        Watch("herald", "ops", "dlq.entry", herald_handler),
     ]

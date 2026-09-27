@@ -117,25 +117,33 @@ public (like standing, §7: authority must be inspectable), logged in
 
 ### 4.3 The Purser — standing and the ranks
 
-*Agent: new; deterministic job, no LLM.*
+*Agent: `lib/rankPromotion.ts` (the A2 half — exists, live in production
+since PR #75) + `scripts/reconcile_ranks.ts` (the A1 half — exists, not yet
+scheduled). Deterministic job, no LLM.*
 
 | | |
 |---|---|
 | Mandate | Compute standing from the audit trail exactly as §7 prescribes — counting the Curator's approvals as approvals, not counting Stage-0 format rejections as editorial rejections — and apply the §7 table: promote and demote automatically, logging the basis. |
 | Authority | execute (deterministic). The §7 table *is* the decision; the Purser only applies it. |
-| Autonomy | **A2** on `verdict.issued` + **A1** nightly reconciliation. |
+| Autonomy | **A2** — not on `verdict.issued` via the mycelium as originally drafted, but *synchronously* inside `lib/deskVerdict.ts::resolveVerdict` and the review-recording paths, on the same trigger points, with the same effect. **A1** nightly reconciliation is written (`scripts/reconcile_ranks.ts`, `npm run rank:reconcile`) but has no crontab/systemd-timer entry yet — needs one on the host. |
 | Must escalate | Any standing computation that the table does not settle; suspected gaming patterns (handed to the Master-at-Arms). |
 | Forbidden | Judgment of any kind. Touching suspensions. |
 
 ### 4.4 The Herald — the only voice that reaches the editor
 
-*Agent: new; the notification channel.*
+*Agent: `officers/dispatcher.py::herald_handler` (the A2 half — exists,
+watches `escalation.raised`, `appeal.filed`, `dlq.entry`) +
+`scripts/herald_heartbeat.py` (the A1 half — exists, not yet scheduled).
+Ops alarms (`service.unhealthy`, `backup.completed`/`failed`,
+`cert.expiring`) have no producer anywhere yet — nothing emits them, so the
+Herald cannot watch for what is never announced. That is the one part of
+this mandate still open.*
 
 | | |
 |---|---|
 | Mandate | Silence while all is well; a message when it is not. Delivers to the Editor-in-chief: escalations, appeals, dead-letter events, failed backups, unhealthy services, expiring certificates — with enough context to act without opening a shell. |
 | Authority | `report` only. |
-| Autonomy | **A2** on `escalation.raised`, `appeal.filed`, `dlq.entry`, ops alarms + **A1 heartbeat** (a daily one-liner proving the Herald itself is alive — a silent Herald must be distinguishable from a dead one). |
+| Autonomy | **A2** on `escalation.raised`, `appeal.filed`, `dlq.entry` (live) — ops alarms not yet, no producer exists — + **A1 heartbeat** (written, not yet scheduled; also reports the officer fleet's own `/health`, since it's already awake). |
 | Forbidden | Deciding, filtering by its own judgment what the editor "needs", batching an escalation past its urgency. |
 
 ### 4.5 The Master-at-Arms — §10.7 watch
