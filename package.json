@@ -11,7 +11,8 @@
     "test": "TSX_TSCONFIG_PATH=test/tsconfig.json node --import tsx --test test/*.test.ts",
     "mcp:probe": "node scripts/probe_mcp.mjs",
     "events:build": "python3 scripts/build_world_events.py && tsx scripts/build_world_event_projection.ts",
-    "events:project": "tsx scripts/build_world_event_projection.ts"
+    "events:project": "tsx scripts/build_world_event_projection.ts",
+    "rank:reconcile": "tsx scripts/reconcile_ranks.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

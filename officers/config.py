@@ -23,6 +23,12 @@ class Settings:
     CURATOR_COOLDOWN_SECONDS = float(os.getenv("CURATOR_COOLDOWN_SECONDS", "10"))
     EMBEDDER_TIMEOUT_SECONDS = int(os.getenv("EMBEDDER_TIMEOUT_SECONDS", "300"))
     EMBEDDER_COOLDOWN_SECONDS = float(os.getenv("EMBEDDER_COOLDOWN_SECONDS", "5"))
+    # The Herald (docs/SHIPS_OFFICERS.md §4.4) — same two vars
+    # scripts/notify_curator_verdicts.py already reads, so one Telegram bot
+    # serves both the cron-triggered verdict digest and the event-driven
+    # escalation/appeal/dlq watch.
+    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+    TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
     # A failed entry sits in the PEL until idle this long, then the sweep
     # reclaims it; the server's times_delivered decides when it is spent.
     PEL_MIN_IDLE_MS = int(os.getenv("PEL_MIN_IDLE_MS", "60000"))
