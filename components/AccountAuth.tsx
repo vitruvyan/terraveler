@@ -52,6 +52,11 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
   const [error, setError] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "complete">("idle");
   const [message, setMessage] = useState("");
+  const [switchNext, setSwitchNext] = useState("");
+
+  useEffect(() => {
+    setSwitchNext(nextPath());
+  }, []);
 
   useEffect(() => {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
@@ -167,7 +172,14 @@ export default function AccountAuth({ mode }: { mode: Mode }) {
 
         <p className="auth-switch">
           {isSignup ? "Already have an account?" : "New to Terraveler?"}{" "}
-          <Link href={isSignup ? "/login" : "/signup"}>{isSignup ? "Sign in" : "Create an account"}</Link>
+          <Link
+            href={
+              (isSignup ? "/login" : "/signup") +
+              (switchNext ? `?next=${encodeURIComponent(switchNext)}` : "")
+            }
+          >
+            {isSignup ? "Sign in" : "Create an account"}
+          </Link>
         </p>
       </section>
     </AuthBackdrop>
