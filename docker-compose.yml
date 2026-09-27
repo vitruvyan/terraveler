@@ -137,6 +137,8 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD}
       REPO: /repo
       OFFICERS_MOORED: ${OFFICERS_MOORED:-0}
+      TELEGRAM_TOKEN: ${TELEGRAM_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
     volumes:
       - ./scripts:/repo/scripts:ro
       - ./ingest:/repo/ingest:ro
