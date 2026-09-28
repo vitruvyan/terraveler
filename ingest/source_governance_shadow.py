@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 from urllib.parse import urlparse
@@ -25,6 +26,25 @@ def get_db_connection():
         password=password,
         cursor_factory=RealDictCursor
     )
+
+_LABEL = r"[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
+_EXACT_HOST_RE = re.compile(rf"^{_LABEL}(?:\.{_LABEL})+$")
+_SUFFIX_HOST_RE = re.compile(rf"^\.{_LABEL}(?:\.{_LABEL})+$")
+
+
+def is_well_formed_pattern(match_type: str, host_pattern: str) -> bool:
+    """A registry pattern the resolver may match against — the same rule as
+    lib/source-governance.ts::isWellFormedPattern. A suffix must be a dot plus
+    at least two labels: `host.endswith("com")` would trust every .com host and
+    `endswith("")` every host at all, so a row like that, however it got into
+    the table, is inert rather than catastrophic."""
+    pattern = host_pattern or ""
+    if match_type == "exact":
+        return bool(_EXACT_HOST_RE.match(pattern))
+    if match_type == "suffix":
+        return bool(_SUFFIX_HOST_RE.match(pattern))
+    return False
+
 
 def resolve_trust_from_db(url: str):
     """
@@ -53,7 +73,8 @@ def resolve_trust_from_db(url: str):
                 "FROM source_endpoints "
                 "WHERE status = 'active'"
             )
-            endpoints = cur.fetchall()
+            endpoints = [e for e in cur.fetchall()
+                         if is_well_formed_pattern(e["match_type"], e["host_pattern"])]
             
             # 2. Match exact first, then suffix
             endpoint = None
@@ -116,6 +137,9 @@ def resolve_trust_from_db(url: str):
                               f"{rights_class or 'unrecorded'!r}: recorded, not in force")
                 else:
                     decision_outcome = "allow"
+            elif rights_class == "in_copyright":
+                decision_outcome = "deny"
+                reason = "approved, but its rights class is 'in_copyright': recorded, not in force"
             elif endpoint["trust_mode"] == "item_verified":
                 decision_outcome = "requires_item_verification"
             else:
