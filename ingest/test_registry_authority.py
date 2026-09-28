@@ -128,6 +128,45 @@ class ApprovalInForce(unittest.TestCase):
         self.assertIn("status = 'active'", cur.sql[0])
 
 
+class HostilePatterns(unittest.TestCase):
+    """The same rule as lib/source-governance.ts::isWellFormedPattern: a stored
+    pattern that is not a well-formed hostname must never match by suffix."""
+
+    def test_well_formed_patterns(self):
+        self.assertTrue(G.is_well_formed_pattern("exact", "pares.cultura.gob.es"))
+        self.assertTrue(G.is_well_formed_pattern("suffix", ".wikisource.org"))
+
+    def test_malformed_patterns_are_inert(self):
+        for kind, bad in [("suffix", "com"), ("suffix", ".com"), ("suffix", ""), ("suffix", "wikisource.org"),
+                          ("suffix", ".org."), ("exact", "a@b.com"), ("exact", "x?y.com"), ("exact", "com"),
+                          ("exact", ""), ("exact", "UPPER.com"), ("bogus", "a.example.org")]:
+            self.assertFalse(G.is_well_formed_pattern(kind, bad), (kind, bad))
+
+    def test_a_suffix_row_named_com_does_not_trust_evil_dot_com(self):
+        hostile = {"id": 99, "host_pattern": "com", "match_type": "suffix", "status": "active", "trust_mode": "domain_trusted"}
+        reg, _ = resolve("https://evil.com/x", endpoint=hostile, decision=decision(rights="public_domain"))
+        self.assertFalse(reg["matched"])
+        self.assertEqual(reg["decision"], "deny")
+
+    def test_an_empty_suffix_row_does_not_trust_everything(self):
+        hostile = {"id": 98, "host_pattern": "", "match_type": "suffix", "status": "active", "trust_mode": "domain_trusted"}
+        reg, _ = resolve("https://anything.example/x", endpoint=hostile, decision=decision(rights="public_domain"))
+        self.assertFalse(reg["matched"])
+
+
+class ItemVerifiedRights(unittest.TestCase):
+    def test_an_in_copyright_item_verified_approval_is_not_in_force(self):
+        reg, _ = resolve(URL, endpoint=endpoint("item_verified"), decision=decision(rights="in_copyright"),
+                         rule={"verification_strategy": "pares_description"})
+        self.assertEqual(reg["decision"], "deny")
+        self.assertIn("in_copyright", reg["reason"])
+
+    def test_an_unknown_rights_item_verified_approval_still_verifies_per_item(self):
+        reg, _ = resolve(URL, endpoint=endpoint("item_verified"), decision=decision(rights="unknown"),
+                         rule={"verification_strategy": "pares_description"})
+        self.assertEqual(reg["decision"], "requires_item_verification")
+
+
 class StrategyDispatch(unittest.TestCase):
     def setUp(self):
         self.mode = os.environ.get("SOURCE_AUTHORITY_MODE")
