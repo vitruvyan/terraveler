@@ -126,18 +126,45 @@ export const MAX_WAYPOINTS = 300;
 export const MAX_CLAIMS_PER_WAYPOINT = 60;
 export const MAX_PLATES_PER_WAYPOINT = 12;
 
-export function domainOk(url: string): boolean {
+/** A plain http(s) URL — no userinfo, no non-default port — or null. */
+function plainUrl(url: string): URL | null {
   try {
     const parsed = new URL(url);
-    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password)
-      return false;
+    if (!["http:", "https:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
     if (parsed.port && !((parsed.protocol === "https:" && parsed.port === "443") ||
-                         (parsed.protocol === "http:" && parsed.port === "80"))) return false;
-    const host = parsed.hostname.toLowerCase();
-    return DOMAINS.some((d) => host === d || host.endsWith("." + d));
+                         (parsed.protocol === "http:" && parsed.port === "80"))) return null;
+    return parsed;
   } catch {
-    return false;
+    return null;
   }
+}
+
+export function domainOk(url: string): boolean {
+  const parsed = plainUrl(url);
+  if (!parsed) return false;
+  const host = parsed.hostname.toLowerCase();
+  return DOMAINS.some((d) => host === d || host.endsWith("." + d));
+}
+
+// Magna Carta 3.2: material whose licence is not open "may be linked and
+// briefly quoted with attribution — never ingested". "Briefly" is one number,
+// shared with the Curator (vocab/controlled.json -> ingest/licence.py).
+export const QUOTE_WORD_CAP: number = (CONTROLLED_VOCAB as any).quote_only_word_cap;
+
+/**
+ * A licence declaration that names no open licence but says so honestly: an
+ * explicit "unknown", a reserved-rights statement, or an NC / ND clause (not
+ * compatible with publishing under CC BY-SA). It is not a refusal — it is the
+ * quote-only profile — because refusing it taught contributors to declare CC
+ * for a source whose licence they could not see, which is a false statement in
+ * the provenance and worse than the truth.
+ */
+export function isQuoteOnlyLicence(lic: string): boolean {
+  const l = (lic ?? "").trim();
+  if (!l) return false;
+  return LICENSE_CLOSED.test(l) ||
+    /\b(unknown|not stated|unspecified|unclear|undetermined|all rights reserved|rights reserved|in copyright|copyrighted)\b/i.test(l) ||
+    l.startsWith("©");
 }
 
 function* strings(obj: any, path = ""): Generator<[string, string]> {
@@ -147,8 +174,14 @@ function* strings(obj: any, path = ""): Generator<[string, string]> {
     for (const k of Object.keys(obj)) yield* strings(obj[k], path ? `${path}.${k}` : k);
 }
 
-export function stage0(sub: any): string[] {
+export function stage0(sub: any, opts: { governedHost?: (url: string) => boolean } = {}): string[] {
   const fails: string[] = [];
+  // Where a source may be cited from: the broad institutional list above, PLUS
+  // any host an editor has approved in the source registry (an approval used to
+  // reach no gate at all). The registry check is injected because it needs the
+  // database and this function is synchronous.
+  const hostOk = (u: string): boolean =>
+    domainOk(u) || (opts.governedHost !== undefined && plainUrl(u) !== null && opts.governedHost(u));
   if (JSON.stringify(sub ?? {}).length > MAX_DRAFT_BYTES)
     return [`submission exceeds ${MAX_DRAFT_BYTES / 1000} kB — split it into smaller drafts`];
   const meta = sub?.meta ?? {};
@@ -185,10 +218,22 @@ export function stage0(sub: any): string[] {
       if (!c?.text) fails.push(`${ctag}: empty claim text`);
       if (!c?.evidence) { fails.push(`${ctag}: CLAIM WITHOUT SOURCE (Carta 3.1)`); continue; }
       if (!c.evidence.excerpt || !c.evidence.source_url) fails.push(`${ctag}: evidence incomplete`);
-      if (!LICENSE_OK.test(c.evidence.license ?? "")) fails.push(`${ctag}: licence not PD/CC (Carta 3.2)`);
-      else if (LICENSE_CLOSED.test(c.evidence.license ?? ""))
-        fails.push(`${ctag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
-      if (c.evidence.source_url && !domainOk(c.evidence.source_url))
+      const lic = String(c.evidence.license ?? "");
+      if (licenceUsable(lic)) {
+        // Declared open. Only a declaration: the Curator reads the item's own
+        // metadata and confirms it against the page, and where it cannot it
+        // applies the quote-only profile below.
+      } else if (isQuoteOnlyLicence(lic)) {
+        // Not open, and said so (Carta 3.2 / 8): a brief attributed quotation,
+        // never ingested. Nothing to refuse unless the quotation is not brief.
+        const quote = typeof c.evidence.quote === "string" ? c.evidence.quote.trim() : "";
+        const words = quote ? quote.split(/\s+/).length : 0;
+        if (words > QUOTE_WORD_CAP)
+          fails.push(`${ctag}: licence declared as '${lic}' (not open), so only a brief quotation is allowed — Carta 3.2: at most ${QUOTE_WORD_CAP} words; this quotation is ${words}. Quote a shorter passage, or cite a source whose licence is open`);
+      } else {
+        fails.push(`${ctag}: licence must be declared — 'public domain' or a CC licence if you can see one on the item; 'unknown' if you cannot (the source is then quoted briefly and never ingested, Carta 3.2). Do not declare an open licence you have not seen`);
+      }
+      if (c.evidence.source_url && !hostOk(c.evidence.source_url))
         fails.push(`${ctag}: source domain not whitelisted`);
     }
     if ((w?.plates ?? []).length > MAX_PLATES_PER_WAYPOINT)
@@ -200,8 +245,8 @@ export function stage0(sub: any): string[] {
       if (!LICENSE_OK.test(p?.license ?? "")) fails.push(`${ptag}: licence not PD/CC (Carta 3.2)`);
       else if (LICENSE_CLOSED.test(p?.license ?? ""))
         fails.push(`${ptag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
-      if (p?.url && !domainOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
-      if (p?.source_url && !domainOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
+      if (p?.url && !hostOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
+      if (p?.source_url && !hostOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
       if (!p?.date) fails.push(`${ptag}: field 'date' missing — say when the image was MADE, which is not always when the stage happened`);
     }
   }

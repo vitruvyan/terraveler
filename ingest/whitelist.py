@@ -278,7 +278,8 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
             "reason_codes": [f"fail closed: invalid SOURCE_AUTHORITY_MODE configuration '{mode}'"],
             "legacy_result": None,
             "registry_result": None,
-            "comparison_class": None
+            "comparison_class": None,
+            "licence_reading": False,
         }
 
     # Evaluate legacy outcome ONLY if we are NOT in strict registry mode
@@ -303,7 +304,8 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
             "reason_codes": [legacy_why],
             "legacy_result": legacy_res,
             "registry_result": None,
-            "comparison_class": None
+            "comparison_class": None,
+            "licence_reading": False,
         }
 
     # Evaluate registry outcome (Fails closed on DB error or unverified scope)
@@ -311,6 +313,7 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
     reg = resolve_trust_from_db(url)
     
     registry_allowed = False
+    licence_reading = False
     registry_reason = "rejected: missing or inactive registry status"
 
     if reg.get("matched"):
@@ -324,6 +327,13 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
             else:
                 registry_allowed = False
                 registry_reason = f"unknown verification strategy: {reg['verification_strategy']}"
+        elif reg["decision"] == "requires_licence_reading":
+            # Not ingestible (`allowed` stays False, so every caller that means
+            # "may this enter the corpus" is unaffected) — but quotable at the
+            # default profile, decided per item once its page has been read.
+            registry_allowed = False
+            licence_reading = True
+            registry_reason = reg.get("reason") or "licence read per item (Carta §3.2)"
         elif reg["decision"] == "deny":
             registry_allowed = False
             registry_reason = reg.get("reason") or "quarantined/rejected/review status on registry endpoint"
@@ -398,7 +408,8 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
             "reason_codes": [legacy_why],
             "legacy_result": legacy_res,
             "registry_result": registry_res,
-            "comparison_class": diff_class
+            "comparison_class": diff_class,
+            "licence_reading": False,
         }
 
     # Registry mode: database registry is the sole runtime authority
@@ -413,8 +424,33 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
         "reason_codes": [registry_reason],
         "legacy_result": None, # Do NOT invoke legacy code when in pure registry mode!
         "registry_result": registry_res,
-        "comparison_class": None
+        "comparison_class": None,
+        "licence_reading": licence_reading,
     }
+
+
+def quotation_gate(url: str, fetch_json=None):
+    """May this source be QUOTED, and on what terms? Returns (mode, reason):
+
+      ("open", why)          the source's licence is established — the same
+                             answer verify_source gives;
+      ("read-licence", why)  the registry admits the source but its rights are
+                             read per ITEM (ingest/licence.py): open if the
+                             item's own metadata says so, else the default
+                             profile — a brief attributed quotation, never
+                             ingested (Carta §3.2);
+      (None, why)            refused.
+
+    verify_source is unchanged and stays the only gate that means "may be
+    ingested": a read-licence source never passes it. Only the Curator's
+    quotation check asks this question."""
+    res = resolve_source_authority(url, fetch_json=fetch_json)
+    why = res["reason_codes"][0]
+    if res["allowed"]:
+        return "open", why
+    if res.get("licence_reading"):
+        return "read-licence", why
+    return None, why
 
 
 def verify_source(url: str, fetch_json=None):

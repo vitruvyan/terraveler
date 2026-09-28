@@ -127,7 +127,8 @@ class Stubbed:
 
     def __init__(self, *, payload=PAYLOAD, dossier=("support", "support"),
                  reviewer_rows=None, ring_detected=False,
-                 superseded=False, unreachable=False, dry_run=False):
+                 superseded=False, unreachable=False, dry_run=False,
+                 gate=None, raw_html=None, source_text=None):
         dossier = list(dossier)
         if reviewer_rows is None:
             # Established Scribes by default: thirty days old at review time,
@@ -145,6 +146,9 @@ class Stubbed:
                       "spans_written": None, "audit": None}
         self.unreachable = unreachable
         self.dry_run = dry_run
+        self.gate = gate
+        self.raw_html = raw_html
+        self.source_text = source_text
         self.saved = {}
 
     def __enter__(self):
@@ -157,9 +161,14 @@ class Stubbed:
         def _fetch(cfg, url):
             if self.unreachable:
                 raise TimeoutError("the archive did not answer")
-            return SOURCE_TEXT
+            if self.raw_html is not None:
+                cfg.raw_cache[url] = self.raw_html
+            return self.source_text if self.source_text is not None else SOURCE_TEXT
 
-        for name, value in (("_payload", _payload), ("fetch", _fetch)):
+        patches = [("_payload", _payload), ("fetch", _fetch)]
+        if self.gate is not None:
+            patches.append(("quotation_gate", lambda url, fetch_json=None: self.gate))
+        for name, value in patches:
             self.saved[name] = getattr(G, name)
             setattr(G, name, value)
         self.cfg = G.DeskConfig(pg={}, carta="0.7", dry_run=self.dry_run)
@@ -849,6 +858,99 @@ class ControlledVocabularyIsSharedNotCopied(unittest.TestCase):
         gate_ts = (HERE.parent / "lib" / "gate.ts").read_text()
         self.assertIn('from "@/vocab/controlled.json"', gate_ts,
                        "lib/gate.ts must import the same vocab file this script reads")
+
+
+# ------------------------------------------------- rights read per item (Carta 3.2)
+
+# A source whose rights the registry cannot state: the endpoint is admitted but
+# each ITEM's licence is read after it is fetched, and where it cannot be read
+# the default profile applies — a brief attributed quotation, never a refusal.
+# First person on purpose: on a journal-basis voyage a passage nobody speaks in
+# is escalated by SPAN_NO_FIRST_PERSON, which is a different check.
+LONG_PASSAGE = "I " + " ".join(f"word{i}" for i in range(120))
+LONG_SOURCE = "Preface.\n\n" + LONG_PASSAGE + "\n\nColophon."
+SHORT_PASSAGE = "I " + " ".join(f"word{i}" for i in range(60))
+READ = ("read-licence", "rights unknown at the endpoint: licence read per item")
+
+
+def one_quote(quote, *, license=None, url="https://www.dbnl.org/tekst/x"):
+    ev = {"quote": quote, "source_url": url}
+    if license:
+        ev["license"] = license
+    return {**PAYLOAD, "waypoints": [
+        {"seq": 1, "confidence": "certain", "arrival_date": "1766-05-01", "claims": [{"evidence": ev}]}]}
+
+
+class RightsReadPerItem(unittest.TestCase):
+
+    def codes(self, result):
+        return {r[1] for r in result.state.fact("source_findings")} | \
+               {r[1] for r in (result.state.fact("verbatim_findings") or [])}
+
+    def test_an_unreadable_licence_falls_to_the_default_profile_and_a_brief_quote_passes(self):
+        with Stubbed(payload=one_quote(SHORT_PASSAGE), gate=READ, source_text=LONG_SOURCE,
+                     raw_html="<html><body>no licence here</body></html>") as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+        span = s.world["spans_written"]["1.1"]
+        self.assertEqual(span["rights"]["profile"], "quote-only")
+        self.assertIn("default profile", span["rights"]["basis"])
+
+    def test_a_long_quote_from_an_unreadable_licence_is_refused_with_the_reason(self):
+        with Stubbed(payload=one_quote(LONG_PASSAGE), gate=READ, source_text=LONG_SOURCE,
+                     raw_html="<html><body>no licence here</body></html>") as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "changes")
+        self.assertEqual(result.state.fact("stats")["capped"], 1)
+        self.assertIsNone(s.world["spans_written"], "a capped quotation must never become a published span")
+        text = " ".join(str(r) for r in result.state.fact("verbatim_findings"))
+        self.assertIn("QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP", text)
+
+    def test_the_same_long_quote_passes_when_the_item_metadata_says_it_is_open(self):
+        html = ('<html><head><link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">'
+                '</head><body>x</body></html>')
+        with Stubbed(payload=one_quote(LONG_PASSAGE), gate=READ, source_text=LONG_SOURCE, raw_html=html) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+        rights = s.world["spans_written"]["1.1"]["rights"]
+        self.assertEqual((rights["profile"], rights["licence"], rights["basis"]),
+                         ("open", "CC BY-SA", "page-metadata"))
+
+    def test_an_nc_licence_is_not_open_so_the_cap_applies(self):
+        html = '<head><link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/"></head>'
+        with Stubbed(payload=one_quote(LONG_PASSAGE), gate=READ, source_text=LONG_SOURCE, raw_html=html) as s:
+            result = run(s)
+        self.assertEqual(result.state.fact("stats")["capped"], 1)
+
+    def test_a_declared_licence_counts_only_when_the_page_itself_carries_it(self):
+        confirmed = "<body>Reuse: Creative Commons CC BY-SA 4.0</body>"
+        with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
+                     source_text=LONG_SOURCE, raw_html=confirmed) as s:
+            result = run(s)
+        rights = s.world["spans_written"]["1.1"]["rights"]
+        self.assertEqual(rights["profile"], "open")
+        self.assertIn("declared by the contributor", rights["basis"])
+
+        with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
+                     source_text=LONG_SOURCE, raw_html="<body>nothing about licences</body>") as s:
+            result = run(s)
+        self.assertEqual(result.state.fact("stats")["capped"], 1,
+                         "a bare declaration is not evidence: the contributor's word alone opens nothing")
+
+    def test_an_established_licence_is_untouched_and_carries_no_rights_record(self):
+        payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
+        with Stubbed(payload=payload, gate=("open", "public_domain")) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "approve")
+        self.assertNotIn("rights", s.world["spans_written"]["1.1"])
+
+    def test_a_refused_source_is_still_refused(self):
+        with Stubbed(payload=one_quote(SHORT_PASSAGE), gate=(None, "in_copyright: recorded, not in force"),
+                     source_text=LONG_SOURCE) as s:
+            result = run(s)
+        self.assertEqual(result.state.decision("verdict"), "changes")
+        self.assertEqual(result.state.fact("gate_stats")["quoted"], 1)
+        self.assertEqual(result.state.fact("n_admitted"), 0)
 
 
 if __name__ == "__main__":

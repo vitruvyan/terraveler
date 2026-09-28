@@ -128,20 +128,37 @@ def resolve_trust_from_db(url: str):
                 decision_outcome = "deny"
                 reason = "no approval in force on this endpoint (newest decision is not an approve)"
             elif endpoint["trust_mode"] == "domain_trusted":
-                # Mirrors lib/source-governance.ts::isEffective: "this whole
-                # domain is safe to ingest unattended" cannot rest on rights
-                # nobody has established.
-                if rights_class in (None, "unknown", "in_copyright"):
+                # "This whole domain is safe to ingest unattended" cannot rest
+                # on rights nobody has established — so it does not: an
+                # approval whose rights are unknown is NOT wholesale trust. It
+                # is in force at the level that needs no such knowledge: each
+                # item's licence is read, and where it cannot be read the
+                # default profile applies (brief attributed quotation, never
+                # ingested — Carta §3.2; ingest/licence.py). Only in_copyright
+                # is a refusal.
+                if rights_class == "in_copyright":
                     decision_outcome = "deny"
-                    reason = (f"approved as domain_trusted but rights class is "
-                              f"{rights_class or 'unrecorded'!r}: recorded, not in force")
+                    reason = "approved, but its rights class is 'in_copyright': recorded, not in force"
+                elif rights_class in (None, "unknown"):
+                    decision_outcome = "requires_licence_reading"
+                    verification_strategy = "licence_markers"
+                    reason = ("rights unknown at the endpoint: licence read per item; where it "
+                              "cannot be read, the default profile applies (Carta §3.2)")
                 else:
                     decision_outcome = "allow"
             elif rights_class == "in_copyright":
                 decision_outcome = "deny"
                 reason = "approved, but its rights class is 'in_copyright': recorded, not in force"
             elif endpoint["trust_mode"] == "item_verified":
-                decision_outcome = "requires_item_verification"
+                if verification_strategy in ("none", "", None):
+                    # No item verifier exists for this host: read the licence
+                    # off the item itself rather than refuse it for good.
+                    decision_outcome = "requires_licence_reading"
+                    verification_strategy = "licence_markers"
+                    reason = ("item_verified with no host-specific verifier: licence read per "
+                              "item; where it cannot be read, the default profile applies (Carta §3.2)")
+                else:
+                    decision_outcome = "requires_item_verification"
             else:
                 decision_outcome = "deny"
                 reason = (f"trust_mode {endpoint['trust_mode']!r} is not honoured by host "

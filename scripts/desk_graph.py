@@ -69,7 +69,8 @@ from vitruvyan_motus.effects import EffectClass            # noqa: E402
 from verbatim import (                                     # noqa: E402
     UnverifiableSource, locate_in_source, norm, source_text,
 )
-from whitelist import domain_of, verify_source             # noqa: E402
+from whitelist import domain_of, quotation_gate, verify_source  # noqa: E402
+import licence as LIC                                     # noqa: E402
 from tls import context_for as tls_context_for            # noqa: E402
 
 import desk_checks as K                                    # noqa: E402
@@ -283,6 +284,9 @@ class DeskConfig:
     dry_run: bool = False
     spans: SpanStore = field(default_factory=SpanStore)
     fetch_cache: dict[str, str] = field(default_factory=dict)
+    # The page as served, kept beside its readable text ONLY so a licence can be
+    # read off its metadata (ingest/licence.py). Never persisted, never traced.
+    raw_cache: dict[str, str] = field(default_factory=dict)
 
     def connect(self):
         return psycopg2.connect(**self.pg)
@@ -354,6 +358,7 @@ def fetch(cfg: DeskConfig, url: str) -> str:
                 f"source larger than {MAX_FETCH_BYTES >> 20}MB: {url}")
         body = raw.decode("utf-8", "replace")
         ctype = r.headers.get("Content-Type", "")
+    cfg.raw_cache[url] = body
     cfg.fetch_cache[url] = source_text(body, ctype)
     return cfg.fetch_cache[url]
 
@@ -464,7 +469,7 @@ def make_nodes(cfg: DeskConfig):
         now = ctx.now()
         f = K.Findings()
         admitted, stats = K.check_sources(payload.get("waypoints") or [], f,
-                                          verify_source)
+                                          verify_source, gate=quotation_gate)
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=(f"licence gate over submissions#{sid} payload {sha}: "
@@ -473,7 +478,8 @@ def make_nodes(cfg: DeskConfig):
         # The URLs travel: a source identifier is exactly the kind of thing a
         # trace is supposed to name. The quotation does not.
         cited = [{"seq": a["seq"], "ci": a["ci"], "where": a["where"],
-                  "url": a["url"], "quote_len": a["quote_len"]} for a in admitted]
+                  "url": a["url"], "quote_len": a["quote_len"],
+                  "gate": a.get("gate", "open")} for a in admitted]
         return (state
                 .with_fact(Fact("source_findings", f.rows, "check_sources", now))
                 .with_fact(Fact("cited_sources", cited, "check_sources", now))
@@ -495,11 +501,14 @@ def make_nodes(cfg: DeskConfig):
         # carried here from check_sources: the state does not hold it, and
         # that is the rule this graph is built around.
         quotes = {}
+        declared = {}
         for w in payload.get("waypoints") or []:
             for ci, c in enumerate(w.get("claims") or [], 1):
-                q = (c.get("evidence") or {}).get("quote")
+                ev = c.get("evidence") or {}
+                q = ev.get("quote")
                 if q:
                     quotes[f"{w.get('seq')}.{ci}"] = q
+                    declared[f"{w.get('seq')}.{ci}"] = ev.get("license")
 
         f = K.Findings()
         fetched: list[dict] = []
@@ -533,6 +542,20 @@ def make_nodes(cfg: DeskConfig):
                     description=f"GET {entry['url']} failed: {failure}",
                     receipt=EffectReceipt(receipt_id=failure, status="unknown")))
                 continue
+            # A source admitted at "read-licence" has no established rights
+            # yet: they are read off the page just fetched — the item's own
+            # metadata, or a declaration the page confirms — and where they
+            # cannot be read the default profile applies, which is a brief
+            # quotation and never a refusal (ingest/licence.py, Carta 3.2).
+            rights = None
+            if entry.get("gate") == "read-licence":
+                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]), declared.get(key))
+                if LIC.over_cap(rights, claim["quote"]):
+                    f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
+                           seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
+                           cap=LIC.QUOTE_WORD_CAP, words=LIC.word_count(claim["quote"]))
+                    stats["capped"] = stats.get("capped", 0) + 1
+                    continue
             body_sha = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
             if not any(s["url"] == entry["url"] for s in fetched):
                 fetched.append({"url": entry["url"], "length": len(body),
@@ -554,6 +577,8 @@ def make_nodes(cfg: DeskConfig):
                              "source_sha256": body_sha.split(":", 1)[1],
                              "verified_at": stamp,
                              "carta_version": cfg.carta})
+                if rights is not None:
+                    span["rights"] = rights
                 cfg.spans.stage(key, span)
 
         staged = cfg.spans.staged()

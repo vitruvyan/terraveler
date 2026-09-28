@@ -331,8 +331,9 @@ def to_bundle(payload: dict, spans: dict, provenance: dict) -> dict:
             # neither), never a replacement for diary_excerpt itself.
             "diary_excerpt_raw": span.get("raw_span"),
             "diary_excerpt_transformations": span.get("transformations"),
-            "diary_source_citation": ev.get("source_title"),
+            "diary_source_citation": citation_of(ev, span),
             "diary_source_url": ev.get("source_url"),
+            "diary_source_rights": rights_of(span),
             "confidence": w.get("confidence") or "certain",
             "media_url": None,
         })
@@ -346,6 +347,29 @@ def to_bundle(payload: dict, spans: dict, provenance: dict) -> dict:
             # this same list rather than overwriting it (see append_provenance).
             "provenance": [provenance_entry(provenance, "new-voyage",
                                              [w["seq"] for w in out_wps])]}
+
+
+RIGHTS_NOTE = "rights not verified — brief quotation under Carta §3.2"
+
+
+def citation_of(ev: dict, span: dict | None) -> str | None:
+    """The citation printed beside an excerpt. For a source whose licence could
+    not be read as open (the Curator's default profile, ingest/licence.py) it
+    says so on the page — the excerpt is a brief attributed quotation, not
+    something the atlas holds the rights to — rather than leaving the reader to
+    assume an open licence."""
+    title = ev.get("source_title")
+    rights = (span or {}).get("rights") or {}
+    if rights.get("profile") == "quote-only":
+        return f"{title} ({RIGHTS_NOTE})" if title else RIGHTS_NOTE.capitalize()
+    return title
+
+
+def rights_of(span: dict | None) -> dict | None:
+    """The machine-readable twin of citation_of's note: how the quotation's
+    rights were established. None for an established (open) source."""
+    rights = (span or {}).get("rights")
+    return dict(rights) if rights else None
 
 
 def atlas_entry(bundle: dict, blurb: str, profile: str) -> str:
@@ -627,8 +651,10 @@ def merge_enrichment_waypoint(existing: dict, sub_wp: dict, spans: dict, notes: 
         out["diary_excerpt"] = span.get("reading_span")
         out["diary_excerpt_raw"] = span.get("raw_span")
         out["diary_excerpt_transformations"] = span.get("transformations")
-        out["diary_source_citation"] = ev.get("source_title")
+        out["diary_source_citation"] = citation_of(ev, span)
         out["diary_source_url"] = ev.get("source_url")
+        if rights_of(span):
+            out["diary_source_rights"] = rights_of(span)
         notes.append(f"  waypoint {out['seq']} ({place}): added a verified excerpt")
     elif span.get("reading_span"):
         notes.append(f"  waypoint {out['seq']} ({place}): has a newly verified span but already "
@@ -682,8 +708,9 @@ def new_enrichment_waypoint(sub_wp: dict, spans: dict, seq: int, wp_id: int) -> 
         "diary_excerpt": span.get("reading_span"),
         "diary_excerpt_raw": span.get("raw_span"),
         "diary_excerpt_transformations": span.get("transformations"),
-        "diary_source_citation": ev.get("source_title"),
+        "diary_source_citation": citation_of(ev, span),
         "diary_source_url": ev.get("source_url"),
+        "diary_source_rights": rights_of(span),
         "confidence": sub_wp.get("confidence") or "certain",
         "media_url": None,
         "media": media,

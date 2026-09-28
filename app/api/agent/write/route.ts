@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ensureRegistry, isGovernedHost } from "@/lib/sourceSearch";
 import { CARTA_VERSION } from "@/lib/carta";
 import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
@@ -288,7 +289,8 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
 
     case "submit_draft": {
       const sub = args?.submission;
-      const fails = stage0(sub);
+      await ensureRegistry();
+      const fails = stage0(sub, { governedHost: isGovernedHost });
       const status = fails.length ? "curator-rejected" : "peer-review";
       const one = await recordSubmission(c, {
         type: sub?.meta?.type ?? "draft",

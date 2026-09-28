@@ -13,7 +13,7 @@ import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 import { CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
-import { fetchSourceText, searchSources } from "@/lib/sourceSearch";
+import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
 /**
@@ -926,7 +926,8 @@ const DRAFT_SUBMISSION_SCHEMA = {
                     source_url: { type: "string",
                       description: "a fetchable URL a verifier can re-read; PD or CC only (Carta 3.2)" },
                     source_title: { type: "string" },
-                    license: { type: "string" },
+                    license: { type: "string",
+                      description: "REQUIRED. The licence you can SEE on the item: 'public domain', 'CC0', 'CC BY 4.0', 'CC BY-SA 4.0' — or 'unknown' if you cannot see one. Never declare an open licence you have not seen: the Curator reads the item's own metadata and confirms a declaration against the page. Where the licence is not open (unknown, NC/ND, all rights reserved) the source is still usable under Carta 3.2 — a brief attributed quotation of at most 80 words, never ingested — and the published citation says the rights were not verified." },
                   },
                 },
               },
@@ -2077,7 +2078,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // write. A submission id and an audit trail are what mark something as
       // actually submitted; a dry run leaves neither behind, however many
       // times it is called.
-      const fails = stage0(args.submission);
+      await ensureRegistry();
+      const fails = stage0(args.submission, { governedHost: isGovernedHost });
       return JSON.stringify({
         valid: fails.length === 0,
         gate_failures: fails,
@@ -2094,7 +2096,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     }
     case "submit_draft": {
       const sub = args.submission;
-      const fails = stage0(sub);
+      await ensureRegistry();
+      const fails = stage0(sub, { governedHost: isGovernedHost });
       const status = fails.length ? "curator-rejected" : "peer-review";
       const draftType = sub?.meta?.type ?? "draft";
       const fp = contentFingerprint(draftType, sub);

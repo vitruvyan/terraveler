@@ -88,12 +88,36 @@ class ApprovalInForce(unittest.TestCase):
                              decision=decision(rights=rights))
             self.assertEqual(reg["decision"], "allow", rights)
 
-    def test_domain_trusted_with_unknown_rights_is_recorded_not_in_force(self):
-        for rights in ("unknown", "in_copyright", None):
+    def test_domain_trusted_with_unknown_rights_is_read_per_item_not_trusted_wholesale(self):
+        # The editor cannot know a library's licences, and an approval that
+        # stays inert until he does never becomes usable. It is in force at the
+        # level that needs no such knowledge: each item's licence is read, and
+        # the default profile applies where it cannot be.
+        for rights in ("unknown", None):
             reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),
                              decision=decision(rights=rights))
-            self.assertEqual(reg["decision"], "deny", rights)
-            self.assertIn("recorded, not in force", reg["reason"])
+            self.assertEqual(reg["decision"], "requires_licence_reading", rights)
+            self.assertEqual(reg["verification_strategy"], "licence_markers")
+            self.assertIn("default profile", reg["reason"])
+
+    def test_domain_trusted_in_copyright_is_still_refused(self):
+        reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),
+                         decision=decision(rights="in_copyright"))
+        self.assertEqual(reg["decision"], "deny")
+        self.assertIn("in_copyright", reg["reason"])
+
+    def test_item_verified_with_no_host_specific_verifier_is_read_per_item_instead_of_refused(self):
+        for rule in (None, {"verification_strategy": "none"}):
+            reg, _ = resolve("https://www.openarch.nl/x", endpoint=endpoint("item_verified", "www.openarch.nl"),
+                             decision=decision(rights="creative_commons"), rule=rule)
+            self.assertEqual(reg["decision"], "requires_licence_reading", rule)
+            self.assertEqual(reg["verification_strategy"], "licence_markers")
+
+    def test_item_verified_with_a_named_verifier_keeps_it(self):
+        reg, _ = resolve(URL, endpoint=endpoint("item_verified"), decision=decision(),
+                         rule={"verification_strategy": "pares_description"})
+        self.assertEqual(reg["decision"], "requires_item_verification")
+        self.assertEqual(reg["verification_strategy"], "pares_description")
 
     def test_a_newest_decision_that_is_not_an_approval_denies(self):
         reg, _ = resolve(URL, endpoint=endpoint("item_verified"), decision=decision(outcome="reject"))
@@ -202,6 +226,59 @@ class StrategyDispatch(unittest.TestCase):
         ok, why = whitelist.verify_source("https://www.dbnl.org/tekst/x")
         self.assertFalse(ok)
         self.assertIn("recorded, not in force", why)
+
+
+
+class QuotationGate(unittest.TestCase):
+    """verify_source means "may be INGESTED" and must not move; quotation_gate
+    is the separate question the Curator asks about a quotation."""
+
+    def setUp(self):
+        self.mode = os.environ.get("SOURCE_AUTHORITY_MODE")
+        os.environ["SOURCE_AUTHORITY_MODE"] = "registry"
+
+    def tearDown(self):
+        if self.mode is None:
+            os.environ.pop("SOURCE_AUTHORITY_MODE", None)
+        else:
+            os.environ["SOURCE_AUTHORITY_MODE"] = self.mode
+
+    READ = {"matched": True, "decision": "requires_licence_reading", "endpoint_id": 11,
+            "host_pattern": "www.dbnl.org", "trust_mode": "domain_trusted",
+            "verification_strategy": "licence_markers", "rights_class": "unknown",
+            "policy_decision_id": 12, "reason": "rights unknown at the endpoint: licence read per item"}
+
+    @patch("source_governance_shadow.resolve_trust_from_db")
+    def test_a_read_licence_source_is_quotable_but_never_ingestible(self, mock_resolve):
+        mock_resolve.return_value = dict(self.READ)
+        mode, why = whitelist.quotation_gate("https://www.dbnl.org/tekst/x")
+        self.assertEqual(mode, "read-licence")
+        ok, _ = whitelist.verify_source("https://www.dbnl.org/tekst/x")
+        self.assertFalse(ok, "verify_source is the ingestion gate: a quote-only source must never pass it")
+
+    @patch("source_governance_shadow.resolve_trust_from_db")
+    def test_an_established_licence_is_open_in_both(self, mock_resolve):
+        mock_resolve.return_value = {"matched": True, "decision": "allow", "endpoint_id": 1,
+                                     "host_pattern": "gutenberg.org", "trust_mode": "domain_trusted",
+                                     "verification_strategy": "none", "rights_class": "public_domain",
+                                     "policy_decision_id": 1}
+        self.assertEqual(whitelist.quotation_gate("https://gutenberg.org/x")[0], "open")
+        self.assertTrue(whitelist.verify_source("https://gutenberg.org/x")[0])
+
+    @patch("source_governance_shadow.resolve_trust_from_db")
+    def test_a_refusal_is_a_refusal(self, mock_resolve):
+        mock_resolve.return_value = {"matched": True, "decision": "deny", "endpoint_id": 5,
+                                     "host_pattern": "x.example", "trust_mode": "domain_trusted",
+                                     "verification_strategy": "none", "rights_class": "in_copyright",
+                                     "policy_decision_id": 5, "reason": "in_copyright: recorded, not in force"}
+        mode, why = whitelist.quotation_gate("https://x.example/a")
+        self.assertIsNone(mode)
+        self.assertIn("in_copyright", why)
+
+    def test_legacy_mode_has_no_read_licence_outcome(self):
+        os.environ["SOURCE_AUTHORITY_MODE"] = "legacy"
+        self.assertEqual(whitelist.quotation_gate("https://www.gutenberg.org/x")[0], "open")
+        self.assertIsNone(whitelist.quotation_gate("https://www.dbnl.org/x")[0])
 
 
 if __name__ == "__main__":
