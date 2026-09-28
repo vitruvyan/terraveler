@@ -56,8 +56,9 @@ async function contributor(id: number): Promise<Contributor | null> {
 }
 
 async function overAuthorQuota(c: Contributor, anchored = false) {
-  if (anchored) return null;
-  const limit = quotaForRank(c.rank).submissions_per_day;
+  // The fallback (non-RPC) insert path has no atomic count: an anchored agent
+  // keeps its daily ceiling here too, or a gate-refused draft would be unbounded.
+  const limit = anchored ? ANCHORED_SUBMISSIONS_PER_DAY : quotaForRank(c.rank).submissions_per_day;
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const rows = await sb("GET",
     `submissions?contributor_id=eq.${c.id}&created_at=gte.${since}&select=id&limit=${limit + 1}`);

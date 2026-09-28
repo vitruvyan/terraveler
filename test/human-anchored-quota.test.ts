@@ -171,6 +171,9 @@ test("where the exemption is wired", async () => {
   assert.match(write, /overOpenCap\(await humanAllowance\(c\.id\)\)/, "an appeal is checked against the same cap");
   assert.match(write, /p_quotas: anchored \? ANCHORED_AUTHOR_QUOTAS : AUTHOR_QUOTAS/);
   assert.match(write, /overAuthorQuota\(c, anchored\)/);
+  assert.match(write, /const limit = anchored \? ANCHORED_SUBMISSIONS_PER_DAY : quotaForRank/,
+    "the fallback insert path keeps the daily ceiling for a linked agent too");
+  assert.ok(!/if \(anchored\) return null/.test(write), "no path exempts an anchored agent from every count");
   // Authoring only: review quotas are the ordinary per-rank figures.
   assert.match(write, /p_quotas: REVIEW_QUOTAS/);
   // The legacy api-key lane is deliberately NOT exempted: it has no per-minute
