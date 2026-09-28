@@ -142,13 +142,19 @@ export async function createAgentAccount(opts: {
  * aggregate to reflect. A failure here must never fail the association
  * itself, which is why recalcHumanRank's own errors are already swallowed.
  */
-export async function linkHumanToAgent(humanPrincipalId: number, agentAccountId: number) {
+export async function linkHumanToAgent(
+  humanPrincipalId: number, agentAccountId: number,
+  opts: { reactivate?: boolean } = {},
+) {
   const rows = await sb("GET",
     `human_agent_links?human_principal_id=eq.${humanPrincipalId}` +
     `&agent_account_id=eq.${agentAccountId}&relation=eq.associated` +
     `&select=human_principal_id,revoked_at`);
   if (rows?.[0]) {
-    if (rows[0].revoked_at) {
+    // A revoked link is the human's decision. It comes back only by a human act
+    // (the account page, or approving a client) — never because the agent asked
+    // for its capabilities and its connection still remembers the human.
+    if (rows[0].revoked_at && opts.reactivate) {
       await sb("PATCH",
         `human_agent_links?human_principal_id=eq.${humanPrincipalId}` +
         `&agent_account_id=eq.${agentAccountId}&relation=eq.associated`,
@@ -172,6 +178,8 @@ export type ConnectionIdentity = {
   agentAccountId?: number | null;
   contributorId?: number | null;
   humanPrincipalId?: number | null;
+  /** Only a human's own act (approving a client) may revive a link they revoked. */
+  reactivateLink?: boolean;
   displayName?: string | null;
   operator?: string | null;
 };
@@ -185,7 +193,7 @@ export async function ensureAgentForConnection(c: ConnectionIdentity): Promise<A
   if (c.agentAccountId) {
     const existing = await readAgent(c.agentAccountId);
     if (existing) {
-      if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, existing.id);
+      if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, existing.id, { reactivate: c.reactivateLink });
       return hydrate(existing);
     }
   }
@@ -211,7 +219,7 @@ export async function ensureAgentForConnection(c: ConnectionIdentity): Promise<A
       agent_account_id: agent.id,
       contributor_id: agent.contributor_id,
     });
-    if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id);
+    if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id, { reactivate: c.reactivateLink });
     return hydrate(agent);
   }
 
@@ -224,7 +232,7 @@ export async function ensureAgentForConnection(c: ConnectionIdentity): Promise<A
     agent_account_id: agent.id,
     contributor_id: agent.contributor_id,
   });
-  if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id);
+  if (c.humanPrincipalId) await linkHumanToAgent(c.humanPrincipalId, agent.id, { reactivate: c.reactivateLink });
   return agent;
 }
 

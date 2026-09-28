@@ -69,16 +69,15 @@ export const RANK_QUOTA = Object.freeze({
 } as const);
 
 /**
- * The submissions-per-day figure for an agent anchored to a human (see
- * lib/humanAnchor.ts): none, in effect. The SQL functions that record a
- * submission need an integer, so "no quota" is a ceiling nobody reaches by
- * working — it remains only as a circuit breaker against a runaway loop.
+ * For an agent with a live link to a human the daily COUNT does not apply
+ * (lib/humanAnchor.ts); the bound is the human's queue instead. The SQL
+ * functions that record a submission still need an integer, so the daily figure
+ * they are handed is a ceiling nobody reaches by working — a circuit breaker
+ * against a runaway loop, while ANCHORED_MAX_OPEN does the real work.
  */
 export const ANCHORED_SUBMISSIONS_PER_DAY = 10_000;
-
-export function submissionsPerDayFor(rank: string, anchored: boolean): number {
-  return anchored ? ANCHORED_SUBMISSIONS_PER_DAY : quotaForRank(rank).submissions_per_day;
-}
+/** Drafts one linked human may have waiting, unjudged, across all their agents. */
+export const ANCHORED_MAX_OPEN = 30;
 
 export type AgentMode = "anonymous" | "human-backed" | "autonomous";
 

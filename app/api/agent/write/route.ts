@@ -3,8 +3,8 @@ import { ensureRegistry, isGovernedHost } from "@/lib/sourceSearch";
 import { CARTA_VERSION } from "@/lib/carta";
 import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
-import { ANCHORED_SUBMISSIONS_PER_DAY, CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
-import { isHumanAnchored } from "@/lib/humanAnchor";
+import { ANCHORED_MAX_OPEN, ANCHORED_SUBMISSIONS_PER_DAY, CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
+import { humanAllowance, openQueueMessage } from "@/lib/humanAnchor";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
 import {
   AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
@@ -96,7 +96,10 @@ async function recordSubmission(c: Contributor, o: {
   findings?: unknown;
 }) {
   const fp = contentFingerprint(o.type, o.payload);
-  const anchored = await isHumanAnchored(c.id);
+  const allowance = await humanAllowance(c.id);
+  const anchored = allowance.anchored;
+  // An agent with a live human link has no daily count; its human's queue is the bound.
+  if (anchored && allowance.open >= ANCHORED_MAX_OPEN) return { error: openQueueMessage(allowance.open) };
   const one = await optionalRpc("mcp_record_submission_oauth", {
     p_contributor_id: c.id,
     p_type: o.type,

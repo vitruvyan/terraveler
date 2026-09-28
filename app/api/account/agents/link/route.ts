@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   if (!principal?.id)
     return NextResponse.json({ error: "Could not resolve your human account." }, { status: 500 });
 
-  await linkHumanToAgent(principal.id, agent.id);
+  await linkHumanToAgent(principal.id, agent.id, { reactivate: true });
   await sb("POST", "audit_log", {
     submission_id: null,
     actor: `human:${user.email ?? user.sub}`,
