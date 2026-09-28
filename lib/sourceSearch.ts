@@ -60,15 +60,6 @@ import {
 const UA = "Terraveler-AgentSourceSearch/1.0 (contact: dbaldoni@gmail.com)";
 const HTTP_TIMEOUT_MS = 20_000;
 
-async function getText(url: string): Promise<string> {
-  const r = await fetch(url, {
-    headers: { "User-Agent": UA },
-    signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
-  });
-  if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
-  return r.text();
-}
-
 async function getJson(url: string): Promise<any> {
   const r = await fetch(url, {
     headers: { "User-Agent": UA, Accept: "application/json" },
@@ -76,6 +67,66 @@ async function getJson(url: string): Promise<any> {
   });
   if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
   return r.json();
+}
+
+const MAX_REDIRECTS = 5;
+
+function isArchiveFamily(host: string): boolean {
+  return host === "archive.org" || host.endsWith(".archive.org");
+}
+
+/**
+ * Whether a redirect stays inside what is governed. The gate is checked
+ * against the URL an agent ASKED for; fetch follows redirects, so it must be
+ * re-established against the URL that answered — or a governed host that
+ * redirects (gutenberg.org → www.gutenberg.org, or an open redirect) binds
+ * the trust decision to a body some other host chose, and quarantining one
+ * host of a pair would not stop the other one serving it.
+ *
+ * Mirrors scripts/desk_graph.py::redirect_stays_home: archive.org hands item
+ * files to per-item CDN nodes (dn760108.eu.archive.org, ia800808.us.archive.org)
+ * that are its own infrastructure and not separately registered.
+ */
+export function redirectStaysGoverned(asked: string, answered: string): boolean {
+  let from: URL, to: URL;
+  try {
+    from = new URL(asked);
+    to = new URL(answered);
+  } catch {
+    return false;
+  }
+  if (to.protocol !== "https:" || to.username || to.password) return false;
+  if (isGovernedHost(answered)) return true;
+  return isArchiveFamily(from.hostname.toLowerCase()) && isArchiveFamily(to.hostname.toLowerCase());
+}
+
+/**
+ * GET a governed source's text, following redirects by hand so every hop is
+ * re-checked. `fetchImpl` is a seam for tests.
+ */
+export async function getGovernedText(startUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
+  let url = startUrl;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const r = await fetchImpl(url, {
+      headers: { "User-Agent": UA },
+      redirect: "manual",
+      signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+    });
+    if (r.status >= 300 && r.status < 400) {
+      const location = r.headers.get("location");
+      if (!location) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status} with no Location`);
+      const next = new URL(location, url).toString();
+      if (!redirectStaysGoverned(url, next))
+        throw new Error(
+          `fetch_source_text: ${new URL(url).host} redirected to ${new URL(next).host}, which is not a governed source — refusing to follow.`,
+        );
+      url = next;
+      continue;
+    }
+    if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
+    return r.text();
+  }
+  throw new Error("fetch_source_text: too many redirects");
 }
 
 // ------------------------------------------------------------------ whitelist gates
@@ -107,15 +158,38 @@ export function isGovernedHost(url: string): boolean {
 
 // ------------------------------------------------------------------ the live registry
 const REGISTRY_TTL_MS = 60_000;
-// Past this, a registry that keeps failing to reload is no longer trusted to
-// describe revocations either — fall back to the seed floor rather than
-// serve an ever-older view.
+// A registry that keeps failing to reload is no longer trusted to describe
+// revocations either, so past this the view is dropped — see currentEndpoints
+// for what a dropped view means.
 const REGISTRY_MAX_STALE_MS = 10 * 60_000;
+// Bounded well inside a request's budget: this read is in front of every fetch.
+const REGISTRY_LOAD_TIMEOUT_MS = 2_500;
 
 let registry: { endpoints: SourceEndpoint[]; loadedAt: number } | null = null;
+let registryLoad: Promise<void> | null = null;
+// Whether a registry is expected at all. Where no backend is configured (a
+// local checkout, the unit tests) the seed hosts are the only authority there
+// is; where one IS configured, "could not read it" must not be read as "no
+// revocations".
+let registryRequired = Boolean(POSTGREST_URL);
 
+/**
+ * The endpoints in force right now. A loaded view (fresh, or stale within
+ * REGISTRY_MAX_STALE_MS) is used as it stands. With no view:
+ *  - a backend is configured → NOTHING is governed. This fails CLOSED, like
+ *    the Python registry authority does: falling back to the seeds would
+ *    re-trust a host the editor had quarantined, exactly when the registry
+ *    that says so cannot be read;
+ *  - no backend configured → the seed floor.
+ */
 function currentEndpoints(): readonly SourceEndpoint[] {
-  return registry?.endpoints ?? SEED_ENDPOINTS;
+  if (registry) return registry.endpoints;
+  return registryRequired ? [] : SEED_ENDPOINTS;
+}
+
+/** True when a backend is configured but no usable view of it exists. */
+export function registryUnavailable(): boolean {
+  return registryRequired && registry === null;
 }
 
 /**
@@ -128,15 +202,20 @@ export async function loadRegistryRows(
 ): Promise<RegistryRow[]> {
   const endpoints: any[] = await fetchJson(
     "source_endpoints?select=id,institution_id,host_pattern,match_type,status,trust_mode&order=id.asc&limit=1000");
+  // nullslast: Postgres sorts NULL first on DESC, which would make a row with
+  // no timestamp read as the newest decision.
   const decisions: any[] = await fetchJson(
-    "source_policy_decisions?endpoint_id=not.is.null&select=endpoint_id,decision_outcome,rights_class&order=timestamp.desc,id.desc&limit=5000");
+    "source_policy_decisions?endpoint_id=not.is.null&select=endpoint_id,decision_outcome,rights_class" +
+    "&order=timestamp.desc.nullslast,id.desc&limit=5000");
+  if (!Array.isArray(endpoints) || !Array.isArray(decisions))
+    throw new Error("source registry backend returned an error object instead of rows");
 
   const newest = new Map<number, { outcome: string; rights: RightsClass }>();
-  for (const d of decisions ?? []) {
+  for (const d of decisions) {
     const id = Number(d.endpoint_id);
     if (!newest.has(id)) newest.set(id, { outcome: String(d.decision_outcome), rights: d.rights_class });
   }
-  return (endpoints ?? []).map((e: any) => {
+  return endpoints.map((e: any) => {
     const latest = newest.get(Number(e.id));
     return {
       id: Number(e.id),
@@ -152,28 +231,50 @@ export async function loadRegistryRows(
   });
 }
 
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`source registry read exceeded ${ms}ms`)), ms);
+    work.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+  });
+}
+
 /**
- * Refresh the registry view if it is older than the TTL. Never throws: a
- * failed read keeps the last good view (up to REGISTRY_MAX_STALE_MS) and
- * otherwise leaves the seed floor in force. Called at the top of each async
- * entry point so the synchronous host gates below read a current view.
+ * Refresh the registry view if it is older than the TTL. Never throws, never
+ * waits longer than REGISTRY_LOAD_TIMEOUT_MS, and concurrent callers share one
+ * read rather than each starting their own. A failed read keeps the last good
+ * view until it is REGISTRY_MAX_STALE_MS old; after that there is no view and
+ * currentEndpoints() decides what that means. Called at the top of each async
+ * entry point so the synchronous host gates read a current view.
  */
-export async function ensureRegistry(
+export function ensureRegistry(
   now: number = Date.now(),
   fetchJson: (path: string) => Promise<any> = pg,
+  timeoutMs: number = REGISTRY_LOAD_TIMEOUT_MS,
 ): Promise<void> {
-  if (registry && now - registry.loadedAt < REGISTRY_TTL_MS) return;
-  try {
-    const rows = await loadRegistryRows(fetchJson);
-    registry = { endpoints: effectiveEndpoints(rows), loadedAt: now };
-  } catch {
-    if (registry && now - registry.loadedAt >= REGISTRY_MAX_STALE_MS) registry = null;
-  }
+  if (registry && now - registry.loadedAt < REGISTRY_TTL_MS) return Promise.resolve();
+  if (registryLoad) return registryLoad;
+  registryLoad = (async () => {
+    try {
+      const rows = await withTimeout(loadRegistryRows(fetchJson), timeoutMs);
+      registry = { endpoints: effectiveEndpoints(rows), loadedAt: now };
+    } catch {
+      if (registry && now - registry.loadedAt >= REGISTRY_MAX_STALE_MS) registry = null;
+    } finally {
+      registryLoad = null;
+    }
+  })();
+  return registryLoad;
 }
 
 /** Test seam: drop any cached view so the next ensureRegistry() reloads. */
 export function resetRegistryCache(): void {
   registry = null;
+  registryLoad = null;
+}
+
+/** Test seam: pretend a backend is (not) configured. */
+export function setRegistryRequiredForTest(required: boolean): void {
+  registryRequired = required;
 }
 
 // ------------------------------------------------------------------ source_search_adapters registry
@@ -189,6 +290,11 @@ export interface AdapterRow {
   notes: string | null;
 }
 
+// A backend that accepts the connection and never answers must cost a bounded
+// wait, not the whole request: the registry read now sits in front of every
+// fetch and search, which never touched the database before.
+const PG_TIMEOUT_MS = 8_000;
+
 async function pg(path: string): Promise<any> {
   if (!POSTGREST_URL) throw new Error("source registry unavailable: POSTGREST_URL is not configured");
   const r = await fetch(`${POSTGREST_URL}/rest/v1/${path}`, {
@@ -197,6 +303,7 @@ async function pg(path: string): Promise<any> {
       Authorization: `Bearer ${POSTGREST_SERVICE_KEY}`,
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(PG_TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`source registry backend ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return r.json();
@@ -439,6 +546,10 @@ export async function searchSources(
   adapters?: AdapterRow[],
 ): Promise<SearchSourcesResult> {
   await ensureRegistry();
+  if (registryUnavailable())
+    throw new Error(
+      "search_sources: the source registry cannot be read right now, so no host can be confirmed as governed — refusing to search (fail closed). Retry shortly.",
+    );
   const loaded = adapters ?? (await loadActiveAdapters());
   const searchAdapters = loaded
     .filter((a) => a.capability === "search")
@@ -612,7 +723,7 @@ async function fetchMediawikiExtract(host: string, title: string): Promise<strin
  *  verification (`whitelist.verify_archive_item`) stays the Curator's job at
  *  review time — this tool only fetches the text to read. */
 async function fetchArchiveText(url: string): Promise<string> {
-  return (await getText(url)).trim();
+  return (await getGovernedText(url)).trim();
 }
 
 /** Title recovered from a candidate's own `url`, inverting exactly how
@@ -663,6 +774,10 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
   // The security gate — BEFORE any request, exactly the discipline
   // `source_registry.py`'s own docstring demands of the Python adapters.
   await ensureRegistry();
+  if (registryUnavailable())
+    throw new Error(
+      "fetch_source_text: the source registry cannot be read right now, so no host can be confirmed as governed — refusing to fetch (fail closed). Retry shortly.",
+    );
   if (!isGovernedHost(rawUrl))
     throw new Error(
       `fetch_source_text: ${JSON.stringify(url.host)} is not an active Terraveler source endpoint — refusing to fetch.`,
@@ -677,7 +792,7 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       // longer a sufficient reason to run the Gutenberg one.
       if (host !== "gutenberg.org" && !host.endsWith(".gutenberg.org"))
         throw new Error(`fetch_source_text: kind="gutenberg" but ${JSON.stringify(host)} is not a gutenberg.org host.`);
-      text = stripGutenbergBoilerplate(await getText(rawUrl));
+      text = stripGutenbergBoilerplate(await getGovernedText(rawUrl));
       break;
     case "wikipedia": {
       if (!host.endsWith(".wikipedia.org"))
