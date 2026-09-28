@@ -97,6 +97,30 @@ def pg_params() -> dict:
     }
 
 
+def configure_source_authority(pg: dict) -> None:
+    """Point the Curator's licence gate at the registry.
+
+    A source an editor has approved is a row in the source registry; the
+    hardcoded whitelist (`SOURCE_AUTHORITY_MODE=legacy`, the old default)
+    knows nine hosts and had never heard of the rest, so an approval had no
+    effect on what the Curator would accept as a citation. The Curator's own
+    entrypoint sets the mode rather than trusting ambient shell state: run by
+    hand, by the officers' dispatcher or by an agent, it judges sources by the
+    same authority. An explicit SOURCE_AUTHORITY_MODE still wins — `legacy` is
+    the one-line rollback, and scripts/check_registry_equivalence.py is what
+    says the two agree where they should.
+
+    The registry resolver connects from the environment; it is offered the
+    connection this pass has already resolved (including the .env fallback a
+    hand-run shell relies on), never overriding what is already set.
+    """
+    os.environ.setdefault("SOURCE_AUTHORITY_MODE", "registry")
+    for key, value in (("PGHOST", pg["host"]), ("PGPORT", str(pg["port"])),
+                       ("PGDATABASE", pg["dbname"]), ("PGUSER", pg["user"]),
+                       ("PGPASSWORD", pg["password"])):
+        os.environ.setdefault(key, value)
+
+
 def ensure_trace_table(pg: dict) -> None:
     """`verdict_traces`, created where it is used.
 
@@ -209,6 +233,7 @@ def main() -> int:
 
     carta = carta_version()
     pg = pg_params()
+    configure_source_authority(pg)
     policy = Policy.STRICT if args.policy == "strict" else Policy.EXPLORATION
     if not args.dry_run:
         ensure_trace_table(pg)

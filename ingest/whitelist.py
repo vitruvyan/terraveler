@@ -204,6 +204,18 @@ def verify_archive_item(url: str, fetch_json=None):
     return True, f"Public domain (published {yr})"
 
 
+# What "verify this item" means for each item_verified host, keyed by the
+# `verification_strategy` on its source_access_rules row. A strategy is a
+# function (url, fetch_json=None) -> (allowed, reason). A host whose rule names
+# a strategy not listed here is REFUSED, never guessed at: approving an
+# item_verified source records the editor's decision, and the decision only
+# takes effect once code exists that can check an item of that source.
+def _verification_strategies() -> dict:
+    return {
+        "archive_org_metadata": verify_archive_item,
+    }
+
+
 def canonical_license(lic: str) -> str:
     """The label a corpus row stores, as opposed to the sentence a human reads.
 
@@ -300,14 +312,15 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
             registry_allowed = True
             registry_reason = reg["rights_class"]
         elif reg["decision"] == "requires_item_verification":
-            if reg["verification_strategy"] == "archive_org_metadata":
-                registry_allowed, registry_reason = verify_archive_item(url, fetch_json=fetch_json)
+            verifier = _verification_strategies().get(reg["verification_strategy"])
+            if verifier is not None:
+                registry_allowed, registry_reason = verifier(url, fetch_json=fetch_json)
             else:
                 registry_allowed = False
                 registry_reason = f"unknown verification strategy: {reg['verification_strategy']}"
         elif reg["decision"] == "deny":
             registry_allowed = False
-            registry_reason = f"quarantined/rejected/review status on registry endpoint"
+            registry_reason = reg.get("reason") or "quarantined/rejected/review status on registry endpoint"
             
     if reg.get("error"):
         registry_reason = f"fail closed: registry infrastructure error ({reg['error']})"
@@ -399,6 +412,15 @@ def resolve_source_authority(url: str, fetch_json=None) -> dict:
 
 
 def verify_source(url: str, fetch_json=None):
-    """The single gate every text passes through — curated as well as discovered."""
+    """The single gate every text passes through — curated as well as discovered.
+
+    Which authority it consults is SOURCE_AUTHORITY_MODE: `legacy` (the nine
+    hardcoded hosts above; the default here), `shadow` (legacy decides, the
+    registry is compared and logged) or `registry` (the database, fail-closed).
+    The Curator's entrypoint (scripts/desk_review.py) sets `registry`, so a
+    source an editor approves is honoured there; ingestion (`pipeline_native`,
+    Oculus) still runs on `legacy` and `is_allowed()`, the narrower authority,
+    until it is deliberately moved. scripts/check_registry_equivalence.py
+    measures where the two differ."""
     res = resolve_source_authority(url, fetch_json=fetch_json)
     return res["allowed"], res["reason_codes"][0]
