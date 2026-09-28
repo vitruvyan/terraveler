@@ -1,5 +1,8 @@
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
-import { resolveTrust } from "@/lib/source-governance";
+import {
+  effectiveEndpoints, resolveTrust, SEED_ENDPOINTS,
+  type RegistryRow, type RightsClass, type SourceEndpoint,
+} from "@/lib/source-governance";
 
 /**
  * The agent-facing discovery + fetch path — Phase 3 of the contribution
@@ -26,33 +29,31 @@ import { resolveTrust } from "@/lib/source-governance";
  *     as it does there, with no redeploy needed.
  *
  *   - Every URL either function is about to request is *additionally*
- *     checked against `isAllowedHost()`/`isGovernedHost()` below, which
- *     mirror `ingest/whitelist.py::is_allowed()` — a small, STATIC,
- *     hardcoded set of wholesale-guaranteed hosts, deliberately NOT the
- *     live `source_endpoints` table. That is not an oversight: Python's
- *     `is_allowed()` (the function the registry's adapters actually call
- *     before any HTTP request — see `_mediawiki_host()` and `gutendex()`)
- *     reads the same hardcoded `ALLOWED_DOMAINS`/`ALLOWED_SUFFIXES` dicts
- *     regardless of `SOURCE_AUTHORITY_MODE`, which is `legacy` in
- *     production today (unset anywhere in docker-compose.yml/.env). A DB
- *     row can retire a search ADAPTER (narrowing what gets searched), but
- *     it can never, by itself, widen what may be FETCHED — matching the
- *     invariant `source_registry.py`'s own module docstring states.
+ *     checked against `isAllowedHost()`/`isGovernedHost()` below — the
+ *     fetch-side trust boundary, kept distinct from the adapter roster.
  *
- *     `lib/source-governance.ts::resolveTrust()` already IS this mirror —
- *     built in Phase 2A specifically to reproduce `whitelist.py` 1:1
- *     (see its "Shadow Mode A/B Fixture Parity" test running both
- *     resolvers side by side against the same URL list) — so it is reused
- *     here rather than re-encoding the same nine hosts a third time.
+ *     That boundary used to be a static copy of the nine hosts
+ *     `ingest/whitelist.py` hardcodes, on the stated ground that a database
+ *     row could narrow what is searched but never widen what may be
+ *     fetched. The consequence was an approval with no effect: an editor
+ *     could approve a source (PARES, DBNL, ...) and nothing that enforces
+ *     trust would ever notice. It is now the seed floor PLUS whatever the
+ *     live registry holds as an effective approval — see
+ *     `lib/source-governance.ts::effectiveEndpoints`, which also keeps
+ *     revocation working (a seed host quarantined in the registry drops
+ *     out) and refuses to act on an approval whose rights are unknown.
+ *     The registry can only widen trust through an approval a human made;
+ *     an empty or unreachable database can never leave this narrower than
+ *     the seeds it always enforced.
+ *
  *     `lib/gate.ts`'s `DOMAINS`/`domainOk()` is a DIFFERENT, deliberately
  *     BROADER list (~40 institutional domains, comment: "what a machine
  *     may ingest unattended... is answered by ingest/whitelist.py, which
  *     is a different list for a reason") for citing evidence a human or
  *     the Curator can still go verify — not a green light for an
  *     unattended agent to pull raw text from. Using it here would let this
- *     tool auto-fetch text from institutions Python's own auto-ingestion
- *     path refuses to touch. It was considered and rejected for exactly
- *     that reason.
+ *     tool auto-fetch text from institutions no editor has approved. It was
+ *     considered and rejected for exactly that reason.
  */
 
 // ------------------------------------------------------------------ HTTP
@@ -87,7 +88,7 @@ async function getJson(url: string): Promise<any> {
  * deliberately excluded here: it needs verify_source()").
  */
 export function isAllowedHost(url: string): boolean {
-  return resolveTrust(url)?.endpoint.trust_mode === "domain_trusted";
+  return resolveTrust(url, currentEndpoints())?.endpoint.trust_mode === "domain_trusted";
 }
 
 /**
@@ -101,7 +102,78 @@ export function isAllowedHost(url: string): boolean {
  * it only confirms the HOST is one Terraveler governs at all.
  */
 export function isGovernedHost(url: string): boolean {
-  return resolveTrust(url) !== null;
+  return resolveTrust(url, currentEndpoints()) !== null;
+}
+
+// ------------------------------------------------------------------ the live registry
+const REGISTRY_TTL_MS = 60_000;
+// Past this, a registry that keeps failing to reload is no longer trusted to
+// describe revocations either — fall back to the seed floor rather than
+// serve an ever-older view.
+const REGISTRY_MAX_STALE_MS = 10 * 60_000;
+
+let registry: { endpoints: SourceEndpoint[]; loadedAt: number } | null = null;
+
+function currentEndpoints(): readonly SourceEndpoint[] {
+  return registry?.endpoints ?? SEED_ENDPOINTS;
+}
+
+/**
+ * Read the registry rows: every endpoint (any status, so a revoked seed is
+ * visible as revoked) joined to the rights class on its newest decision.
+ * Pure of caching and fallbacks, so it can be tested with a fake backend.
+ */
+export async function loadRegistryRows(
+  fetchJson: (path: string) => Promise<any> = pg,
+): Promise<RegistryRow[]> {
+  const endpoints: any[] = await fetchJson(
+    "source_endpoints?select=id,institution_id,host_pattern,match_type,status,trust_mode&order=id.asc&limit=1000");
+  const decisions: any[] = await fetchJson(
+    "source_policy_decisions?endpoint_id=not.is.null&select=endpoint_id,decision_outcome,rights_class&order=timestamp.desc,id.desc&limit=5000");
+
+  const newest = new Map<number, { outcome: string; rights: RightsClass }>();
+  for (const d of decisions ?? []) {
+    const id = Number(d.endpoint_id);
+    if (!newest.has(id)) newest.set(id, { outcome: String(d.decision_outcome), rights: d.rights_class });
+  }
+  return (endpoints ?? []).map((e: any) => {
+    const latest = newest.get(Number(e.id));
+    return {
+      id: Number(e.id),
+      institution_id: e.institution_id == null ? null : Number(e.institution_id),
+      host_pattern: String(e.host_pattern),
+      match_type: e.match_type,
+      status: e.status,
+      trust_mode: e.trust_mode ?? null,
+      // Only an approval carries rights the registry may act on: an
+      // endpoint whose newest decision is anything else has none.
+      rights_class: latest && latest.outcome === "approve" ? latest.rights : null,
+    };
+  });
+}
+
+/**
+ * Refresh the registry view if it is older than the TTL. Never throws: a
+ * failed read keeps the last good view (up to REGISTRY_MAX_STALE_MS) and
+ * otherwise leaves the seed floor in force. Called at the top of each async
+ * entry point so the synchronous host gates below read a current view.
+ */
+export async function ensureRegistry(
+  now: number = Date.now(),
+  fetchJson: (path: string) => Promise<any> = pg,
+): Promise<void> {
+  if (registry && now - registry.loadedAt < REGISTRY_TTL_MS) return;
+  try {
+    const rows = await loadRegistryRows(fetchJson);
+    registry = { endpoints: effectiveEndpoints(rows), loadedAt: now };
+  } catch {
+    if (registry && now - registry.loadedAt >= REGISTRY_MAX_STALE_MS) registry = null;
+  }
+}
+
+/** Test seam: drop any cached view so the next ensureRegistry() reloads. */
+export function resetRegistryCache(): void {
+  registry = null;
 }
 
 // ------------------------------------------------------------------ source_search_adapters registry
@@ -366,6 +438,7 @@ export async function searchSources(
   subject: string, lang = "en", totalCap: number = DEFAULT_CANDIDATE_CAP,
   adapters?: AdapterRow[],
 ): Promise<SearchSourcesResult> {
+  await ensureRegistry();
   const loaded = adapters ?? (await loadActiveAdapters());
   const searchAdapters = loaded
     .filter((a) => a.capability === "search")
@@ -589,6 +662,7 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
 
   // The security gate — BEFORE any request, exactly the discipline
   // `source_registry.py`'s own docstring demands of the Python adapters.
+  await ensureRegistry();
   if (!isGovernedHost(rawUrl))
     throw new Error(
       `fetch_source_text: ${JSON.stringify(url.host)} is not an active Terraveler source endpoint — refusing to fetch.`,
@@ -598,6 +672,11 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
   let text: string;
   switch (kind) {
     case "gutenberg":
+      // A kind names a FETCHER, and a fetcher only knows its own site's
+      // shape. With more than nine governed hosts, "any governed host" is no
+      // longer a sufficient reason to run the Gutenberg one.
+      if (host !== "gutenberg.org" && !host.endsWith(".gutenberg.org"))
+        throw new Error(`fetch_source_text: kind="gutenberg" but ${JSON.stringify(host)} is not a gutenberg.org host.`);
       text = stripGutenbergBoilerplate(await getText(rawUrl));
       break;
     case "wikipedia": {
@@ -617,6 +696,8 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       break;
     }
     case "archive":
+      if (host !== "archive.org" && host !== "www.archive.org")
+        throw new Error(`fetch_source_text: kind="archive" but ${JSON.stringify(host)} is not an archive.org host.`);
       text = await fetchArchiveText(rawUrl);
       break;
     default:

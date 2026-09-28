@@ -132,7 +132,7 @@ export const SEED_DECISIONS: SourcePolicyDecision[] = [
  * Proves that the new relational domain model perfectly captures the legacy 
  * hardcoded whitelist rules without altering their security boundaries.
  */
-export function resolveTrust(url: string) {
+export function resolveTrust(url: string, endpoints: readonly SourceEndpoint[] = SEED_ENDPOINTS) {
   let parsed: URL;
   try {
     parsed = new URL(url);
@@ -143,11 +143,11 @@ export function resolveTrust(url: string) {
   const host = parsed.host.toLowerCase();
 
   // 1. Try exact matches first
-  let endpoint = SEED_ENDPOINTS.find(e => e.match_type === "exact" && e.host_pattern === host);
+  let endpoint = endpoints.find(e => e.match_type === "exact" && e.host_pattern === host);
   
   // 2. Try suffix matches if no exact match (must match .suffix exactly, not just substring)
   if (!endpoint) {
-    endpoint = SEED_ENDPOINTS.find(e => e.match_type === "suffix" && host.endsWith(e.host_pattern));
+    endpoint = endpoints.find(e => e.match_type === "suffix" && host.endsWith(e.host_pattern));
   }
 
   // 3. Not found in governance registry -> rejected
@@ -161,4 +161,87 @@ export function resolveTrust(url: string) {
     rule,
     decision
   };
+}
+
+// ----------------------------------------------------------------------------
+// The live registry: what an editor's approval actually does.
+//
+// The seeds above are the nine hosts the hardcoded whitelist has always
+// known. Approving a source through the Desk or the Telegram button writes a
+// row to `source_endpoints` — and until this, nothing that ENFORCES trust
+// read that table, so an approval was a record with no effect (eight
+// sources, PARES among them, sat approved and unusable). effectiveEndpoints()
+// is the join between the two: what the database says is active, restricted
+// to approvals that are actually safe to act on.
+// ----------------------------------------------------------------------------
+
+/** One approval as the registry read reports it. */
+export interface RegistryRow {
+  id: number;
+  institution_id: number | null;
+  host_pattern: string;
+  match_type: MatchType;
+  status: LifecycleStatus;
+  trust_mode: TrustMode | null;
+  /** rights_class of this endpoint's newest APPROVE decision; null if none. */
+  rights_class: RightsClass | null;
+}
+
+/**
+ * Whether a registry row may act as an endpoint. Fail-closed on every axis:
+ *
+ *  - only `active` endpoints (retired/quarantined/needs_human_review never);
+ *  - only trust modes this layer can honour by host alone. `domain_trusted`
+ *    (the whole domain) and `item_verified` (host governed; the item is
+ *    verified at the Curator). `collection_trusted` needs a collection
+ *    match this layer does not perform, and `link_only` means "cite, never
+ *    ingest" — neither may be fetched on the strength of the host;
+ *  - a `domain_trusted` approval only when its rights class is KNOWN. "This
+ *    whole domain is safe to ingest unattended" cannot rest on "rights:
+ *    unknown"; that approval stays on record and inert until an editor
+ *    settles the rights, rather than quietly becoming live authority.
+ */
+export function isEffective(row: RegistryRow): boolean {
+  if (row.status !== "active") return false;
+  if (row.trust_mode === "item_verified") return true;
+  if (row.trust_mode === "domain_trusted")
+    return row.rights_class !== null && row.rights_class !== "unknown" && row.rights_class !== "in_copyright";
+  return false;
+}
+
+/**
+ * The endpoints in force: the seed floor plus every effective registry row.
+ * Seeds are kept as the floor on purpose — the registry can ADD trust here
+ * (an approval is a human act) but a database that is empty, stale or
+ * unreachable can never leave the site trusting LESS than the hardcoded
+ * whitelist it has always enforced.
+ *
+ * A seed host the registry no longer lists as active (a quarantine or
+ * retirement recorded by the desk) is removed: revocation must work, or
+ * approval would be a one-way ratchet.
+ */
+export function effectiveEndpoints(rows: readonly RegistryRow[]): SourceEndpoint[] {
+  const byHost = new Map<string, RegistryRow>();
+  for (const r of rows) byHost.set(`${r.match_type}:${r.host_pattern}`, r);
+
+  const out: SourceEndpoint[] = [];
+  for (const seed of SEED_ENDPOINTS) {
+    const live = byHost.get(`${seed.match_type}:${seed.host_pattern}`);
+    if (live && live.status !== "active") continue; // revoked in the registry
+    out.push(seed);
+  }
+  const seedKeys = new Set(SEED_ENDPOINTS.map(e => `${e.match_type}:${e.host_pattern}`));
+  for (const r of rows) {
+    if (seedKeys.has(`${r.match_type}:${r.host_pattern}`)) continue;
+    if (!isEffective(r)) continue;
+    out.push({
+      id: r.id,
+      institution_id: r.institution_id ?? 0,
+      host_pattern: r.host_pattern,
+      match_type: r.match_type,
+      status: "active",
+      trust_mode: r.trust_mode,
+    });
+  }
+  return out;
 }
