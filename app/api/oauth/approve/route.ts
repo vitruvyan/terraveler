@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         agent_account_id: selectedAgent.id,
         contributor_id: selectedAgent.contributor_id,
       });
-      await linkHumanToAgent(principal.id, selectedAgent.id);
+      await linkHumanToAgent(principal.id, selectedAgent.id, { reactivate: true });
       agent = selectedAgent;
     } else {
       agent = await ensureAgentForConnection({
@@ -141,6 +141,7 @@ export async function POST(req: Request) {
         agentAccountId: connection.agent_account_id ?? null,
         contributorId: connection.contributor_id ?? null,
         humanPrincipalId: principal.id,
+        reactivateLink: true,   // the human is approving this client right now
         displayName: client.client_name || "Terraveler agent",
       });
     }

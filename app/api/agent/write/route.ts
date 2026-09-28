@@ -3,7 +3,8 @@ import { ensureRegistry, isGovernedHost } from "@/lib/sourceSearch";
 import { CARTA_VERSION } from "@/lib/carta";
 import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
-import { CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
+import { ANCHORED_SUBMISSIONS_PER_DAY, CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
+import { humanAllowance, overOpenCap } from "@/lib/humanAnchor";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
 import {
   AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
@@ -18,6 +19,10 @@ export const dynamic = "force-dynamic";
 
 const AUTHOR_QUOTAS = Object.fromEntries(
   Object.entries(RANK_QUOTA).map(([rank, q]) => [rank, q.submissions_per_day]),
+);
+// An agent anchored to a human has no daily authoring quota (lib/humanAnchor.ts).
+const ANCHORED_AUTHOR_QUOTAS = Object.fromEntries(
+  Object.keys(RANK_QUOTA).map((rank) => [rank, ANCHORED_SUBMISSIONS_PER_DAY]),
 );
 const REVIEW_QUOTAS = Object.fromEntries(
   Object.entries(RANK_QUOTA).map(([rank, q]) => [rank, q.submissions_per_day * 2]),
@@ -50,8 +55,10 @@ async function contributor(id: number): Promise<Contributor | null> {
   return rows?.[0] ?? null;
 }
 
-async function overAuthorQuota(c: Contributor) {
-  const limit = quotaForRank(c.rank).submissions_per_day;
+async function overAuthorQuota(c: Contributor, anchored = false) {
+  // The fallback (non-RPC) insert path has no atomic count: an anchored agent
+  // keeps its daily ceiling here too, or a gate-refused draft would be unbounded.
+  const limit = anchored ? ANCHORED_SUBMISSIONS_PER_DAY : quotaForRank(c.rank).submissions_per_day;
   const since = new Date(Date.now() - 86_400_000).toISOString();
   const rows = await sb("GET",
     `submissions?contributor_id=eq.${c.id}&created_at=gte.${since}&select=id&limit=${limit + 1}`);
@@ -90,6 +97,11 @@ async function recordSubmission(c: Contributor, o: {
   findings?: unknown;
 }) {
   const fp = contentFingerprint(o.type, o.payload);
+  const allowance = await humanAllowance(c.id);
+  const anchored = allowance.anchored;
+  // An agent with a live human link has no daily count; its human's queue is the bound.
+  const full = overOpenCap(allowance);
+  if (full) return { error: full };
   const one = await optionalRpc("mcp_record_submission_oauth", {
     p_contributor_id: c.id,
     p_type: o.type,
@@ -97,7 +109,7 @@ async function recordSubmission(c: Contributor, o: {
     p_payload: o.payload,
     p_status: o.status,
     p_carta: CARTA_VERSION,
-    p_quotas: AUTHOR_QUOTAS,
+    p_quotas: anchored ? ANCHORED_AUTHOR_QUOTAS : AUTHOR_QUOTAS,
     p_actor: o.actor,
     p_action: o.action,
     p_verdict: o.verdict ?? null,
@@ -106,7 +118,7 @@ async function recordSubmission(c: Contributor, o: {
   });
   if (one) return one;
 
-  const over = await overAuthorQuota(c);
+  const over = await overAuthorQuota(c, anchored);
   if (over) return { error: over };
   let s: any;
   try {
@@ -364,6 +376,11 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
         return `ERROR: submission ${id} is '${rows[0].status}'; only a refused verdict can be appealed.`;
       const prior = await sb("GET", `audit_log?submission_id=eq.${id}&action=eq.appeal&select=id&limit=1`);
       if (prior.length) return "ERROR: this submission has already been appealed.";
+      // An appeal lands on the editor like a draft does: an anchored agent's
+      // appeals count against the same open-queue cap (an unanchored agent's
+      // are already bounded by its daily count, each needing a submission).
+      const full = overOpenCap(await humanAllowance(c.id));
+      if (full) return `ERROR: ${full}`;
       await sb("POST", "audit_log", {
         submission_id: id, actor: `contributor:${c.handle}`, action: "appeal", verdict: null,
         findings: [["APPEAL", 0, grounds]], carta_version: CARTA_VERSION,

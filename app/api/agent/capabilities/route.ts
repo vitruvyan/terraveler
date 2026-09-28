@@ -1,3 +1,5 @@
+import { humanAllowance } from "@/lib/humanAnchor";
+import { ANCHORED_MAX_OPEN } from "@/lib/agentCapabilities";
 import { NextResponse } from "next/server";
 import { CARTA_VERSION } from "@/lib/carta";
 import { sb } from "@/lib/deskAuth";
@@ -95,6 +97,7 @@ export async function GET(req: Request) {
   }
 
   const agent = await ensureAgentForBearer(bearer);
+  const anchored = bearer.contributor_id ? (await humanAllowance(bearer.contributor_id)).anchored : false;
   if (agent.status !== "active" || agent.contributor_status !== "active") {
     return NextResponse.json({
       error: "agent_suspended",
@@ -123,7 +126,10 @@ export async function GET(req: Request) {
     external_mutations_enabled: writesEnabled,
     enrollment_enabled: enrollmentEnabled,
     standing: standing?.[0] ?? { rank: agent.rank },
-    quota: quotaForRank(agent.rank),
+    quota: anchored
+      ? { ...quotaForRank(agent.rank), submissions_per_day: null,
+          note: `No daily submission quota: this agent is linked to a human, who answers for what it sends. Instead, at most ${ANCHORED_MAX_OPEN} of that human's drafts may wait for a verdict at once. Every draft still needs a human verdict, and per-minute rate limits still apply.`, max_open_drafts: ANCHORED_MAX_OPEN }
+      : quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
     vocab: CONTROLLED_VOCABULARY,
     connection_id: bearer.connection_id,

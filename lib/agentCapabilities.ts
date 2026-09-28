@@ -68,6 +68,20 @@ export const RANK_QUOTA = Object.freeze({
   admiral: { submissions_per_day: 48, active_claims: 8 },
 } as const);
 
+/**
+ * For an agent with a live link to a human the daily COUNT of the rank ladder
+ * (3, 6, 12…) does not apply (lib/humanAnchor.ts): the bound that protects the
+ * editor is the human's queue of unjudged drafts, ANCHORED_MAX_OPEN. But a
+ * queue cap only sees drafts that are WAITING; a draft the Stage-0 gate refuses
+ * is stored as `curator-rejected` and never waits, yet it still writes rows and
+ * a Telegram message. So a real daily ceiling — counting every status, enforced
+ * atomically by the SQL functions through p_quotas — stays as the backstop.
+ * 100 a day is a figure nobody reaches by working.
+ */
+export const ANCHORED_SUBMISSIONS_PER_DAY = 100;
+/** Drafts one linked human may have waiting, unjudged, across all their agents. */
+export const ANCHORED_MAX_OPEN = 30;
+
 export type AgentMode = "anonymous" | "human-backed" | "autonomous";
 
 export function quotaForRank(rank: string) {
