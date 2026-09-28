@@ -10,6 +10,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 
+import tls
 from html_text import visible_text as _visible_text
 
 UA = "terraveler-rag/2.0 (contact: dbaldoni@gmail.com)"
@@ -17,7 +18,9 @@ UA = "terraveler-rag/2.0 (contact: dbaldoni@gmail.com)"
 
 def _get(url, headers=None):
     req = urllib.request.Request(url, headers={"User-Agent": UA, **(headers or {})})
-    with urllib.request.urlopen(req, timeout=60) as r:
+    # tls.context_for is None (the default, unchanged) for every host except the
+    # few whose servers send an incomplete certificate chain (vocab/tls_intermediates.json).
+    with urllib.request.urlopen(req, timeout=60, context=tls.context_for(url)) as r:
         return r.read()
 
 
@@ -145,6 +148,9 @@ def fetch_by_kind(candidate: dict) -> str:
         return fetch_wikisource(candidate["lang"], candidate["title"])
     if kind == "archive":
         return fetch_archive_text(candidate["url"])
+    if kind == "pares":
+        import pares
+        return pares.record_text(pares.fetch_record_html(candidate["url"]))
     raise ValueError(f"fetch_by_kind: no fetcher registered for kind={kind!r} "
                       f"(candidate: {candidate.get('title', '?')!r})")
 

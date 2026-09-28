@@ -1422,8 +1422,8 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", required: ["url", "kind"],
       properties: {
         url: { type: "string", description: "the candidate's url (or source_url), exactly as search_sources returned it" },
-        kind: { type: "string", enum: ["gutenberg", "wikipedia", "wikisource", "archive"],
-          description: "the candidate's kind, exactly as search_sources returned it — an unrecognized kind is refused, never silently fetched from a fallback source" },
+        kind: { type: "string", enum: ["gutenberg", "wikipedia", "wikisource", "archive", "pares"],
+          description: "the candidate's kind, exactly as search_sources returned it — an unrecognized kind is refused, never silently fetched from a fallback source. \"pares\" (the Spanish state archives portal) takes a record URL, https://pares.cultura.gob.es/ParesBusquedas20/catalogo/description/<id>, and returns the archival DESCRIPTION — title, signatura, date, and the archivist's \"Alcance y Contenido\" in Spanish — not the document's text (those are images): cite the record (archive, signatura, date, PARES URL) and quote only the description's own words, verbatim." },
         lang: { type: "string", description: "the candidate's lang, exactly as search_sources returned it (wikipedia/wikisource only — cross-checked against the url's own host)" },
       } } },
 ];

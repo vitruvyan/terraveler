@@ -211,8 +211,14 @@ def verify_archive_item(url: str, fetch_json=None):
 # item_verified source records the editor's decision, and the decision only
 # takes effect once code exists that can check an item of that source.
 def _verification_strategies() -> dict:
+    # Imported here, not at module level: strategies are resolved only when a
+    # registry decision asks for one, and whitelist.py is imported by nearly
+    # everything — it must not pull in an HTML parser and a TLS loader to say
+    # yes to gutenberg.org.
+    from pares import verify_pares_item
     return {
         "archive_org_metadata": verify_archive_item,
+        "pares_description": verify_pares_item,
     }
 
 

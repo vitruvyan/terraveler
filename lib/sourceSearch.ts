@@ -1,4 +1,6 @@
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
+import { getWithExtraCa } from "@/lib/tlsFetch";
+import PARES_SHAPE from "@/vocab/pares.json";
 import {
   effectiveEndpoints, resolveTrust, SEED_ENDPOINTS,
   type RegistryRow, type RightsClass, type SourceEndpoint,
@@ -726,6 +728,54 @@ async function fetchArchiveText(url: string): Promise<string> {
   return (await getGovernedText(url)).trim();
 }
 
+// ------------------------------------------------------------------ PARES
+// The Ministerio de Cultura's archive portal. What a record page gives is an
+// ARCHIVAL DESCRIPTION (title, signatura, date, "Alcance y Contenido" — the
+// archivist's own statement of what a document contains, in Spanish), not the
+// document's text, which is images. A citation from here is a citation of the
+// finding aid. The shape of a citable URL and the record's boundaries live in
+// vocab/pares.json, shared with ingest/pares.py so the two cannot drift.
+const PARES_PATH_RE = new RegExp(PARES_SHAPE.description_path_pattern);
+
+/** https://pares.cultura.gob.es/ParesBusquedas20/catalogo/description/<id> and nothing else on that host. */
+export function isParesDescriptionUrl(rawUrl: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(rawUrl);
+  } catch {
+    return false;
+  }
+  return (
+    u.protocol === "https:" &&
+    u.hostname === PARES_SHAPE.host &&
+    (u.port === "" || u.port === "443") &&
+    !u.username &&
+    !u.password &&
+    PARES_PATH_RE.test(u.pathname)
+  );
+}
+
+/** The record itself, without the site's navigation and footer. */
+export function paresRecordText(html: string): string {
+  const text = wikisourceRenderToText(html);
+  const start = text.indexOf(PARES_SHAPE.record_start_marker);
+  const end = text.indexOf(PARES_SHAPE.record_end_marker, start >= 0 ? start : 0);
+  const body = start >= 0 && end > start ? text.slice(start, end) : text;
+  return body.replace(/\n{3,}/g, "\n\n").trim();
+}
+
+async function fetchParesRecord(rawUrl: string): Promise<string> {
+  if (!isParesDescriptionUrl(rawUrl))
+    throw new Error(
+      `fetch_source_text: kind="pares" takes a record URL (https://${PARES_SHAPE.host}/ParesBusquedas20/catalogo/description/<id>), not ${JSON.stringify(rawUrl)}.`,
+    );
+  const r = await getWithExtraCa(rawUrl, { userAgent: UA, timeoutMs: HTTP_TIMEOUT_MS });
+  if (r.status >= 300 && r.status < 400)
+    throw new Error("fetch_source_text: PARES redirected a record URL — refusing to follow (the redirect target has not been checked).");
+  if (r.status !== 200) throw new Error(`request to ${PARES_SHAPE.host} failed: HTTP ${r.status}`);
+  return paresRecordText(r.body);
+}
+
 /** Title recovered from a candidate's own `url`, inverting exactly how
  *  `mediawikiSearch` built it (`https://{host}/wiki/{title.replace(" ","_")}`)
  *  — the MCP tool signature is `(url, kind, lang?)`, with no separate title
@@ -810,13 +860,18 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       text = await fetchMediawikiExtract(host, titleFromWikiUrl(url));
       break;
     }
+    case "pares":
+      if (host !== PARES_SHAPE.host)
+        throw new Error(`fetch_source_text: kind="pares" but ${JSON.stringify(host)} is not ${PARES_SHAPE.host}.`);
+      text = await fetchParesRecord(rawUrl);
+      break;
     case "archive":
       if (host !== "archive.org" && host !== "www.archive.org")
         throw new Error(`fetch_source_text: kind="archive" but ${JSON.stringify(host)} is not an archive.org host.`);
       text = await fetchArchiveText(rawUrl);
       break;
     default:
-      throw new Error(`fetch_source_text: no fetcher registered for kind=${JSON.stringify(kind)} (known kinds: gutenberg, wikipedia, wikisource, archive).`);
+      throw new Error(`fetch_source_text: no fetcher registered for kind=${JSON.stringify(kind)} (known kinds: gutenberg, wikipedia, wikisource, archive, pares).`);
   }
 
   const totalLength = text.length;
