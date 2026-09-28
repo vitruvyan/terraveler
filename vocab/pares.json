@@ -1,0 +1,12 @@
+{
+  "_comment": "The one shape of PARES URL Terraveler treats as a citable item, shared by ingest/pares.py and lib/sourceSearch.ts so the two cannot drift.",
+  "host": "pares.cultura.gob.es",
+  "description_path_pattern": "^/ParesBusquedas20/catalogo/description/[0-9]{1,12}/?$",
+  "record_start_marker": "Identificación",
+  "record_end_marker": "© Ministerio de Cultura",
+  "required_field_markers": [
+    "Signatura",
+    "Código de Referencia"
+  ],
+  "reuse_statement_marker": "pueden reproducirse y utilizarse sin permiso previo"
+}

@@ -70,6 +70,7 @@ from verbatim import (                                     # noqa: E402
     UnverifiableSource, locate_in_source, norm, source_text,
 )
 from whitelist import domain_of, verify_source             # noqa: E402
+from tls import context_for as tls_context_for            # noqa: E402
 
 import desk_checks as K                                    # noqa: E402
 
@@ -330,7 +331,10 @@ def fetch(cfg: DeskConfig, url: str) -> str:
     if url in cfg.fetch_cache:
         return cfg.fetch_cache[url]
     req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=120) as r:
+    # The Curator relocates quotations in the live source, so it must be able to
+    # reach every source the registry admits — including a host whose server
+    # sends an incomplete certificate chain (ingest/tls.py; None = default).
+    with urllib.request.urlopen(req, timeout=120, context=tls_context_for(url)) as r:
         # The whitelist was checked against the URL we asked for; urlopen
         # follows redirects, so the guarantee must be re-established against
         # the URL that answered. A whitelisted host that open-redirects

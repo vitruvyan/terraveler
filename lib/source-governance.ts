@@ -3,7 +3,7 @@ export type LifecycleStatus = "discovered" | "proposed" | "triaging" | "assessin
 export type TrustMode = "domain_trusted" | "collection_trusted" | "item_verified" | "link_only";
 export type RightsScopeType = "endpoint" | "collection" | "item";
 export type RightsClass = "public_domain" | "creative_commons" | "mixed" | "in_copyright" | "unknown";
-export type VerificationStrategy = "none" | "archive_org_metadata" | "wikimedia_api";
+export type VerificationStrategy = "none" | "archive_org_metadata" | "wikimedia_api" | "pares_description";
 
 export interface EvidenceSnapshot {
   rights_scope_type: RightsScopeType;
