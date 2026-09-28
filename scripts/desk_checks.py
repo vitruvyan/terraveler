@@ -265,7 +265,7 @@ def check_chronology(waypoints: list, f: Findings) -> None:
         prev = (d, w.get("seq"))
 
 
-def check_sources(waypoints: list, f: Findings, verify_source) -> tuple[list, dict]:
+def check_sources(waypoints: list, f: Findings, verify_source, gate=None) -> tuple[list, dict]:
     """The licence gate, and the inventory of what will have to be fetched.
 
     Split out of the quotation check so that the graph has a node whose whole
@@ -277,6 +277,14 @@ def check_sources(waypoints: list, f: Findings, verify_source) -> tuple[list, di
 
     Returns the claims admitted to verification, and the counts the gate alone
     can already settle.
+
+    `gate`, when given, is whitelist.quotation_gate: (mode, why) with mode
+    "open" (the licence is established), "read-licence" (the registry admits
+    the source but its rights are read per ITEM after it is fetched — the
+    default profile applies where they cannot be) or None (refused). Without
+    it the plain verify_source answer is used and every admitted claim is
+    "open", as before. Each admitted claim carries its mode and the licence the
+    contributor declared, for the node that fetches the source to decide with.
     """
     admitted: list[dict] = []
     stats = {"quoted": 0, "verified": 0, "unreachable": 0, "mismatched": 0,
@@ -295,12 +303,20 @@ def check_sources(waypoints: list, f: Findings, verify_source) -> tuple[list, di
                 f.fail(where, "QUOTE_NO_SOURCE_URL", seq=seq, ci=ci)
                 stats["absent"] += 1
                 continue
-            ok, why = verify_source(url)
-            if not ok:
-                f.fail(where, "SOURCE_REFUSED", seq=seq, ci=ci, why=why)
-                continue
+            if gate is not None:
+                mode, why = gate(url)
+                if mode is None:
+                    f.fail(where, "SOURCE_REFUSED", seq=seq, ci=ci, why=why)
+                    continue
+            else:
+                ok, why = verify_source(url)
+                if not ok:
+                    f.fail(where, "SOURCE_REFUSED", seq=seq, ci=ci, why=why)
+                    continue
+                mode = "open"
             admitted.append({"seq": seq, "ci": ci, "where": where, "url": url,
-                             "quote": quote, "quote_len": len(quote)})
+                             "quote": quote, "quote_len": len(quote),
+                             "gate": mode, "declared": ev.get("license")})
     return admitted, stats
 
 
@@ -423,6 +439,11 @@ MESSAGES = {
         "a quotation with no source_url",
     "SOURCE_REFUSED":
         "source refused by the licence gate: {why}",
+    "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP":
+        "the source's licence could not be read as open ({basis}), so only a "
+        "brief quotation is allowed (Carta 3.2: at most {cap} words) — this one "
+        "is {words}. Quote a shorter passage, or cite a source whose licence "
+        "is open",
     "SOURCE_UNVERIFIABLE":
         "cannot be verified: {detail}",
     "SOURCE_UNREACHABLE":

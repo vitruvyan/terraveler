@@ -19,6 +19,9 @@ offline against the LIVE registry (read-only) and a fixed corpus:
 Each row is classified:
 
   MATCH               both decide the same
+  QUOTE_ONLY          neither may INGEST it, but the registry admits it at the
+                      default profile: its licence is read per item, and where it
+                      cannot be read only a brief attributed quotation (Carta 3.2)
   EXPECTED_WIDENING   registry allows, legacy does not, and the host is an
                       editor-approved endpoint beyond the legacy nine
   REGRESSION          legacy allows, registry does not        -> exit 1
@@ -91,6 +94,13 @@ def outcome(mode: str, url: str, fetch_json) -> tuple[bool, str]:
     return bool(res["allowed"]), str(res["reason_codes"][0])[:110]
 
 
+def quotable_only(mode: str, url: str, fetch_json) -> bool:
+    """True when the source may be quoted at the default profile (read per item,
+    brief attributed quotation, never ingested) though it is not ingestible."""
+    os.environ["SOURCE_AUTHORITY_MODE"] = mode
+    return whitelist.quotation_gate(url, fetch_json=fetch_json)[0] == "read-licence"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
@@ -120,6 +130,8 @@ def main() -> int:
             klass = "EXPECTED_WIDENING"
         else:
             klass = "UNEXPECTED_WIDENING"
+        if klass == "MATCH" and not r_ok and quotable_only("registry", url, fetch_json):
+            klass = "QUOTE_ONLY"       # not ingestible, quotable at the default profile
         if klass in ("REGRESSION", "UNEXPECTED_WIDENING"):
             bad += 1
         rows.append({"case": label, "url": url, "legacy": l_ok, "registry": r_ok,

@@ -57,6 +57,28 @@ RECORDED = EffectClass.RECORDED_EFFECT
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 PUBLISHABLE_TYPES = ("new-voyage",)
+# The note printed beside a quotation whose licence could not be read as open
+# (the Curator's default profile, ingest/licence.py). Kept identical to
+# scripts/publish_submission.py::RIGHTS_NOTE by a test.
+RIGHTS_NOTE = "rights not verified — brief quotation under Carta §3.2"
+
+
+def _excerpt_of(span: dict, evidence: dict):
+    """(reading, raw, rights, citation) for one waypoint's quotation.
+
+    The verified span is the ONLY source of the excerpt — never the
+    contributor's own `excerpt`/`quote`, which nothing has checked against the
+    source. A claim with no span was refused (absent, fabricated, or over the cap
+    its source's rights allow — Carta 3.2) and prints no excerpt; the editor sees
+    that at the Desk and resubmits. Mirrors scripts/publish_submission.py
+    (citation_of / rights_of), which has always refused this fallback."""
+    reading = span.get("reading_span")
+    raw = span.get("raw_span")
+    rights = span.get("rights") or None
+    citation = evidence.get("source_title")
+    if (rights or {}).get("profile") == "quote-only":
+        citation = f"{citation} ({RIGHTS_NOTE})" if citation else RIGHTS_NOTE.capitalize()
+    return reading, raw, rights, citation
 # Approval alone is not enough per se; §4.2 requires the verdict live in
 # audit_log under the roles that may issue one, not merely a status column
 # an operator could hand-edit.
@@ -213,6 +235,20 @@ def make_nodes(cfg: PublishConfig) -> dict:
         finally:
             conn.close()
         spans = (row["spans"] if row else {}) or {}
+        # No verified_spans row and a draft that quotes: the Desk never verified
+        # (or refused) those quotations, so there is nothing to print. Say so
+        # rather than publishing waypoints that silently lack them —
+        # scripts/publish_submission.py refuses the same case.
+        quoted = sum(1 for wp in payload.get("waypoints") or []
+                     for c in (wp.get("claims") or [])[:1]
+                     if ((c.get("evidence") or {}).get("quote") or (c.get("evidence") or {}).get("excerpt")))
+        if row is None and quoted:
+            return state.with_rejection(Rejection(
+                "quotations with no verified spans",
+                f"#{sid} quotes {quoted} claim(s) but has no verified_spans row: the Desk has not verified "
+                f"them, and the contributor's own text is never printed in their place (Carta 3.4). "
+                f"Run the Desk (scripts/desk_review.py {sid}) or resubmit.", now,
+                evidence={"submission_id": sid, "quoted_claims": quoted}))
 
         waypoints = []
         for wp in payload.get("waypoints") or []:
@@ -223,12 +259,9 @@ def make_nodes(cfg: PublishConfig) -> dict:
             span = spans.get(f"{seq}.1") or {}
             # Provenance (§4.2, §8.5): the raw span as submitted and the reading
             # span as verified against the live source travel together, not
-            # collapsed into one. When no verified_spans row exists (an older
-            # submission, from before that table), the evidence's own excerpt
-            # is the only copy there is — both fields carry the same text
-            # rather than inventing a distinction the record does not have.
-            reading = span.get("reading_span") or evidence.get("excerpt") or evidence.get("quote")
-            raw = span.get("raw_span") or evidence.get("quote") or reading
+            # collapsed into one. The verified span is the only source of the
+            # excerpt (see _excerpt_of).
+            reading, raw, rights, citation = _excerpt_of(span, evidence)
             waypoints.append({
                 "seq": seq,
                 "place_historical": wp.get("place_historical"),
@@ -242,8 +275,9 @@ def make_nodes(cfg: PublishConfig) -> dict:
                 "diary_excerpt": reading,
                 "diary_excerpt_raw": raw,
                 "diary_excerpt_transformations": span.get("transformations") or None,
-                "diary_source_citation": evidence.get("source_title"),
+                "diary_source_citation": citation,
                 "diary_source_url": evidence.get("source_url"),
+                "diary_source_rights": rights,
                 "confidence": wp.get("confidence") or "certain",
                 "media_url": None,
                 "media": [],

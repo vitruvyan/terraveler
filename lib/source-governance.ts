@@ -213,26 +213,36 @@ export function isWellFormedPattern(matchType: MatchType, hostPattern: string): 
  *  - only `active` endpoints (retired/quarantined/needs_human_review never),
  *    and only with a well-formed host pattern;
  *  - only trust modes this layer can honour by host alone. `domain_trusted`
- *    (the whole domain) and `item_verified` (host governed; the item is
- *    verified at the Curator). `collection_trusted` needs a collection
- *    match this layer does not perform, and `link_only` means "cite, never
- *    ingest" — neither may be fetched on the strength of the host;
+ *    and `item_verified` — see effectiveMode for what each means here.
+ *    `collection_trusted` needs a collection match this layer does not
+ *    perform, and `link_only` means "cite, never ingest" — neither may be
+ *    fetched on the strength of the host;
  *  - an approval must be IN FORCE: the row's newest decision is an approve
- *    (rights_class is null otherwise) and its rights are not `in_copyright`;
- *  - a `domain_trusted` approval additionally needs a KNOWN rights class.
- *    "This whole domain is safe to ingest unattended" cannot rest on
- *    "rights: unknown"; that approval stays on record and inert until an
- *    editor settles the rights, rather than quietly becoming live authority.
- *    (item_verified may carry `unknown` at the endpoint level: its rights
- *    are established per item, which is the point of the mode.)
+ *    (rights_class is null otherwise) and its rights are not `in_copyright`.
  */
 export function isEffective(row: RegistryRow): boolean {
   if (row.status !== "active") return false;
   if (!isWellFormedPattern(row.match_type, row.host_pattern)) return false;
   if (row.rights_class === null || row.rights_class === "in_copyright") return false;
-  if (row.trust_mode === "item_verified") return true;
-  if (row.trust_mode === "domain_trusted") return row.rights_class !== "unknown";
-  return false;
+  return row.trust_mode === "item_verified" || row.trust_mode === "domain_trusted";
+}
+
+/**
+ * The trust this layer grants a row. `domain_trusted` with KNOWN rights is
+ * wholesale trust, as ever. `domain_trusted` with rights `unknown` is NOT: "this
+ * whole domain is safe to ingest unattended" cannot rest on rights nobody has
+ * established — and the editor, who cannot know a library's licences, cannot
+ * be required to. It is in force at the level that needs no such knowledge:
+ * governed, but per item (`item_verified`). The Curator then reads each item's
+ * licence and, where it cannot be read, applies the default profile — a brief
+ * attributed quotation, never ingested (Magna Carta §3.2; ingest/licence.py).
+ * An approval used to sit inert until someone could state a licence, which for
+ * an editor who cannot is forever.
+ */
+export function effectiveMode(row: RegistryRow): TrustMode | null {
+  if (row.trust_mode === "domain_trusted" && row.rights_class === "unknown")
+    return "item_verified";
+  return row.trust_mode;
 }
 
 /**
@@ -264,6 +274,9 @@ export function effectiveEndpoints(rows: readonly RegistryRow[]): SourceEndpoint
     if (live.status !== "active") continue;
     if (live.rights_class === "in_copyright") continue;
     if (live.trust_mode !== "domain_trusted" && live.trust_mode !== "item_verified") continue;
+    // A seed host keeps the trust it has always had (gutenberg, Wikipedia…): the
+    // per-item downgrade below is for hosts an editor approved with rights
+    // nobody could state, not for the floor that search relies on.
     out.push({ ...seed, trust_mode: live.trust_mode });
   }
   const seedKeys = new Set(SEED_ENDPOINTS.map(e => `${e.match_type}:${e.host_pattern}`));
@@ -276,7 +289,7 @@ export function effectiveEndpoints(rows: readonly RegistryRow[]): SourceEndpoint
       host_pattern: r.host_pattern,
       match_type: r.match_type,
       status: "active",
-      trust_mode: r.trust_mode,
+      trust_mode: effectiveMode(r),
     });
   }
   return out;

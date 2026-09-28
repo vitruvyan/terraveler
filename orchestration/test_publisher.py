@@ -148,6 +148,31 @@ class CommitPushTargetsMainExplicitly(unittest.TestCase):
         self.assertNotRegex(source, r'_run_git\(cfg\.repo_root,\s*"push"\)\s*$',
                             "a bare `git push` with no explicit refspec must never reappear")
 
+class ExcerptOf(unittest.TestCase):
+    """What a waypoint's quotation is, and is not, allowed to be when published
+    (Carta 3.2). Pure: no database."""
+    EV = {"source_title": "Some Book", "excerpt": "contributor excerpt", "quote": "contributor quote"}
+
+    def test_a_verified_span_is_the_excerpt(self):
+        r, raw, rights, cit = P._excerpt_of({"reading_span": "R", "raw_span": "W"}, self.EV)
+        self.assertEqual((r, raw, rights, cit), ("R", "W", None, "Some Book"))
+
+    def test_a_claim_with_no_span_prints_nothing_of_the_contributors(self):
+        # Not even when no spans row exists at all: an approved-anyway draft
+        # whose every quotation was capped or fabricated must not be printed.
+        r, raw, rights, _ = P._excerpt_of({}, self.EV)
+        self.assertEqual((r, raw, rights), (None, None, None))
+
+    def test_a_quote_only_span_carries_its_rights_and_says_so_in_the_citation(self):
+        span = {"reading_span": "R", "raw_span": "W", "rights": {"profile": "quote-only"}}
+        _, _, rights, cit = P._excerpt_of(span, self.EV)
+        self.assertEqual(rights, {"profile": "quote-only"})
+        self.assertEqual(cit, f"Some Book ({P.RIGHTS_NOTE})")
+
+    def test_the_note_is_the_same_words_as_the_other_publish_path(self):
+        import publish_submission as PS
+        self.assertEqual(P.RIGHTS_NOTE, PS.RIGHTS_NOTE)
+
 
 if __name__ == "__main__":
     unittest.main()

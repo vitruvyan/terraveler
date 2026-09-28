@@ -69,7 +69,8 @@ from vitruvyan_motus.effects import EffectClass            # noqa: E402
 from verbatim import (                                     # noqa: E402
     UnverifiableSource, locate_in_source, norm, source_text,
 )
-from whitelist import domain_of, verify_source             # noqa: E402
+from whitelist import domain_of, quotation_gate, verify_source  # noqa: E402
+import licence as LIC                                     # noqa: E402
 from tls import context_for as tls_context_for            # noqa: E402
 
 import desk_checks as K                                    # noqa: E402
@@ -243,10 +244,21 @@ class SpanStore:
 
     def __init__(self) -> None:
         self._staged: dict[str, dict] = {}
+        # Claims whose quotation was found to exceed what its source's rights
+        # allow. If nothing else was staged, an older span for them (from a run
+        # before the draft was edited) would otherwise survive the "an empty
+        # pass writes nothing" rule below and be published.
+        self._revoked: set[str] = set()
         self.committed = False
 
     def stage(self, key: str, span: dict) -> None:
         self._staged[key] = span
+
+    def revoke(self, key: str) -> None:
+        self._revoked.add(key)
+
+    def revoked(self) -> list[str]:
+        return sorted(self._revoked)
 
     def staged(self) -> dict[str, dict]:
         return dict(self._staged)
@@ -259,6 +271,9 @@ class SpanStore:
         by evidence, never by absence.
         """
         if not self._staged:
+            if self._revoked:
+                cur.execute("update verified_spans set spans = spans - %s::text[] "
+                            "where submission_id = %s", (sorted(self._revoked), submission_id))
             return False
         cur.execute("insert into verified_spans (submission_id, spans, carta_version) "
                     "values (%s,%s,%s) on conflict (submission_id) do update "
@@ -283,6 +298,9 @@ class DeskConfig:
     dry_run: bool = False
     spans: SpanStore = field(default_factory=SpanStore)
     fetch_cache: dict[str, str] = field(default_factory=dict)
+    # The page as served, kept beside its readable text ONLY so a licence can be
+    # read off its metadata (ingest/licence.py). Never persisted, never traced.
+    raw_cache: dict[str, str] = field(default_factory=dict)
 
     def connect(self):
         return psycopg2.connect(**self.pg)
@@ -346,6 +364,14 @@ def fetch(cfg: DeskConfig, url: str) -> str:
         if final != url and not redirect_stays_home(url, final):
             ok, why = verify_source(final)
             if not ok:
+                # A source admitted for quotation only (never ingestable) never
+                # passes verify_source, so a plain http->https or trailing-slash
+                # redirect would read as "off-whitelist". It stays home if the
+                # place it lands is admitted on the same terms — but only for a
+                # source that was quote-only to begin with.
+                if not verify_source(url)[0] and quotation_gate(final)[0] is not None:
+                    ok = True
+            if not ok:
                 raise UnverifiableSource(
                     f"redirected off-whitelist: {url} -> {final} ({why})")
         raw = r.read(MAX_FETCH_BYTES + 1)
@@ -354,6 +380,7 @@ def fetch(cfg: DeskConfig, url: str) -> str:
                 f"source larger than {MAX_FETCH_BYTES >> 20}MB: {url}")
         body = raw.decode("utf-8", "replace")
         ctype = r.headers.get("Content-Type", "")
+    cfg.raw_cache[url] = body
     cfg.fetch_cache[url] = source_text(body, ctype)
     return cfg.fetch_cache[url]
 
@@ -464,7 +491,7 @@ def make_nodes(cfg: DeskConfig):
         now = ctx.now()
         f = K.Findings()
         admitted, stats = K.check_sources(payload.get("waypoints") or [], f,
-                                          verify_source)
+                                          verify_source, gate=quotation_gate)
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=(f"licence gate over submissions#{sid} payload {sha}: "
@@ -473,7 +500,8 @@ def make_nodes(cfg: DeskConfig):
         # The URLs travel: a source identifier is exactly the kind of thing a
         # trace is supposed to name. The quotation does not.
         cited = [{"seq": a["seq"], "ci": a["ci"], "where": a["where"],
-                  "url": a["url"], "quote_len": a["quote_len"]} for a in admitted]
+                  "url": a["url"], "quote_len": a["quote_len"],
+                  "gate": a.get("gate", "open")} for a in admitted]
         return (state
                 .with_fact(Fact("source_findings", f.rows, "check_sources", now))
                 .with_fact(Fact("cited_sources", cited, "check_sources", now))
@@ -495,9 +523,11 @@ def make_nodes(cfg: DeskConfig):
         # carried here from check_sources: the state does not hold it, and
         # that is the rule this graph is built around.
         quotes = {}
+        quoted_words: dict[str, int] = {}   # quote-only words spent per source CONTENT (body hash)
         for w in payload.get("waypoints") or []:
             for ci, c in enumerate(w.get("claims") or [], 1):
-                q = (c.get("evidence") or {}).get("quote")
+                ev = c.get("evidence") or {}
+                q = ev.get("quote")
                 if q:
                     quotes[f"{w.get('seq')}.{ci}"] = q
 
@@ -533,7 +563,39 @@ def make_nodes(cfg: DeskConfig):
                     description=f"GET {entry['url']} failed: {failure}",
                     receipt=EffectReceipt(receipt_id=failure, status="unknown")))
                 continue
+            # A source admitted at "read-licence" has no established rights
+            # yet: they are read off the page just fetched — the item's own
+            # metadata alone (a contributor's declaration is not evidence) — and where they
+            # cannot be read the default profile applies, which is a brief
+            # quotation and never a refusal (ingest/licence.py, Carta 3.2).
             body_sha = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
+            rights = None
+            words = 0
+            if entry.get("gate") == "read-licence":
+                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]), entry["url"])
+                words = LIC.word_count(claim["quote"])
+                if LIC.over_cap(rights, claim["quote"]):
+                    f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
+                           seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
+                           cap=LIC.QUOTE_WORD_CAP, words=words)
+                    stats["capped"] = stats.get("capped", 0) + 1
+                    cfg.spans.revoke(key)
+                    continue
+                # Brief quotations, plural, must not add up to a long text. The
+                # budget is charged to the content (its hash) AND to the
+                # canonical item (host + path): a page whose visible text
+                # changes a little per request (a sidebar, a echoed query)
+                # must not hand out a fresh budget for every URL variant.
+                budget_keys = (body_sha, LIC.canonical_item_key(entry["url"]))
+                spent = max(quoted_words.get(k, 0) for k in budget_keys)
+                if rights["profile"] == "quote-only" and spent + words > LIC.QUOTE_TOTAL_CAP:
+                    f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
+                           seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
+                           cap=LIC.QUOTE_TOTAL_CAP, words=spent + words,
+                           scope="all quotations from this source")
+                    stats["capped"] = stats.get("capped", 0) + 1
+                    cfg.spans.revoke(key)
+                    continue
             if not any(s["url"] == entry["url"] for s in fetched):
                 fetched.append({"url": entry["url"], "length": len(body),
                                 "sha256": body_sha})
@@ -554,6 +616,13 @@ def make_nodes(cfg: DeskConfig):
                              "source_sha256": body_sha.split(":", 1)[1],
                              "verified_at": stamp,
                              "carta_version": cfg.carta})
+                if rights is not None:
+                    span["rights"] = rights
+                    if rights["profile"] == "quote-only":
+                        # Only a quotation that was actually located spends the
+                        # budget: a fabricated one must not cap a real later claim.
+                        for k in budget_keys:
+                            quoted_words[k] = quoted_words.get(k, 0) + words
                 cfg.spans.stage(key, span)
 
         staged = cfg.spans.staged()
@@ -799,7 +868,11 @@ def make_nodes(cfg: DeskConfig):
             effect_class=EXTERNAL,
             description=(f"recorded '{verdict}' on #{sid} as {ACTOR}: status "
                          f"{status or 'unchanged'}, {len(rows)} finding(s), "
-                         f"{len(cfg.spans.staged()) if wrote_spans else 0} span(s)"),
+                         f"{len(cfg.spans.staged()) if wrote_spans else 0} span(s)"
+                         # A write the trace must name: an empty pass leaves older
+                         # spans alone EXCEPT those of claims now found over-cap.
+                         + (f", revoked older span(s) for claim(s) {', '.join(cfg.spans.revoked())}"
+                            if cfg.spans.revoked() and not wrote_spans else "")),
             receipt=EffectReceipt(receipt_id=f"audit:{sid}:{verdict}",
                                   status="completed",
                                   result_fingerprint="effect:" + digest(rows))))

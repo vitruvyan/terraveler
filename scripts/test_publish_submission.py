@@ -440,5 +440,46 @@ class WriteLibDataEntry(unittest.TestCase):
         self.assertIn('"boudeuse-2000": boudeuse_2000,', text)
 
 
+class RightsOnThePage(unittest.TestCase):
+    """A quotation whose licence could not be read as open says so beside its
+    citation — the reader is never left to assume an open licence."""
+
+    EV = {"source_title": "Tekst X", "source_url": "https://www.dbnl.org/tekst/x"}
+
+    def test_an_open_source_prints_its_citation_unchanged(self):
+        self.assertEqual(P.citation_of(self.EV, {"reading_span": "q"}), "Tekst X")
+        self.assertEqual(P.citation_of(self.EV, {"rights": {"profile": "open", "licence": "CC BY-SA"}}), "Tekst X")
+        self.assertIsNone(P.rights_of({"reading_span": "q"}))
+
+    def test_a_quote_only_source_says_so(self):
+        span = {"rights": {"profile": "quote-only", "licence": None, "basis": "default"}}
+        cite = P.citation_of(self.EV, span)
+        self.assertTrue(cite.startswith("Tekst X ("))
+        self.assertIn("rights not verified", cite)
+        self.assertIn("Carta §3.2", cite)
+        self.assertEqual(P.rights_of(span)["profile"], "quote-only")
+
+    def test_a_quote_only_source_with_no_title_still_says_so(self):
+        cite = P.citation_of({}, {"rights": {"profile": "quote-only"}})
+        self.assertIn("ights not verified", cite)
+
+    def test_the_new_voyage_bundle_carries_the_note_and_the_record(self):
+        payload = {
+            "meta": {"carta_version": "0.7"},
+            "voyage": {"slug": "x-1500", "title": "X", "evidence_basis": "contemporary-journal",
+                       "what_was_lost": "nothing"},
+            "navigator": {"name": "N"},
+            "waypoints": [{"seq": 1, "place_historical": "A", "place_modern": "A", "latitude": 1.0,
+                           "longitude": 2.0, "arrival_date": "1500-01-01", "confidence": "certain",
+                           "claims": [{"text": "t", "evidence": dict(self.EV, quote="q")}]}],
+        }
+        spans = {"1.1": {"reading_span": "q", "raw_span": "q", "transformations": [],
+                         "rights": {"profile": "quote-only", "licence": None, "basis": "default"}}}
+        prov = {"ideator": None, "scribe_model": None, "carta_version": "0.7"}
+        wp = P.to_bundle(payload, spans, prov)["waypoints"][0]
+        self.assertIn("rights not verified", wp["diary_source_citation"])
+        self.assertEqual(wp["diary_source_rights"]["profile"], "quote-only")
+
+
 if __name__ == "__main__":
     unittest.main()

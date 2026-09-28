@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   effectiveEndpoints,
+  effectiveMode,
   isEffective,
   isWellFormedPattern,
   resolveTrust,
@@ -38,15 +39,19 @@ test("an approval only takes effect when it is safe to act on", async (t) => {
     assert.equal(isEffective(PARES), true);
   });
 
-  await t.test("a domain_trusted approval needs a KNOWN rights class", () => {
-    assert.equal(isEffective(row({ id: 1, host_pattern: "a.example", rights_class: "public_domain" })), true);
-    assert.equal(isEffective(row({ id: 2, host_pattern: "b.example", rights_class: "creative_commons" })), true);
-    assert.equal(isEffective(row({ id: 3, host_pattern: "c.example", rights_class: "mixed" })), true);
-    assert.equal(isEffective(row({ id: 4, host_pattern: "d.example", rights_class: "unknown" })), false,
-      "'this whole domain is safe to ingest' cannot rest on 'rights: unknown'");
+  await t.test("a domain_trusted approval with UNKNOWN rights is in force — per item, not wholesale", () => {
+    for (const rights of ["public_domain", "creative_commons", "mixed", "unknown"] as const)
+      assert.equal(isEffective(row({ id: 1, host_pattern: "a.example", rights_class: rights })), true, rights);
     assert.equal(isEffective(row({ id: 5, host_pattern: "e.example", rights_class: "in_copyright" })), false);
     assert.equal(isEffective(row({ id: 6, host_pattern: "f.example", rights_class: null })), false,
-      "no approval on record means no rights to act on");
+      "no approval on record means nothing in force");
+  });
+
+  await t.test("effectiveMode: wholesale trust needs known rights; unknown rights downgrade to per-item", () => {
+    assert.equal(effectiveMode(row({ id: 1, host_pattern: "a.example", rights_class: "public_domain" })), "domain_trusted");
+    assert.equal(effectiveMode(row({ id: 2, host_pattern: "b.example", rights_class: "mixed" })), "domain_trusted");
+    assert.equal(effectiveMode(row({ id: 3, host_pattern: "c.example", rights_class: "unknown" })), "item_verified");
+    assert.equal(effectiveMode({ ...PARES }), "item_verified");
   });
 
   await t.test("an item_verified approval must still be IN FORCE and not in_copyright", () => {
@@ -96,7 +101,9 @@ test("effectiveEndpoints: the seed floor plus effective approvals, with revocati
     ];
     const hosts = effectiveEndpoints(rows).map((e) => e.host_pattern);
     assert.ok(hosts.includes("pares.cultura.gob.es"));
-    assert.ok(!hosts.includes("www.dbnl.org"), "rights unknown → recorded, not live");
+    assert.ok(hosts.includes("www.dbnl.org"), "rights unknown → in force, per item (not left inert)");
+    const dbnl = resolveTrust("https://www.dbnl.org/tekst/x", effectiveEndpoints(rows))!;
+    assert.equal(dbnl.endpoint.trust_mode, "item_verified", "and never wholesale trust");
     assert.ok(!hosts.includes("globalise.huygens.knaw.nl"), "collection_trusted needs a collection match");
     assert.ok(!hosts.includes("test-governance-verify.example.org"), "retired");
   });
@@ -125,6 +132,11 @@ test("effectiveEndpoints: the seed floor plus effective approvals, with revocati
   await t.test("a seed re-stated as item_verified keeps its host but loses wholesale trust", () => {
     const eps = effectiveEndpoints([row({ id: 4, host_pattern: "runeberg.org", trust_mode: "item_verified", rights_class: "mixed" })]);
     assert.equal(resolveTrust("https://runeberg.org/x", eps)!.endpoint.trust_mode, "item_verified");
+  });
+
+  await t.test("a seed host keeps wholesale trust even if its live row says rights 'unknown' (search must not lose gutenberg)", () => {
+    const eps = effectiveEndpoints([row({ id: 2, host_pattern: "www.gutenberg.org", rights_class: "unknown" })]);
+    assert.equal(resolveTrust("https://www.gutenberg.org/ebooks/1", eps)!.endpoint.trust_mode, "domain_trusted");
   });
 
   await t.test("a seed host is never duplicated by its own registry row", () => {
@@ -205,10 +217,11 @@ test("ensureRegistry keeps the site's host gates in step with the registry, and 
     assert.equal(isAllowedHost(PARES_URL), false, "item_verified never counts as wholesale-trusted");
   });
 
-  await t.test("an approval with unknown rights stays inert", async () => {
+  await t.test("an approval with unknown rights is governed per item, and never auto-searchable as wholesale trust", async () => {
     reset();
     await ensureRegistry(1_000, backend);
-    assert.equal(isGovernedHost("https://www.dbnl.org/tekst/x"), false);
+    assert.equal(isGovernedHost("https://www.dbnl.org/tekst/x"), true);
+    assert.equal(isAllowedHost("https://www.dbnl.org/tekst/x"), false);
   });
 
   await t.test("within the TTL the backend is not asked again", async () => {
