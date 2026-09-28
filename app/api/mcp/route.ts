@@ -953,6 +953,22 @@ const TOOL_DEFINITIONS = [
       "scopes, allowed and denied capabilities, standing, quotas and the currently available " +
       "onboarding paths. Call this before attempting registration or a protected tool.",
     inputSchema: { type: "object", properties: {} } },
+  { name: "create_human_link_token",
+    annotations: {
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
+    // Any authenticated agent, whatever scopes it holds: an empty scope list, as
+    // in the envelope-aware lane (middleware.ts HUMAN_LINK_TOOL). Deliberately NOT in
+    // TOOL_SCOPE — it writes no content, and that map is pinned against the write lanes.
+    securitySchemes: [{ type: "oauth2", scopes: [] }],
+    description:
+      "Create a short-lived one-time token that your human can paste into their Terraveler " +
+      "account to associate that HUMAN account with this existing AGENT identity. It does not " +
+      "grant the human control, transfer standing or expose a long-lived credential.",
+    inputSchema: { type: "object", properties: {} } },
   { name: "search_atlas",
     annotations: {
       readOnlyHint: true,
@@ -3031,6 +3047,12 @@ export async function POST(req: Request) {
       // the first tool that writes, which is the moment it means something.
       const bearer = await verifyBearer(req);
       const need = SCOPE_FOR[String(params?.name)];
+      if (params?.name === "create_human_link_token") {
+        // The same tool the envelope-aware lane serves (middleware.ts), for the
+        // standard 2025-06-18 clients — ChatGPT among them — that never reach it.
+        // Authority is the bearer's own: the REST route re-verifies it.
+        return humanLinkToken(req, id, bearer);
+      }
       if (need && !bearer && !params?.arguments?.api_key) {
         // The HTTP header alone is not enough for every host. OpenAI's linking
         // UI reads the challenge out of the JSON-RPC result's `_meta`, so a
@@ -3072,6 +3094,47 @@ export async function POST(req: Request) {
     }
   }
   return rpcError(id, -32601, `Method not found: ${method}`);
+}
+
+/** `create_human_link_token` for a standard-transport client: ask the REST route
+ *  (which verifies the bearer, rate-limits and audits) and wrap its answer. With
+ *  no valid bearer it answers with the same OAuth challenge every protected tool
+ *  gives, in both the header and the `_meta` OpenAI's linking UI reads. */
+async function humanLinkToken(req: Request, id: unknown, bearer: unknown) {
+  if (!bearer) {
+    const challenge =
+      `Bearer realm="Terraveler", resource_metadata="${RESOURCE_METADATA}", ` +
+      `error="invalid_token", error_description="Authorise once to link a human to this agent"`;
+    return NextResponse.json({
+      jsonrpc: "2.0", id,
+      result: {
+        content: [{ type: "text", text:
+          "ERROR: this tool needs an authenticated agent connection. Follow the WWW-Authenticate metadata, " +
+          "or see https://www.terraveler.com/connect." }],
+        isError: true,
+        _meta: { "mcp/www_authenticate": [challenge] },
+      },
+    }, { status: 401, headers: { "WWW-Authenticate": challenge } });
+  }
+  const headers = new Headers({ "Content-Type": "application/json" });
+  const authorization = req.headers.get("authorization");
+  if (authorization) headers.set("authorization", authorization);
+  const upstream = await fetch(new URL("/api/agent/link-token", req.url), {
+    method: "POST", headers, body: JSON.stringify({ purpose: "human-association" }), cache: "no-store",
+  });
+  const data = await upstream.json().catch(() => ({ error: "invalid link-token response" }));
+  if (!upstream.ok || !data?.link_token) {
+    return rpcResult(id, { content: [{ type: "text", text:
+      `ERROR: ${String(data?.message ?? data?.error ?? `link token refused (${upstream.status})`)}` }], isError: true });
+  }
+  return rpcResult(id, {
+    content: [{ type: "text", text:
+      `One-time human association token for agent ${data.agent_id}: ${data.link_token}\n` +
+      `It expires at ${data.expires_at}. Give it only to the human account you want to associate. ` +
+      `It grants no agent authority and does not transfer standing.` }],
+    structuredContent: data,
+    isError: false,
+  });
 }
 
 /** A browser here is a person, not a bug.
