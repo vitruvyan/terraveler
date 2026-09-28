@@ -187,48 +187,84 @@ export interface RegistryRow {
   rights_class: RightsClass | null;
 }
 
+// A host as a hostname, not as anything a URL parser could read differently:
+// lowercase labels, no userinfo/port/path/query, at least two labels. A stored
+// pattern that is not this can never equal a parsed URL host, so it must not
+// be able to match by suffix either.
+const LABEL = "[a-z0-9](?:[a-z0-9-]*[a-z0-9])?";
+const EXACT_HOST_RE = new RegExp(`^${LABEL}(?:\\.${LABEL})+$`);
+const SUFFIX_HOST_RE = new RegExp(`^\\.${LABEL}(?:\\.${LABEL})+$`);
+
+/**
+ * A registry pattern the resolver may match against. A suffix pattern must be
+ * a dot plus at least two labels: `endsWith("com")` would trust every .com
+ * host and `endsWith("")` every host at all, so a row like that — however it
+ * got into the table — is inert rather than catastrophic.
+ */
+export function isWellFormedPattern(matchType: MatchType, hostPattern: string): boolean {
+  if (matchType === "exact") return EXACT_HOST_RE.test(hostPattern);
+  if (matchType === "suffix") return SUFFIX_HOST_RE.test(hostPattern);
+  return false;
+}
+
 /**
  * Whether a registry row may act as an endpoint. Fail-closed on every axis:
  *
- *  - only `active` endpoints (retired/quarantined/needs_human_review never);
+ *  - only `active` endpoints (retired/quarantined/needs_human_review never),
+ *    and only with a well-formed host pattern;
  *  - only trust modes this layer can honour by host alone. `domain_trusted`
  *    (the whole domain) and `item_verified` (host governed; the item is
  *    verified at the Curator). `collection_trusted` needs a collection
  *    match this layer does not perform, and `link_only` means "cite, never
  *    ingest" — neither may be fetched on the strength of the host;
- *  - a `domain_trusted` approval only when its rights class is KNOWN. "This
- *    whole domain is safe to ingest unattended" cannot rest on "rights:
- *    unknown"; that approval stays on record and inert until an editor
- *    settles the rights, rather than quietly becoming live authority.
+ *  - an approval must be IN FORCE: the row's newest decision is an approve
+ *    (rights_class is null otherwise) and its rights are not `in_copyright`;
+ *  - a `domain_trusted` approval additionally needs a KNOWN rights class.
+ *    "This whole domain is safe to ingest unattended" cannot rest on
+ *    "rights: unknown"; that approval stays on record and inert until an
+ *    editor settles the rights, rather than quietly becoming live authority.
+ *    (item_verified may carry `unknown` at the endpoint level: its rights
+ *    are established per item, which is the point of the mode.)
  */
 export function isEffective(row: RegistryRow): boolean {
   if (row.status !== "active") return false;
+  if (!isWellFormedPattern(row.match_type, row.host_pattern)) return false;
+  if (row.rights_class === null || row.rights_class === "in_copyright") return false;
   if (row.trust_mode === "item_verified") return true;
-  if (row.trust_mode === "domain_trusted")
-    return row.rights_class !== null && row.rights_class !== "unknown" && row.rights_class !== "in_copyright";
+  if (row.trust_mode === "domain_trusted") return row.rights_class !== "unknown";
   return false;
 }
 
 /**
- * The endpoints in force: the seed floor plus every effective registry row.
- * Seeds are kept as the floor on purpose — the registry can ADD trust here
- * (an approval is a human act) but a database that is empty, stale or
- * unreachable can never leave the site trusting LESS than the hardcoded
- * whitelist it has always enforced.
+ * The endpoints in force: the seed floor, corrected by the registry, plus
+ * every effective registry row. For a seed host:
  *
- * A seed host the registry no longer lists as active (a quarantine or
- * retirement recorded by the desk) is removed: revocation must work, or
- * approval would be a one-way ratchet.
+ *  - no registry row at all → kept. An empty or partial registry never leaves
+ *    the site trusting LESS than the hardcoded whitelist it has always
+ *    enforced (the registry can add trust through an approval a human made;
+ *    it is not required to re-state the nine hosts to keep them);
+ *  - a row that is not active (quarantined, retired, under review) → dropped:
+ *    revocation must work, or approval would be a one-way ratchet;
+ *  - an active row → the REGISTRY's trust mode governs, so an editor
+ *    downgrading `.wikimedia.org` to link_only takes it out of fetching. A
+ *    downgrade to a mode this layer cannot honour by host alone, or a rights
+ *    class of in_copyright, drops the host.
  */
 export function effectiveEndpoints(rows: readonly RegistryRow[]): SourceEndpoint[] {
-  const byHost = new Map<string, RegistryRow>();
-  for (const r of rows) byHost.set(`${r.match_type}:${r.host_pattern}`, r);
+  const byKey = new Map<string, RegistryRow>();
+  for (const r of rows) byKey.set(`${r.match_type}:${r.host_pattern}`, r);
 
   const out: SourceEndpoint[] = [];
   for (const seed of SEED_ENDPOINTS) {
-    const live = byHost.get(`${seed.match_type}:${seed.host_pattern}`);
-    if (live && live.status !== "active") continue; // revoked in the registry
-    out.push(seed);
+    const live = byKey.get(`${seed.match_type}:${seed.host_pattern}`);
+    if (!live) {
+      out.push(seed);
+      continue;
+    }
+    if (live.status !== "active") continue;
+    if (live.rights_class === "in_copyright") continue;
+    if (live.trust_mode !== "domain_trusted" && live.trust_mode !== "item_verified") continue;
+    out.push({ ...seed, trust_mode: live.trust_mode });
   }
   const seedKeys = new Set(SEED_ENDPOINTS.map(e => `${e.match_type}:${e.host_pattern}`));
   for (const r of rows) {
