@@ -1015,6 +1015,44 @@ class RightsReadPerItem(unittest.TestCase):
         self.assertEqual(result.state.fact("gate_stats")["quoted"], 1)
         self.assertEqual(result.state.fact("n_admitted"), 0)
 
+class NonAsciiUrls(unittest.TestCase):
+    """A contributor cites a page by its readable address; urllib would raise
+    UnicodeEncodeError on it, which the Desk reported as an unreachable source."""
+
+    def test_the_wire_form_is_ascii_and_keeps_existing_escapes(self):
+        for url, want in [
+            ("https://es.wikipedia.org/wiki/Tallán", "https://es.wikipedia.org/wiki/Tall%C3%A1n"),
+            ("https://es.wikisource.org/wiki/Historia_general_del_Perú,_o_Comentarios_reales_de_los_incas_(Tomo_I)",
+             "https://es.wikisource.org/wiki/Historia_general_del_Per%C3%BA,_o_Comentarios_reales_de_los_incas_(Tomo_I)"),
+            ("https://es.wikipedia.org/wiki/Tall%C3%A1n", "https://es.wikipedia.org/wiki/Tall%C3%A1n"),
+            ("https://www.gutenberg.org/ebooks/1?a=b&c=d#x", "https://www.gutenberg.org/ebooks/1?a=b&c=d#x"),
+            ("https://bücher.example/x", "https://xn--bcher-kva.example/x"),
+        ]:
+            self.assertEqual(G.iri_to_uri(url), want)
+            self.assertTrue(G.iri_to_uri(url).isascii())
+
+    def test_fetch_requests_the_encoded_url_and_does_not_treat_it_as_a_redirect(self):
+        from unittest import mock
+        seen = {}
+
+        class Resp:
+            headers = {"Content-Type": "text/html"}
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def geturl(self): return seen["url"]
+            def read(self, n=-1): return b"<html><body>text</body></html>"
+
+        def urlopen(req, **kw):
+            seen["url"] = req.full_url
+            return Resp()
+
+        cfg = G.DeskConfig(pg={}, carta="0.7")
+        with mock.patch.object(G.urllib.request, "urlopen", side_effect=urlopen), \
+             mock.patch.object(G, "verify_source", side_effect=AssertionError("not a redirect")):
+            G.fetch(cfg, "https://es.wikipedia.org/wiki/Tallán")
+        self.assertEqual(seen["url"], "https://es.wikipedia.org/wiki/Tall%C3%A1n")
+
+
 class RedirectsOfAQuoteOnlySource(unittest.TestCase):
     """A quote-only source never passes verify_source, so the redirect guard
     must not read its ordinary http->https hop as "off-whitelist" — and must

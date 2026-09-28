@@ -49,6 +49,7 @@ import json
 import pathlib
 import sys
 import urllib.request
+from urllib.parse import quote, urlsplit, urlunsplit
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -339,6 +340,26 @@ def redirect_stays_home(asked: str, answered: str) -> bool:
         _within(domain_of(answered), "archive.org")
 
 
+def iri_to_uri(url: str) -> str:
+    """The URL as it goes on the wire. Contributors cite pages by their readable
+    address — `https://es.wikipedia.org/wiki/Tallán`, `…/Historia_general_del_Perú,…` —
+    and urllib refuses a non-ASCII request line (UnicodeEncodeError), which read
+    as "source unreachable" and stalled every such quotation. Percent-encode the
+    path, query and fragment (leaving existing %XX escapes and reserved
+    characters alone) and IDNA-encode a non-ASCII host."""
+    try:
+        p = urlsplit(url)
+        host = p.hostname or ""
+        if not host.isascii():
+            host = host.encode("idna").decode("ascii")
+        netloc = host + (f":{p.port}" if p.port else "")
+        safe = "%/:@!$&'()*+,;=~[]-._?#"
+        return urlunsplit((p.scheme, netloc, quote(p.path, safe=safe), quote(p.query, safe=safe),
+                           quote(p.fragment, safe=safe)))
+    except (ValueError, UnicodeError):
+        return url
+
+
 def fetch(cfg: DeskConfig, url: str) -> str:
     """The readable text of a source, cached for the run.
 
@@ -348,7 +369,8 @@ def fetch(cfg: DeskConfig, url: str) -> str:
     """
     if url in cfg.fetch_cache:
         return cfg.fetch_cache[url]
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    wire = iri_to_uri(url)
+    req = urllib.request.Request(wire, headers={"User-Agent": UA})
     # The Curator relocates quotations in the live source, so it must be able to
     # reach every source the registry admits — including a host whose server
     # sends an incomplete certificate chain (ingest/tls.py; None = default).
@@ -361,7 +383,7 @@ def fetch(cfg: DeskConfig, url: str) -> str:
         # an unbounded r.read() on a shared VPS is an OOM with a contributor's
         # name on the trigger.
         final = r.geturl()
-        if final != url and not redirect_stays_home(url, final):
+        if final not in (url, wire) and not redirect_stays_home(url, final):
             ok, why = verify_source(final)
             if not ok:
                 # A source admitted for quotation only (never ingestable) never
