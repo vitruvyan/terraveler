@@ -19,6 +19,7 @@ export const dynamic = "force-dynamic";
  */
 
 const RIGHTS_FALLBACK = "unknown";
+const BROAD_TRUST_MODES = new Set(["domain_trusted", "collection_trusted"]);
 
 async function editorPrincipalId(): Promise<number | null> {
   const rows = await sb("GET", `human_principals?email=eq.${encodeURIComponent(editorEmail())}&select=id`);
@@ -45,6 +46,22 @@ async function handleSourceCallback(action: "approve" | "reject", proposalId: nu
     return {
       toast: "L'agente non ha suggerito un trust_mode — serve una scelta manuale sul desk (bottone Rivedi).",
       alert: true, outcome: "needs manual trust_mode",
+    };
+  }
+
+  // An approval is no longer only a record: the site's fetch gate and the
+  // Curator's licence gate now honour what the registry holds. So a tap that
+  // approves `domain_trusted` would make a WHOLE DOMAIN trusted for unattended
+  // use (`collection_trusted`, a whole collection) on the strength of the
+  // proposing agent's own claim about its licence. That is a decision for the
+  // desk form, where the editor chooses the trust mode and rights class with
+  // the reasoning in front of them. `item_verified` (every item is checked at
+  // use) and `link_only` (cite, never ingest) stay one-tap: neither widens
+  // anything by itself.
+  if (action === "approve" && trustMode && BROAD_TRUST_MODES.has(trustMode)) {
+    return {
+      toast: "Fiducia estesa a un intero dominio o collezione — serve una scelta esplicita di trust_mode e diritti sul desk (bottone Rivedi).",
+      alert: true, outcome: "needs explicit domain/collection trust decision on desk",
     };
   }
 

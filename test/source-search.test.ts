@@ -3,9 +3,18 @@ import assert from "node:assert/strict";
 import {
   ADAPTER_FNS, AdapterRejected, DEFAULT_CANDIDATE_CAP, MAX_FETCHED_TEXT_CHARS,
   fetchSourceText, filterActiveAdapters, isAllowedHost, isGovernedHost,
-  mediawikiSearch, searchSources, wikisourceRenderToText,
+  mediawikiSearch, searchSources, wikisourceRenderToText, setRegistryRequiredForTest,
   type AdapterRow, type Candidate,
 } from "../lib/sourceSearch";
+
+// CI configures a backend (POSTGREST_URL=https://example.invalid) that cannot
+// be reached. With a backend configured the host gates fail CLOSED when the
+// registry cannot be read — which is the production behaviour, and exactly
+// what must not be assumed away here. This suite pins the seed-host behaviour
+// of the gates and the fetch/search dispatch around them, so it declares the
+// situation it is about: no registry expected, the seeds are the authority.
+// The fail-closed behaviour itself is pinned in source-registry-trust.test.ts.
+setRegistryRequiredForTest(false);
 
 /**
  * Phase 3: the agent-facing discovery + fetch path (`search_sources`,

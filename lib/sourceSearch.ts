@@ -1,5 +1,8 @@
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
-import { resolveTrust } from "@/lib/source-governance";
+import {
+  effectiveEndpoints, resolveTrust, SEED_ENDPOINTS,
+  type RegistryRow, type RightsClass, type SourceEndpoint,
+} from "@/lib/source-governance";
 
 /**
  * The agent-facing discovery + fetch path — Phase 3 of the contribution
@@ -26,47 +29,36 @@ import { resolveTrust } from "@/lib/source-governance";
  *     as it does there, with no redeploy needed.
  *
  *   - Every URL either function is about to request is *additionally*
- *     checked against `isAllowedHost()`/`isGovernedHost()` below, which
- *     mirror `ingest/whitelist.py::is_allowed()` — a small, STATIC,
- *     hardcoded set of wholesale-guaranteed hosts, deliberately NOT the
- *     live `source_endpoints` table. That is not an oversight: Python's
- *     `is_allowed()` (the function the registry's adapters actually call
- *     before any HTTP request — see `_mediawiki_host()` and `gutendex()`)
- *     reads the same hardcoded `ALLOWED_DOMAINS`/`ALLOWED_SUFFIXES` dicts
- *     regardless of `SOURCE_AUTHORITY_MODE`, which is `legacy` in
- *     production today (unset anywhere in docker-compose.yml/.env). A DB
- *     row can retire a search ADAPTER (narrowing what gets searched), but
- *     it can never, by itself, widen what may be FETCHED — matching the
- *     invariant `source_registry.py`'s own module docstring states.
+ *     checked against `isAllowedHost()`/`isGovernedHost()` below — the
+ *     fetch-side trust boundary, kept distinct from the adapter roster.
  *
- *     `lib/source-governance.ts::resolveTrust()` already IS this mirror —
- *     built in Phase 2A specifically to reproduce `whitelist.py` 1:1
- *     (see its "Shadow Mode A/B Fixture Parity" test running both
- *     resolvers side by side against the same URL list) — so it is reused
- *     here rather than re-encoding the same nine hosts a third time.
+ *     That boundary used to be a static copy of the nine hosts
+ *     `ingest/whitelist.py` hardcodes, on the stated ground that a database
+ *     row could narrow what is searched but never widen what may be
+ *     fetched. The consequence was an approval with no effect: an editor
+ *     could approve a source (PARES, DBNL, ...) and nothing that enforces
+ *     trust would ever notice. It is now the seed floor PLUS whatever the
+ *     live registry holds as an effective approval — see
+ *     `lib/source-governance.ts::effectiveEndpoints`, which also keeps
+ *     revocation working (a seed host quarantined in the registry drops
+ *     out) and refuses to act on an approval whose rights are unknown.
+ *     The registry can only widen trust through an approval a human made;
+ *     an empty or unreachable database can never leave this narrower than
+ *     the seeds it always enforced.
+ *
  *     `lib/gate.ts`'s `DOMAINS`/`domainOk()` is a DIFFERENT, deliberately
  *     BROADER list (~40 institutional domains, comment: "what a machine
  *     may ingest unattended... is answered by ingest/whitelist.py, which
  *     is a different list for a reason") for citing evidence a human or
  *     the Curator can still go verify — not a green light for an
  *     unattended agent to pull raw text from. Using it here would let this
- *     tool auto-fetch text from institutions Python's own auto-ingestion
- *     path refuses to touch. It was considered and rejected for exactly
- *     that reason.
+ *     tool auto-fetch text from institutions no editor has approved. It was
+ *     considered and rejected for exactly that reason.
  */
 
 // ------------------------------------------------------------------ HTTP
 const UA = "Terraveler-AgentSourceSearch/1.0 (contact: dbaldoni@gmail.com)";
 const HTTP_TIMEOUT_MS = 20_000;
-
-async function getText(url: string): Promise<string> {
-  const r = await fetch(url, {
-    headers: { "User-Agent": UA },
-    signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
-  });
-  if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
-  return r.text();
-}
 
 async function getJson(url: string): Promise<any> {
   const r = await fetch(url, {
@@ -75,6 +67,66 @@ async function getJson(url: string): Promise<any> {
   });
   if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
   return r.json();
+}
+
+const MAX_REDIRECTS = 5;
+
+function isArchiveFamily(host: string): boolean {
+  return host === "archive.org" || host.endsWith(".archive.org");
+}
+
+/**
+ * Whether a redirect stays inside what is governed. The gate is checked
+ * against the URL an agent ASKED for; fetch follows redirects, so it must be
+ * re-established against the URL that answered — or a governed host that
+ * redirects (gutenberg.org → www.gutenberg.org, or an open redirect) binds
+ * the trust decision to a body some other host chose, and quarantining one
+ * host of a pair would not stop the other one serving it.
+ *
+ * Mirrors scripts/desk_graph.py::redirect_stays_home: archive.org hands item
+ * files to per-item CDN nodes (dn760108.eu.archive.org, ia800808.us.archive.org)
+ * that are its own infrastructure and not separately registered.
+ */
+export function redirectStaysGoverned(asked: string, answered: string): boolean {
+  let from: URL, to: URL;
+  try {
+    from = new URL(asked);
+    to = new URL(answered);
+  } catch {
+    return false;
+  }
+  if (to.protocol !== "https:" || to.username || to.password) return false;
+  if (isGovernedHost(answered)) return true;
+  return isArchiveFamily(from.hostname.toLowerCase()) && isArchiveFamily(to.hostname.toLowerCase());
+}
+
+/**
+ * GET a governed source's text, following redirects by hand so every hop is
+ * re-checked. `fetchImpl` is a seam for tests.
+ */
+export async function getGovernedText(startUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
+  let url = startUrl;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const r = await fetchImpl(url, {
+      headers: { "User-Agent": UA },
+      redirect: "manual",
+      signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+    });
+    if (r.status >= 300 && r.status < 400) {
+      const location = r.headers.get("location");
+      if (!location) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status} with no Location`);
+      const next = new URL(location, url).toString();
+      if (!redirectStaysGoverned(url, next))
+        throw new Error(
+          `fetch_source_text: ${new URL(url).host} redirected to ${new URL(next).host}, which is not a governed source — refusing to follow.`,
+        );
+      url = next;
+      continue;
+    }
+    if (!r.ok) throw new Error(`request to ${new URL(url).host} failed: HTTP ${r.status}`);
+    return r.text();
+  }
+  throw new Error("fetch_source_text: too many redirects");
 }
 
 // ------------------------------------------------------------------ whitelist gates
@@ -87,7 +139,7 @@ async function getJson(url: string): Promise<any> {
  * deliberately excluded here: it needs verify_source()").
  */
 export function isAllowedHost(url: string): boolean {
-  return resolveTrust(url)?.endpoint.trust_mode === "domain_trusted";
+  return resolveTrust(url, currentEndpoints())?.endpoint.trust_mode === "domain_trusted";
 }
 
 /**
@@ -101,7 +153,131 @@ export function isAllowedHost(url: string): boolean {
  * it only confirms the HOST is one Terraveler governs at all.
  */
 export function isGovernedHost(url: string): boolean {
-  return resolveTrust(url) !== null;
+  return resolveTrust(url, currentEndpoints()) !== null;
+}
+
+// ------------------------------------------------------------------ the live registry
+const REGISTRY_TTL_MS = 60_000;
+// A registry that keeps failing to reload is no longer trusted to describe
+// revocations either, so past this the view is dropped — see currentEndpoints
+// for what a dropped view means.
+const REGISTRY_MAX_STALE_MS = 10 * 60_000;
+// Bounded well inside a request's budget: this read is in front of every fetch.
+const REGISTRY_LOAD_TIMEOUT_MS = 2_500;
+
+let registry: { endpoints: SourceEndpoint[]; loadedAt: number } | null = null;
+let registryLoad: Promise<void> | null = null;
+// Whether a registry is expected at all. Where no backend is configured (a
+// local checkout, the unit tests) the seed hosts are the only authority there
+// is; where one IS configured, "could not read it" must not be read as "no
+// revocations".
+let registryRequired = Boolean(POSTGREST_URL);
+
+/**
+ * The endpoints in force right now. A loaded view (fresh, or stale within
+ * REGISTRY_MAX_STALE_MS) is used as it stands. With no view:
+ *  - a backend is configured → NOTHING is governed. This fails CLOSED, like
+ *    the Python registry authority does: falling back to the seeds would
+ *    re-trust a host the editor had quarantined, exactly when the registry
+ *    that says so cannot be read;
+ *  - no backend configured → the seed floor.
+ */
+function currentEndpoints(): readonly SourceEndpoint[] {
+  if (registry) return registry.endpoints;
+  return registryRequired ? [] : SEED_ENDPOINTS;
+}
+
+/** True when a backend is configured but no usable view of it exists. */
+export function registryUnavailable(): boolean {
+  return registryRequired && registry === null;
+}
+
+/**
+ * Read the registry rows: every endpoint (any status, so a revoked seed is
+ * visible as revoked) joined to the rights class on its newest decision.
+ * Pure of caching and fallbacks, so it can be tested with a fake backend.
+ */
+export async function loadRegistryRows(
+  fetchJson: (path: string) => Promise<any> = pg,
+): Promise<RegistryRow[]> {
+  const endpoints: any[] = await fetchJson(
+    "source_endpoints?select=id,institution_id,host_pattern,match_type,status,trust_mode&order=id.asc&limit=1000");
+  // nullslast: Postgres sorts NULL first on DESC, which would make a row with
+  // no timestamp read as the newest decision.
+  const decisions: any[] = await fetchJson(
+    "source_policy_decisions?endpoint_id=not.is.null&select=endpoint_id,decision_outcome,rights_class" +
+    "&order=timestamp.desc.nullslast,id.desc&limit=5000");
+  if (!Array.isArray(endpoints) || !Array.isArray(decisions))
+    throw new Error("source registry backend returned an error object instead of rows");
+
+  const newest = new Map<number, { outcome: string; rights: RightsClass }>();
+  for (const d of decisions) {
+    const id = Number(d.endpoint_id);
+    if (!newest.has(id)) newest.set(id, { outcome: String(d.decision_outcome), rights: d.rights_class });
+  }
+  return endpoints.map((e: any) => {
+    const latest = newest.get(Number(e.id));
+    return {
+      id: Number(e.id),
+      institution_id: e.institution_id == null ? null : Number(e.institution_id),
+      host_pattern: String(e.host_pattern),
+      match_type: e.match_type,
+      status: e.status,
+      trust_mode: e.trust_mode ?? null,
+      // Only an approval carries rights the registry may act on: an
+      // endpoint whose newest decision is anything else has none.
+      rights_class: latest && latest.outcome === "approve" ? latest.rights : null,
+    };
+  });
+}
+
+function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`source registry read exceeded ${ms}ms`)), ms);
+    work.then((v) => { clearTimeout(timer); resolve(v); }, (e) => { clearTimeout(timer); reject(e); });
+  });
+}
+
+/**
+ * Refresh the registry view if it is older than the TTL. Never throws, never
+ * waits longer than REGISTRY_LOAD_TIMEOUT_MS, and concurrent callers share one
+ * read rather than each starting their own. A failed read keeps the last good
+ * view until it is REGISTRY_MAX_STALE_MS old; after that there is no view and
+ * currentEndpoints() decides what that means. Called at the top of each async
+ * entry point so the synchronous host gates read a current view.
+ */
+export function ensureRegistry(
+  now: number = Date.now(),
+  fetchJson: (path: string) => Promise<any> = pg,
+  timeoutMs: number = REGISTRY_LOAD_TIMEOUT_MS,
+): Promise<void> {
+  if (registry && now - registry.loadedAt < REGISTRY_TTL_MS) return Promise.resolve();
+  // No backend expected and none injected: nothing to read, the seeds are the
+  // whole authority — do not go to the network to find that out.
+  if (!registryRequired && fetchJson === pg) return Promise.resolve();
+  if (registryLoad) return registryLoad;
+  registryLoad = (async () => {
+    try {
+      const rows = await withTimeout(loadRegistryRows(fetchJson), timeoutMs);
+      registry = { endpoints: effectiveEndpoints(rows), loadedAt: now };
+    } catch {
+      if (registry && now - registry.loadedAt >= REGISTRY_MAX_STALE_MS) registry = null;
+    } finally {
+      registryLoad = null;
+    }
+  })();
+  return registryLoad;
+}
+
+/** Test seam: drop any cached view so the next ensureRegistry() reloads. */
+export function resetRegistryCache(): void {
+  registry = null;
+  registryLoad = null;
+}
+
+/** Test seam: pretend a backend is (not) configured. */
+export function setRegistryRequiredForTest(required: boolean): void {
+  registryRequired = required;
 }
 
 // ------------------------------------------------------------------ source_search_adapters registry
@@ -117,6 +293,11 @@ export interface AdapterRow {
   notes: string | null;
 }
 
+// A backend that accepts the connection and never answers must cost a bounded
+// wait, not the whole request: the registry read now sits in front of every
+// fetch and search, which never touched the database before.
+const PG_TIMEOUT_MS = 8_000;
+
 async function pg(path: string): Promise<any> {
   if (!POSTGREST_URL) throw new Error("source registry unavailable: POSTGREST_URL is not configured");
   const r = await fetch(`${POSTGREST_URL}/rest/v1/${path}`, {
@@ -125,6 +306,7 @@ async function pg(path: string): Promise<any> {
       Authorization: `Bearer ${POSTGREST_SERVICE_KEY}`,
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(PG_TIMEOUT_MS),
   });
   if (!r.ok) throw new Error(`source registry backend ${r.status}: ${(await r.text()).slice(0, 200)}`);
   return r.json();
@@ -366,6 +548,11 @@ export async function searchSources(
   subject: string, lang = "en", totalCap: number = DEFAULT_CANDIDATE_CAP,
   adapters?: AdapterRow[],
 ): Promise<SearchSourcesResult> {
+  await ensureRegistry();
+  if (registryUnavailable())
+    throw new Error(
+      "search_sources: the source registry cannot be read right now, so no host can be confirmed as governed — refusing to search (fail closed). Retry shortly.",
+    );
   const loaded = adapters ?? (await loadActiveAdapters());
   const searchAdapters = loaded
     .filter((a) => a.capability === "search")
@@ -539,7 +726,7 @@ async function fetchMediawikiExtract(host: string, title: string): Promise<strin
  *  verification (`whitelist.verify_archive_item`) stays the Curator's job at
  *  review time — this tool only fetches the text to read. */
 async function fetchArchiveText(url: string): Promise<string> {
-  return (await getText(url)).trim();
+  return (await getGovernedText(url)).trim();
 }
 
 /** Title recovered from a candidate's own `url`, inverting exactly how
@@ -589,6 +776,11 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
 
   // The security gate — BEFORE any request, exactly the discipline
   // `source_registry.py`'s own docstring demands of the Python adapters.
+  await ensureRegistry();
+  if (registryUnavailable())
+    throw new Error(
+      "fetch_source_text: the source registry cannot be read right now, so no host can be confirmed as governed — refusing to fetch (fail closed). Retry shortly.",
+    );
   if (!isGovernedHost(rawUrl))
     throw new Error(
       `fetch_source_text: ${JSON.stringify(url.host)} is not an active Terraveler source endpoint — refusing to fetch.`,
@@ -598,7 +790,12 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
   let text: string;
   switch (kind) {
     case "gutenberg":
-      text = stripGutenbergBoilerplate(await getText(rawUrl));
+      // A kind names a FETCHER, and a fetcher only knows its own site's
+      // shape. With more than nine governed hosts, "any governed host" is no
+      // longer a sufficient reason to run the Gutenberg one.
+      if (host !== "gutenberg.org" && !host.endsWith(".gutenberg.org"))
+        throw new Error(`fetch_source_text: kind="gutenberg" but ${JSON.stringify(host)} is not a gutenberg.org host.`);
+      text = stripGutenbergBoilerplate(await getGovernedText(rawUrl));
       break;
     case "wikipedia": {
       if (!host.endsWith(".wikipedia.org"))
@@ -617,6 +814,8 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       break;
     }
     case "archive":
+      if (host !== "archive.org" && host !== "www.archive.org")
+        throw new Error(`fetch_source_text: kind="archive" but ${JSON.stringify(host)} is not an archive.org host.`);
       text = await fetchArchiveText(rawUrl);
       break;
     default:

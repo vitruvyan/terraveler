@@ -111,6 +111,69 @@ test("Telegram webhook", async (t) => {
     assert.deepEqual(edited!.body.reply_markup, { inline_keyboard: [] });
   });
 
+  for (const mode of ["domain_trusted", "collection_trusted"]) {
+    await t.test(`src:approve refuses to one-tap an agent's ${mode} claim — a whole domain or collection is the desk's decision`, async () => {
+      const calls: { url: string; body: any }[] = [];
+      globalThis.fetch = async (input, init) => {
+        const url = typeof input === "string" ? input : (input as any).url;
+        const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+        calls.push({ url, body });
+        if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+        if (url.includes("source_proposals?id=eq.31")) {
+          return {
+            ok: true, status: 200,
+            text: async () => JSON.stringify([{
+              id: 31, target_url: "https://some-archive.example/", status: "submitted", endpoint_id: null,
+              source_proposal_intents: [{ reason: "all of it is public domain, trust me", suggested_trust_mode: mode, suggested_rights_class: "public_domain" }],
+            }]),
+          } as any;
+        }
+        if (url.includes("human_principals?email=eq.")) {
+          return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+        }
+        return { ok: false, status: 404, text: async () => "unexpected" } as any;
+      };
+
+      await POST(req(telegramUpdate("src:approve:31")));
+
+      assert.equal(calls.find((c) => c.url.includes("mcp_resolve_source_proposal")), undefined,
+        "must not resolve: this classification would become live authority");
+      const answered = calls.find((c) => c.url.includes("answerCallbackQuery"));
+      assert.equal(answered!.body.show_alert, true);
+      assert.match(answered!.body.text, /desk|Rivedi/);
+    });
+  }
+
+  await t.test("a reject of a domain_trusted proposal is still one-tap — refusing widens nothing", async () => {
+    const calls: { url: string; body: any }[] = [];
+    globalThis.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : (input as any).url;
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      calls.push({ url, body });
+      if (url.includes("api.telegram.org")) return { ok: true, json: async () => ({ ok: true, result: {} }) } as any;
+      if (url.includes("source_proposals?id=eq.32")) {
+        return {
+          ok: true, status: 200,
+          text: async () => JSON.stringify([{
+            id: 32, target_url: "https://some-archive.example/", status: "submitted", endpoint_id: null,
+            source_proposal_intents: [{ reason: "x", suggested_trust_mode: "domain_trusted", suggested_rights_class: "public_domain" }],
+          }]),
+        } as any;
+      }
+      if (url.includes("human_principals?email=eq.")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify([{ id: 1 }]) } as any;
+      }
+      if (url.includes("/rest/v1/rpc/mcp_resolve_source_proposal")) {
+        return { ok: true, status: 200, text: async () => JSON.stringify({ decision_id: 9, proposal_id: 32, status: "rejected" }) } as any;
+      }
+      return { ok: false, status: 404, text: async () => "unexpected" } as any;
+    };
+    await POST(req(telegramUpdate("src:reject:32")));
+    const rpcCall = calls.find((c) => c.url.includes("mcp_resolve_source_proposal"));
+    assert.ok(rpcCall);
+    assert.equal(rpcCall!.body.p_decision, "reject");
+  });
+
   await t.test("src:approve refuses to one-tap a proposal with no agent-suggested trust_mode", async () => {
     const calls: { url: string; body: any }[] = [];
     globalThis.fetch = async (input, init) => {
