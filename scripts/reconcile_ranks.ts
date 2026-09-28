@@ -1,55 +1,32 @@
 #!/usr/bin/env tsx
 /**
- * The Purser's nightly reconciliation (docs/SHIPS_OFFICERS.md §4.3, A1).
- *
- * recalcHumanRank() already runs synchronously at every trigger point that
- * changes what a human's aggregate could be — a verdict, a review, a link
- * created or reactivated (lib/rankPromotion.ts, wired into
- * lib/deskVerdict.ts and lib/agentIdentity.ts). This exists for the drift
- * those triggers cannot see by construction: a standing view definition
- * that changed after the fact, a link touched by something other than the
- * normal flow, or a trigger that failed and was swallowed (rank promotion
- * errors are logged and never allowed to fail the event that caused them —
- * see maybeRecalcRankForContributor's own docstring). It is a pure
- * recompute of already-derived state: safe to run as often as wanted, and
- * every run is its own audit_log row (actor 'rank-promotion'), so a
- * no-op night looks like a no-op night rather than silence.
+ * The Purser's nightly reconciliation (docs/SHIPS_OFFICERS.md §4.3, A1) —
+ * CLI entry point. See lib/rankPromotion.ts::reconcileAllHumanRanks for
+ * what this actually does and why; app/api/cron/reconcile-ranks/route.ts
+ * is the other entry point (Vercel Cron), sharing the same function so the
+ * two can't drift on what "reconcile" means.
  *
  * Usage: npx tsx scripts/reconcile_ranks.ts
- * Needs POSTGREST_URL / POSTGREST_SERVICE_KEY in the environment, same as
- * every other script that imports lib/deskAuth's sb().
- *
- * Not yet scheduled anywhere in this repo — add a nightly, off-peak
- * crontab/systemd-timer entry on the host that runs this.
+ * Needs POSTGREST_URL / POSTGREST_SERVICE_KEY in the environment — the
+ * Vercel app's own env, not the VPS data-plane .env. Run this from
+ * wherever that's configured (a developer machine, CI, or via the Vercel
+ * Cron route instead of this script on a host that doesn't have it).
  */
-import { sb } from "@/lib/deskAuth";
-import { recalcHumanRank } from "@/lib/rankPromotion";
+import { reconcileAllHumanRanks } from "@/lib/rankPromotion";
 
 async function main() {
-  const links = await sb("GET",
-    "human_agent_links?revoked_at=is.null&select=human_principal_id");
-  const humanIds = [...new Set<number>(
-    (links ?? []).map((l: any) => Number(l.human_principal_id)))];
-
-  console.log(`purser reconciliation: ${humanIds.length} human(s) with an active agent link`);
-
-  let failed = 0;
-  for (const id of humanIds) {
-    try {
-      const result = await recalcHumanRank(id);
-      if (result) {
-        console.log(`  human #${id}: rank='${result.rank}' ` +
-          `accepted=${result.signal.accepted} rejections=${result.signal.rejections} ` +
-          `reviews_given=${result.signal.reviewsGiven} abandoned_claims=${result.signal.abandonedClaims}`);
-      }
-    } catch (e) {
-      failed += 1;
-      console.error(`  human #${id}: reconciliation failed`, e);
-    }
+  const summary = await reconcileAllHumanRanks();
+  console.log(`purser reconciliation: ${summary.checked} human(s) with an active agent link`);
+  for (const r of summary.results) {
+    console.log(`  human #${r.humanPrincipalId}: rank='${r.rank}' ` +
+      `accepted=${r.signal.accepted} rejections=${r.signal.rejections} ` +
+      `reviews_given=${r.signal.reviewsGiven} abandoned_claims=${r.signal.abandonedClaims}`);
   }
-
-  console.log(`purser reconciliation: done, ${failed} failure(s)`);
-  if (failed) process.exitCode = 1;
+  for (const e of summary.errors) {
+    console.error(`  human #${e.humanPrincipalId}: reconciliation failed — ${e.message}`);
+  }
+  console.log(`purser reconciliation: done, ${summary.failed} failure(s)`);
+  if (summary.failed) process.exitCode = 1;
 }
 
 main();
