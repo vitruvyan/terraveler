@@ -86,21 +86,42 @@ def resolve_trust_from_db(url: str):
             rule = cur.fetchone()
             verification_strategy = rule["verification_strategy"] if rule else "none"
 
+            # The NEWEST decision, whatever its outcome. This used to be a bare
+            # fetchone() with no ordering — an arbitrary row of the endpoint's
+            # history, so a superseding reject or an older approve could be
+            # the one that spoke. The newest decision is the one in force.
             cur.execute(
-                "SELECT id, trust_mode, rights_class FROM source_policy_decisions WHERE endpoint_id = %s",
+                "SELECT id, decision_outcome, trust_mode, rights_class FROM source_policy_decisions "
+                "WHERE endpoint_id = %s ORDER BY timestamp DESC, id DESC LIMIT 1",
                 (endpoint["id"],)
             )
             decision = cur.fetchone()
             rights_class = decision["rights_class"] if decision else "unknown"
             policy_decision_id = decision["id"] if decision else None
 
-            # Resolve decision state (ITEM_VERIFIED is never automatically allowed)
-            if endpoint["trust_mode"] == "domain_trusted":
-                decision_outcome = "allow"
+            # Resolve decision state (ITEM_VERIFIED is never automatically allowed).
+            # Every branch that does not allow says WHY, so a refusal at the
+            # Curator names its cause instead of a generic "registry status".
+            reason = None
+            if decision is None or decision["decision_outcome"] != "approve":
+                decision_outcome = "deny"
+                reason = "no approval in force on this endpoint (newest decision is not an approve)"
+            elif endpoint["trust_mode"] == "domain_trusted":
+                # Mirrors lib/source-governance.ts::isEffective: "this whole
+                # domain is safe to ingest unattended" cannot rest on rights
+                # nobody has established.
+                if rights_class in (None, "unknown", "in_copyright"):
+                    decision_outcome = "deny"
+                    reason = (f"approved as domain_trusted but rights class is "
+                              f"{rights_class or 'unrecorded'!r}: recorded, not in force")
+                else:
+                    decision_outcome = "allow"
             elif endpoint["trust_mode"] == "item_verified":
                 decision_outcome = "requires_item_verification"
             else:
                 decision_outcome = "deny"
+                reason = (f"trust_mode {endpoint['trust_mode']!r} is not honoured by host "
+                          f"alone (collection_trusted needs a collection match; link_only never ingests)")
 
             return {
                 "matched": True,
@@ -110,7 +131,8 @@ def resolve_trust_from_db(url: str):
                 "trust_mode": endpoint["trust_mode"],
                 "verification_strategy": verification_strategy,
                 "rights_class": rights_class,
-                "policy_decision_id": policy_decision_id
+                "policy_decision_id": policy_decision_id,
+                "reason": reason,
             }
             
     except Exception as e:
@@ -188,8 +210,9 @@ def compare_shadow(url: str, fetch_json=None) -> tuple[bool, str]:
         registry_reason = reg["rights_class"]
     elif reg["decision"] == "requires_item_verification":
         # True behavioral equivalence: run the configured verifier on the item
-        if reg["verification_strategy"] == "archive_org_metadata":
-            registry_allowed, registry_reason = whitelist.verify_archive_item(url, fetch_json=fetch_json)
+        verifier = whitelist._verification_strategies().get(reg["verification_strategy"])
+        if verifier is not None:
+            registry_allowed, registry_reason = verifier(url, fetch_json=fetch_json)
         else:
             registry_allowed = False
             registry_reason = f"unknown verification strategy: {reg['verification_strategy']}"
