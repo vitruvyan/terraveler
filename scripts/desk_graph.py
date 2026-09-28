@@ -257,6 +257,9 @@ class SpanStore:
     def revoke(self, key: str) -> None:
         self._revoked.add(key)
 
+    def revoked(self) -> list[str]:
+        return sorted(self._revoked)
+
     def staged(self) -> dict[str, dict]:
         return dict(self._staged)
 
@@ -520,7 +523,7 @@ def make_nodes(cfg: DeskConfig):
         # carried here from check_sources: the state does not hold it, and
         # that is the rule this graph is built around.
         quotes = {}
-        quoted_words: dict[str, int] = {}   # quote-only words used per source URL
+        quoted_words: dict[str, int] = {}   # quote-only words spent per source CONTENT (body hash)
         for w in payload.get("waypoints") or []:
             for ci, c in enumerate(w.get("claims") or [], 1):
                 ev = c.get("evidence") or {}
@@ -565,9 +568,11 @@ def make_nodes(cfg: DeskConfig):
             # metadata alone (a contributor's declaration is not evidence) — and where they
             # cannot be read the default profile applies, which is a brief
             # quotation and never a refusal (ingest/licence.py, Carta 3.2).
+            body_sha = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
             rights = None
+            words = 0
             if entry.get("gate") == "read-licence":
-                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]))
+                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]), entry["url"])
                 words = LIC.word_count(claim["quote"])
                 if LIC.over_cap(rights, claim["quote"]):
                     f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
@@ -576,18 +581,19 @@ def make_nodes(cfg: DeskConfig):
                     stats["capped"] = stats.get("capped", 0) + 1
                     cfg.spans.revoke(key)
                     continue
-                if rights["profile"] == "quote-only":
-                    # Brief quotations, plural, must not add up to a long text.
-                    used = quoted_words.get(entry["url"], 0) + words
-                    if used > LIC.QUOTE_TOTAL_CAP:
-                        f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
-                               seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
-                               cap=LIC.QUOTE_TOTAL_CAP, words=used, scope="all quotations from this source")
-                        stats["capped"] = stats.get("capped", 0) + 1
-                        cfg.spans.revoke(key)
-                        continue
-                    quoted_words[entry["url"]] = used
-            body_sha = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
+                # Brief quotations, plural, must not add up to a long text. The
+                # budget belongs to the CONTENT (its hash), not to the URL that
+                # happened to serve it: `#1`, `?a=1` and a trailing slash are
+                # the same page.
+                if rights["profile"] == "quote-only" and \
+                        quoted_words.get(body_sha, 0) + words > LIC.QUOTE_TOTAL_CAP:
+                    f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
+                           seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
+                           cap=LIC.QUOTE_TOTAL_CAP, words=quoted_words.get(body_sha, 0) + words,
+                           scope="all quotations from this source")
+                    stats["capped"] = stats.get("capped", 0) + 1
+                    cfg.spans.revoke(key)
+                    continue
             if not any(s["url"] == entry["url"] for s in fetched):
                 fetched.append({"url": entry["url"], "length": len(body),
                                 "sha256": body_sha})
@@ -610,6 +616,10 @@ def make_nodes(cfg: DeskConfig):
                              "carta_version": cfg.carta})
                 if rights is not None:
                     span["rights"] = rights
+                    if rights["profile"] == "quote-only":
+                        # Only a quotation that was actually located spends the
+                        # budget: a fabricated one must not cap a real later claim.
+                        quoted_words[body_sha] = quoted_words.get(body_sha, 0) + words
                 cfg.spans.stage(key, span)
 
         staged = cfg.spans.staged()
@@ -855,7 +865,11 @@ def make_nodes(cfg: DeskConfig):
             effect_class=EXTERNAL,
             description=(f"recorded '{verdict}' on #{sid} as {ACTOR}: status "
                          f"{status or 'unchanged'}, {len(rows)} finding(s), "
-                         f"{len(cfg.spans.staged()) if wrote_spans else 0} span(s)"),
+                         f"{len(cfg.spans.staged()) if wrote_spans else 0} span(s)"
+                         # A write the trace must name: an empty pass leaves older
+                         # spans alone EXCEPT those of claims now found over-cap.
+                         + (f", revoked older span(s) for claim(s) {', '.join(cfg.spans.revoked())}"
+                            if cfg.spans.revoked() and not wrote_spans else "")),
             receipt=EffectReceipt(receipt_id=f"audit:{sid}:{verdict}",
                                   status="completed",
                                   result_fingerprint="effect:" + digest(rows))))

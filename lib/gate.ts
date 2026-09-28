@@ -165,9 +165,12 @@ export const QUOTE_WORD_CAP: number = (CONTROLLED_VOCAB as any).quote_only_word_
  * counts — otherwise a whole page is "one word". The same ranges as
  * ingest/licence.py::_UNSPACED — keep them identical.
  */
-const UNSPACED = /[\u0e00-\u0eff\u1000-\u109f\u1780-\u17ff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\u{20000}-\u{2fa1f}]/gu;
+const UNSPACED = /[\u0e00-\u0eff\u0f00-\u0fff\u1000-\u109f\u1780-\u17ff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\ua000-\ua4cf\uf900-\ufaff\uff66-\uff9f\u{20000}-\u{323af}]/gu;
+// The explicit whitespace set of ingest/licence.py::_SPACE — not \s, whose
+// membership differs from Python's between the two runtimes.
+const SPACE = /[ \t\n\r\f\v\u00a0\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/;
 export function quoteWords(text: string): number {
-  return (text ?? "").replace(UNSPACED, " x ").split(/\s+/).filter(Boolean).length;
+  return (text ?? "").replace(UNSPACED, " x ").split(SPACE).filter(Boolean).length;
 }
 
 export function isQuoteOnlyLicence(lic: string): boolean {

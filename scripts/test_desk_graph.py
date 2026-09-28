@@ -907,7 +907,7 @@ class RightsReadPerItem(unittest.TestCase):
         self.assertIn("QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP", text)
 
     def test_the_same_long_quote_passes_when_the_item_metadata_says_it_is_open(self):
-        html = ('<html><head><link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/">'
+        html = ('<html><head><meta name="DC.rights" content="https://creativecommons.org/licenses/by-sa/4.0/">'
                 '</head><body>x</body></html>')
         with Stubbed(payload=one_quote(LONG_PASSAGE), gate=READ, source_text=LONG_SOURCE, raw_html=html) as s:
             result = run(s)
@@ -917,7 +917,7 @@ class RightsReadPerItem(unittest.TestCase):
                          ("open", "CC BY-SA", "page-metadata"))
 
     def test_an_nc_licence_is_not_open_so_the_cap_applies(self):
-        html = '<head><link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/"></head>'
+        html = '<head><meta name="DC.rights" content="https://creativecommons.org/licenses/by-nc/4.0/"></head>'
         with Stubbed(payload=one_quote(LONG_PASSAGE), gate=READ, source_text=LONG_SOURCE, raw_html=html) as s:
             result = run(s)
         self.assertEqual(result.state.fact("stats")["capped"], 1)
@@ -931,7 +931,7 @@ class RightsReadPerItem(unittest.TestCase):
                 result = run(s)
             self.assertEqual(result.state.fact("stats")["capped"], 1, html)
 
-        html = ('<head><link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"></head>'
+        html = ('<head><meta name="DC.rights" content="https://creativecommons.org/licenses/by-sa/4.0/"></head>'
                 "<body>x</body>")
         with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
                      source_text=LONG_SOURCE, raw_html=html) as s:
@@ -951,6 +951,24 @@ class RightsReadPerItem(unittest.TestCase):
         # 3 x 61 = 183 <= 240 < 4 x 61 = 244
         self.assertEqual(result.state.fact("stats")["capped"], 1)
         self.assertEqual(sorted(s.world["spans_written"]), ["1.1", "2.1", "3.1"])
+
+    def test_the_budget_belongs_to_the_content_not_the_url_and_a_fabricated_quote_spends_none(self):
+        passages = ["I " + " ".join(f"p{k}w{i}" for i in range(60)) for k in range(4)]   # 61 words each
+        source = "\n\n".join(passages)
+        # same page, four spellings of its URL: fragments and a query do not reset the budget
+        urls = ["https://www.dbnl.org/tekst/x#1", "https://www.dbnl.org/tekst/x#2",
+                "https://www.dbnl.org/tekst/x?a=1", "https://www.dbnl.org/tekst/x/"]
+        fabricated = "I " + " ".join(f"zzz{i}" for i in range(60))
+        claims = [fabricated] + passages
+        payload = {**PAYLOAD, "waypoints": [
+            {"seq": k + 1, "confidence": "certain", "arrival_date": "1766-05-01",
+             "claims": [{"evidence": {"quote": q, "source_url": (urls + urls)[k]}}]}
+            for k, q in enumerate(claims)]}
+        with Stubbed(payload=payload, gate=READ, source_text=source, raw_html="<body>x</body>") as s:
+            result = run(s)
+        # the fabricated quote spent nothing; three real ones fit (183 <= 240), the fourth (244) does not
+        self.assertEqual(result.state.fact("stats")["capped"], 1)
+        self.assertEqual(sorted(s.world["spans_written"]), ["2.1", "3.1", "4.1"])
 
     def test_a_capped_claim_revokes_an_older_span_instead_of_leaving_it_to_be_published(self):
         store = G.SpanStore()

@@ -150,8 +150,11 @@ class BundleDocs(unittest.TestCase):
         self.assertEqual(spans_for({"diary_source_rights": quote_only}), [])
         # even on a host the whitelist knows: the Curator's reading of the item wins
         self.assertEqual(spans_for({"diary_source_url": "https://www.dbnl.org/x", "diary_source_rights": quote_only}), [])
-        # a host nothing has cleared, and no rights record: not ingestible either
-        self.assertEqual(spans_for({"diary_source_url": "https://www.dbnl.org/x"}), [])
+        # No rights record = the source passed verify_source: ingested as before,
+        # including hosts whose licence label license_for does not know
+        # (archive.org items are verified per item; a pre-existing bundle has no record).
+        [d] = spans_for({"diary_source_url": "https://archive.org/details/x"})
+        self.assertIsNone(d["license"])
         # an open licence read off the item itself is ingestible, under that licence
         [d] = spans_for({"diary_source_url": "https://www.dbnl.org/x",
                          "diary_source_rights": {"profile": "open", "licence": "CC BY-SA", "basis": "page-metadata"}})

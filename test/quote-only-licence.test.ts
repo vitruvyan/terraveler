@@ -125,7 +125,8 @@ test("scripts written without spaces are counted per character, identically to P
   assert.equal(quoteWords(""), 0);
   const cjk = licenceFindings(claim({ source_url: URL_OK, license: "unknown", quote: "天".repeat(QUOTE_WORD_CAP + 1) }));
   assert.equal(cjk.length, 1, "a page of Chinese is not one word");
-  for (const text of ["天下大势".repeat(25), "ประวัติศาสตร์", "Cook 航海 log", "a b\nc\t d  e", "𠀀𠀁 x"]) {
+  for (const text of ["天下大势".repeat(25), "ประวัติศาสตร์", "Cook 航海 log", "a b\nc\t d  e", "𠀀𠀁 x",
+                      "ཀ་ཁ་ག", "ꀀꀁ", "\u{30000}\u{30001}", "a\u001fb\u0085c", "a\u3000b\u00a0c\u2003d", "a\ufeffb", "ｱｲｳ"]) {
     const py = execFileSync("python3", ["-c",
       "import sys; sys.path.insert(0,'ingest'); import licence; print(licence.word_count(sys.argv[1]))", text],
       { encoding: "utf8", cwd: join(__dirname, "..") });

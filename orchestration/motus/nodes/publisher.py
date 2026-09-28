@@ -63,20 +63,17 @@ PUBLISHABLE_TYPES = ("new-voyage",)
 RIGHTS_NOTE = "rights not verified — brief quotation under Carta §3.2"
 
 
-def _excerpt_of(span: dict, evidence: dict, legacy_no_spans: bool):
+def _excerpt_of(span: dict, evidence: dict):
     """(reading, raw, rights, citation) for one waypoint's quotation.
 
-    The verified span is the only source of the excerpt. The contributor's own
-    text stands in for it only for a submission from before verified_spans
-    existed (`legacy_no_spans`); where a row exists and this claim has no span,
-    it was refused — absent, or over the cap its source's rights allow (Carta
-    3.2) — and nothing of the contributor's text is printed in its place.
-    Mirrors scripts/publish_submission.py::citation_of / rights_of."""
+    The verified span is the ONLY source of the excerpt — never the
+    contributor's own `excerpt`/`quote`, which nothing has checked against the
+    source. A claim with no span was refused (absent, fabricated, or over the cap
+    its source's rights allow — Carta 3.2) and prints no excerpt; the editor sees
+    that at the Desk and resubmits. Mirrors scripts/publish_submission.py
+    (citation_of / rights_of), which has always refused this fallback."""
     reading = span.get("reading_span")
     raw = span.get("raw_span")
-    if legacy_no_spans:
-        reading = reading or evidence.get("excerpt") or evidence.get("quote")
-        raw = raw or evidence.get("quote") or reading
     rights = span.get("rights") or None
     citation = evidence.get("source_title")
     if (rights or {}).get("profile") == "quote-only":
@@ -238,12 +235,6 @@ def make_nodes(cfg: PublishConfig) -> dict:
         finally:
             conn.close()
         spans = (row["spans"] if row else {}) or {}
-        # Only a submission from before verified_spans existed has no row at
-        # all; for it the evidence's own excerpt is the only copy there is. Where
-        # a row exists, a claim without a verified span was refused (its quotation
-        # was absent, or over the cap its source's rights allow — Carta 3.2) and
-        # nothing of the contributor's text goes onto the page in its place.
-        legacy_no_spans = row is None
 
         waypoints = []
         for wp in payload.get("waypoints") or []:
@@ -258,7 +249,7 @@ def make_nodes(cfg: PublishConfig) -> dict:
             # submission, from before that table), the evidence's own excerpt
             # is the only copy there is — both fields carry the same text
             # rather than inventing a distinction the record does not have.
-            reading, raw, rights, citation = _excerpt_of(span, evidence, legacy_no_spans)
+            reading, raw, rights, citation = _excerpt_of(span, evidence)
             waypoints.append({
                 "seq": seq,
                 "place_historical": wp.get("place_historical"),
