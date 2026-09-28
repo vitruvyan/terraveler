@@ -144,3 +144,32 @@ test("set-rank, the manual editor override, is untouched", async () => {
   assert.match(src, /case "set-rank":/);
   assert.doesNotMatch(src, /rankPromotion/, "the manual desk override must not be wired to the automatic calculator");
 });
+
+test("the Purser's two reconciliation entry points (CLI and Vercel Cron) share reconcileAllHumanRanks rather than each looping on their own", async () => {
+  const lib = await read("../lib/rankPromotion.ts");
+  assert.match(lib, /export async function reconcileAllHumanRanks/);
+
+  const cli = await read("../scripts/reconcile_ranks.ts");
+  assert.match(cli, /import \{ reconcileAllHumanRanks \} from "@\/lib\/rankPromotion";/);
+  assert.doesNotMatch(cli, /human_agent_links\?revoked_at=is\.null/,
+    "the CLI must not re-query the link table itself — that loop belongs to reconcileAllHumanRanks alone");
+
+  const route = await read("../app/api/cron/reconcile-ranks/route.ts");
+  assert.match(route, /import \{ reconcileAllHumanRanks \} from "@\/lib\/rankPromotion";/);
+});
+
+test("the Vercel Cron route refuses an unauthenticated request when CRON_SECRET is set", async () => {
+  const src = await read("../app/api/cron/reconcile-ranks/route.ts");
+  const authCheck = src.indexOf('process.env.CRON_SECRET');
+  const unauthorized = src.indexOf('"unauthorized"');
+  const reconcileCall = src.indexOf("reconcileAllHumanRanks()");
+  assert.ok(authCheck >= 0 && unauthorized > authCheck && reconcileCall > unauthorized,
+    "the secret check and its refusal must precede the reconciliation call");
+});
+
+test("vercel.json schedules the reconciliation cron against the same path the route file defines", async () => {
+  const cfg = JSON.parse(await read("../vercel.json"));
+  const job = cfg.crons?.find((c: any) => c.path === "/api/cron/reconcile-ranks");
+  assert.ok(job, "vercel.json must schedule /api/cron/reconcile-ranks");
+  assert.match(job.schedule, /^\S+ \S+ \S+ \S+ \S+$/, "schedule must be a 5-field cron expression");
+});

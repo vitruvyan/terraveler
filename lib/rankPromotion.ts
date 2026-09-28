@@ -173,3 +173,43 @@ export async function maybeRecalcRankForContributor(contributorId: number): Prom
     console.error(`rank promotion: recalc for contributor #${contributorId} failed`, e);
   }
 }
+
+export type ReconcileSummary = {
+  checked: number;
+  failed: number;
+  results: Array<{ humanPrincipalId: number; rank: string; signal: AggregateSignal }>;
+  errors: Array<{ humanPrincipalId: number; message: string }>;
+};
+
+/**
+ * The Purser's A1 reconciliation sweep (docs/SHIPS_OFFICERS.md §4.3): every
+ * human with an active agent link, recomputed. recalcHumanRank() already
+ * runs synchronously at every trigger point that changes what the aggregate
+ * could be (a verdict, a review, a link created or reactivated) — this is
+ * for the drift those triggers cannot see by construction: a standing view
+ * definition that changed after the fact, a link touched outside the normal
+ * flow, or a trigger that failed and was swallowed. A pure recompute of
+ * already-derived state, safe to run as often as wanted.
+ *
+ * Shared by scripts/reconcile_ranks.ts (CLI) and app/api/cron/reconcile-ranks
+ * (Vercel Cron) so the two entry points can never drift on what "reconcile"
+ * means — one loop, two triggers.
+ */
+export async function reconcileAllHumanRanks(): Promise<ReconcileSummary> {
+  const links = await sb("GET",
+    "human_agent_links?revoked_at=is.null&select=human_principal_id");
+  const humanIds = [...new Set<number>(
+    (links ?? []).map((l: any) => Number(l.human_principal_id)))];
+
+  const summary: ReconcileSummary = { checked: humanIds.length, failed: 0, results: [], errors: [] };
+  for (const humanPrincipalId of humanIds) {
+    try {
+      const result = await recalcHumanRank(humanPrincipalId);
+      if (result) summary.results.push({ humanPrincipalId, rank: result.rank, signal: result.signal });
+    } catch (e) {
+      summary.failed += 1;
+      summary.errors.push({ humanPrincipalId, message: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return summary;
+}
