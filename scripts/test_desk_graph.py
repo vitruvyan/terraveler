@@ -922,20 +922,48 @@ class RightsReadPerItem(unittest.TestCase):
             result = run(s)
         self.assertEqual(result.state.fact("stats")["capped"], 1)
 
-    def test_a_declared_licence_counts_only_when_the_page_itself_carries_it(self):
-        confirmed = "<body>Reuse: Creative Commons CC BY-SA 4.0</body>"
+    def test_a_declaration_alone_opens_nothing_but_the_items_own_metadata_does(self):
+        # The contributor's word, and text merely somewhere on the page, decide
+        # nothing: the quotation is capped as quote-only.
+        for html in ["<body>Reuse: Creative Commons CC BY-SA 4.0</body>", "<footer>metadata CC0</footer>"]:
+            with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
+                         source_text=LONG_SOURCE, raw_html=html) as s:
+                result = run(s)
+            self.assertEqual(result.state.fact("stats")["capped"], 1, html)
+
+        html = ('<head><link rel="license" href="https://creativecommons.org/licenses/by-sa/4.0/"></head>'
+                "<body>x</body>")
         with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
-                     source_text=LONG_SOURCE, raw_html=confirmed) as s:
+                     source_text=LONG_SOURCE, raw_html=html) as s:
             result = run(s)
         rights = s.world["spans_written"]["1.1"]["rights"]
-        self.assertEqual(rights["profile"], "open")
-        self.assertIn("declared by the contributor", rights["basis"])
+        self.assertEqual((rights["profile"], rights["basis"]), ("open", "page-metadata"))
 
-        with Stubbed(payload=one_quote(LONG_PASSAGE, license="CC BY-SA 4.0"), gate=READ,
-                     source_text=LONG_SOURCE, raw_html="<body>nothing about licences</body>") as s:
+    def test_many_brief_quotations_cannot_add_up_to_a_long_text(self):
+        passages = ["I " + " ".join(f"p{k}w{i}" for i in range(60)) for k in range(4)]   # 61 words each
+        source = "\n\n".join(passages)
+        payload = {**PAYLOAD, "waypoints": [
+            {"seq": k + 1, "confidence": "certain", "arrival_date": "1766-05-01",
+             "claims": [{"evidence": {"quote": q, "source_url": "https://www.dbnl.org/tekst/x"}}]}
+            for k, q in enumerate(passages)]}
+        with Stubbed(payload=payload, gate=READ, source_text=source, raw_html="<body>x</body>") as s:
             result = run(s)
-        self.assertEqual(result.state.fact("stats")["capped"], 1,
-                         "a bare declaration is not evidence: the contributor's word alone opens nothing")
+        # 3 x 61 = 183 <= 240 < 4 x 61 = 244
+        self.assertEqual(result.state.fact("stats")["capped"], 1)
+        self.assertEqual(sorted(s.world["spans_written"]), ["1.1", "2.1", "3.1"])
+
+    def test_a_capped_claim_revokes_an_older_span_instead_of_leaving_it_to_be_published(self):
+        store = G.SpanStore()
+        store.revoke("1.1")
+        sql = []
+
+        class Cur:
+            def execute(self, q, params=None):
+                sql.append((q, params))
+        self.assertFalse(store.commit(Cur(), 7, "v0.7"))
+        (q, params), = sql
+        self.assertIn("spans - ", q)
+        self.assertEqual(params, (["1.1"], 7))
 
     def test_an_established_licence_is_untouched_and_carries_no_rights_record(self):
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
@@ -951,6 +979,54 @@ class RightsReadPerItem(unittest.TestCase):
         self.assertEqual(result.state.decision("verdict"), "changes")
         self.assertEqual(result.state.fact("gate_stats")["quoted"], 1)
         self.assertEqual(result.state.fact("n_admitted"), 0)
+
+class RedirectsOfAQuoteOnlySource(unittest.TestCase):
+    """A quote-only source never passes verify_source, so the redirect guard
+    must not read its ordinary http->https hop as "off-whitelist" — and must
+    still refuse a hop to anywhere that is not itself admitted."""
+
+    class Resp:
+        def __init__(self, final):
+            self._final = final
+            self.headers = {"Content-Type": "text/html"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def geturl(self):
+            return self._final
+
+        def read(self, n=-1):
+            return b"<html><body>text</body></html>"
+
+    def fetch(self, asked, final, gate_of):
+        from unittest import mock
+        cfg = G.DeskConfig(pg={}, carta="0.7")
+        with mock.patch.object(G.urllib.request, "urlopen", return_value=self.Resp(final)), \
+             mock.patch.object(G, "verify_source", return_value=(False, "not ingestible")), \
+             mock.patch.object(G, "quotation_gate", side_effect=gate_of):
+            return G.fetch(cfg, asked)
+
+    def test_a_hop_within_an_admitted_quote_only_host_is_fine(self):
+        self.fetch("http://www.dbnl.org/tekst/x", "https://www.dbnl.org/tekst/x/",
+                   lambda u: ("read-licence", "ok"))
+
+    def test_a_hop_to_a_host_that_is_not_admitted_is_refused(self):
+        with self.assertRaises(G.UnverifiableSource):
+            self.fetch("https://www.dbnl.org/tekst/x", "https://evil.example/x", lambda u: (None, "no"))
+
+    def test_an_open_source_may_not_hop_to_a_quote_only_one(self):
+        from unittest import mock
+        cfg = G.DeskConfig(pg={}, carta="0.7")
+        ok_for = lambda u: (("gutenberg" in u), "why")
+        with mock.patch.object(G.urllib.request, "urlopen", return_value=self.Resp("https://www.dbnl.org/x")), \
+             mock.patch.object(G, "verify_source", side_effect=ok_for), \
+             mock.patch.object(G, "quotation_gate", return_value=("read-licence", "ok")):
+            with self.assertRaises(G.UnverifiableSource):
+                G.fetch(cfg, "https://www.gutenberg.org/ebooks/1")
 
 
 if __name__ == "__main__":

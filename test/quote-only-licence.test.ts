@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { QUOTE_WORD_CAP, domainOk, isQuoteOnlyLicence, licenceUsable, stage0 } from "../lib/gate";
+import { QUOTE_WORD_CAP, domainOk, isQuoteOnlyLicence, licenceUsable, quoteWords, stage0 } from "../lib/gate";
 import { CARTA_VERSION } from "../lib/carta";
 
 /**
@@ -97,7 +97,38 @@ test("an approved source is citable at Stage-0 through the injected registry, an
 test("the cap is one number: TypeScript and Python read the same file", () => {
   const vocab = JSON.parse(readFileSync(join(__dirname, "..", "vocab", "controlled.json"), "utf8"));
   assert.equal(QUOTE_WORD_CAP, vocab.quote_only_word_cap);
+  assert.equal(vocab.quote_only_total_cap, 3 * vocab.quote_only_word_cap);
   const py = execFileSync("python3", ["-c", "import sys; sys.path.insert(0,'ingest'); import licence; print(licence.QUOTE_WORD_CAP)"],
     { encoding: "utf8", cwd: join(__dirname, "..") });
   assert.equal(Number(py.trim()), QUOTE_WORD_CAP);
+});
+
+test("a plate is never admitted through the registry: a brief quotation means nothing for an image", () => {
+  const sub: any = claim({ source_url: "https://gallica.bnf.fr/x", license: "public domain", quote: words(5) });
+  sub.waypoints[0].plates = [{ url: "https://www.dbnl.org/img/1.jpg", source_url: "https://www.dbnl.org/x",
+                               license: "public domain", date: "1772" }];
+  const fails = stage0(sub, { governedHost: () => true });
+  assert.ok(fails.some((f) => /plate1: image domain not whitelisted/.test(f)));
+  assert.ok(fails.some((f) => /plate1: source domain not whitelisted/.test(f)));
+});
+
+test("the cap counts the excerpt too, not just the quote", () => {
+  const f = licenceFindings(claim({ source_url: URL_OK, license: "unknown", quote: words(10), excerpt: words(QUOTE_WORD_CAP + 20) }));
+  assert.equal(f.length, 1);
+});
+
+test("scripts written without spaces are counted per character, identically to Python", () => {
+  assert.equal(quoteWords("天下大势".repeat(25)), 100);
+  assert.equal(quoteWords("ประวัติศาสตร์"), 13);
+  assert.equal(quoteWords("Cook 航海 log"), 4);
+  assert.equal(quoteWords("a b\nc\t d  e"), 5);
+  assert.equal(quoteWords(""), 0);
+  const cjk = licenceFindings(claim({ source_url: URL_OK, license: "unknown", quote: "天".repeat(QUOTE_WORD_CAP + 1) }));
+  assert.equal(cjk.length, 1, "a page of Chinese is not one word");
+  for (const text of ["天下大势".repeat(25), "ประวัติศาสตร์", "Cook 航海 log", "a b\nc\t d  e", "𠀀𠀁 x"]) {
+    const py = execFileSync("python3", ["-c",
+      "import sys; sys.path.insert(0,'ingest'); import licence; print(licence.word_count(sys.argv[1]))", text],
+      { encoding: "utf8", cwd: join(__dirname, "..") });
+    assert.equal(Number(py.trim()), quoteWords(text), text);
+  }
 });

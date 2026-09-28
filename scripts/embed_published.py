@@ -145,12 +145,33 @@ def span_docs(slug: str, payload: dict, spans: dict) -> list[dict]:
                 continue
             evidence = claim.get("evidence") or {}
             url = span.get("source_url") or evidence.get("source_url")
+            if (span.get("rights") or {}).get("profile") == "quote-only":
+                continue    # brief attributed quotation, never ingested (Carta 3.2)
             docs.append({"voyage_slug": slug, "type": "text",
                          "title": f"wp{seq}.claim{ci}{SPAN_MARK}",
                          "content": reading, "source_url": url,
                          "license": (license_for(url) if url else None) or evidence.get("license"),
                          "credit": None, "media_url": None, "chunk_index": None})
     return docs
+
+
+def ingestible_excerpt(url: str | None, rights: dict | None) -> str | None:
+    """The licence an excerpt may enter the retrieval corpus under, or None.
+
+    The corpus is what Pigafetta retrieves from and quotes at length, so "never
+    ingested" (Carta 3.2) has to hold HERE too: a brief attributed quotation
+    from a source whose licence is not open is published on the waypoint and
+    linked, and stays out of `rag_docs`. Open only when the host is one the
+    whitelist knows (license_for) or the Curator read an open licence off the
+    item itself."""
+    if (rights or {}).get("profile") == "quote-only":
+        return None
+    licence = license_for(url) if url else None
+    if licence:
+        return licence
+    if (rights or {}).get("profile") == "open":
+        return rights.get("licence") or None
+    return None
 
 
 def bundle_docs(slug: str, bundle: dict) -> list[dict]:
@@ -195,12 +216,13 @@ def bundle_docs(slug: str, bundle: dict) -> list[dict]:
                          "content": text, "source_url": None, "license": NARRATIVE_LICENSE,
                          "credit": None, "media_url": None, "chunk_index": i})
         excerpt = wp.get("diary_excerpt")
-        if excerpt:
-            url = wp.get("diary_source_url")
+        url = wp.get("diary_source_url")
+        licence = ingestible_excerpt(url, wp.get("diary_source_rights")) if excerpt else None
+        if excerpt and licence:
             docs.append({"voyage_slug": slug, "type": "text",
                          "title": f"wp{seq}.claim1{SPAN_MARK}",
                          "content": excerpt, "source_url": url,
-                         "license": (license_for(url) if url else None),
+                         "license": licence,
                          "credit": None, "media_url": None, "chunk_index": None})
     return docs
 

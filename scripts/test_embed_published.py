@@ -107,7 +107,7 @@ BUNDLE = {
         {"seq": 1, "place_historical": "Brest", "place_modern": "Brest, France",
          "event": "Start of the expedition.",
          "diary_excerpt": "The 5th at noon we got under sail.",
-         "diary_source_url": "https://example/1"},
+         "diary_source_url": "https://www.gutenberg.org/ebooks/1"},
         {"seq": 6, "place_historical": "Taïti", "place_modern": "Tahiti, French Polynesia",
          "event": "Bougainville claimed the island for France."},  # no verified excerpt
     ],
@@ -135,8 +135,32 @@ class BundleDocs(unittest.TestCase):
         span_docs = [d for d in docs if d["title"].endswith(E.SPAN_MARK)]
         self.assertEqual(len(span_docs), 1)
         self.assertEqual(span_docs[0]["content"], "The 5th at noon we got under sail.")
-        self.assertEqual(span_docs[0]["source_url"], "https://example/1")
+        self.assertEqual(span_docs[0]["source_url"], "https://www.gutenberg.org/ebooks/1")
         self.assertIn("wp1.claim1", span_docs[0]["title"])
+
+    def test_a_quote_only_excerpt_is_published_but_never_ingested(self):
+        # Carta 3.2: a brief attributed quotation from a source whose licence is
+        # not open is linked and quoted on the waypoint — and stays OUT of the
+        # corpus Pigafetta retrieves from and quotes at length.
+        def spans_for(wp):
+            bundle = {**BUNDLE, "waypoints": [{**BUNDLE["waypoints"][0], **wp}]}
+            return [d for d in E.bundle_docs("x", bundle) if d["title"].endswith(E.SPAN_MARK)]
+
+        quote_only = {"profile": "quote-only", "licence": None, "basis": "default profile"}
+        self.assertEqual(spans_for({"diary_source_rights": quote_only}), [])
+        # even on a host the whitelist knows: the Curator's reading of the item wins
+        self.assertEqual(spans_for({"diary_source_url": "https://www.dbnl.org/x", "diary_source_rights": quote_only}), [])
+        # a host nothing has cleared, and no rights record: not ingestible either
+        self.assertEqual(spans_for({"diary_source_url": "https://www.dbnl.org/x"}), [])
+        # an open licence read off the item itself is ingestible, under that licence
+        [d] = spans_for({"diary_source_url": "https://www.dbnl.org/x",
+                         "diary_source_rights": {"profile": "open", "licence": "CC BY-SA", "basis": "page-metadata"}})
+        self.assertEqual(d["license"], "CC BY-SA")
+
+    def test_span_docs_skip_a_quote_only_span(self):
+        payload = {"waypoints": [{"seq": 1, "claims": [{"evidence": {"source_url": "https://www.gutenberg.org/ebooks/1"}}]}]}
+        spans = {"1.1": {"reading_span": "text", "rights": {"profile": "quote-only"}}}
+        self.assertEqual(E.span_docs("x", payload, spans), [])
 
     def test_uses_the_waypoints_own_seq_not_its_list_position(self):
         # Waypoint 6 is the second item in the list but must be titled by

@@ -93,12 +93,18 @@ class ApprovalInForce(unittest.TestCase):
         # stays inert until he does never becomes usable. It is in force at the
         # level that needs no such knowledge: each item's licence is read, and
         # the default profile applies where it cannot be.
-        for rights in ("unknown", None):
-            reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),
-                             decision=decision(rights=rights))
-            self.assertEqual(reg["decision"], "requires_licence_reading", rights)
-            self.assertEqual(reg["verification_strategy"], "licence_markers")
-            self.assertIn("default profile", reg["reason"])
+        reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),
+                         decision=decision(rights="unknown"))
+        self.assertEqual(reg["decision"], "requires_licence_reading")
+        self.assertIn("default profile", reg["reason"])
+
+    def test_an_approval_with_no_rights_recorded_at_all_is_not_in_force(self):
+        # lib/source-governance.ts::isEffective agrees: null is "nobody said",
+        # which is not the same as an editor stating 'unknown'.
+        reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),
+                         decision=decision(rights=None))
+        self.assertEqual(reg["decision"], "deny")
+        self.assertIn("unrecorded", reg["reason"])
 
     def test_domain_trusted_in_copyright_is_still_refused(self):
         reg, _ = resolve("https://www.dbnl.org/x", endpoint=endpoint("domain_trusted", "www.dbnl.org"),

@@ -136,12 +136,15 @@ def resolve_trust_from_db(url: str):
                 # default profile applies (brief attributed quotation, never
                 # ingested — Carta §3.2; ingest/licence.py). Only in_copyright
                 # is a refusal.
-                if rights_class == "in_copyright":
+                if rights_class in (None, "in_copyright"):
+                    # None is "no rights recorded at all" (lib/source-governance.ts
+                    # isEffective agrees): distinct from 'unknown', which an editor
+                    # stated.
                     decision_outcome = "deny"
-                    reason = "approved, but its rights class is 'in_copyright': recorded, not in force"
-                elif rights_class in (None, "unknown"):
+                    reason = (f"approved, but its rights class is {rights_class or 'unrecorded'!r}: "
+                              f"recorded, not in force")
+                elif rights_class == "unknown":
                     decision_outcome = "requires_licence_reading"
-                    verification_strategy = "licence_markers"
                     reason = ("rights unknown at the endpoint: licence read per item; where it "
                               "cannot be read, the default profile applies (Carta §3.2)")
                 else:

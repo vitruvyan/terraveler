@@ -240,7 +240,7 @@ export function isEffective(row: RegistryRow): boolean {
  * an editor who cannot is forever.
  */
 export function effectiveMode(row: RegistryRow): TrustMode | null {
-  if (row.trust_mode === "domain_trusted" && (row.rights_class === "unknown" || row.rights_class === null))
+  if (row.trust_mode === "domain_trusted" && row.rights_class === "unknown")
     return "item_verified";
   return row.trust_mode;
 }
@@ -274,7 +274,10 @@ export function effectiveEndpoints(rows: readonly RegistryRow[]): SourceEndpoint
     if (live.status !== "active") continue;
     if (live.rights_class === "in_copyright") continue;
     if (live.trust_mode !== "domain_trusted" && live.trust_mode !== "item_verified") continue;
-    out.push({ ...seed, trust_mode: effectiveMode(live) });
+    // A seed host keeps the trust it has always had (gutenberg, Wikipedia…): the
+    // per-item downgrade below is for hosts an editor approved with rights
+    // nobody could state, not for the floor that search relies on.
+    out.push({ ...seed, trust_mode: live.trust_mode });
   }
   const seedKeys = new Set(SEED_ENDPOINTS.map(e => `${e.match_type}:${e.host_pattern}`));
   for (const r of rows) {

@@ -244,10 +244,18 @@ class SpanStore:
 
     def __init__(self) -> None:
         self._staged: dict[str, dict] = {}
+        # Claims whose quotation was found to exceed what its source's rights
+        # allow. If nothing else was staged, an older span for them (from a run
+        # before the draft was edited) would otherwise survive the "an empty
+        # pass writes nothing" rule below and be published.
+        self._revoked: set[str] = set()
         self.committed = False
 
     def stage(self, key: str, span: dict) -> None:
         self._staged[key] = span
+
+    def revoke(self, key: str) -> None:
+        self._revoked.add(key)
 
     def staged(self) -> dict[str, dict]:
         return dict(self._staged)
@@ -260,6 +268,9 @@ class SpanStore:
         by evidence, never by absence.
         """
         if not self._staged:
+            if self._revoked:
+                cur.execute("update verified_spans set spans = spans - %s::text[] "
+                            "where submission_id = %s", (sorted(self._revoked), submission_id))
             return False
         cur.execute("insert into verified_spans (submission_id, spans, carta_version) "
                     "values (%s,%s,%s) on conflict (submission_id) do update "
@@ -349,6 +360,14 @@ def fetch(cfg: DeskConfig, url: str) -> str:
         final = r.geturl()
         if final != url and not redirect_stays_home(url, final):
             ok, why = verify_source(final)
+            if not ok:
+                # A source admitted for quotation only (never ingestable) never
+                # passes verify_source, so a plain http->https or trailing-slash
+                # redirect would read as "off-whitelist". It stays home if the
+                # place it lands is admitted on the same terms — but only for a
+                # source that was quote-only to begin with.
+                if not verify_source(url)[0] and quotation_gate(final)[0] is not None:
+                    ok = True
             if not ok:
                 raise UnverifiableSource(
                     f"redirected off-whitelist: {url} -> {final} ({why})")
@@ -501,14 +520,13 @@ def make_nodes(cfg: DeskConfig):
         # carried here from check_sources: the state does not hold it, and
         # that is the rule this graph is built around.
         quotes = {}
-        declared = {}
+        quoted_words: dict[str, int] = {}   # quote-only words used per source URL
         for w in payload.get("waypoints") or []:
             for ci, c in enumerate(w.get("claims") or [], 1):
                 ev = c.get("evidence") or {}
                 q = ev.get("quote")
                 if q:
                     quotes[f"{w.get('seq')}.{ci}"] = q
-                    declared[f"{w.get('seq')}.{ci}"] = ev.get("license")
 
         f = K.Findings()
         fetched: list[dict] = []
@@ -544,18 +562,31 @@ def make_nodes(cfg: DeskConfig):
                 continue
             # A source admitted at "read-licence" has no established rights
             # yet: they are read off the page just fetched — the item's own
-            # metadata, or a declaration the page confirms — and where they
+            # metadata alone (a contributor's declaration is not evidence) — and where they
             # cannot be read the default profile applies, which is a brief
             # quotation and never a refusal (ingest/licence.py, Carta 3.2).
             rights = None
             if entry.get("gate") == "read-licence":
-                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]), declared.get(key))
+                rights = LIC.decide_rights(cfg.raw_cache.get(entry["url"]))
+                words = LIC.word_count(claim["quote"])
                 if LIC.over_cap(rights, claim["quote"]):
                     f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
                            seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
-                           cap=LIC.QUOTE_WORD_CAP, words=LIC.word_count(claim["quote"]))
+                           cap=LIC.QUOTE_WORD_CAP, words=words)
                     stats["capped"] = stats.get("capped", 0) + 1
+                    cfg.spans.revoke(key)
                     continue
+                if rights["profile"] == "quote-only":
+                    # Brief quotations, plural, must not add up to a long text.
+                    used = quoted_words.get(entry["url"], 0) + words
+                    if used > LIC.QUOTE_TOTAL_CAP:
+                        f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
+                               seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
+                               cap=LIC.QUOTE_TOTAL_CAP, words=used, scope="all quotations from this source")
+                        stats["capped"] = stats.get("capped", 0) + 1
+                        cfg.spans.revoke(key)
+                        continue
+                    quoted_words[entry["url"]] = used
             body_sha = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
             if not any(s["url"] == entry["url"] for s in fetched):
                 fetched.append({"url": entry["url"], "length": len(body),

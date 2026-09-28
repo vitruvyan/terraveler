@@ -159,6 +159,17 @@ export const QUOTE_WORD_CAP: number = (CONTROLLED_VOCAB as any).quote_only_word_
  * for a source whose licence they could not see, which is a false statement in
  * the provenance and worse than the truth.
  */
+/**
+ * How many words a quotation counts as. Scripts written without spaces
+ * (Chinese, Japanese, Thai…) have no word boundary, so each of their characters
+ * counts — otherwise a whole page is "one word". The same ranges as
+ * ingest/licence.py::_UNSPACED — keep them identical.
+ */
+const UNSPACED = /[\u0e00-\u0eff\u1000-\u109f\u1780-\u17ff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\u{20000}-\u{2fa1f}]/gu;
+export function quoteWords(text: string): number {
+  return (text ?? "").replace(UNSPACED, " x ").split(/\s+/).filter(Boolean).length;
+}
+
 export function isQuoteOnlyLicence(lic: string): boolean {
   const l = (lic ?? "").trim();
   if (!l) return false;
@@ -226,8 +237,11 @@ export function stage0(sub: any, opts: { governedHost?: (url: string) => boolean
       } else if (isQuoteOnlyLicence(lic)) {
         // Not open, and said so (Carta 3.2 / 8): a brief attributed quotation,
         // never ingested. Nothing to refuse unless the quotation is not brief.
-        const quote = typeof c.evidence.quote === "string" ? c.evidence.quote.trim() : "";
-        const words = quote ? quote.split(/\s+/).length : 0;
+        // Both fields: `excerpt` is what peer reviewers are shown and what a
+        // fallback would print, so it may not smuggle what `quote` may not.
+        const words = Math.max(
+          quoteWords(typeof c.evidence.quote === "string" ? c.evidence.quote : ""),
+          quoteWords(typeof c.evidence.excerpt === "string" ? c.evidence.excerpt : ""));
         if (words > QUOTE_WORD_CAP)
           fails.push(`${ctag}: licence declared as '${lic}' (not open), so only a brief quotation is allowed — Carta 3.2: at most ${QUOTE_WORD_CAP} words; this quotation is ${words}. Quote a shorter passage, or cite a source whose licence is open`);
       } else {
@@ -245,8 +259,10 @@ export function stage0(sub: any, opts: { governedHost?: (url: string) => boolean
       if (!LICENSE_OK.test(p?.license ?? "")) fails.push(`${ptag}: licence not PD/CC (Carta 3.2)`);
       else if (LICENSE_CLOSED.test(p?.license ?? ""))
         fails.push(`${ptag}: NC/ND cannot be republished under CC BY-SA (Carta 3.2, 8) — link and quote it instead`);
-      if (p?.url && !hostOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
-      if (p?.source_url && !hostOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
+      // Plates stay on the broad list only: a brief quotation means nothing for
+      // an image, and a plate's licence is only ever the contributor's word.
+      if (p?.url && !domainOk(p.url)) fails.push(`${ptag}: image domain not whitelisted`);
+      if (p?.source_url && !domainOk(p.source_url)) fails.push(`${ptag}: source domain not whitelisted`);
       if (!p?.date) fails.push(`${ptag}: field 'date' missing — say when the image was MADE, which is not always when the stage happened`);
     }
   }

@@ -927,7 +927,7 @@ const DRAFT_SUBMISSION_SCHEMA = {
                       description: "a fetchable URL a verifier can re-read; PD or CC only (Carta 3.2)" },
                     source_title: { type: "string" },
                     license: { type: "string",
-                      description: "REQUIRED. The licence you can SEE on the item: 'public domain', 'CC0', 'CC BY 4.0', 'CC BY-SA 4.0' — or 'unknown' if you cannot see one. Never declare an open licence you have not seen: the Curator reads the item's own metadata and confirms a declaration against the page. Where the licence is not open (unknown, NC/ND, all rights reserved) the source is still usable under Carta 3.2 — a brief attributed quotation of at most 80 words, never ingested — and the published citation says the rights were not verified." },
+                      description: "REQUIRED. The licence you can SEE on the item: 'public domain', 'CC0', 'CC BY 4.0', 'CC BY-SA 4.0' — or 'unknown' if you cannot see one. Never declare an open licence you have not seen: the Curator reads the licence from the item's own machine-readable metadata; your declaration is a hint, not evidence. Where it cannot read an open licence there (or you say unknown, NC/ND, all rights reserved) the source is still usable under Carta 3.2 — a brief attributed quotation of at most 80 words per quotation (240 per source per submission; each character counts as a word in scripts written without spaces), never ingested — and the published citation says the rights were not verified." },
                   },
                 },
               },

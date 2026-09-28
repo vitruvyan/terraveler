@@ -13,10 +13,11 @@ ingested". This module is that sentence made operable:
   - OPEN. The item's own metadata carries a licence we can classify as open
     (public domain, CC0, CC BY, CC BY-SA) → the quotation is unrestricted by
     length and the licence read is recorded.
-    The contributor may DECLARE a licence in `evidence.license`; a declaration
-    is a pointer to where to look, not a verdict. It is accepted only when the
-    fetched page itself carries that licence's URL or name — the code confirms
-    it, nobody's say-so does — and the record says it was established that way.
+    The contributor may DECLARE a licence in `evidence.license`; that is a hint
+    at what to look for, never evidence. Nothing but the item's own machine
+    statement makes a source "open": a declaration the page merely mentions
+    somewhere (a footer, a comment, an echoed URL) proves nothing, so it does
+    not count — the code reads, nobody's say-so decides.
   - DEFAULT PROFILE ("quote-only"). Anything else — no licence found, one that
     cannot be classified, or an NC / ND clause (not compatible with publishing
     under CC BY-SA) → a brief attributed quotation, capped at QUOTE_WORD_CAP
@@ -25,8 +26,11 @@ ingested". This module is that sentence made operable:
 
 A wrong "open" is the dangerous error (a long quotation from a copyrighted
 text), so the structured signals are deliberately narrow: `<link rel=license>`,
-`<meta>` rights tags, JSON-LD `license` — machine statements about THIS item.
-A body-text "© … CC BY-SA" footer, which is usually about the site, is not one.
+`<meta>` rights tags, JSON-LD `license` on a CreativeWork-type node — machine
+statements about THIS item. A body-text "© … CC BY-SA" footer, or a licence on
+the WebSite / Organization node, is usually about the site and is not one. Any
+doubt — a "©", a negation, an NC/ND/reserved-rights wording in any language, a
+statement that is about metadata — resolves to the default profile.
 
 Nothing here decides ingestion: `whitelist.verify_source` stays the only gate
 that says "may be ingested", and quote-only sources never pass it.
@@ -44,12 +48,16 @@ from pathlib import Path
 QUOTE_WORD_CAP = int(json.loads(
     (Path(__file__).resolve().parent.parent / "vocab" / "controlled.json").read_text(encoding="utf-8")
 )["quote_only_word_cap"])
+# The cap is per quotation; many brief quotations could rebuild a long text, so
+# the same source URL may also contribute only this much per submission.
+QUOTE_TOTAL_CAP = int(json.loads(
+    (Path(__file__).resolve().parent.parent / "vocab" / "controlled.json").read_text(encoding="utf-8")
+)["quote_only_total_cap"])
 
 # (key, label, URL patterns that state it, name patterns that state it)
 _OPEN = [
     ("pd", "Public domain",
-     [r"creativecommons\.org/publicdomain/(?:mark|zero)/1\.0",
-      r"rightsstatements\.org/vocab/NoC-(?:US|OKLR)/"],
+     [r"creativecommons\.org/publicdomain/(?:mark|zero)/1\.0"],
      [r"\bpublic[ -]domain\b", r"\bdominio p[uú]blico\b", r"\bdomaine public\b",
       r"\bpubliek domein\b", r"\bdom[ií]nio p[uú]blico\b", r"\bCC0\b"]),
     ("cc-by", "CC BY",
@@ -64,7 +72,9 @@ _OPEN = [
 _RESTRICTIVE_URLS = [
     r"creativecommons\.org/licenses/by(?:-sa)?-(?:nc|nd)(?:-(?:sa|nd))?/",
     r"creativecommons\.org/licenses/by-(?:nc|nd)",
-    r"rightsstatements\.org/vocab/(?:InC|CNE|UND|NoC-CR|NoC-NC)",
+    # NoC-US is public domain in the US ONLY and NoC-OKLR carries other legal
+    # restrictions: neither is a statement this atlas can publish under.
+    r"rightsstatements\.org/vocab/(?:InC|CNE|UND|NoC-CR|NoC-NC|NoC-US|NoC-OKLR)",
 ]
 
 # Free-text rights statements in a machine field (a <meta> rights tag, a JSON-LD
@@ -72,10 +82,25 @@ _RESTRICTIVE_URLS = [
 # first: a field that says both resolves to the cautious side.
 _RESTRICTIVE_TEXT = [
     r"\bCC[ -]BY(?:[ -]SA)?[ -](?:NC|ND)\b", r"\bnon[- ]?commercial\b", r"\bno[- ]?derivativ",
-    r"\ball rights reserved\b", r"\btous droits r[ée]serv[ée]s\b",
-    r"\btodos los derechos reservados\b", r"\balle rechten voorbehouden\b",
-    r"\bin copyright\b",
+    r"©", r"\(c\)", r"\bcopyright", r"\bcopr\b",
+    # "all rights reserved" in the languages of the approved hosts and their neighbours.
+    r"\b(?:all\s+)?rights?\s+reserved\b",
+    r"\b(?:tous\s+)?droits?\s+r[ée]serv[ée]s?\b", r"\b(?:todos\s+)?(?:los\s+)?derechos?\s+reservad",
+    r"\b(?:todos\s+os\s+)?direitos?\s+reservad", r"\b(?:tutti\s+i\s+)?diritti\s+riservati\b",
+    r"\balle\s+rechte?\s+vorbehalten\b", r"\balle\s+rechten\s+voorbehouden\b", r"\bvoorbehouden\b",
+    r"\bin\s+copyright\b", r"\breservad[oa]s?\b",
+    # About the catalogue record, not the work.
+    r"\bmeta-?data\b", r"\bmetadat", r"\bcatalog", r"\bcatálog", r"\bdatabase\b", r"\bbase de datos\b",
 ]
+# A negated statement ("not in the public domain", "no es de dominio público")
+# is the opposite of the statement it contains.
+_NEGATION = re.compile(
+    r"\b(?:not|no|non|nicht|kein\w*|niet|pas|não|nao|nunca|never)\b[\W\w]{0,30}?"
+    r"(?:public[ -]domain|dominio p[uú]blico|domaine public|publiek domein|dom[ií]nio p[uú]blico|\bCC0\b|\bCC[ -]BY)",
+    re.I)
+_DASHES = re.compile("[\u2010-\u2015\u2212\ufe58\ufe63\uff0d]")
+# A machine rights field is a short statement. A paragraph is prose.
+_MAX_SIGNAL_LEN = 200
 
 _RIGHTS_META = re.compile(r"^(?:dc|dcterms|dct)\.(?:rights|license)$|^(?:license|rights|copyright)$|^(?:og:)?license$", re.I)
 _URL = re.compile(r"https?://[^\s\"'<>)]+", re.I)
@@ -117,28 +142,50 @@ class _Signals(HTMLParser):
         for blob in self._jsonld:
             try:
                 self.urls.extend(_jsonld_licences(json.loads(blob)))
-            except ValueError:
+            except (ValueError, RecursionError):
                 continue
         return [u.strip() for u in self.urls if u and u.strip()]
 
 
-def _jsonld_licences(node) -> list[str]:
+# A JSON-LD `license` is a statement about the item only when it sits on a node
+# that IS a creative work. On a WebSite / Organization / WebPage node it is the
+# site's own licence (often CC0 for the catalogue data), which says nothing
+# about the text being quoted.
+_WORK_TYPES = {
+    "creativework", "book", "article", "manuscript", "photograph", "imageobject", "map", "periodical",
+    "thesis", "painting", "chapter", "digitaldocument", "archivecomponent", "report", "legislation",
+    "visualartwork", "newspaper", "publicationissue", "publicationvolume", "scholarlyarticle",
+    "newsarticle", "sculpture", "drawing", "collection", "musiccomposition", "audioobject", "videoobject",
+}
+
+
+def _is_work(node: dict) -> bool:
+    t = node.get("@type")
+    types = t if isinstance(t, list) else [t]
+    return any(isinstance(x, str) and x.rsplit("/", 1)[-1].rsplit(":", 1)[-1].lower() in _WORK_TYPES for x in types)
+
+
+def _jsonld_licences(node, _depth: int = 0) -> list[str]:
     out: list[str] = []
+    if _depth > 20:
+        return out
     if isinstance(node, dict):
         for k, v in node.items():
             if k.lower() in ("license", "licence"):
+                if not _is_work(node):
+                    continue
                 if isinstance(v, str):
                     out.append(v)
                 elif isinstance(v, dict):
                     out.append(str(v.get("@id") or v.get("url") or ""))
                 elif isinstance(v, list):
                     for x in v:
-                        out.extend(_jsonld_licences({"license": x}))
+                        out.extend(_jsonld_licences({"@type": node.get("@type"), "license": x}, _depth + 1))
             else:
-                out.extend(_jsonld_licences(v))
+                out.extend(_jsonld_licences(v, _depth + 1))
     elif isinstance(node, list):
         for x in node:
-            out.extend(_jsonld_licences(x))
+            out.extend(_jsonld_licences(x, _depth + 1))
     return out
 
 
@@ -155,11 +202,14 @@ def _classify_url(url: str):
 
 def _classify_signal(value: str):
     """A machine field's value: a licence URL, or a rights statement in words."""
+    value = _DASHES.sub("-", value)
     by_url = _classify_url(value)
     if by_url:
         return by_url
-    if any(re.search(p, value, re.I) for p in _RESTRICTIVE_TEXT):
+    if _NEGATION.search(value) or any(re.search(p, value, re.I) for p in _RESTRICTIVE_TEXT):
         return ("restricted", None, "an NC/ND or reserved-rights statement")
+    if len(value) > _MAX_SIGNAL_LEN:
+        return None
     for key, label, _urls, name_pats in _OPEN:
         if any(re.search(p, value, re.I) for p in name_pats):
             return ("open", key, label)
@@ -179,9 +229,10 @@ def read_licence(html: str) -> dict | None:
     try:
         parser.feed(html)
         parser.close()
-    except Exception:  # noqa: BLE001 — malformed HTML is unreadable, not fatal
+        signals = parser.finish()
+    except Exception:  # noqa: BLE001 — a hostile or malformed page is unreadable, not fatal
         return None
-    classified = [c for c in (_classify_signal(u) for u in parser.finish()) if c]
+    classified = [c for c in (_classify_signal(u) for u in signals) if c]
     if not classified:
         return None
     if any(kind == "restricted" for kind, _k, _l in classified):
@@ -191,53 +242,29 @@ def read_licence(html: str) -> dict | None:
     return {"profile": "open", "licence": " / ".join(labels), "basis": "page-metadata"}
 
 
-def _declared_key(declared: str) -> str | None:
-    """Which OPEN licence a contributor's declaration names, or None. Anything
-    that is not clearly one of the three — including every NC/ND variant and
-    prose like 'free to use' — names nothing."""
-    d = (declared or "").strip()
-    if not d or re.search(r"\b(?:NC|ND)\b|non[- ]?commercial|no[- ]?deriv", d, re.I):
-        return None
-    if re.search(r"public[ -]domain|\bCC0\b|\bPDM\b|dominio p[uú]blico|domaine public", d, re.I):
-        return "pd"
-    if re.search(r"\bCC[ -]BY[ -]SA\b|by-sa", d, re.I):
-        return "cc-by-sa"
-    if re.search(r"\bCC[ -]BY\b|licenses/by/", d, re.I):
-        return "cc-by"
-    return None
-
-
-def confirm_declared(html: str, declared: str) -> dict | None:
-    """A declared open licence, accepted only if the fetched page carries that
-    licence's own URL or name. The code confirms; the contributor does not."""
-    key = _declared_key(declared)
-    if not key or not html:
-        return None
-    for k, label, url_pats, name_pats in _OPEN:
-        if k != key:
-            continue
-        if any(re.search(p, html, re.I) for p in url_pats + name_pats):
-            return {"profile": "open", "licence": label, "basis": "declared by the contributor, matched on the page"}
-    return None
-
-
-def decide_rights(html: str | None, declared: str | None) -> dict:
+def decide_rights(html: str | None) -> dict:
     """The rights profile for an item whose licence is read per item.
 
-    Order: the item's own metadata; then a declaration the page confirms; then
-    the default profile. Always returns a profile — nothing here blocks."""
+    Only the item's own machine-readable statement can make it "open"; a
+    contributor's declaration is deliberately not an input. Otherwise the
+    default profile applies. Always returns a profile — nothing here blocks."""
     reading = read_licence(html or "")
     if reading:
         return reading
-    confirmed = confirm_declared(html or "", declared or "")
-    if confirmed:
-        return confirmed
     return {"profile": "quote-only", "licence": None,
             "basis": "licence not readable on the item — default profile (Carta §3.2)"}
 
 
+# Scripts written without spaces (Chinese, Japanese, Thai…) have no word
+# boundary to count, so each of their characters counts as a word. The same
+# ranges are in lib/gate.ts::quoteWords — keep them identical.
+_UNSPACED = re.compile(
+    "[\u0e00-\u0eff\u1000-\u109f\u1780-\u17ff\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff"
+    "\uff66-\uff9f\U00020000-\U0002fa1f]")
+
+
 def word_count(text: str) -> int:
-    return len((text or "").split())
+    return len(_UNSPACED.sub(" x ", text or "").split())
 
 
 def over_cap(rights: dict, quote: str) -> bool:

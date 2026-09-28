@@ -16,5 +16,7 @@
   "waypoint-enrichment"
  ],
  "quote_only_word_cap": 80,
+ "quote_only_total_cap": 240,
+ "_quote_only_total_cap": "Per submission, per source URL: the most words all quote-only quotations from one source may total, so many brief quotations cannot rebuild a long text (3 x the per-quotation cap). Read by ingest/licence.py (the Curator).",
  "_quote_only_word_cap": "Carta 3.2: material whose licence is not open may be linked and briefly quoted, never ingested. 'Briefly' = this many words per quotation (editor's decision, 2026-09-28). Read by lib/gate.ts (Stage-0) and ingest/licence.py (the Curator)."
 }

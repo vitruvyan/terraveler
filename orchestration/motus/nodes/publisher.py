@@ -57,6 +57,31 @@ RECORDED = EffectClass.RECORDED_EFFECT
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 PUBLISHABLE_TYPES = ("new-voyage",)
+# The note printed beside a quotation whose licence could not be read as open
+# (the Curator's default profile, ingest/licence.py). Kept identical to
+# scripts/publish_submission.py::RIGHTS_NOTE by a test.
+RIGHTS_NOTE = "rights not verified — brief quotation under Carta §3.2"
+
+
+def _excerpt_of(span: dict, evidence: dict, legacy_no_spans: bool):
+    """(reading, raw, rights, citation) for one waypoint's quotation.
+
+    The verified span is the only source of the excerpt. The contributor's own
+    text stands in for it only for a submission from before verified_spans
+    existed (`legacy_no_spans`); where a row exists and this claim has no span,
+    it was refused — absent, or over the cap its source's rights allow (Carta
+    3.2) — and nothing of the contributor's text is printed in its place.
+    Mirrors scripts/publish_submission.py::citation_of / rights_of."""
+    reading = span.get("reading_span")
+    raw = span.get("raw_span")
+    if legacy_no_spans:
+        reading = reading or evidence.get("excerpt") or evidence.get("quote")
+        raw = raw or evidence.get("quote") or reading
+    rights = span.get("rights") or None
+    citation = evidence.get("source_title")
+    if (rights or {}).get("profile") == "quote-only":
+        citation = f"{citation} ({RIGHTS_NOTE})" if citation else RIGHTS_NOTE.capitalize()
+    return reading, raw, rights, citation
 # Approval alone is not enough per se; §4.2 requires the verdict live in
 # audit_log under the roles that may issue one, not merely a status column
 # an operator could hand-edit.
@@ -213,6 +238,12 @@ def make_nodes(cfg: PublishConfig) -> dict:
         finally:
             conn.close()
         spans = (row["spans"] if row else {}) or {}
+        # Only a submission from before verified_spans existed has no row at
+        # all; for it the evidence's own excerpt is the only copy there is. Where
+        # a row exists, a claim without a verified span was refused (its quotation
+        # was absent, or over the cap its source's rights allow — Carta 3.2) and
+        # nothing of the contributor's text goes onto the page in its place.
+        legacy_no_spans = row is None
 
         waypoints = []
         for wp in payload.get("waypoints") or []:
@@ -227,8 +258,7 @@ def make_nodes(cfg: PublishConfig) -> dict:
             # submission, from before that table), the evidence's own excerpt
             # is the only copy there is — both fields carry the same text
             # rather than inventing a distinction the record does not have.
-            reading = span.get("reading_span") or evidence.get("excerpt") or evidence.get("quote")
-            raw = span.get("raw_span") or evidence.get("quote") or reading
+            reading, raw, rights, citation = _excerpt_of(span, evidence, legacy_no_spans)
             waypoints.append({
                 "seq": seq,
                 "place_historical": wp.get("place_historical"),
@@ -242,8 +272,9 @@ def make_nodes(cfg: PublishConfig) -> dict:
                 "diary_excerpt": reading,
                 "diary_excerpt_raw": raw,
                 "diary_excerpt_transformations": span.get("transformations") or None,
-                "diary_source_citation": evidence.get("source_title"),
+                "diary_source_citation": citation,
                 "diary_source_url": evidence.get("source_url"),
+                "diary_source_rights": rights,
                 "confidence": wp.get("confidence") or "certain",
                 "media_url": None,
                 "media": [],

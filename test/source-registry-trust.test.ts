@@ -134,6 +134,11 @@ test("effectiveEndpoints: the seed floor plus effective approvals, with revocati
     assert.equal(resolveTrust("https://runeberg.org/x", eps)!.endpoint.trust_mode, "item_verified");
   });
 
+  await t.test("a seed host keeps wholesale trust even if its live row says rights 'unknown' (search must not lose gutenberg)", () => {
+    const eps = effectiveEndpoints([row({ id: 2, host_pattern: "www.gutenberg.org", rights_class: "unknown" })]);
+    assert.equal(resolveTrust("https://www.gutenberg.org/ebooks/1", eps)!.endpoint.trust_mode, "domain_trusted");
+  });
+
   await t.test("a seed host is never duplicated by its own registry row", () => {
     const rows = [row({ id: 1, host_pattern: "gutenberg.org" })];
     const hosts = effectiveEndpoints(rows).map((e) => e.host_pattern);
