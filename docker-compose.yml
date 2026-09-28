@@ -142,6 +142,10 @@ services:
     volumes:
       - ./scripts:/repo/scripts:ro
       - ./ingest:/repo/ingest:ro
+      # The shared vocabularies (controlled.json, rank_thresholds.json, pares.json,
+      # tls_intermediates.json): scripts/ and ingest/ read them from ../vocab, so
+      # without this mount desk_checks.py fails at import inside the container.
+      - ./vocab:/repo/vocab:ro
       - ./MAGNA_CARTA.md:/repo/MAGNA_CARTA.md:ro
     ports:
       - "127.0.0.1:6005:8080"
