@@ -237,9 +237,9 @@ export default function Desk() {
 
     const r = await fetch("/api/desk/overview");
     if (r.ok) setOverview(await r.json());
-    const [rs, rc, ra, rg, rp, rw] = await Promise.all([
+    const [rs, rc, ra, rp, rw] = await Promise.all([
       fetch("/api/desk/submissions"), fetch("/api/desk/users"), fetch("/api/desk/analytics"),
-      fetch("/api/desk/governance"), fetch("/api/desk/prompts"), fetch("/api/desk/claims"),
+      fetch("/api/desk/prompts"), fetch("/api/desk/claims"),
     ]);
     if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
     if (rc.ok) {
@@ -250,17 +250,25 @@ export default function Desk() {
     if (ra.ok) setAnalytics(await ra.json());
     if (rp.ok) setPromptVersions((await rp.json()).versions ?? []);
     if (rw.ok) setClaims((await rw.json()).claims ?? []);
-    if (rg.ok) {
-      const gov = await rg.json();
-      setPendingSources(gov.queue?.pending_proposals ?? []);
-      setResolvedSources(gov.queue?.recent_decisions ?? []);
-      setFlaggedEndpoints(gov.queue?.review_required_endpoints ?? []);
-      setMaterialDrifts(gov.queue?.recent_material_drifts ?? []);
-      setAllEndpoints(gov.queue?.all_endpoints ?? []);
-      setEndpointDossier(gov.queue?.endpoint_dossier ?? {});
-      setEndpointContext(gov.queue?.endpoint_context ?? {});
-      setReverificationEvidence(gov.queue?.reverification_evidence ?? { any_reverifications: false, any_drift_evaluations: false });
-    }
+    await refreshGovernance();
+  }
+
+  /* The source lists (pending proposals, the dossier, reverification) are
+     read on their own so they can be re-read on their own: an editor
+     approves a source from Telegram or another tab, and the list on a page
+     opened earlier must not stay frozen at what was true when it loaded. */
+  async function refreshGovernance() {
+    const rg = await fetch("/api/desk/governance").catch(() => null);
+    if (!rg?.ok) return;
+    const gov = await rg.json();
+    setPendingSources(gov.queue?.pending_proposals ?? []);
+    setResolvedSources(gov.queue?.recent_decisions ?? []);
+    setFlaggedEndpoints(gov.queue?.review_required_endpoints ?? []);
+    setMaterialDrifts(gov.queue?.recent_material_drifts ?? []);
+    setAllEndpoints(gov.queue?.all_endpoints ?? []);
+    setEndpointDossier(gov.queue?.endpoint_dossier ?? {});
+    setEndpointContext(gov.queue?.endpoint_context ?? {});
+    setReverificationEvidence(gov.queue?.reverification_evidence ?? { any_reverifications: false, any_drift_evaluations: false });
   }
 
   /** Sets the sidebar's own state and rewrites ?tab=&sub= to match, so a
@@ -301,6 +309,25 @@ export default function Desk() {
     if (!r.ok) { alert((await r.json()).error ?? "failed"); return; }
     load();
   }
+
+  /* While the sources section is open: re-read it on a timer and whenever the
+     tab comes back to the foreground. A source approved elsewhere (the
+     Telegram button, another tab) then shows up without a manual reload. */
+  useEffect(() => {
+    if (standing !== "editor" || section !== "sources") return;
+    const tick = () => {
+      if (document.visibilityState === "visible") void refreshGovernance();
+    };
+    tick();
+    const timer = setInterval(tick, 30_000);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
+    };
+    // refreshGovernance only calls state setters, which are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standing, section]);
 
   useEffect(() => {
     // Returning from Google OAuth: the token arrives in the URL hash.
