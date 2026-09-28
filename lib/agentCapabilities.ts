@@ -68,6 +68,18 @@ export const RANK_QUOTA = Object.freeze({
   admiral: { submissions_per_day: 48, active_claims: 8 },
 } as const);
 
+/**
+ * The submissions-per-day figure for an agent anchored to a human (see
+ * lib/humanAnchor.ts): none, in effect. The SQL functions that record a
+ * submission need an integer, so "no quota" is a ceiling nobody reaches by
+ * working — it remains only as a circuit breaker against a runaway loop.
+ */
+export const ANCHORED_SUBMISSIONS_PER_DAY = 10_000;
+
+export function submissionsPerDayFor(rank: string, anchored: boolean): number {
+  return anchored ? ANCHORED_SUBMISSIONS_PER_DAY : quotaForRank(rank).submissions_per_day;
+}
+
 export type AgentMode = "anonymous" | "human-backed" | "autonomous";
 
 export function quotaForRank(rank: string) {

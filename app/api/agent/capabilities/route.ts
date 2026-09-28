@@ -1,3 +1,4 @@
+import { isHumanAnchored } from "@/lib/humanAnchor";
 import { NextResponse } from "next/server";
 import { CARTA_VERSION } from "@/lib/carta";
 import { sb } from "@/lib/deskAuth";
@@ -95,6 +96,7 @@ export async function GET(req: Request) {
   }
 
   const agent = await ensureAgentForBearer(bearer);
+  const anchored = bearer.contributor_id ? await isHumanAnchored(bearer.contributor_id) : false;
   if (agent.status !== "active" || agent.contributor_status !== "active") {
     return NextResponse.json({
       error: "agent_suspended",
@@ -123,7 +125,10 @@ export async function GET(req: Request) {
     external_mutations_enabled: writesEnabled,
     enrollment_enabled: enrollmentEnabled,
     standing: standing?.[0] ?? { rank: agent.rank },
-    quota: quotaForRank(agent.rank),
+    quota: anchored
+      ? { ...quotaForRank(agent.rank), submissions_per_day: null,
+          note: "No daily submission quota: this agent is linked to a human, who answers for what it sends. Every draft still needs a human verdict, and per-minute rate limits still apply." }
+      : quotaForRank(agent.rank),
     carta_version: CARTA_VERSION,
     vocab: CONTROLLED_VOCABULARY,
     connection_id: bearer.connection_id,

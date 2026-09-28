@@ -263,6 +263,9 @@ async function geocodePlace(place: string): Promise<GeocodeHit | null> {
   return null; // unanchored -> caller must mark confidence=reconstructed, not guess
 }
 
+import { ANCHORED_SUBMISSIONS_PER_DAY } from "@/lib/agentCapabilities";
+import { isHumanAnchored, isHumanAnchoredHandle } from "@/lib/humanAnchor";
+
 const keyHash = (key: string) => createHash("sha256").update(key).digest("hex");
 
 /** Authenticate, check the daily quota, insert the submission and audit it —
@@ -273,6 +276,8 @@ async function recordSubmission(args: any, o: {
   target_voyage?: string | null; verdict?: string | null; findings?: unknown;
   contentFingerprint: string;
 }): Promise<any> {
+  // An agent anchored to a human has no daily authoring quota (lib/humanAnchor.ts).
+  const anchored = await isHumanAnchoredHandle(String(args.handle ?? ""));
   return rpc("mcp_record_submission", {
     p_handle: args.handle,
     p_key_hash: keyHash(String(args.api_key)),
@@ -290,8 +295,9 @@ async function recordSubmission(args: any, o: {
     p_quotas: Object.fromEntries(
       Object.entries(QUOTA).map(([r, q]) => [
         r,
-        isInternal(String(args.handle ?? "")) ? QUOTA["navigator"].submissionsPerDay
-                                              : q.submissionsPerDay,
+        anchored ? ANCHORED_SUBMISSIONS_PER_DAY
+          : isInternal(String(args.handle ?? "")) ? QUOTA["navigator"].submissionsPerDay
+                                                  : q.submissionsPerDay,
       ])),
     p_actor: o.actor,
     p_action: o.action,
@@ -578,6 +584,7 @@ function quotaFor(rank: string, handle?: string) {
 }
 
 async function overDailyLimit(c: Contributor): Promise<string | null> {
+  if (await isHumanAnchored(c.id)) return null;   // lib/humanAnchor.ts
   const q = quotaFor(c.rank, c.handle);
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const rows = await sb("GET",
