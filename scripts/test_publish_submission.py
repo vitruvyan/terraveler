@@ -373,5 +373,72 @@ class ResolveDataFile(unittest.TestCase):
             P.resolve_data_file("no-such-voyage-slug-anywhere")
 
 
+class LibDataVarName(unittest.TestCase):
+    def test_hyphens_become_underscores(self):
+        self.assertEqual(P.lib_data_var_name("verrazzano-1524", taken=set()), "verrazzano_1524")
+
+    def test_a_digit_led_slug_gets_a_leading_underscore(self):
+        # Not reachable through slugify() today (voyage names lead every
+        # slug), but a valid identifier either way rather than a SyntaxError
+        # nobody sees until `npm run build`.
+        self.assertEqual(P.lib_data_var_name("1524-something", taken=set()), "_1524_something")
+
+    def test_a_real_collision_refuses_rather_than_inventing_a_second_name(self):
+        with self.assertRaises(SystemExit):
+            P.lib_data_var_name("verrazzano-1524", taken={"verrazzano_1524"})
+
+
+class WriteLibDataEntry(unittest.TestCase):
+    """Isolated from the checked-out lib/data.ts by pointing P.LIB_DATA_TS at
+    a throwaway copy of its real shape for the duration of each test."""
+
+    FIXTURE = (
+        'import { ATLAS, isVoyageSlug, type VoyageSlug } from "./voyages";\n'
+        'import bougainville from "@/data/bougainville.json";\n'
+        'import cortes from "@/data/cortes.json";\n'
+        "\n"
+        "const LOCAL: Record<VoyageSlug, unknown> = {\n"
+        '  "boudeuse-1766": bougainville,\n'
+        '  "cortes-1519": cortes,\n'
+        "};\n"
+        "\n"
+        "export function knownVoyages() {}\n"
+    )
+
+    def setUp(self):
+        import tempfile
+        self.tmp = Path(tempfile.mkstemp(suffix=".ts")[1])
+        self.tmp.write_text(self.FIXTURE, encoding="utf-8")
+        self.original = P.LIB_DATA_TS
+        P.LIB_DATA_TS = self.tmp
+
+    def tearDown(self):
+        P.LIB_DATA_TS = self.original
+        self.tmp.unlink(missing_ok=True)
+
+    def test_adds_the_import_after_the_last_data_import_and_the_local_entry(self):
+        P.write_lib_data_entry("verrazzano-1524", "verrazzano-1524")
+        text = self.tmp.read_text(encoding="utf-8")
+        self.assertIn('import verrazzano_1524 from "@/data/verrazzano-1524.json";\n\nconst LOCAL', text)
+        self.assertIn('"verrazzano-1524": verrazzano_1524,\n};', text)
+        # The pre-existing entries must survive untouched.
+        self.assertIn('"boudeuse-1766": bougainville,', text)
+        self.assertIn('"cortes-1519": cortes,', text)
+
+    def test_an_already_present_slug_is_left_untouched(self):
+        P.write_lib_data_entry("cortes-1519", "cortes")
+        text = self.tmp.read_text(encoding="utf-8")
+        self.assertEqual(text, self.FIXTURE, "an existing entry must not be duplicated or rewritten")
+
+    def test_the_stem_can_differ_from_the_slug(self):
+        # data/bougainville.json holds voyage.slug boudeuse-1766 — the file
+        # stem and the slug are not the same thing (resolve_data_file's own
+        # docstring), so the import path must follow the stem, not the slug.
+        P.write_lib_data_entry("boudeuse-2000", "some-other-file")
+        text = self.tmp.read_text(encoding="utf-8")
+        self.assertIn('import boudeuse_2000 from "@/data/some-other-file.json";', text)
+        self.assertIn('"boudeuse-2000": boudeuse_2000,', text)
+
+
 if __name__ == "__main__":
     unittest.main()

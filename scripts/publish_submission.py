@@ -364,6 +364,61 @@ def atlas_entry(bundle: dict, blurb: str, profile: str) -> str:
     )
 
 
+def lib_data_var_name(slug: str, taken: set) -> str:
+    """A deterministic, collision-free import identifier for a slug — the
+    existing entries in lib/data.ts were named by hand and inconsistently
+    (verrazzano-1524 -> verrazzano_1524, but cartier-1534 -> just cartier),
+    so there is no convention worth imitating. Every character slugify()
+    allows is already identifier-safe except the hyphen; a slug beginning
+    with a digit (unlikely — voyage slugs are name-led) gets a leading
+    underscore so the result is never an invalid identifier either way."""
+    name = slug.replace("-", "_")
+    if name[0].isdigit():
+        name = f"_{name}"
+    if name not in taken:
+        return name
+    # Only reachable if two submissions raced to the same slug, which
+    # resolve_data_file's own slug uniqueness check elsewhere would already
+    # have caught — kept as a refusal rather than a silent second identifier.
+    sys.exit(f"lib/data.ts already imports something named {name!r} — "
+              f"cannot derive a unique identifier for slug {slug!r}.")
+
+
+def write_lib_data_entry(slug: str, stem: str) -> None:
+    """Add the bundle import + LOCAL entry for a newly published voyage.
+    The ATLAS half of registration (atlas_entry, above) was already
+    automatic; this was the one step main() printed as "deliberately not
+    automatic" and left for a human to do by hand from a build error. Same
+    idempotency discipline as the ATLAS write: check first, no-op if the
+    slug is already present, never touch LIB_DATA_TS on a dry run."""
+    if not LIB_DATA_TS.exists():
+        sys.exit(f"{LIB_DATA_TS.relative_to(ROOT)} not found — cannot register {slug!r}.")
+    text = LIB_DATA_TS.read_text(encoding="utf-8")
+    if f'"{slug}":' in text:
+        print(f"  lib/data.ts  already present — will not duplicate")
+        return
+
+    existing_names = set(re.findall(r'^import\s+(\w+)\s+from\s+"@/data/', text, re.M))
+    var = lib_data_var_name(slug, existing_names)
+
+    import_lines = list(re.finditer(r'^import\s+\w+\s+from\s+"@/data/[\w.-]+\.json";[ \t]*$', text, re.M))
+    if not import_lines:
+        sys.exit(f"could not find any '@/data/*.json' import in {LIB_DATA_TS.relative_to(ROOT)} "
+                  f"to insert after — add by hand:\n  import {var} from \"@/data/{stem}.json\";")
+    insert_at = import_lines[-1].end()
+    text = text[:insert_at] + f'\nimport {var} from "@/data/{stem}.json";' + text[insert_at:]
+
+    local_block = re.search(r"const LOCAL:[^=]*=\s*\{", text)
+    if not local_block:
+        sys.exit(f"could not find 'const LOCAL: ... = {{' in {LIB_DATA_TS.relative_to(ROOT)} "
+                  f"to insert into — add by hand:\n  \"{slug}\": {var},")
+    close = text.index("\n};", local_block.end())
+    text = text[:close] + f'\n  "{slug}": {var},' + text[close:]
+
+    LIB_DATA_TS.write_text(text, encoding="utf-8")
+    print(f"  lib/data.ts  entry added (import {var} from \"@/data/{stem}.json\")")
+
+
 def resolve_data_file(slug: str) -> Path:
     """Map a target_voyage slug to its data/<file>.json.
 
@@ -838,14 +893,16 @@ def main():
                      f"add the entry by hand:\n\n{atlas_entry(bundle, blurb, profile)}")
         atlas = atlas.replace(marker, atlas_entry(bundle, blurb, profile) + marker)
         ATLAS_TS.write_text(atlas, encoding="utf-8")
+        write_lib_data_entry(slug, stem)
 
     record_publication(args.submission_id, slug, provenance["carta_version"] or "unknown",
                        approved=row["status"] == "approved")
 
     print(f"\nwritten. Next, and deliberately not automatic:")
-    print(f"  1. add the bundle import + LOCAL entry in lib/data.ts (the build will tell you)")
-    print(f"  2. npm run build   — proves ATLAS and data/ agree")
-    print(f"  3. review the diff and commit: publication is a reviewable change, not a side effect")
+    print(f"  1. npm run build   — proves ATLAS and data/ agree")
+    print(f"  2. review the diff and commit: publication is a reviewable change, not a side effect")
+    print(f"  3. python3 scripts/build_world_events.py   — unscoped; --voyage now merges safely "
+          f"but a brand-new voyage still needs its own year window harvested at least once")
     print(f"  4. python3 scripts/load_bundles.py   — put it in Postgres too")
 
     maybe_embed(args, row, slug, bundle)

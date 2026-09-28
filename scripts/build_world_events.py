@@ -745,6 +745,17 @@ def main() -> int:
             print(f"  {slug}: window {vi['start_year']}–{vi['end_year']} places={len(vi['place_qids'])} wps={len(vi['waypoints'])}")
         return 0
 
+    if args.voyage:
+        harvested_years = {str(y) for y in years}
+        existing_catalogue = json.loads(CATALOGUE_PATH.read_text()) if CATALOGUE_PATH.exists() else {"events": []}
+        before = len(existing_catalogue.get("events", []))
+        kept = merge_scoped_catalogue(existing_catalogue.get("events", []), kept, harvested_years)
+        print(f"  --voyage merge: catalogue {before} → {len(kept)} event(s) "
+              f"(years outside {args.voyage}'s window untouched)")
+
+        existing_inputs = json.loads(VOYAGE_INPUT_PATH.read_text()) if VOYAGE_INPUT_PATH.exists() else {}
+        inputs = merge_scoped_inputs(existing_inputs, inputs)
+
     CATALOGUE_PATH.write_text(json.dumps(
         {
             "generated_at": RETRIEVED_AT,
@@ -767,6 +778,26 @@ def date_year(date: str) -> str:
     negative years ("-1300" would become "-130")."""
     m = re.match(r"(-?\d{1,4})", date)
     return m.group(1) if m else date
+
+
+def merge_scoped_catalogue(existing_events: list[dict], harvested_events: list[dict],
+                            harvested_years: set) -> list[dict]:
+    """A --voyage run only harvests years inside one voyage's window, so
+    writing its results as the whole catalogue would erase every event
+    outside that window — every other voyage's context. Keep whatever
+    existing event falls in a year this run did not touch; replace
+    everything in years it did (matching what an unscoped run already does
+    to the whole catalogue, just bounded to the years in scope)."""
+    kept_existing = [e for e in existing_events if date_year(e["date"]) not in harvested_years]
+    return sorted(kept_existing + harvested_events, key=lambda r: (r["date"], r["id"]))
+
+
+def merge_scoped_inputs(existing_inputs: dict, harvested_inputs: dict) -> dict:
+    """Voyage inputs are keyed by slug already, so a --voyage run only ever
+    needs to update its own key(s) — everything else passes through."""
+    merged = dict(existing_inputs)
+    merged.update(harvested_inputs)
+    return merged
 
 
 def _better(a: dict, b: dict) -> bool:
