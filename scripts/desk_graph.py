@@ -582,14 +582,16 @@ def make_nodes(cfg: DeskConfig):
                     cfg.spans.revoke(key)
                     continue
                 # Brief quotations, plural, must not add up to a long text. The
-                # budget belongs to the CONTENT (its hash), not to the URL that
-                # happened to serve it: `#1`, `?a=1` and a trailing slash are
-                # the same page.
-                if rights["profile"] == "quote-only" and \
-                        quoted_words.get(body_sha, 0) + words > LIC.QUOTE_TOTAL_CAP:
+                # budget is charged to the content (its hash) AND to the
+                # canonical item (host + path): a page whose visible text
+                # changes a little per request (a sidebar, a echoed query)
+                # must not hand out a fresh budget for every URL variant.
+                budget_keys = (body_sha, LIC.canonical_item_key(entry["url"]))
+                spent = max(quoted_words.get(k, 0) for k in budget_keys)
+                if rights["profile"] == "quote-only" and spent + words > LIC.QUOTE_TOTAL_CAP:
                     f.fail(entry["where"], "QUOTE_EXCEEDS_UNVERIFIED_RIGHTS_CAP",
                            seq=entry["seq"], ci=entry["ci"], basis=rights["basis"],
-                           cap=LIC.QUOTE_TOTAL_CAP, words=quoted_words.get(body_sha, 0) + words,
+                           cap=LIC.QUOTE_TOTAL_CAP, words=spent + words,
                            scope="all quotations from this source")
                     stats["capped"] = stats.get("capped", 0) + 1
                     cfg.spans.revoke(key)
@@ -619,7 +621,8 @@ def make_nodes(cfg: DeskConfig):
                     if rights["profile"] == "quote-only":
                         # Only a quotation that was actually located spends the
                         # budget: a fabricated one must not cap a real later claim.
-                        quoted_words[body_sha] = quoted_words.get(body_sha, 0) + words
+                        for k in budget_keys:
+                            quoted_words[k] = quoted_words.get(k, 0) + words
                 cfg.spans.stage(key, span)
 
         staged = cfg.spans.staged()

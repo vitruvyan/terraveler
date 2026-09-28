@@ -235,6 +235,20 @@ def make_nodes(cfg: PublishConfig) -> dict:
         finally:
             conn.close()
         spans = (row["spans"] if row else {}) or {}
+        # No verified_spans row and a draft that quotes: the Desk never verified
+        # (or refused) those quotations, so there is nothing to print. Say so
+        # rather than publishing waypoints that silently lack them —
+        # scripts/publish_submission.py refuses the same case.
+        quoted = sum(1 for wp in payload.get("waypoints") or []
+                     for c in (wp.get("claims") or [])[:1]
+                     if ((c.get("evidence") or {}).get("quote") or (c.get("evidence") or {}).get("excerpt")))
+        if row is None and quoted:
+            return state.with_rejection(Rejection(
+                "quotations with no verified spans",
+                f"#{sid} quotes {quoted} claim(s) but has no verified_spans row: the Desk has not verified "
+                f"them, and the contributor's own text is never printed in their place (Carta 3.4). "
+                f"Run the Desk (scripts/desk_review.py {sid}) or resubmit.", now,
+                evidence={"submission_id": sid, "quoted_claims": quoted}))
 
         waypoints = []
         for wp in payload.get("waypoints") or []:
@@ -245,10 +259,8 @@ def make_nodes(cfg: PublishConfig) -> dict:
             span = spans.get(f"{seq}.1") or {}
             # Provenance (§4.2, §8.5): the raw span as submitted and the reading
             # span as verified against the live source travel together, not
-            # collapsed into one. When no verified_spans row exists (an older
-            # submission, from before that table), the evidence's own excerpt
-            # is the only copy there is — both fields carry the same text
-            # rather than inventing a distinction the record does not have.
+            # collapsed into one. The verified span is the only source of the
+            # excerpt (see _excerpt_of).
             reading, raw, rights, citation = _excerpt_of(span, evidence)
             waypoints.append({
                 "seq": seq,

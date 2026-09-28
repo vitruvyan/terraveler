@@ -39,8 +39,16 @@ resolves to the default profile:
     ("Public domain", "CC0 1.0", "CC BY 4.0", "CC BY-SA 4.0" and translations of
     "public domain"). Anything longer, qualified, negated or in another wording
     is not read as open — a deny-list of negations always misses one;
-  - any signal that is present but not a plain open licence — an NC/ND clause,
-    a reserved-rights or "©" wording, an unknown URL, prose — is a veto.
+  - any ITEM-level signal that is present but not a plain open licence — an
+    NC/ND clause, a reserved-rights or "©" wording, an unknown URL, prose — is a
+    veto (except access-rights tokens such as DSpace's `info:eu-repo/semantics/
+    openAccess`, which say who may read the item, not what may be done with it);
+    a site-level signal vetoes only when it is plainly a restriction on reuse;
+  - a licence URL opens only on creativecommons.org itself.
+
+KNOWN LIMIT: on a host where uploaders write their own Dublin Core rights (Omeka,
+DSpace, Zenodo-style repositories) the uploader decides "open". The code cannot
+tell such hosts apart; approve them with a per-host rule, not on this reading.
 
 Nothing here decides ingestion: `whitelist.verify_source` stays the only gate
 that says "may be ingested", and quote-only sources never pass it.
@@ -64,11 +72,13 @@ QUOTE_WORD_CAP = int(_VOCAB["quote_only_word_cap"])
 # one source may also contribute only this much per submission.
 QUOTE_TOTAL_CAP = int(_VOCAB["quote_only_total_cap"])
 
-# Open licences: (key, label, URL patterns that state it)
+# Open licences, as (key, label, path pattern). The URL must be ON creativecommons.org
+# — a string that merely contains such a path elsewhere (a query, another host) is not.
+_CC_HOSTS = ("creativecommons.org", "www.creativecommons.org")
 _OPEN_URLS = [
-    ("pd", "Public domain", [r"creativecommons\.org/publicdomain/(?:mark|zero)/1\.0"]),
-    ("cc-by", "CC BY", [r"creativecommons\.org/licenses/by/\d\.\d"]),
-    ("cc-by-sa", "CC BY-SA", [r"creativecommons\.org/licenses/by-sa/\d\.\d"]),
+    ("pd", "Public domain", re.compile(r"^/publicdomain/(?:mark|zero)/1\.0(?:/|$)", re.I)),
+    ("cc-by", "CC BY", re.compile(r"^/licenses/by/\d\.\d(?:/|$)", re.I)),
+    ("cc-by-sa", "CC BY-SA", re.compile(r"^/licenses/by-sa/\d\.\d(?:/|$)", re.I)),
 ]
 
 # The only text values that open anything: the WHOLE (trimmed, case-folded,
@@ -77,9 +87,27 @@ _OPEN_TEXT = [
     ("pd", "Public domain",
      re.compile(r"^(?:public[ -]domain(?: mark)?(?: 1\.0)?|cc0(?: 1\.0)?(?: universal)?|"
                 r"dominio p[uú]blico|domaine public|publiek domein|dom[ií]nio p[uú]blico)$")),
-    ("cc-by", "CC BY", re.compile(r"^cc[ -]by(?: \d\.\d)?$")),
-    ("cc-by-sa", "CC BY-SA", re.compile(r"^cc[ -]by[ -]sa(?: \d\.\d)?$")),
+    ("cc-by", "CC BY", re.compile(r"^(?:cc[ -]by(?:[ -]\d\.\d)?(?: international)?|"
+                                  r"creative commons attribution(?: \d\.\d)?(?: international)?"
+                                  r"(?: license| licence)?)$")),
+    ("cc-by-sa", "CC BY-SA", re.compile(r"^(?:cc[ -]by[ -]sa(?:[ -]\d\.\d)?(?: international)?|"
+                                        r"creative commons attribution[ -]share ?alike(?: \d\.\d)?"
+                                        r"(?: international)?(?: license| licence)?)$")),
 ]
+
+# Access-rights vocabulary that says who may READ an item, not what may be done
+# with its text — DSpace's standard DC.rights is "info:eu-repo/semantics/openAccess".
+# It says nothing about the licence, so it is ignored rather than a veto.
+_ACCESS_RIGHTS = re.compile(r"^(?:info:eu-repo/semantics/(?:openaccess|closedaccess|restrictedaccess|embargoedaccess)|"
+                            r"open access|closed access|restricted access)$")
+
+# A page-level (template) statement can only VETO, and only when it is plainly a
+# restriction on reuse — a site's "© 2024 Biblioteca" footer or a link to its
+# terms page is about the site, and must not cancel an item's own open licence.
+_PAGE_RESTRICTION_URL = re.compile(
+    r"creativecommons\.org/licenses/by(?:-sa)?-(?:nc|nd)|creativecommons\.org/licenses/by-(?:nc|nd)|"
+    r"rightsstatements\.org/vocab/(?:InC|CNE|UND|NoC-CR|NoC-NC|NoC-US|NoC-OKLR)", re.I)
+_PAGE_RESTRICTION_TEXT = re.compile(r"\b(?:NC|ND)\b|non[- ]?commercial|no[- ]?deriv", re.I)
 
 _DASHES = re.compile("[‐-―−﹘﹣－]")
 # A machine rights field is a short statement; a longer value is prose. Checked
@@ -115,6 +143,8 @@ class _Signals(HTMLParser):
         self.found: list[tuple[str, str]] = []
         self._in_jsonld = False
         self._jsonld: list[str] = []
+        # More JSON-LD blobs than we read: what we did not read may hold a veto.
+        self.overflow = False
 
     def handle_starttag(self, tag, attrs):
         a = {k.lower(): (v or "") for k, v in attrs}
@@ -132,6 +162,8 @@ class _Signals(HTMLParser):
             if len(self._jsonld) < _MAX_JSONLD_BLOBS:
                 self._in_jsonld = True
                 self._jsonld.append("")
+            else:
+                self.overflow = True
 
     def handle_endtag(self, tag):
         if tag == "script":
@@ -186,39 +218,56 @@ def _license_values(v) -> list[str]:
     return []
 
 
-def _jsonld_licences(node, page_url: str | None, _in_main: bool = False, _depth: int = 0) -> list[tuple[str, str]]:
+def _jsonld_licences(node, page_url: str | None, _is_item: bool = False, _depth: int = 0) -> list[tuple[str, str]]:
+    """A licence is item-scoped ONLY on a work node that is the page's own item:
+    the direct value of `mainEntity`, or a node whose url/@id is the fetched URL.
+    Nothing deeper counts — a catalogue record describes what it is `isBasedOn`,
+    `hasPart`, `isPartOf` or an `exampleOfWork` of, and those carry their own
+    licences — and `mainEntityOfPage` points at the page, not the item."""
     out: list[tuple[str, str]] = []
     if _depth > 20:
         return out
     if isinstance(node, dict):
         for k, v in node.items():
             if k.lower() in ("license", "licence"):
-                if _is_work(node):
-                    scope = "item" if (_in_main or _is_this_page(node, page_url)) else "page"
-                    out.extend((scope, x) for x in _license_values(v))
-                else:
-                    out.extend(("page", x) for x in _license_values(v))
+                scope = "item" if (_is_work(node) and (_is_item or _is_this_page(node, page_url))) else "page"
+                out.extend((scope, x) for x in _license_values(v))
             else:
-                out.extend(_jsonld_licences(v, page_url, _in_main or k in ("mainEntity", "mainEntityOfPage"),
-                                            _depth + 1))
+                out.extend(_jsonld_licences(v, page_url, k == "mainEntity", _depth + 1))
     elif isinstance(node, list):
         for x in node:
-            out.extend(_jsonld_licences(x, page_url, _in_main, _depth + 1))
+            out.extend(_jsonld_licences(x, page_url, _is_item, _depth + 1))
     return out
 
 
-def _classify(value: str):
-    """('open', key, label) | ('veto', None, why). Never None: a signal that is
-    present and is not a plain open licence is a veto, not silence."""
+def _classify(value: str, scope: str = "item"):
+    """('open', key, label) | ('veto', None, why) | ('ignore', None, why).
+
+    An item-scoped value that is present and is not a plain open licence is a
+    veto, not silence. A page-scoped value can only veto, and only when it is
+    plainly a restriction on reuse."""
     if len(value) > _MAX_SIGNAL_LEN:
         return ("veto", None, "a rights statement too long to be a licence")
     value = _DASHES.sub("-", value)
-    if re.match(r"https?://", value, re.I):
-        for key, label, pats in _OPEN_URLS:
-            if any(re.search(p, value, re.I) for p in pats):
-                return ("open", key, label)
+    is_url = bool(re.match(r"https?://", value, re.I))
+    if scope == "page":
+        restrictive = (_PAGE_RESTRICTION_URL.search(value) if is_url
+                       else _PAGE_RESTRICTION_TEXT.search(value))
+        return ("veto", None, "the page carries a restrictive licence") if restrictive else \
+               ("ignore", None, "a site-level statement")
+    if is_url:
+        try:
+            u = urlsplit(value)
+        except ValueError:
+            return ("veto", None, "an unreadable licence URL")
+        if (u.hostname or "").lower() in _CC_HOSTS:
+            for key, label, pat in _OPEN_URLS:
+                if pat.match(u.path):
+                    return ("open", key, label)
         return ("veto", None, "a licence URL that is not an open licence (NC/ND, reserved rights, or unknown)")
     text = value.strip().casefold().rstrip(".;, ")
+    if _ACCESS_RIGHTS.match(text):
+        return ("ignore", None, "an access-rights statement (who may read it), not a licence")
     for key, label, pat in _OPEN_TEXT:
         if pat.match(text):
             return ("open", key, label)
@@ -242,7 +291,10 @@ def read_licence(html: str, page_url: str | None = None) -> dict | None:
         signals = parser.finish(page_url)
     except Exception:  # noqa: BLE001 — a hostile or malformed page is unreadable, not fatal
         return None
-    classified = [(scope, *_classify(v)) for scope, v in signals]
+    if parser.overflow:
+        return {"profile": "quote-only", "licence": None,
+                "basis": "the page carries more structured data than is read — a veto could hide in it"}
+    classified = [(scope, *_classify(v, scope)) for scope, v in signals]
     if any(kind == "veto" for _s, kind, _k, _l in classified):
         return {"profile": "quote-only", "licence": None,
                 "basis": "the item's metadata carries a rights statement that is not a plain open licence"}
@@ -250,6 +302,17 @@ def read_licence(html: str, page_url: str | None = None) -> dict | None:
     if not opens:
         return None
     return {"profile": "open", "licence": " / ".join(opens), "basis": "page-metadata"}
+
+
+def canonical_item_key(url: str) -> str:
+    """host + path, lower-cased, no scheme, query, fragment or trailing slash:
+    the same item however its URL is spelled. (Two items that differ only by a
+    query on one path share a budget — a false FAIL, never a leak.)"""
+    try:
+        p = urlsplit((url or "").strip())
+    except ValueError:
+        return url or ""
+    return f"{(p.hostname or '').lower()}{p.path.rstrip('/').lower()}"
 
 
 def decide_rights(html: str | None, page_url: str | None = None) -> dict:

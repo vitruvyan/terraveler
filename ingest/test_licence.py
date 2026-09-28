@@ -85,9 +85,13 @@ class ReadLicence(unittest.TestCase):
 
     def test_conflicting_signals_resolve_to_the_cautious_side(self):
         html = (f'<head><meta name="DC.rights" content="{BY_SA_URL}">'
-                '<meta name="copyright" content="All rights reserved"></head>')
+                '<meta name="DC.rights" content="All rights reserved"></head>')
         self.assertEqual(L.read_licence(html)["profile"], "quote-only")
-        # even a page-level (template) restriction vetoes an item-level open
+        # a site template's "© 2024 Biblioteca" is about the site: it does not cancel the item's own licence
+        html = (f'<head><meta name="DC.rights" content="{BY_SA_URL}">'
+                '<meta name="copyright" content="© 2024 Biblioteca"><link rel="license" href="/terms"></head>')
+        self.assertEqual(L.read_licence(html)["profile"], "open")
+        # ...but a page-level NC/ND licence is plainly a restriction on reuse
         html = (f'<head><meta name="DC.rights" content="{BY_SA_URL}">'
                 '<link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/"></head>')
         self.assertEqual(L.read_licence(html)["profile"], "quote-only")
@@ -96,6 +100,21 @@ class ReadLicence(unittest.TestCase):
         for bad in ["", None, "<<<<", "<link rel=license", '<script type="application/ld+json">{not json</script>',
                     "\x00\x01<meta name='rights'"]:
             L.read_licence(bad or "")
+
+
+class UsableForms(unittest.TestCase):
+    """What real repositories emit, so that "open" is reachable and not only safe."""
+
+    def test_long_names_and_spdx_forms_open(self):
+        for text, label in [("CC BY-SA 4.0 International", "CC BY-SA"), ("Creative Commons Attribution 4.0 International", "CC BY"),
+                            ("CC-BY-4.0", "CC BY"), ("CC-BY-SA-4.0", "CC BY-SA"),
+                            ("Creative Commons Attribution-ShareAlike 4.0 International License", "CC BY-SA")]:
+            self.assertEqual(L.read_licence(meta(text))["licence"], label, text)
+
+    def test_dspace_access_rights_say_who_may_read_not_what_may_be_done(self):
+        html = meta("info:eu-repo/semantics/openAccess") + meta(BY_SA_URL)
+        self.assertEqual(L.read_licence(html)["licence"], "CC BY-SA")
+        self.assertIsNone(L.read_licence(meta("info:eu-repo/semantics/openAccess")), "and alone it opens nothing")
 
 
 class Hostile(unittest.TestCase):
@@ -146,6 +165,31 @@ class Hostile(unittest.TestCase):
                      f'{{"@type":"Book","url":"https://repo.example.org/item/2","license":"{by}"}}]']:
             self.assertNotOpen(f'<script type="application/ld+json">{blob}</script>')
 
+    def test_item_scope_does_not_spread_to_what_the_item_is_based_on_or_contains(self):
+        pd = "https://creativecommons.org/publicdomain/mark/1.0/"
+        for blob in [
+            # a copyrighted translation whose ORIGINAL is public domain
+            f'{{"@type":"WebPage","mainEntity":{{"@type":"Book","name":"Modern translation","isBasedOn":{{"@type":"Book","license":"{pd}"}}}}}}',
+            # a search / list page
+            f'{{"@type":"SearchResultsPage","mainEntity":{{"@type":"ItemList","itemListElement":[{{"@type":"Book","license":"{pd}"}}]}}}}',
+            # mainEntityOfPage points at the page, not the item
+            f'{{"@type":"Book","mainEntityOfPage":{{"@type":"WebPage","hasPart":{{"@type":"Photograph","license":"{pd}"}}}}}}',
+            f'{{"@type":"Book","hasPart":{{"@type":"Chapter","license":"{pd}"}}}}',
+        ]:
+            self.assertNotOpen(f'<script type="application/ld+json">{blob}</script>')
+
+    def test_a_licence_url_must_be_on_creativecommons_org(self):
+        for url in ["https://evil.example/creativecommons.org/licenses/by/4.0/",
+                    "https://x.example/?r=creativecommons.org/publicdomain/zero/1.0",
+                    "https://creativecommons.org.evil.example/licenses/by/4.0/",
+                    "https://creativecommons.org/licenses/by/4.0.evil/"]:
+            self.assertNotOpen(meta(url))
+        self.assertEqual(L.read_licence(meta("http://www.creativecommons.org/licenses/by/4.0/legalcode"))["licence"], "CC BY")
+
+    def test_a_veto_cannot_hide_behind_more_json_ld_blobs_than_are_read(self):
+        blobs = '<script type="application/ld+json">{}</script>' * (L._MAX_JSONLD_BLOBS + 1)
+        self.assertNotOpen(meta(BY_SA_URL) + blobs)
+
     def test_a_declaration_opens_nothing_however_the_page_echoes_it(self):
         for html in ['<footer>Our metadata is released under CC0.</footer>',
                      '<a href="/login?return=/item/1?x=public-domain">log in</a>',
@@ -188,6 +232,12 @@ class Cap(unittest.TestCase):
         self.assertFalse(L.over_cap(qo, " ".join(["w"] * 80)))
         self.assertTrue(L.over_cap(qo, " ".join(["w"] * 81)))
         self.assertFalse(L.over_cap({"profile": "open"}, " ".join(["w"] * 5000)))
+
+    def test_the_same_item_has_one_key_however_its_url_is_spelled(self):
+        keys = {L.canonical_item_key(u) for u in [
+            "https://www.dbnl.org/tekst/x", "http://WWW.dbnl.org/tekst/x/", "https://www.dbnl.org/tekst/x#1",
+            "https://www.dbnl.org/tekst/x?q=1", "https://www.dbnl.org/tekst/x?q=2"]}
+        self.assertEqual(len(keys), 1)
 
     def test_a_total_cap_stops_many_brief_quotations_adding_up(self):
         self.assertEqual(L.QUOTE_TOTAL_CAP, 240)

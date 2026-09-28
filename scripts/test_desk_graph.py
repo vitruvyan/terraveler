@@ -163,6 +163,8 @@ class Stubbed:
                 raise TimeoutError("the archive did not answer")
             if self.raw_html is not None:
                 cfg.raw_cache[url] = self.raw_html
+            if callable(self.source_text):
+                return self.source_text(url)
             return self.source_text if self.source_text is not None else SOURCE_TEXT
 
         patches = [("_payload", _payload), ("fetch", _fetch)]
@@ -969,6 +971,21 @@ class RightsReadPerItem(unittest.TestCase):
         # the fabricated quote spent nothing; three real ones fit (183 <= 240), the fourth (244) does not
         self.assertEqual(result.state.fact("stats")["capped"], 1)
         self.assertEqual(sorted(s.world["spans_written"]), ["2.1", "3.1", "4.1"])
+
+    def test_a_page_whose_text_changes_per_url_does_not_hand_out_a_fresh_budget(self):
+        # Same item, URL variants: the visible text differs each time (an echoed
+        # query, a sidebar) so the content hash cannot be the only key.
+        passages = ["I " + " ".join(f"p{k}w{i}" for i in range(60)) for k in range(4)]
+        urls = [f"https://www.dbnl.org/tekst/x?q={k}" for k in range(4)]
+        payload = {**PAYLOAD, "waypoints": [
+            {"seq": k + 1, "confidence": "certain", "arrival_date": "1766-05-01",
+             "claims": [{"evidence": {"quote": q, "source_url": urls[k]}}]} for k, q in enumerate(passages)]}
+        body = "\n\n".join(passages)
+        # each URL variant is served with a little different visible text
+        with Stubbed(payload=payload, gate=READ, source_text=lambda url: body + f"\n\nYou searched for {url}",
+                     raw_html="<body>x</body>") as s:
+            result = run(s)
+        self.assertEqual(result.state.fact("stats")["capped"], 1)
 
     def test_a_capped_claim_revokes_an_older_span_instead_of_leaving_it_to_be_published(self):
         store = G.SpanStore()
