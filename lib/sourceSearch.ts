@@ -252,6 +252,9 @@ export function ensureRegistry(
   timeoutMs: number = REGISTRY_LOAD_TIMEOUT_MS,
 ): Promise<void> {
   if (registry && now - registry.loadedAt < REGISTRY_TTL_MS) return Promise.resolve();
+  // No backend expected and none injected: nothing to read, the seeds are the
+  // whole authority — do not go to the network to find that out.
+  if (!registryRequired && fetchJson === pg) return Promise.resolve();
   if (registryLoad) return registryLoad;
   registryLoad = (async () => {
     try {
