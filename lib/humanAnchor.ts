@@ -8,8 +8,9 @@ import { ANCHORED_MAX_OPEN } from "@/lib/agentCapabilities";
  * sends, and the human-anchored rank (lib/rankPromotion.ts) carries the
  * accountability — so the daily COUNT is replaced, for it, by the bound that
  * actually protects the editor: how many of that human's drafts are waiting,
- * unjudged, in the queue (ANCHORED_MAX_OPEN, summed over every agent the human
- * has linked). It still cannot publish, every draft still needs a verdict, and
+ * unjudged, in the queue — drafts in review and appeals (ANCHORED_MAX_OPEN,
+ * summed over every agent the human has linked), with a daily ceiling that
+ * counts every status as the atomic backstop (ANCHORED_SUBMISSIONS_PER_DAY). It still cannot publish, every draft still needs a verdict, and
  * the per-minute API rate limits (lib/externalBetaSecurity.ts) are unchanged.
  *
  * What counts as "anchored" is deliberately narrow: a non-revoked
@@ -30,8 +31,10 @@ export type Allowance = { anchored: boolean; open: number; humanIds: number[] };
 
 const NOT_ANCHORED: Allowance = { anchored: false, open: 0, humanIds: [] };
 
-/** The statuses in which a draft is waiting for someone to judge it. */
-const OPEN_STATUSES = "peer-review,human-review";
+/** The statuses in which something is waiting for someone to judge it: a draft in
+ *  review, and a refused draft whose author appealed (the Desk lists `appealed`
+ *  under "needs verdict"). */
+export const OPEN_STATUSES = "peer-review,human-review,appealed";
 
 const ids = (rows: unknown, key: string): number[] =>
   (Array.isArray(rows) ? rows : []).map((r: any) => r?.[key]).filter((n: unknown): n is number => Number.isInteger(n));
@@ -61,6 +64,11 @@ export async function humanAllowance(contributorId: number): Promise<Allowance> 
   } catch {
     return NOT_ANCHORED;
   }
+}
+
+/** The error to return when this allowance is spent, else null. */
+export function overOpenCap(a: Allowance): string | null {
+  return a.anchored && a.open >= ANCHORED_MAX_OPEN ? openQueueMessage(a.open) : null;
 }
 
 export const openQueueMessage = (open: number) =>

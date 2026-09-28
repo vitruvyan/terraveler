@@ -53,7 +53,8 @@ test("humanAllowance", async (t) => {
       if (u.includes("agent_accounts?id=in.(65,2)")) return [{ contributor_id: 78 }, { contributor_id: 9 }];
       if (u.includes("submissions?contributor_id=in.(")) {
         assert.match(u, /contributor_id=in\.\((78,9|9,78)\)/, "the human's other agent's drafts count too");
-        assert.match(u, /status=in\.\(peer-review,human-review\)/, "only drafts awaiting a verdict count");
+        assert.match(u, /status=in\.\(peer-review,human-review,appealed\)/,
+          "drafts awaiting a verdict AND appeals count; a refused draft that was never appealed does not");
         assert.match(u, new RegExp(`limit=${caps.ANCHORED_MAX_OPEN + 1}`));
         return [{ id: 1 }, { id: 2 }, { id: 3 }];
       }
@@ -116,6 +117,7 @@ test("a link the human revoked stays revoked unless a human revives it", async (
       return [];
     });
     await identity.ensureAgentForConnection({ connectionId: 5, agentAccountId: 65, humanPrincipalId: 1 }).catch(() => {});
+    assert.ok(calls.some((c) => c.url.includes("human_agent_links?")), "the link WAS looked at: the test reached the code under test");
     assert.ok(!calls.some((c) => c.method === "PATCH" && c.url.includes("human_agent_links")));
   });
 
@@ -126,6 +128,23 @@ test("a link the human revoked stays revoked unless a human revives it", async (
     assert.deepEqual(patch?.body, { revoked_at: null });
   });
 
+  await t.test("the EDITOR's revocation is not the human's to undo, even by a human act", async () => {
+    stub((m, u) => {
+      if (m === "GET" && u.includes("human_agent_links?")) return [{ human_principal_id: 1, revoked_at: "2026-09-28T10:00:00Z" }];
+      if (m === "GET" && u.includes("audit_log?action=eq.users-revoke-link")) {
+        assert.ok(u.includes(`verdict=eq.${encodeURIComponent(identity.editorRevokeMarker(1, 65))}`));
+        return [{ id: 1 }];
+      }
+      return [];
+    });
+    await identity.linkHumanToAgent(1, 65, { reactivate: true });
+    assert.ok(!calls.some((c) => c.method === "PATCH"), "stays revoked");
+    // and the human's OWN revocation (no editor marker) is theirs to undo
+    stub((m, u) => (u.includes("human_agent_links?") ? [{ human_principal_id: 1, revoked_at: "x" }] : []));
+    await identity.linkHumanToAgent(1, 65, { reactivate: true });
+    assert.ok(calls.some((c) => c.method === "PATCH" && c.url.includes("human_agent_links")));
+  });
+
   await t.test("a first link is still created", async () => {
     stub(() => []);
     await identity.linkHumanToAgent(1, 65);
@@ -133,12 +152,23 @@ test("a link the human revoked stays revoked unless a human revives it", async (
   });
 });
 
+test("the queue cap refuses the 31st, appeals included", async () => {
+  const { anchor, caps } = await load();
+  const at = (open: number, anchored = true) => ({ anchored, open, humanIds: [1] });
+  assert.equal(anchor.overOpenCap(at(caps.ANCHORED_MAX_OPEN - 1)), null);
+  assert.match(anchor.overOpenCap(at(caps.ANCHORED_MAX_OPEN))!, /already waiting for a verdict \(limit 30 per linked human\)/);
+  assert.equal(anchor.overOpenCap(at(500, false)), null, "an unanchored agent is bounded by its daily count instead");
+  assert.ok(anchor.OPEN_STATUSES.split(",").includes("appealed"));
+  assert.ok(!anchor.OPEN_STATUSES.split(",").includes("curator-rejected"), "a refused, unappealed draft is not waiting");
+});
+
 test("where the exemption is wired", async () => {
   const { caps } = await load();
   const read = (p: string) => readFileSync(join(__dirname, "..", p), "utf8");
   const write = read("app/api/agent/write/route.ts");
   assert.match(write, /const allowance = await humanAllowance\(c\.id\)/);
-  assert.match(write, /allowance\.open >= ANCHORED_MAX_OPEN\) return \{ error: openQueueMessage/);
+  assert.match(write, /const full = overOpenCap\(allowance\);\s+if \(full\) return \{ error: full \}/, "a new submission");
+  assert.match(write, /overOpenCap\(await humanAllowance\(c\.id\)\)/, "an appeal is checked against the same cap");
   assert.match(write, /p_quotas: anchored \? ANCHORED_AUTHOR_QUOTAS : AUTHOR_QUOTAS/);
   assert.match(write, /overAuthorQuota\(c, anchored\)/);
   // Authoring only: review quotas are the ordinary per-rank figures.
@@ -148,7 +178,9 @@ test("where the exemption is wired", async () => {
   assert.ok(!read("app/api/mcp/route.ts").includes("humanAnchor"));
   for (const f of ["app/api/account/agents/link/route.ts", "app/api/oauth/approve/route.ts"])
     assert.match(read(f), /reactivate(Link)?: true/, `${f}: a human act revives a link`);
-  assert.ok(caps.ANCHORED_SUBMISSIONS_PER_DAY >= 1000, "a circuit breaker, not a working limit");
+  // The daily ceiling counts EVERY status (the SQL functions enforce it atomically),
+  // which is what bounds gate-refused drafts that never wait in the queue.
+  assert.equal(caps.ANCHORED_SUBMISSIONS_PER_DAY, 100);
   assert.equal(caps.ANCHORED_MAX_OPEN, 30);
   assert.equal(caps.AGENT_CAN_PUBLISH, false);
 });

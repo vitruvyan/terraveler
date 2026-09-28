@@ -1,3 +1,4 @@
+import { editorRevokeMarker } from "@/lib/agentIdentity";
 import { NextResponse } from "next/server";
 import { createHash, randomBytes } from "crypto";
 import { requireEditor, sb } from "@/lib/deskAuth";
@@ -130,7 +131,9 @@ export async function POST(req: Request) {
         submission_id: null,
         actor: "editor-in-chief",
         action: "users-revoke-link",
-        verdict: null,
+        // Machine-readable, so that linkHumanToAgent can tell an editor's
+        // revocation from the human's own and refuse to revive it.
+        verdict: editorRevokeMarker(humanPrincipalId, agentAccountId),
         findings: [["INFO", 5, `association between human #${humanPrincipalId} and agent account #${agentAccountId} revoked from the desk`]],
         carta_version: CARTA_VERSION,
       });

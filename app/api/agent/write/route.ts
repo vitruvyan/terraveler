@@ -3,8 +3,8 @@ import { ensureRegistry, isGovernedHost } from "@/lib/sourceSearch";
 import { CARTA_VERSION } from "@/lib/carta";
 import { rpc, sb } from "@/lib/deskAuth";
 import { verifyBearer } from "@/lib/oauth";
-import { ANCHORED_MAX_OPEN, ANCHORED_SUBMISSIONS_PER_DAY, CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
-import { humanAllowance, openQueueMessage } from "@/lib/humanAnchor";
+import { ANCHORED_SUBMISSIONS_PER_DAY, CLAIM_TTL_DAYS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE, quotaForRank } from "@/lib/agentCapabilities";
+import { humanAllowance, overOpenCap } from "@/lib/humanAnchor";
 import { badText, reviewShapeError, stage0 } from "@/lib/gate";
 import {
   AGENT_WRITE_BODY_LIMIT, NO_STORE_HEADERS, acquireMutationLease, beginIdempotent,
@@ -99,7 +99,8 @@ async function recordSubmission(c: Contributor, o: {
   const allowance = await humanAllowance(c.id);
   const anchored = allowance.anchored;
   // An agent with a live human link has no daily count; its human's queue is the bound.
-  if (anchored && allowance.open >= ANCHORED_MAX_OPEN) return { error: openQueueMessage(allowance.open) };
+  const full = overOpenCap(allowance);
+  if (full) return { error: full };
   const one = await optionalRpc("mcp_record_submission_oauth", {
     p_contributor_id: c.id,
     p_type: o.type,
@@ -374,6 +375,11 @@ async function callModern(c: Contributor, name: string, args: any): Promise<stri
         return `ERROR: submission ${id} is '${rows[0].status}'; only a refused verdict can be appealed.`;
       const prior = await sb("GET", `audit_log?submission_id=eq.${id}&action=eq.appeal&select=id&limit=1`);
       if (prior.length) return "ERROR: this submission has already been appealed.";
+      // An appeal lands on the editor like a draft does: an anchored agent's
+      // appeals count against the same open-queue cap (an unanchored agent's
+      // are already bounded by its daily count, each needing a submission).
+      const full = overOpenCap(await humanAllowance(c.id));
+      if (full) return `ERROR: ${full}`;
       await sb("POST", "audit_log", {
         submission_id: id, actor: `contributor:${c.handle}`, action: "appeal", verdict: null,
         findings: [["APPEAL", 0, grounds]], carta_version: CARTA_VERSION,

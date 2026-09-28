@@ -142,6 +142,10 @@ export async function createAgentAccount(opts: {
  * aggregate to reflect. A failure here must never fail the association
  * itself, which is why recalcHumanRank's own errors are already swallowed.
  */
+/** The audit_log verdict the Desk writes when the EDITOR revokes a link. */
+export const editorRevokeMarker = (humanPrincipalId: number, agentAccountId: number) =>
+  `human-${humanPrincipalId}:agent-${agentAccountId}`;
+
 export async function linkHumanToAgent(
   humanPrincipalId: number, agentAccountId: number,
   opts: { reactivate?: boolean } = {},
@@ -155,6 +159,14 @@ export async function linkHumanToAgent(
     // (the account page, or approving a client) — never because the agent asked
     // for its capabilities and its connection still remembers the human.
     if (rows[0].revoked_at && opts.reactivate) {
+      // The editor's revocation is not the human's to undo: a human can end a
+      // link themselves and start it again, but an editor who took the
+      // exemption away from an abusive human must not see it come back by the
+      // same human approving the client once more.
+      const byEditor = await sb("GET",
+        `audit_log?action=eq.users-revoke-link` +
+        `&verdict=eq.${encodeURIComponent(editorRevokeMarker(humanPrincipalId, agentAccountId))}&select=id&limit=1`);
+      if (Array.isArray(byEditor) && byEditor.length) return;
       await sb("PATCH",
         `human_agent_links?human_principal_id=eq.${humanPrincipalId}` +
         `&agent_account_id=eq.${agentAccountId}&relation=eq.associated`,
