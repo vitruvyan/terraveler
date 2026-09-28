@@ -10,6 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   PendingSourceProposals,
   SourceDossier,
+  describeEndpoint,
   ReverificationStatus,
   type PendingProposal,
   type EndpointContext,
@@ -237,4 +238,65 @@ test("ReverificationStatus — a zero says which zero it is", async (t) => {
     }));
     assert.match(html, /No source is trusted yet/i);
   });
+});
+
+test("SourceDossier — every source row carries a description", async (t) => {
+  const endpoint = (id: number, host: string): DossierEndpoint =>
+    ({ id, host_pattern: host, match_type: "exact", status: "active", trust_mode: "item_verified", last_verified_at: null });
+  const decision = (id: number, outcome: string, reason: string, timestamp: string) => ({
+    id, decision_outcome: outcome, trust_mode: "item_verified", rights_class: "mixed",
+    reason, timestamp, proposal_id: null, endpoint_id: 21, evidence_snapshot: null,
+  });
+
+  await t.test("the collapsed row shows the newest approval's reason, without opening it", () => {
+    const html = renderToStaticMarkup(h(SourceDossier, {
+      endpoints: [endpoint(21, "pares.cultura.gob.es")],
+      dossier: { "21": { proposals: [], decisions: [
+        decision(20, "approve", "An older account of this source.", "2026-09-20T09:00:00Z"),
+        decision(25, "approve", "PARES is the official Spanish portal for archival descriptions.", "2026-09-28T11:26:00Z"),
+      ] } },
+      unattachedDecisions: [],
+    }));
+    const summary = html.slice(html.indexOf("<summary"), html.indexOf("</summary>"));
+    assert.match(summary, /official Spanish portal/, "the newest approval's reason belongs in the summary");
+    assert.doesNotMatch(summary, /older account/);
+  });
+
+  await t.test("a reject never describes the source; the proposal's own stated purpose stands in", () => {
+    const entry: EndpointDossierEntry = {
+      proposals: [{
+        id: 9, target_url: "https://x.example/", status: "submitted", endpoint_id: 30,
+        source_proposal_intents: [{ voyage: "pizarro-1532", waypoint: null, region: null, person: null,
+          reason: "Contemporary Spanish administrative records.", suggested_trust_mode: null, suggested_rights_class: null }],
+      }],
+      decisions: [decision(31, "reject", "Not admissible.", "2026-09-01T09:00:00Z")],
+    };
+    assert.equal(describeEndpoint(entry), "Contemporary Spanish administrative records.");
+  });
+
+  await t.test("a source with nothing on file says so instead of passing for described", () => {
+    const html = renderToStaticMarkup(h(SourceDossier, {
+      endpoints: [endpoint(40, "bare.example.org")],
+      dossier: { "40": { proposals: [], decisions: [] } },
+      unattachedDecisions: [],
+    }));
+    assert.match(html, /No description on file/);
+    assert.match(html, /src-dossier-desc is-missing/);
+  });
+
+  await t.test("a long reason is cut at a word boundary with an ellipsis", () => {
+    const long = ("archival description ").repeat(40);
+    const out = describeEndpoint({ proposals: [], decisions: [decision(50, "approve", long, "2026-09-28T09:00:00Z")] });
+    assert.ok(out && out.length <= 262 && out.endsWith("…"), `got length ${out?.length}`);
+    assert.doesNotMatch(out!, /descripti…$/, "must not cut mid-word");
+  });
+});
+
+test("the Desk re-reads the source lists on its own while the sources section is open", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const src = await readFile(new URL("../app/desk/page.tsx", import.meta.url), "utf8");
+  assert.match(src, /async function refreshGovernance\(\)/, "the governance read must be its own re-callable function");
+  assert.match(src, /section !== "sources"\) return;/, "the refresh must only run while the sources section is open");
+  assert.match(src, /setInterval\(tick, 30_000\)/);
+  assert.match(src, /addEventListener\("visibilitychange", tick\)/, "and again when the tab returns to the foreground");
 });

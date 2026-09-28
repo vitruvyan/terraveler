@@ -6442,6 +6442,16 @@ main.prose {
   font-size: var(--step--2);
   color: var(--ink-faint);
 }
+/* What the source is for, on its own line under the host — prose someone
+   wrote (the reason on its approval), so the reading voice, not the machine's. */
+.src-dossier-desc {
+  flex: 1 0 100%;
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.src-dossier-desc.is-missing { font-style: italic; color: var(--brass-text); }
 .src-dossier-body { margin-top: var(--space-4); }
 .src-dossier-proposals { margin-top: var(--space-5); }
 .src-dossier-proposal {

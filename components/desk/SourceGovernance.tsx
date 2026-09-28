@@ -419,6 +419,38 @@ function resolvedProposalIdOf(d: DossierDecision): number | null {
   return d.proposal_id ?? d.evidence_snapshot?.proposal_id ?? null;
 }
 
+const DESCRIPTION_LIMIT = 260;
+
+function shorten(text: string): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  if (flat.length <= DESCRIPTION_LIMIT) return flat;
+  const cut = flat.slice(0, DESCRIPTION_LIMIT);
+  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:.\s]+$/, "") + "…";
+}
+
+/**
+ * What a source is FOR, in words, for the collapsed row: the reason recorded
+ * on its newest approval (the editor's own account of why it was admitted),
+ * else what the newest proposal that named it said it was wanted for. Null —
+ * shown as "No description on file" — rather than an invented line when
+ * neither exists, so a source admitted without one is visible as a gap
+ * instead of passing for described.
+ */
+export function describeEndpoint(entry: EndpointDossierEntry): string | null {
+  const newestFirst = [...entry.decisions].sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime() || b.id - a.id,
+  );
+  const approval = newestFirst.find((d) => d.decision_outcome === "approve" && d.reason?.trim());
+  if (approval) return shorten(approval.reason);
+
+  const proposals = [...entry.proposals].sort((a, b) => b.id - a.id);
+  for (const p of proposals) {
+    const intent = (p.source_proposal_intents ?? []).find((i) => i.reason?.trim());
+    if (intent?.reason) return shorten(intent.reason);
+  }
+  return null;
+}
+
 /* One row per endpoint, not per decision — the Dossier the old `resolved`
  * and `flagged` tabs were both partial views of. Expandable: the decision
  * chain in order (which one is currently in force), and every proposal
@@ -447,6 +479,7 @@ export function SourceDossier({
         );
         const inForceId = decisions[0]?.id;
         const flagged = REVIEW_STATUSES.has(e.status);
+        const description = describeEndpoint(entry);
 
         return (
           <details key={e.id} className="src-dossier-row">
@@ -461,6 +494,9 @@ export function SourceDossier({
               <span className="src-dossier-count">
                 {entry.proposals.length} proposal{entry.proposals.length === 1 ? "" : "s"} ·{" "}
                 {decisions.length} decision{decisions.length === 1 ? "" : "s"}
+              </span>
+              <span className={`src-dossier-desc${description ? "" : " is-missing"}`}>
+                {description ?? "No description on file."}
               </span>
             </summary>
 
