@@ -71,3 +71,20 @@ test("authenticated modern calls bootstrap a persistent agent before enforcement
   assert.equal(identity.includes("contributors?human_principal_id"), false,
     "standing must never be selected from the associated human account");
 });
+
+test("get_capabilities makes the enrollment state transition directly testable", async () => {
+  const route = await read("../app/api/agent/capabilities/route.ts");
+  const anonymous = route.slice(route.indexOf('mode: "anonymous"'), route.indexOf("if (!bearer.agent_account_id"));
+  assert.match(anonymous, /onboarding_transition:\s*\{/);
+  assert.match(anonymous, /state:\s*"before-enrollment"/);
+  assert.match(anonymous, /agent_id_matches_registration:\s*true/);
+  assert.match(anonymous, /requested_scopes_appear_in_allowed_when_external_mutations_enabled:\s*true/);
+
+  const authenticated = route.slice(route.lastIndexOf('mode: "agent"'));
+  assert.match(authenticated, /state:\s*credentialBound \? "after-enrollment" : "identity-unbound"/);
+  assert.match(authenticated, /credential_bound:\s*credentialBound/);
+  assert.match(authenticated, /reflected_scopes:\s*reflectedScopes/);
+  assert.match(authenticated, /permissions_current:\s*credentialBound && missingScopes.length === 0 && unreflectedScopes.length === 0/);
+  assert.match(authenticated, /content mutations are paused globally/,
+    "a global write pause must not be misreported as stale enrollment state");
+});

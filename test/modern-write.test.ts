@@ -60,7 +60,7 @@ test("standard MCP exposes capability discovery before onboarding", async () => 
   const route = await read("../app/api/mcp/route.ts");
   assert.match(route, /\{ name: "get_capabilities"/);
   assert.match(route, /params\?\.name === "get_capabilities"/);
-  assert.match(route, /\/api\/agent\/capabilities/);
+  assert.match(route, /capabilitySnapshotUrl\(req.url, params\?\.arguments\?\.requested_scopes\)/);
   assert.match(route, /tools: PUBLIC_TOOLS/);
   assert.match(route, /LEGACY_ONLY_TOOLS\.has\(tool\.name\)/);
   assert.match(route, /delete properties\.handle/);

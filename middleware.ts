@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 const MCP_BODY_LIMIT = 384 * 1024;
 const NO_STORE_HEADERS = {
@@ -40,7 +40,6 @@ async function readLimitedJson(req: Request, maxBytes: number) {
 
 const MODERN = "2026-07-28";
 const LEGACY = "2025-06-18";
-const CAPABILITIES_PATH = "/api/agent/capabilities";
 const WRITE_PATH = "/api/agent/write";
 const LINK_TOKEN_PATH = "/api/agent/link-token";
 const MODERN_NATIVE_WRITES = new Set([
@@ -109,7 +108,7 @@ const CAPABILITY_TOOL = {
   _meta: { securitySchemes: [{ type: "noauth" }] },
   description:
     "Explain this connection's effective Terraveler authority: persistent agent identity, optional human association, OAuth scopes, allowed and denied capabilities, standing and quota. Publication is never an agent capability.",
-  inputSchema: { type: "object", properties: {} },
+  inputSchema: CAPABILITY_INPUT_SCHEMA,
 };
 
 const HUMAN_LINK_TOOL = {
@@ -199,8 +198,8 @@ function authHeaders(req: NextRequest) {
   return headers;
 }
 
-async function capabilitySnapshot(req: NextRequest) {
-  return fetch(new URL(CAPABILITIES_PATH, req.url), {
+async function capabilitySnapshot(req: NextRequest, requestedScopes?: unknown) {
+  return fetch(capabilitySnapshotUrl(req.url, requestedScopes), {
     method: "GET", headers: authHeaders(req), cache: "no-store",
   });
 }
@@ -381,7 +380,9 @@ export async function middleware(req: NextRequest) {
   if (method === "tools/call") {
     const name = req.headers.get("mcp-name") ?? "";
     if (name === "get_capabilities") {
-      const snapshot = await capabilitySnapshot(req);
+      try { capabilitySnapshotUrl(req.url, msg.params?.arguments?.requested_scopes); }
+      catch (error) { return jsonRpcError(msg.id, -32602, (error as Error).message); }
+      const snapshot = await capabilitySnapshot(req, msg.params?.arguments?.requested_scopes);
       const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
       return NextResponse.json({
         jsonrpc: "2.0", id: msg.id ?? null,

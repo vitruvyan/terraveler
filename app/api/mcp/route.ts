@@ -12,7 +12,7 @@ import { adaptEditorialGap, pickRecommendedWaypointId } from "@/lib/chartroom";
 import { voyageEventsFor, worldEventsMeta } from "@/lib/world-events";
 import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
-import { CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
@@ -952,7 +952,7 @@ const TOOL_DEFINITIONS = [
       "Explain this connection's effective Terraveler authority: agent identity, OAuth " +
       "scopes, allowed and denied capabilities, standing, quotas and the currently available " +
       "onboarding paths. Call this before attempting registration or a protected tool.",
-    inputSchema: { type: "object", properties: {} } },
+    inputSchema: CAPABILITY_INPUT_SCHEMA },
   { name: "create_human_link_token",
     annotations: {
       readOnlyHint: false,
@@ -3029,10 +3029,13 @@ export async function POST(req: Request) {
       const argumentError = invalidPublicArguments(String(params?.name ?? ""), params?.arguments);
       if (argumentError) return rpcError(id, -32602, argumentError);
       if (params?.name === "get_capabilities") {
+        let url: URL;
+        try { url = capabilitySnapshotUrl(req.url, params?.arguments?.requested_scopes); }
+        catch (error) { return rpcError(id, -32602, (error as Error).message); }
         const headers = new Headers();
         const authorization = req.headers.get("authorization");
         if (authorization) headers.set("authorization", authorization);
-        const snapshot = await fetch(new URL("/api/agent/capabilities", req.url), {
+        const snapshot = await fetch(url, {
           method: "GET", headers, cache: "no-store",
         });
         const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));

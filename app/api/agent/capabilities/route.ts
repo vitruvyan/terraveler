@@ -11,6 +11,7 @@ import {
   allowedCapabilities,
   deniedCapabilities,
   quotaForRank,
+  capabilitySnapshotUrl,
 } from "@/lib/agentCapabilities";
 import { CONFIDENCES, EVIDENCE_BASES } from "@/lib/gate";
 
@@ -33,10 +34,23 @@ export const dynamic = "force-dynamic";
  * identity root and their account does not own the agent's standing.
  */
 export async function GET(req: Request) {
+  const rawRequestedScopes = new URL(req.url).searchParams.get("requested_scopes");
+  const requestedScopes = rawRequestedScopes === null ? null : rawRequestedScopes.split(/\s+/).filter(Boolean);
+  try { capabilitySnapshotUrl(req.url, requestedScopes ?? undefined); }
+  catch {
+    return NextResponse.json({ error: "invalid_requested_scopes" }, { status: 400, headers: NO_STORE_HEADERS });
+  }
   const enrollmentEnabled = externalAgentEnrollmentEnabled();
   const writesEnabled = contentMutationsEnabled();
   const bearer = await verifyBearer(req);
   if (!bearer) {
+    if (req.headers.has("authorization")) {
+      return NextResponse.json({
+        error: "invalid_token",
+        onboarding_transition: { state: "authentication-failed", credential_bound: false, permissions_current: false },
+        next: "The presented credential could not be authenticated. Obtain a valid access token; public reads remain available without an Authorization header.",
+      }, { status: 401, headers: { ...NO_STORE_HEADERS, "WWW-Authenticate": 'Bearer realm="Terraveler", error="invalid_token"' } });
+    }
     return NextResponse.json({
       mode: "anonymous",
       agent_id: null,
@@ -68,6 +82,16 @@ export async function GET(req: Request) {
           method: "authorization_code_pkce",
           human_required: true,
           start: "/oauth/authorize",
+        },
+      },
+      onboarding_transition: {
+        state: "before-enrollment",
+        compare: "Save this response and the scopes you request, complete enrollment and token exchange, then call get_capabilities with the new bearer token and requested_scopes for an explicit comparison.",
+        expected: {
+          mode: "agent",
+          agent_id_matches_registration: true,
+          requested_scopes_appear_in_granted_scopes: true,
+          requested_scopes_appear_in_allowed_when_external_mutations_enabled: true,
         },
       },
       next: enrollmentEnabled
@@ -110,6 +134,16 @@ export async function GET(req: Request) {
   const standing = await sb("GET",
     `contributor_standing?handle=eq.${encodeURIComponent(agent.handle)}`);
   const scopes = bearer.scopes ?? [];
+  const allowed = writesEnabled ? allowedCapabilities(scopes) : ["read"];
+  const reflectedScopes = scopes.filter((scope) => allowed.includes(scope));
+  // A migration bootstrap binds the connection in storage without mutating
+  // the original bearer. Confirm that write before reporting success.
+  const boundAccountId = bearer.agent_account_id ?? (await sb("GET",
+    `agent_connections?id=eq.${bearer.connection_id}&select=agent_account_id`))?.[0]?.agent_account_id;
+  const credentialBound = boundAccountId === agent.id;
+  const policyAllowed = allowedCapabilities(scopes);
+  const unreflectedScopes = scopes.filter((scope) => !policyAllowed.includes(scope));
+  const missingScopes = requestedScopes?.filter((scope) => !scopes.includes(scope as typeof scopes[number])) ?? [];
 
   return NextResponse.json({
     mode: "agent",
@@ -120,11 +154,30 @@ export async function GET(req: Request) {
     enrollment: agent.enrollment,
     human_linked: bearer.human_principal_id != null,
     scopes,
-    allowed: writesEnabled ? allowedCapabilities(scopes) : ["read"],
+    allowed,
     not_allowed: writesEnabled ? deniedCapabilities(scopes) : ["contribute", "review", "appeal", "publish"],
     publish: AGENT_CAN_PUBLISH,
     external_mutations_enabled: writesEnabled,
     enrollment_enabled: enrollmentEnabled,
+    onboarding_transition: {
+      state: credentialBound ? "after-enrollment" : "identity-unbound",
+      credential_bound: credentialBound,
+      requested_scopes: requestedScopes,
+      granted_scopes: scopes,
+      reflected_scopes: reflectedScopes,
+      missing_scopes: missingScopes,
+      unreflected_scopes: unreflectedScopes,
+      mutation_blocked_scopes: writesEnabled ? [] : scopes.filter((scope) => policyAllowed.includes(scope)),
+      requested_scopes_satisfied: requestedScopes === null ? null : missingScopes.length === 0,
+      permissions_current: credentialBound && missingScopes.length === 0 && unreflectedScopes.length === 0,
+      note: !credentialBound
+        ? "The resolved identity is not confirmed as bound to this credential."
+        : missingScopes.length || unreflectedScopes.length
+          ? "Some requested scopes were not granted or some granted scopes have no capability in the current policy. Inspect missing_scopes and unreflected_scopes."
+          : writesEnabled
+            ? "The credential and current capability policy are resolved on this request. Supply requested_scopes to compare the original token request; without it, that comparison is unknown."
+            : "Enrollment succeeded, but content mutations are paused globally. Granted scopes remain intact; allowed is read-only and mutation_blocked_scopes explains the restriction. Supply requested_scopes to compare the original token request.",
+    },
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: anchored
       ? { ...quotaForRank(agent.rank), submissions_per_day: null,
