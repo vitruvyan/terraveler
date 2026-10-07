@@ -2,6 +2,7 @@
 import copy
 import contextlib
 import io
+import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -342,6 +343,359 @@ class PilotTests(unittest.TestCase):
         self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
         header = json.loads(trace.splitlines()[0])
         self.assertIn('none', json.dumps(header))
+
+
+def evidence_catalog(data=None):
+    data = data or bundle()
+    text = data['sources'][0]['text']
+    start, end = text.index('They'), text.index(' Afterwards.')
+    return {'protocol': 'evidence-v2', 'bundle_sha256': C.digest(data),
+            'missions': copy.deepcopy(data['missions']),
+            'evidence': [{'id': 'body01', 'source_id': 'chronicle', 'kind': 'source-text',
+                          'start': start, 'end': end, 'source_sha256': hashlib.sha256(text.encode()).hexdigest()},
+                         {'id': 'meta01', 'source_id': 'chronicle', 'kind': 'provenance-metadata',
+                          'field': 'edition', 'value': data['sources'][0]['provenance']['edition']}]}
+
+
+def evidence_research():
+    return {'status': 'supported', 'title': 'Motux in the chronicle', 'title_evidence_ids': ['body01'],
+            'summary': 'The author describes a four-day stay at Motux.', 'summary_evidence_ids': ['body01'],
+            'claims': [{'text': 'The author reports staying four days.', 'evidence_ids': ['body01']}],
+            'limitations': []}
+
+
+def calibration_fixture():
+    negative = evidence_research()
+    negative['claims'][0]['text'] = 'They arrived on 1 January 1532.'
+    return {'protocol': 'evidence-v2', 'cases': [
+        {'id': 'case01', 'mission_id': 'motux', 'draft': evidence_research(),
+         'expected': 'pass', 'reason': 'Paraphrase is supported despite line breaks.'},
+        {'id': 'case02', 'mission_id': 'motux', 'draft': negative,
+         'expected': 'revise', 'reason': 'The passage supplies no exact arrival date.'}]}
+
+
+def calibration_review():
+    return {'reviews': [review('case01')['reviews'][0], review('case02', 'revise')['reviews'][0]]}
+
+
+class EvidenceTests(unittest.TestCase):
+    setUp = PilotTests.setUp
+    provider = PilotTests.provider
+
+    def configure(self):
+        self.catalog_path = Path(self.temp.name) / 'catalog.json'
+        self.calibration_path = Path(self.temp.name) / 'calibration.json'
+        self.catalog_path.write_text(json.dumps(evidence_catalog()))
+        self.calibration_path.write_text(json.dumps(calibration_fixture()))
+        patcher = patch.object(C, 'CALIBRATION_FILE', self.calibration_path)
+        patcher.start(); self.addCleanup(patcher.stop)
+
+    def v2(self):
+        result = C.EvidencePilot(self.source_path, self.catalog_path, self.directory)
+        result.client = OpenAIClient('fixture-secret-do-not-trace', result.ledger)
+        return result
+
+    def checked(self, candidate, data=None):
+        data = data or bundle()
+        return C.validate_evidence_research(candidate, data['missions'][0], evidence_catalog(data),
+                                            {s['id']: s for s in data['sources']})
+
+    def test_original_prompts_remain_byte_identical_for_paid_cache(self):
+        expected = {'RESEARCH': 'd4d86f47be587efcf24d52a00e8d718f19c26b4419331721b6c638d8b7b41e09',
+                    'REVIEW': '084b9e72bbd69e77d875ca1c221eb4970f4554b3616b168b1d28940a471913eb',
+                    'REVISION_RESEARCH': '4fc2d85e3ceb63fc53835ea1f4ecb77113f13f69b456540d7b16a3fbc5902b0b',
+                    'REVISION_REVIEW': '0f691751015b543dbc620edb3ff5e9a2193566d41864e09c075c221c7d4f442a'}
+        for key, value in expected.items():
+            self.assertEqual(hashlib.sha256(getattr(C, key).encode()).hexdigest(), value)
+
+    def test_selected_body_is_program_copied_and_metadata_never_becomes_quote(self):
+        candidate = evidence_research()
+        candidate['claims'].append({'text': 'The edition label describes a reprint.', 'evidence_ids': ['meta01']})
+        result = self.checked(candidate)
+        self.assertFalse(result['findings'])
+        body, metadata = result['evidence']
+        self.assertEqual(body['quote_raw'], 'They stayed\n\n  four days at Motux.')
+        self.assertEqual(bundle()['sources'][0]['text'][body['source_span_start']:body['source_span_end']], body['quote_raw'])
+        self.assertNotIn('quote_raw', metadata)
+        self.assertEqual(metadata['value'], bundle()['sources'][0]['provenance']['edition'])
+
+    def test_freehand_quote_keys_unknown_and_unassigned_ids_are_rejected(self):
+        for mutation in ('quote', 'unknown', 'foreign', 'title', 'summary', 'url', 'empty-supported'):
+            candidate, data = evidence_research(), bundle()
+            if mutation == 'quote': candidate['claims'][0]['quote'] = 'invented'
+            if mutation == 'unknown': candidate['claims'][0]['evidence_ids'] = ['unknown']
+            if mutation == 'foreign': data['missions'][0]['source_ids'] = []
+            if mutation == 'title': candidate['title_evidence_ids'] = []
+            if mutation == 'summary': candidate['summary_evidence_ids'] = ['unknown']
+            if mutation == 'url': candidate['limitations'] = ['https://invented.example/']
+            if mutation == 'empty-supported': candidate['claims'] = []
+            with self.subTest(mutation=mutation):self.assertTrue(self.checked(candidate, data)['findings'])
+
+    def test_exact_abstention_is_valid_but_unsupported_descriptive_abstention_is_not(self):
+        result = self.checked(copy.deepcopy(C.ABSTENTION))
+        self.assertFalse(result['findings']);self.assertEqual(result['status'], 'insufficient-evidence')
+        altered = copy.deepcopy(C.ABSTENTION);altered['summary'] = 'No oral histories survived at Motux.'
+        self.assertTrue(self.checked(altered)['findings'])
+
+    def test_catalog_source_offsets_hash_metadata_literal_and_mission_bindings_fail_closed(self):
+        self.configure()
+        self.assertEqual(C.load_evidence_catalog(self.catalog_path, bundle()), evidence_catalog())
+        for mutation in ('offset', 'bool', 'partial', 'hash', 'metadata', 'source', 'task-source', 'bundle'):
+            c = evidence_catalog()
+            if mutation == 'offset': c['evidence'][0]['end'] = 99999
+            if mutation == 'bool': c['evidence'][0]['start'] = True
+            if mutation == 'partial': c['evidence'][0]['start'] += 1
+            if mutation == 'hash': c['evidence'][0]['source_sha256'] = '0' * 64
+            if mutation == 'metadata': c['evidence'][1]['value'] = 'Original eyewitness manuscript'
+            if mutation == 'source': c['evidence'][1]['source_id'] = 'unknown'
+            if mutation == 'task-source': c['missions'][0]['source_ids'] = ['unknown']
+            if mutation == 'bundle': c['bundle_sha256'] = '0' * 64
+            self.catalog_path.write_text(json.dumps(c))
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):C.load_evidence_catalog(self.catalog_path, bundle())
+
+    def test_success_preserves_baseline_files_ledger_and_resume_is_free(self):
+        self.configure()
+        with self.provider([research(), review()]):C.run_graph(self.pilot)
+        baseline = {name: (self.directory / name).read_bytes() for name in ('spec.json', 'dossier.json', 'dossier.md')}
+        v2 = self.v2()
+        with self.provider([calibration_review(), evidence_research(), review()]):C.run_graph(v2)
+        self.assertEqual(len(self.requests), 5);self.assertEqual(v2.dossier['status'], 'awaiting-human')
+        self.assertEqual(v2.ledger.summary()['spent_microdollars'], 1400)
+        self.assertTrue(v2.calibration_passed)
+        sent = json.loads(self.requests[2]['input'][1]['content'])
+        self.assertNotIn('expected', C.canonical(sent));self.assertNotIn('reason', sent)
+        self.assertEqual(self.requests[2]['input'][0]['content'], self.requests[4]['input'][0]['content'])
+        for name, raw in baseline.items():self.assertEqual((self.directory / name).read_bytes(), raw)
+        with patch('outreach_core._request', side_effect=AssertionError('no new namespace retry')) as api:
+            C.run_graph(self.v2())
+        api.assert_not_called()
+        self.assertTrue((self.directory / 'spec-evidence-v2.json').is_file())
+        self.assertTrue((self.directory / 'dossier-evidence-v2.md').is_file())
+
+    def test_bad_incomplete_duplicate_or_wrong_calibration_blocks_research_and_exports(self):
+        self.configure()
+        for variant in ('wrong', 'missing', 'duplicate', 'extra'):
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as tmp:
+                pilot = C.EvidencePilot(self.source_path, self.catalog_path, Path(tmp))
+                pilot.client = OpenAIClient('fixture-secret', pilot.ledger)
+                result = calibration_review()
+                if variant == 'wrong':result['reviews'][1] = review('case02')['reviews'][0]
+                if variant == 'missing':result['reviews'].pop()
+                if variant == 'duplicate':result['reviews'][1] = result['reviews'][0]
+                if variant == 'extra':result['unexpected'] = True
+                with patch('outreach_core._request', return_value=response(result)) as api:C.run_graph(pilot)
+                self.assertEqual(api.call_count, 1)
+                self.assertEqual(pilot.dossier['status'], 'needs-revision');self.assertFalse(pilot.checked)
+                self.assertTrue((Path(tmp) / 'calibration-v2.json').is_file())
+                with patch('outreach_core._request') as api:C.run_graph(C.EvidencePilot(self.source_path, self.catalog_path, Path(tmp)))
+                api.assert_not_called()
+
+    def test_abstention_counts_separately_from_supported_or_completed_missions(self):
+        self.configure();pilot = self.v2()
+        with self.provider([calibration_review(), copy.deepcopy(C.ABSTENTION), review()]):C.run_graph(pilot)
+        self.assertEqual(pilot.dossier['status'], 'insufficient-evidence')
+        self.assertEqual(pilot.dossier['outcomes'], {'supported': 0, 'insufficient-evidence': 1,
+                                                   'rejected': 0, 'not-reviewed': 0})
+
+    def test_supported_self_declaration_is_not_counted_when_reviewer_rejects(self):
+        self.configure();pilot = self.v2()
+        with self.provider([calibration_review(), evidence_research(), review(verdict='revise')]):C.run_graph(pilot)
+        self.assertEqual(pilot.dossier['outcomes'], {'supported': 0, 'insufficient-evidence': 0,
+                                                   'rejected': 1, 'not-reviewed': 0})
+        self.assertEqual(pilot.dossier['declared_status_counts']['supported'], 1)
+        self.assertEqual(pilot.dossier['status'], 'needs-revision')
+
+    def test_changed_catalog_calibration_or_task_stops_before_any_paid_reuse(self):
+        self.configure()
+        with self.provider([calibration_review(), evidence_research(), review()]):C.run_graph(self.v2())
+        for mutation in ('catalog', 'calibration', 'task'):
+            c, cal = evidence_catalog(), calibration_fixture()
+            if mutation == 'catalog':c['evidence'][0]['end'] -= 1
+            if mutation == 'calibration':cal['cases'][0]['reason'] += ' Changed.'
+            if mutation == 'task':c['missions'][0]['task'] += ' Changed.'
+            self.catalog_path.write_text(json.dumps(c));self.calibration_path.write_text(json.dumps(cal))
+            with self.subTest(mutation=mutation), patch('outreach_core._request') as api, self.assertRaises(Exception):C.run_graph(self.v2())
+            api.assert_not_called()
+
+    def test_changed_protocol_spec_stops_before_overwriting_saved_spec(self):
+        self.configure()
+        with self.provider([calibration_review(), evidence_research(), review()]):C.run_graph(self.v2())
+        original = (self.directory / 'spec-evidence-v2.json').read_bytes()
+        changed = copy.deepcopy(C.EVIDENCE_SPEC_DICT);changed['version'] = '2.0.1'
+        with patch.object(C, 'EVIDENCE_SPEC_DICT', changed), patch('outreach_core._request') as api, self.assertRaises(Exception):
+            C.run_graph(self.v2())
+        api.assert_not_called()
+        self.assertEqual((self.directory / 'spec-evidence-v2.json').read_bytes(), original)
+
+    def test_positive_calibration_paraphrase_is_mechanically_valid_while_critic_must_judge_negative(self):
+        cases = calibration_fixture()['cases']
+        for case in cases:
+            self.assertFalse(self.checked(case['draft'])['findings'])
+        # A genuine interpretation error has valid evidence IDs; the critic's
+        # rejection is necessary, rather than trusting mechanical membership.
+        self.assertEqual(cases[1]['expected'], 'revise')
+
+    def test_invalid_final_review_is_cached_and_cannot_claim_ready(self):
+        self.configure();pilot = self.v2()
+        with self.provider([calibration_review(), evidence_research(), {'reviews': []}]):C.run_graph(pilot)
+        self.assertEqual(pilot.dossier['status'], 'needs-revision')
+        self.assertEqual(pilot.dossier['review_validation'], 'invalid-or-skipped')
+        self.assertEqual(pilot.dossier['outcomes']['supported'], 0)
+        self.assertEqual(pilot.dossier['outcomes']['not-reviewed'], 1)
+        with patch('outreach_core._request') as api:C.run_graph(self.v2())
+        api.assert_not_called()
+
+    def test_uncertain_call_blocks_all_protocols_without_retry(self):
+        self.configure()
+        with self.provider([RemoteError('uncertain provider')]), self.assertRaises(Exception):C.run_graph(self.v2())
+        for pilot in (self.v2(), C.Pilot(self.source_path, self.directory)):
+            with patch('outreach_core._request') as api, self.assertRaises(Exception):C.run_graph(pilot)
+            api.assert_not_called()
+
+    def test_insufficient_budget_or_orphan_reservation_creates_no_paid_attempt(self):
+        self.configure()
+        reservation = self.pilot.ledger.reserve(C.MODEL, 990_000, 2000)
+        self.pilot.ledger.settle(reservation, 990_000, 2000)
+        with patch('outreach_core._request') as api, self.assertRaises(Exception):C.run_graph(self.v2())
+        api.assert_not_called()
+        with self.pilot.db() as db:self.assertEqual(db.execute('SELECT count(*) FROM content_attempts').fetchone()[0], 0)
+        with tempfile.TemporaryDirectory() as tmp:
+            pilot = C.EvidencePilot(self.source_path, self.catalog_path, Path(tmp))
+            pilot.ledger.reserve(C.MODEL, 10, 2000)
+            with patch('outreach_core._request') as api, self.assertRaises(Exception):C.run_graph(pilot)
+            api.assert_not_called()
+            with pilot.db() as db:self.assertEqual(db.execute('SELECT count(*) FROM content_attempts').fetchone()[0], 0)
+
+    def test_v2_trace_validates_and_omits_private_text_and_credentials(self):
+        self.configure()
+        with self.provider([calibration_review(), evidence_research(), review()]):C.run_graph(self.v2())
+        files = list((self.directory / 'traces-evidence-v2').glob('*.jsonl'))
+        self.assertEqual(len(files), 1)
+        trace = files[0].read_text()
+        for text in ('fixture-secret-do-not-trace', evidence_research()['summary'], bundle()['sources'][0]['text']):
+            self.assertNotIn(text, trace)
+        checked = subprocess.run([sys.executable, '-m', 'vitruvyan_motus.contract.validate', 'jsonl', str(files[0]),
+                                  '--spec', str(self.directory / 'spec-evidence-v2.json')],capture_output=True,text=True)
+        self.assertEqual(checked.returncode, 0, checked.stdout + checked.stderr)
+
+    def test_real_v2_fixtures_and_free_cli_preview_require_no_credentials_or_runtime_writes(self):
+        data = C.load_bundle(C.ROOT / 'scripts/fixtures/content-swarm-pizarro.json')
+        cat = C.load_evidence_catalog(C.ROOT / 'scripts/fixtures/content-swarm-pizarro-evidence-v2.json', data)
+        cal = C.load_calibration(C.CALIBRATION_FILE, cat)
+        self.assertEqual(len(cat['missions']), 3);self.assertEqual({c['expected']for c in cal['cases']}, {'pass', 'revise'})
+        with patch.object(C,'OUTPUT',self.directory),patch.object(C,'OpenAIClient')as api,patch.object(C,'load_secrets')as secrets,contextlib.redirect_stdout(io.StringIO()):
+            result = C.main(['--sources', str(C.ROOT / 'scripts/fixtures/content-swarm-pizarro.json'),
+                             '--evidence-v2', str(C.ROOT / 'scripts/fixtures/content-swarm-pizarro-evidence-v2.json')])
+        self.assertEqual(result,0);api.assert_not_called();secrets.assert_not_called()
+        self.assertFalse((self.directory/'dossier-evidence-v2.json').exists())
+
+
+class CalibrationCorrectionTests(unittest.TestCase):
+    """One explicit namespace after a completed failed benchmark; no retries."""
+    setUp = PilotTests.setUp
+    provider = PilotTests.provider
+    configure = EvidenceTests.configure
+    v2 = EvidenceTests.v2
+    def configure_correction(self):
+        self.configure()
+        self.correction_path = Path(self.temp.name) / 'correction.json'
+        fixture = calibration_fixture()
+        fixture['cases'][0]['task'] = 'Describe only the source-supported four-day stay.'
+        self.correction_path.write_text(json.dumps(fixture))
+        patcher = patch.object(C, 'CORRECTION_CALIBRATION_FILE', self.correction_path)
+        patcher.start();self.addCleanup(patcher.stop)
+
+    def correction(self):
+        pilot = C.EvidencePilot(self.source_path, self.catalog_path, self.directory, calibration_correction=True)
+        pilot.client = OpenAIClient('fixture-secret-do-not-trace', pilot.ledger)
+        return pilot
+
+    def failed_original(self):
+        verdict = calibration_review()
+        verdict['reviews'][1] = review('case02')['reviews'][0]
+        with self.provider([verdict]):C.run_graph(self.v2())
+
+    def test_correction_requires_verified_completed_failed_original(self):
+        self.configure_correction()
+        with patch('outreach_core._request') as api,self.assertRaises(Exception):C.run_graph(self.correction())
+        api.assert_not_called()
+        with self.provider([calibration_review(),evidence_research(),review()]):C.run_graph(self.v2())
+        with patch('outreach_core._request') as api,self.assertRaises(Exception):C.run_graph(self.correction())
+        api.assert_not_called()
+        with self.pilot.db() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM content_attempts WHERE id LIKE '%calibration-correction%'").fetchone()[0],0)
+
+    def test_correction_preserves_failed_artifacts_ledger_and_uses_override_only_in_calibration(self):
+        self.configure_correction();self.failed_original()
+        names=['spec-evidence-v2.json','calibration-v2.json','calibration-v2.md',
+               'dossier-evidence-v2.json','dossier-evidence-v2.md']
+        frozen={name:(self.directory/name).read_bytes()for name in names}
+        with self.pilot.db()as db:
+            manifest=db.execute("SELECT digest FROM content_protocol_manifests WHERE protocol='evidence-v2'").fetchone()
+            attempt=db.execute("SELECT * FROM content_attempts WHERE id='evidence-v2:review-calibration'").fetchone()
+        pilot=self.correction()
+        with self.provider([calibration_review(),evidence_research(),review()]):C.run_graph(pilot)
+        self.assertEqual(len(self.requests),4)
+        self.assertEqual(pilot.ledger.summary()['cap_microdollars'],C.CAP)
+        self.assertEqual(pilot.ledger.summary()['spent_microdollars'],1120)
+        self.assertEqual(pilot.dossier['status'],'awaiting-human')
+        calibration_payload=json.loads(self.requests[1]['input'][1]['content'])
+        research_payload=json.loads(self.requests[2]['input'][1]['content'])
+        final_payload=json.loads(self.requests[3]['input'][1]['content'])
+        self.assertEqual(calibration_payload['missions'][0]['task'],'Describe only the source-supported four-day stay.')
+        self.assertEqual(research_payload['mission'],bundle()['missions'][0])
+        self.assertEqual(final_payload['missions'],bundle()['missions'])
+        self.assertEqual(self.requests[0]['input'][0]['content'],self.requests[1]['input'][0]['content'])
+        for name,body in frozen.items():self.assertEqual((self.directory/name).read_bytes(),body)
+        with self.pilot.db()as db:
+            self.assertEqual(db.execute("SELECT digest FROM content_protocol_manifests WHERE protocol='evidence-v2'").fetchone(),manifest)
+            self.assertEqual(db.execute("SELECT * FROM content_attempts WHERE id='evidence-v2:review-calibration'").fetchone(),attempt)
+        with patch('outreach_core._request')as api:C.run_graph(self.correction())
+        api.assert_not_called()
+        self.assertTrue((self.directory/'dossier-evidence-v2-correction-1.md').is_file())
+        trace=next((self.directory/'traces-evidence-v2-correction-1').glob('*.jsonl'))
+        checked=subprocess.run([sys.executable,'-m','vitruvyan_motus.contract.validate','jsonl',str(trace),
+                                '--spec',str(self.directory/'spec-evidence-v2-correction-1.json')],capture_output=True,text=True)
+        self.assertEqual(checked.returncode,0,checked.stdout+checked.stderr)
+
+    def test_failed_correction_is_cached_and_never_auto_loops(self):
+        self.configure_correction();self.failed_original()
+        bad=calibration_review();bad['reviews'][1]=review('case02')['reviews'][0]
+        with self.provider([bad]):C.run_graph(self.correction())
+        self.assertEqual(len(self.requests),2)
+        with patch('outreach_core._request')as api:C.run_graph(self.correction())
+        api.assert_not_called()
+        dossier=json.loads((self.directory/'dossier-evidence-v2-correction-1.json').read_text())
+        self.assertEqual(dossier['status'],'needs-revision')
+        self.assertEqual(dossier['outcomes']['not-reviewed'],1)
+
+    def test_tampered_original_cache_or_digest_cannot_authorize_correction(self):
+        self.configure_correction();self.failed_original()
+        with self.pilot.db()as db:
+            db.execute("UPDATE content_attempts SET result='{}' WHERE id='evidence-v2:review-calibration'")
+        with patch('outreach_core._request')as api,self.assertRaises(Exception):C.run_graph(self.correction())
+        api.assert_not_called()
+
+    def test_correction_fixture_or_override_change_blocks_before_saved_spec_write(self):
+        self.configure_correction();self.failed_original()
+        with self.provider([calibration_review(),evidence_research(),review()]):C.run_graph(self.correction())
+        spec=(self.directory/'spec-evidence-v2-correction-1.json').read_bytes()
+        changed=json.loads(self.correction_path.read_text());changed['cases'][0]['task']+=' Changed.'
+        self.correction_path.write_text(json.dumps(changed))
+        with patch('outreach_core._request')as api,self.assertRaises(Exception):C.run_graph(self.correction())
+        api.assert_not_called();self.assertEqual((self.directory/'spec-evidence-v2-correction-1.json').read_bytes(),spec)
+
+    def test_calibration_task_override_is_bounded_and_cannot_override_sources(self):
+        self.configure_correction()
+        for field,value in [('task',''),('task','x'*2001),('task',None),('source_ids',['unknown'])]:
+            fixture=calibration_fixture();fixture['cases'][0][field]=value
+            self.correction_path.write_text(json.dumps(fixture))
+            with self.subTest(field=field,value_type=type(value)),self.assertRaises(ValueError):
+                C.load_calibration(self.correction_path,evidence_catalog())
+
+    def test_cli_correction_requires_evidence_v2(self):
+        with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+            C.main(['--sources','unused.json','--calibration-correction','--run'])
 
 
 if __name__ == '__main__':

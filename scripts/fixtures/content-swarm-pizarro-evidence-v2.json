@@ -1,0 +1,273 @@
+{
+  "protocol": "evidence-v2",
+  "bundle_sha256": "2869b69a4a4e7970d14b521a37d68842a4b659d9acb864515974337a4dcb47bc",
+  "evidence": [
+    {
+      "id": "xerez-rest-valley",
+      "source_id": "xerez-motux",
+      "kind": "source-text",
+      "start": 0,
+      "end": 212,
+      "source_sha256": "4e822953832e9ea185dc95f9b9fd28a317dc5685d6c99cbd7b72f594783ad1d1"
+    },
+    {
+      "id": "sancho-entry",
+      "source_id": "sancho-bilcas",
+      "kind": "source-text",
+      "start": 3022,
+      "end": 3153,
+      "source_sha256": "d91adf9c24cbada3eb3e4228bee50569e1c21498abdfad60272fb43d7e6e0f53"
+    },
+    {
+      "id": "sancho-setting",
+      "source_id": "sancho-bilcas",
+      "kind": "source-text",
+      "start": 3154,
+      "end": 3254,
+      "source_sha256": "d91adf9c24cbada3eb3e4228bee50569e1c21498abdfad60272fb43d7e6e0f53"
+    },
+    {
+      "id": "sancho-fortress",
+      "source_id": "sancho-bilcas",
+      "kind": "source-text",
+      "start": 3255,
+      "end": 3335,
+      "source_sha256": "d91adf9c24cbada3eb3e4228bee50569e1c21498abdfad60272fb43d7e6e0f53"
+    },
+    {
+      "id": "sancho-route",
+      "source_id": "sancho-bilcas",
+      "kind": "source-text",
+      "start": 3340,
+      "end": 3383,
+      "source_sha256": "d91adf9c24cbada3eb3e4228bee50569e1c21498abdfad60272fb43d7e6e0f53"
+    },
+    {
+      "id": "commons-depicted-event",
+      "source_id": "commons-encounter",
+      "kind": "source-text",
+      "start": 183,
+      "end": 256,
+      "source_sha256": "8f6875a30278bfb3fff3110a3e4023942f1da88d331f0aafd7abd38f56d669ce"
+    },
+    {
+      "id": "commons-drawing-date",
+      "source_id": "commons-encounter",
+      "kind": "source-text",
+      "start": 257,
+      "end": 281,
+      "source_sha256": "8f6875a30278bfb3fff3110a3e4023942f1da88d331f0aafd7abd38f56d669ce"
+    },
+    {
+      "id": "commons-indigenous-description",
+      "source_id": "commons-encounter",
+      "kind": "source-text",
+      "start": 502,
+      "end": 651,
+      "source_sha256": "8f6875a30278bfb3fff3110a3e4023942f1da88d331f0aafd7abd38f56d669ce"
+    },
+    {
+      "id": "commons-author-label",
+      "source_id": "commons-encounter",
+      "kind": "source-text",
+      "start": 316,
+      "end": 350,
+      "source_sha256": "8f6875a30278bfb3fff3110a3e4023942f1da88d331f0aafd7abd38f56d669ce"
+    },
+    {
+      "id": "guaman-book-request",
+      "source_id": "guaman-book",
+      "kind": "source-text",
+      "start": 3573,
+      "end": 3634,
+      "source_sha256": "242d122a32c98a4dada796f88751192aa27e71c11988164ddb648428b6ea4ad3"
+    },
+    {
+      "id": "guaman-book-silence",
+      "source_id": "guaman-book",
+      "kind": "source-text",
+      "start": 3718,
+      "end": 3801,
+      "source_sha256": "242d122a32c98a4dada796f88751192aa27e71c11988164ddb648428b6ea4ad3"
+    },
+    {
+      "id": "xerez-author",
+      "source_id": "xerez-motux",
+      "kind": "provenance-metadata",
+      "field": "author",
+      "value": "Francisco de Xerez"
+    },
+    {
+      "id": "sancho-author",
+      "source_id": "sancho-bilcas",
+      "kind": "provenance-metadata",
+      "field": "author",
+      "value": "Pedro Sancho; translator Philip Ainsworth Means (1892–1944)"
+    },
+    {
+      "id": "commons-rights-split",
+      "source_id": "commons-encounter",
+      "kind": "provenance-metadata",
+      "field": "notes.0",
+      "value": "Metadata text CC BY-SA4.0, underlying image separately PD-old-100-expired and Public Domain Mark1.0."
+    },
+    {
+      "id": "xerez-edition",
+      "source_id": "xerez-motux",
+      "kind": "provenance-metadata",
+      "field": "edition",
+      "value": "Translation Clements R. Markham 1872, scanned reprint 1970; only the historical body text is used"
+    },
+    {
+      "id": "xerez-date-limit",
+      "source_id": "xerez-motux",
+      "kind": "provenance-metadata",
+      "field": "notes.1",
+      "value": "Rest four days at Motux, but passage does not provide an exact arrival date."
+    },
+    {
+      "id": "xerez-duplicate",
+      "source_id": "xerez-motux",
+      "kind": "provenance-metadata",
+      "field": "notes.2",
+      "value": "Markham footer identifies Motux as Motupe; do not create two independent observations for duplicate map stages4 and5."
+    },
+    {
+      "id": "sancho-edition",
+      "source_id": "sancho-bilcas",
+      "kind": "provenance-metadata",
+      "field": "edition",
+      "value": "English translation1917, Gutenberg ebook26602 transcription updated2021"
+    },
+    {
+      "id": "sancho-date-limit",
+      "source_id": "sancho-bilcas",
+      "kind": "provenance-metadata",
+      "field": "notes.2",
+      "value": "Bilcas is identified as Vilcas in translator note45. Exact calendar date is absent from this selected chapter."
+    },
+    {
+      "id": "sancho-application-date-limit",
+      "source_id": "sancho-bilcas",
+      "kind": "provenance-metadata",
+      "field": "notes.3",
+      "value": "Current map waypoint15 arrival_date1533-10 is existing application data, not verified by this excerpt. Do not assert an exact date or overwrite date based on inference."
+    },
+    {
+      "id": "commons-retrospective",
+      "source_id": "commons-encounter",
+      "kind": "provenance-metadata",
+      "field": "notes.2",
+      "value": "Early seventeenth-century depiction of1532 encounter; not an eyewitness image. It cannot document Motux."
+    },
+    {
+      "id": "commons-location-limit",
+      "source_id": "commons-encounter",
+      "kind": "provenance-metadata",
+      "field": "notes.3",
+      "value": "Placement at Cajamarca (map seq10) is an editorial proposed association, not a geolocation verified by this item metadata."
+    },
+    {
+      "id": "commons-page-limit",
+      "source_id": "commons-encounter",
+      "kind": "provenance-metadata",
+      "field": "notes.4",
+      "value": "Low-resolution400x569 image; source manuscript page386 mapping has not been independently verified in this pilot."
+    },
+    {
+      "id": "guaman-author",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "author",
+      "value": "Felipe Guaman Poma de Ayala"
+    },
+    {
+      "id": "guaman-edition",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "edition",
+      "value": "Later indigenous chronicle, early seventeenth century; Wikisource hosted transcription revision1665689"
+    },
+    {
+      "id": "guaman-date-limit",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "notes.0",
+      "value": "Work authored in early seventeenth century, conventionally circa1615, not an eyewitness record of1532."
+    },
+    {
+      "id": "guaman-transcription-limit",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "notes.1",
+      "value": "Wikisource index flags incomplete text and pages requiring cleanup; manuscript page not independently mapped here."
+    },
+    {
+      "id": "guaman-chronology-limit",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "notes.2",
+      "value": "Narrative chronology includes1533 for Cajamarca and Almagro participation; do not silently treat every detail as historical fact."
+    },
+    {
+      "id": "guaman-dialogue-limit",
+      "source_id": "guaman-book",
+      "kind": "provenance-metadata",
+      "field": "notes.5",
+      "value": "Claims of dialogue are portrayals by Guaman Poma, not independently established verbatim speech from1532."
+    },
+    {
+      "id": "commons-license",
+      "source_id": "commons-encounter",
+      "kind": "asset-metadata",
+      "field": "license",
+      "value": "PDM 1.0"
+    },
+    {
+      "id": "commons-credit",
+      "source_id": "commons-encounter",
+      "kind": "asset-metadata",
+      "field": "credit",
+      "value": "Felipe Guaman Poma de Ayala; Wikimedia Commons"
+    },
+    {
+      "id": "commons-width",
+      "source_id": "commons-encounter",
+      "kind": "asset-metadata",
+      "field": "width",
+      "value": 400
+    },
+    {
+      "id": "commons-height",
+      "source_id": "commons-encounter",
+      "kind": "asset-metadata",
+      "field": "height",
+      "value": 569
+    }
+  ],
+  "missions": [
+    {
+      "id": "motux-vilcas",
+      "source_ids": [
+        "xerez-motux",
+        "sancho-bilcas"
+      ],
+      "task": "Prepare concise English editorial passages for Motux (duplicate existing map stages 4 and 5) and Vilcas (stage 15), using selected evidence IDs. Attribute the rest and valley account to Xerez and the Bilcas entry, setting and route account to Sancho. Distinguish translated-edition and editor metadata from narrated events. Note duplicate-stage and exact-date limitations as supplied metadata; do not turn the existing October 1533 map label into a verified arrival date or merge narrators and travel branches. Maximum 170 words total, with at most three supported claims and no minimum word count. No freehand quotations or generated URLs. These are private proposals; a human decides publication. If evidence cannot support a requested detail, report the limitation."
+    },
+    {
+      "id": "cajamarca-image",
+      "source_ids": [
+        "commons-encounter"
+      ],
+      "task": "Prepare a concise English museum-style caption for the Guaman Poma image proposed for Cajamarca stage 10, selecting evidence IDs. Commons description text is item metadata, not primary historical testimony. Separate the represented 1532 encounter from the early seventeenth-century drawing; avoid exact 1615, eyewitness status, unverified manuscript page, and unsupported visual details. Credit the image and identify its public-domain asset label and low resolution from asset metadata; distinguish those from the CC BY-SA description. Treat Cajamarca placement as the supplied editorial proposal, not an independently verified location. At most three supported claims, no minimum word count, no freehand quotations or generated URLs. Private draft pending human publication authority; acknowledge unsupported details."
+    },
+    {
+      "id": "indigenous-perspective",
+      "source_ids": [
+        "guaman-book",
+        "commons-encounter"
+      ],
+      "task": "Prepare a concise English paragraph introducing Guaman Poma’s later indigenous interpretation beside conquest-participant accounts, selecting evidence IDs. Attribute the portrayed book request and silence episode to Guaman Poma; English prose is a paraphrase, not independently verified words spoken by Atahualpa in 1532. Any interpretation must be explicitly labelled and limited to this portrayal, not all Andean peoples or a comparison not supplied by the sources. Distinguish the later chronicle and retrospective image from eyewitness testimony. Note the supplied chronology and hosted-transcription limitations as provenance metadata. Do not invent a Quechua-only text, oral histories, an exact drawing date or manuscript-page mapping. At most three claims, no minimum word count, no freehand quotations or generated URLs. Private proposal requiring a human editor; use insufficient evidence when the requested detail is unsupported."
+    }
+  ]
+}
