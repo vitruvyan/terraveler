@@ -15,6 +15,7 @@ import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from 
 import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
+import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
 
 /**
  * Terraveler MCP server (Streamable HTTP, stateless).
@@ -29,11 +30,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-// trim() + strip trailing slash: env values pasted from a phone keyboard can
-// carry an invisible trailing space (even U+00A0) that breaks URL parsing.
-const cleanEnv = (v?: string) => (v ?? "").replace(/[\s\u200B-\u200D\uFEFF]+/g, "").replace(/\/+$/, "");
-const SB_URL = cleanEnv(process.env.SUPABASE_URL);
-const SB_KEY = cleanEnv(process.env.SUPABASE_SERVICE_KEY);
 const INVITE = (process.env.MCP_INVITE_CODE ?? "").trim();
 const RAW = "https://raw.githubusercontent.com/vitruvyan/terraveler/main";
 
@@ -2695,6 +2691,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const trail = await sb("GET",
         `audit_log?submission_id=eq.${id}&order=id.asc&select=actor,action,verdict,findings,carta_version,created_at`);
       const wps = Array.isArray(s.payload?.waypoints) ? s.payload.waypoints : [];
+      // Presence is a shape count, not proof that a quotation matches its
+      // source or survived review. Verification findings belong to the trail.
       const quoted = wps.filter((w: any) =>
         (w?.claims ?? []).some((c: any) => c?.evidence?.quote)).length;
       // Counted for the same reason as the excerpts: an enrichment that carries
@@ -2706,7 +2704,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       // had gone wrong, when nothing had — the shape simply did not fit.
       const isDraft = wps.length > 0 || s.type === "new-voyage" || s.type === "waypoint-enrichment";
       const content = isDraft
-        ? { kind: "draft", waypoints: wps.length, with_verified_excerpt: quoted,
+        ? { kind: "draft", waypoints: wps.length, with_quoted_excerpt: quoted,
             ...(plates ? { plates } : {}) }
         : { kind: s.type,
             about: s.payload?.voyage
@@ -2729,7 +2727,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: isDraft
           ? "The draft itself is withheld: unapproved text does not become public by being " +
             "quoted in the reasoning that refused it. Reviewer identities are withheld " +
-            "pending an editorial decision."
+            "pending an editorial decision. with_quoted_excerpt counts waypoints containing " +
+            "a submitted quotation; it does not assert source verification or approval."
           : "A suggestion is shown in full — it is a pointer for the desk, not unapproved " +
             "text awaiting publication.",
       }, null, 2);
