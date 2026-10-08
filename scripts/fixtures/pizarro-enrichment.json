@@ -1,0 +1,32 @@
+{
+  "meta": {"type": "waypoint-enrichment", "target_voyage": "pizarro-1532", "ideator": "Terraveler audit repair", "scribe_model": "source-verified-fixture", "carta_version": "0.7"},
+  "waypoints": [
+    {
+      "seq": 4, "place_historical": "Motux", "place_modern": "Motupe, Lambayeque, Peru",
+      "latitude": -6.15443, "longitude": -79.71707, "arrival_date": "1532-10", "confidence": "certain",
+      "claims": [{
+        "text": "According to Francisco de Xerez's account, the Spaniards rested at Motux for four days; the governor observed an extensive inhabited country that included a fertile valley.",
+        "confidence": "certain",
+        "evidence": {
+          "quote": "The  Spaniards  rested  at Motux  for  four  days,  and,  during  that  time,  the  Governor saw  some  portion  of  the  inhabited  country  belonging  to  the chief,  which  appeared  to  be  extensive,  and  to  include  a fertile  valley.",
+          "excerpt": "The  Spaniards  rested  at Motux  for  four  days,  and,  during  that  time,  the  Governor saw  some  portion  of  the  inhabited  country  belonging  to  the chief,  which  appeared  to  be  extensive,  and  to  include  a fertile  valley.",
+          "source_url": "https://archive.org/download/reportsondiscove00markrich/reportsondiscove00markrich_djvu.txt",
+          "source_title": "Report of Francisco de Xerez, Reports on the Discovery of Peru, translated by Clements R. Markham, Hakluyt Society, 1872, p. 32",
+          "license": "public domain"
+        }
+      }]
+    },
+    {
+      "seq": 10, "place_historical": "Caxamalca", "place_modern": "Cajamarca, Peru",
+      "latitude": -7.15667, "longitude": -78.51731, "arrival_date": "1532-11-15", "confidence": "certain", "claims": [],
+      "plates": [{
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Atawallpa_Pizarro_tinkuy.jpg",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Atawallpa_Pizarro_tinkuy.jpg",
+        "caption": "Guaman Poma de Ayala's later depiction of the encounter between Pizarro and Atahualpa at Cajamarca; an early seventeenth-century drawing, not an eyewitness image from 1532.",
+        "credit": "Felipe Guaman Poma de Ayala; Nueva corónica y buen gobierno, Royal Danish Library; reproduction via Wikimedia Commons",
+        "date": "early 17th century", "license": "public domain",
+        "rights_note": "The Commons record marks this work public domain (PD-old-100-expired and Public Domain Mark). The drawing was made later than the events it depicts."
+      }]
+    }
+  ]
+}
