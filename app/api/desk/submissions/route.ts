@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
 import { PENDING_STATUSES, hasEscalateFinding } from "@/lib/deskEscalation";
+import { readDeskRows } from "@/lib/deskQueue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,10 +32,10 @@ export async function GET(req: Request) {
   const auth = await requireEditor(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
-    const subs = await sb("GET",
-      "submissions?order=id.desc&limit=1000&select=id,type,target_voyage,status,carta_version,created_at,payload,contributor_id");
+    const subs = await readDeskRows(
+      "submissions?order=id.desc&select=id,type,target_voyage,status,carta_version,created_at,payload,contributor_id");
     const contributors = await sb("GET", "contributors?select=id,handle,rank");
-    const audit = await sb("GET",
+    const audit = await readDeskRows(
       "audit_log?order=id.asc&select=submission_id,actor,action,verdict,findings,created_at");
     const reviews = await sb("GET",
       "reviews?order=id.asc&select=submission_id,reviewer_id,verdict,findings,created_at")
