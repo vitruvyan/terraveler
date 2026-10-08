@@ -12,6 +12,7 @@ import {
 import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub, type UsersSub } from "@/components/desk/DeskSidebar";
 import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
 import type { PromptKey } from "@/lib/promptRegistry";
+import { PENDING_STATUSES } from "@/lib/deskEscalation";
 import { CLAIM_TTL_DAYS } from "@/lib/agentCapabilities";
 
 type Sub = {
@@ -202,6 +203,11 @@ export default function Desk() {
   const [submissionsSub, setSubmissionsSub] = useState<SubmissionsSub>(() => initialSub(SUBMISSIONS_SUBS, "needs_verdict"));
   const [sourcesSub, setSourcesSub] = useState<SourcesSub>(() => initialSub(SOURCES_SUBS, "pending"));
   const [usersSub, setUsersSub] = useState<UsersSub>(() => initialSub(USERS_SUBS, "humans"));
+  const [submissionFilter, setSubmissionFilter] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const filter = new URLSearchParams(window.location.search).get("filter") ?? "";
+    return ["appealed", "escalated", "human-review", "peer-review"].includes(filter) ? filter : "";
+  });
   const [subGroups, setSubGroups] = useState<SubGroups>(EMPTY_SUB_GROUPS);
   const [pendingSources, setPendingSources] = useState<PendingProposal[]>([]);
   const [resolvedSources, setResolvedSources] = useState<ResolvedDecision[]>([]);
@@ -275,6 +281,7 @@ export default function Desk() {
    *  reload or a shared link lands back on the exact same subsection. */
   function navigate(next: Section, sub?: string) {
     setSection(next);
+    setSubmissionFilter("");
     if (next === "submissions" && sub) setSubmissionsSub(sub as SubmissionsSub);
     if (next === "sources" && sub) setSourcesSub(sub as SourcesSub);
     if (next === "users" && sub) setUsersSub(sub as UsersSub);
@@ -477,7 +484,7 @@ export default function Desk() {
   const eyebrow = section === "submissions" || section === "sources" || section === "users"
     ? `Terraveler · editorial desk · ${SECTION_TITLE[section]}`
     : "Terraveler · editorial desk";
-  const title = section === "submissions" ? SUB_LABEL[submissionsSub]
+  const title = section === "submissions" ? (submissionFilter ? ({ appealed: "Appealed", escalated: "Escalated", "human-review": "Awaiting desk", "peer-review": "In peer review" }[submissionFilter] ?? SUB_LABEL[submissionsSub]) : SUB_LABEL[submissionsSub])
     : section === "sources" ? SUB_LABEL[sourcesSub]
     : section === "users" ? SUB_LABEL[usersSub]
     : SECTION_TITLE[section];
@@ -530,11 +537,11 @@ export default function Desk() {
               editor at all. */}
           <DeskStanding
             demands={[
-              { label: "appealed", n: overview.counts.appealed ?? 0, alarm: true },
-              { label: "escalated", n: overview.counts.escalations ?? 0, alarm: true },
-              { label: "awaiting desk", n: overview.counts.submissions["human-review"] ?? 0 },
-              { label: "in peer review", n: overview.counts.submissions["peer-review"] ?? 0 },
-              { label: "taken Waypoints, unfinished", n: overview.counts.gaps["claimed"] ?? 0 },
+              { label: "appealed", n: overview.counts.appealed ?? 0, alarm: true, href: "/desk?tab=submissions&sub=needs_verdict&filter=appealed" },
+              { label: "escalated", n: overview.counts.escalations ?? 0, alarm: true, href: "/desk?tab=submissions&sub=needs_verdict&filter=escalated" },
+              { label: "awaiting desk", n: overview.counts.submissions["human-review"] ?? 0, href: "/desk?tab=submissions&sub=needs_verdict&filter=human-review" },
+              { label: "in peer review", n: overview.counts.submissions["peer-review"] ?? 0, href: "/desk?tab=submissions&sub=peer_review&filter=peer-review" },
+              { label: "taken Waypoints, unfinished", n: overview.counts.gaps["claimed"] ?? 0, href: "/desk?tab=waypoints" },
             ]}
             ledger={[
               { label: "approved", n: overview.counts.submissions["approved"] ?? 0 },
@@ -590,12 +597,17 @@ export default function Desk() {
       )}
 
       {section === "submissions" && (() => {
-        const list = subGroups[submissionsSub];
+        const list = submissionFilter
+          ? Object.values(subGroups).flat().filter((s) => submissionFilter === "escalated"
+            ? s.escalated && PENDING_STATUSES.includes(s.status)
+            : s.status === submissionFilter)
+          : subGroups[submissionsSub];
         return (
         <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
           {list.length === 0 && (
             <p className="dk-empty">
-              {submissionsSub === "needs_verdict" ? "Nothing waiting on your verdict."
+              {submissionFilter ? `No submissions ${submissionFilter === "human-review" ? "awaiting the desk" : submissionFilter === "peer-review" ? "in peer review" : submissionFilter}.`
+                : submissionsSub === "needs_verdict" ? "Nothing waiting on your verdict."
                 : submissionsSub === "peer_review" ? "Nothing currently with the Scribes."
                 : "No settled submissions yet."}
             </p>

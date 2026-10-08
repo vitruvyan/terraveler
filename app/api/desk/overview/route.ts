@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
 import { PENDING_STATUSES, hasEscalateFinding } from "@/lib/deskEscalation";
+import { readDeskRows } from "@/lib/deskQueue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +24,8 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const [subs, gaps, contributors, reviews, audit, demand, escalationAudit] = await Promise.all([
-      sb("GET", "submissions?select=id,status&limit=1000"),
-      sb("GET", "editorial_gaps?select=status&limit=1000"),
+      readDeskRows("submissions?order=id.desc&select=id,status"),
+      readDeskRows("editorial_gaps?order=id.asc&select=id,status"),
       sb("GET", "contributors?select=status&limit=1000"),
       sb("GET", "reviews?select=id&limit=1000").catch(() => []),
       sb("GET", "audit_log?order=id.desc&limit=40&select=submission_id,actor,action,verdict,findings,created_at"),
@@ -36,10 +37,9 @@ export async function GET(req: Request) {
       // submission's LATEST audit_log entry — a status carries forward until
       // something rules again, and so must the escalation flag derived from
       // it. Rows with no submission (registrations, crew actions, oauth) are
-      // filtered server-side: they'd spend the 1000-row window on nothing,
-      // and a pending escalation that ages out of the window would read as
-      // resolved — silence from the one tile whose job is to be loud.
-      sb("GET", "audit_log?submission_id=not.is.null&order=id.desc&limit=1000&select=submission_id,findings"),
+      // filtered server-side. Paginate the rest so an old pending escalation
+      // cannot age out of a response window and falsely read as resolved.
+      readDeskRows("audit_log?submission_id=not.is.null&order=id.desc&select=submission_id,findings"),
     ]);
     const tally = (rows: any[]) =>
       rows.reduce((acc: Record<string, number>, r: any) => {
