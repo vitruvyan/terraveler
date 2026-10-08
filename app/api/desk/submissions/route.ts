@@ -32,7 +32,7 @@ export async function GET(req: Request) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
     const subs = await sb("GET",
-      "submissions?order=id.desc&limit=100&select=id,type,target_voyage,status,carta_version,created_at,payload,contributor_id");
+      "submissions?order=id.desc&limit=1000&select=id,type,target_voyage,status,carta_version,created_at,payload,contributor_id");
     const contributors = await sb("GET", "contributors?select=id,handle,rank");
     const audit = await sb("GET",
       "audit_log?order=id.asc&select=submission_id,actor,action,verdict,findings,created_at");

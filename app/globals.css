@@ -5279,7 +5279,7 @@ main.prose {
 /* --- the desk's own index: sections and subsections, machine voice ------- */
 .dk-shell {
   display: grid;
-  grid-template-columns: 13.5rem 1fr;
+  grid-template-columns: 13.5rem minmax(0, 1fr);
   gap: var(--space-7);
   align-items: start;
   margin-top: var(--space-5);
@@ -5374,13 +5374,31 @@ main.prose {
   padding-top: var(--space-4);
 }
 
+.dk-content { min-width: 0; }
+
 /* --- what the desk is being asked to do --------------------------------- */
 .dk-demands {
-  display: flex;
-  gap: var(--space-8);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
   padding: var(--space-6) 0;
   border-bottom: 1px solid var(--rule-hair);
+}
+.dk-demand {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-decoration: none;
+}
+a.dk-demand .dk-demand-l { text-decoration: underline; text-underline-offset: var(--space-1); }
+a.dk-demand:focus-visible { outline: 2px solid var(--accent); outline-offset: var(--space-1); }
+@media (hover: hover) {
+  a.dk-demand:hover .dk-demand-l { color: var(--accent); }
+}
+[data-layout="phone"] .dk-demands {
+  grid-template-columns: repeat(5, minmax(8rem, 1fr));
+  overflow-x: auto;
 }
 .dk-demand-n {
   display: block;
