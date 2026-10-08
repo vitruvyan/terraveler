@@ -175,8 +175,14 @@ export async function GET(req: Request) {
         : missingScopes.length || unreflectedScopes.length
           ? "Some requested scopes were not granted or some granted scopes have no capability in the current policy. Inspect missing_scopes and unreflected_scopes."
           : writesEnabled
-            ? "The credential and current capability policy are resolved on this request. Supply requested_scopes to compare the original token request; without it, that comparison is unknown."
-            : "Enrollment succeeded, but content mutations are paused globally. Granted scopes remain intact; allowed is read-only and mutation_blocked_scopes explains the restriction. Supply requested_scopes to compare the original token request.",
+            ? "The credential and current capability policy are resolved on this request. " +
+              (requestedScopes === null
+                ? "Supply requested_scopes to compare the original token request; without it, that comparison is unknown."
+                : "All scopes in the supplied requested_scopes baseline were granted and are reflected in allowed.")
+            : "Enrollment succeeded, but content mutations are paused globally. Granted scopes remain intact; allowed is read-only and mutation_blocked_scopes explains the restriction. " +
+              (requestedScopes === null
+                ? "Supply requested_scopes to compare the original token request; without it, that comparison is unknown."
+                : "All scopes in the supplied requested_scopes baseline were granted."),
     },
     standing: standing?.[0] ?? { rank: agent.rank },
     quota: anchored
