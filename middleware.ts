@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
+import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, LEGACY_ONLY_TOOLS, TOOL_SCOPE } from "@/lib/agentCapabilities";
 
 const MCP_BODY_LIMIT = 384 * 1024;
 const NO_STORE_HEADERS = {
@@ -40,7 +40,6 @@ async function readLimitedJson(req: Request, maxBytes: number) {
 
 const MODERN = "2026-07-28";
 const LEGACY = "2025-06-18";
-const CAPABILITIES_PATH = "/api/agent/capabilities";
 const WRITE_PATH = "/api/agent/write";
 const LINK_TOKEN_PATH = "/api/agent/link-token";
 const MODERN_NATIVE_WRITES = new Set([
@@ -109,7 +108,7 @@ const CAPABILITY_TOOL = {
   _meta: { securitySchemes: [{ type: "noauth" }] },
   description:
     "Explain this connection's effective Terraveler authority: persistent agent identity, optional human association, OAuth scopes, allowed and denied capabilities, standing and quota. Publication is never an agent capability.",
-  inputSchema: { type: "object", properties: {} },
+  inputSchema: CAPABILITY_INPUT_SCHEMA,
 };
 
 const HUMAN_LINK_TOOL = {
@@ -199,10 +198,30 @@ function authHeaders(req: NextRequest) {
   return headers;
 }
 
-async function capabilitySnapshot(req: NextRequest) {
-  return fetch(new URL(CAPABILITIES_PATH, req.url), {
+async function capabilitySnapshot(req: NextRequest, requestedScopes?: unknown) {
+  return fetch(capabilitySnapshotUrl(req.url, requestedScopes), {
     method: "GET", headers: authHeaders(req), cache: "no-store",
   });
+}
+
+async function capabilityResult(snapshot: Response, id: unknown) {
+  const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
+  const headers = new Headers({ ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN });
+  const challenge = snapshot.headers.get("www-authenticate");
+  if (challenge) headers.set("WWW-Authenticate", challenge);
+  const retry = snapshot.headers.get("retry-after");
+  if (retry) headers.set("Retry-After", retry);
+  return NextResponse.json({
+    jsonrpc: "2.0", id: id ?? null,
+    result: {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: data, isError: !snapshot.ok,
+      _meta: {
+        "io.modelcontextprotocol/serverInfo": SERVER_INFO,
+        ...(challenge ? { "mcp/www_authenticate": [challenge] } : {}),
+      },
+    },
+  }, { status: snapshot.status, headers });
 }
 
 async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) {
@@ -381,16 +400,10 @@ export async function middleware(req: NextRequest) {
   if (method === "tools/call") {
     const name = req.headers.get("mcp-name") ?? "";
     if (name === "get_capabilities") {
-      const snapshot = await capabilitySnapshot(req);
-      const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
-      return NextResponse.json({
-        jsonrpc: "2.0", id: msg.id ?? null,
-        result: {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data, isError: !snapshot.ok,
-          _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
-        },
-      }, { status: 200, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } });
+      try { capabilitySnapshotUrl(req.url, msg.params?.arguments?.requested_scopes); }
+      catch (error) { return jsonRpcError(msg.id, -32602, (error as Error).message); }
+      const snapshot = await capabilitySnapshot(req, msg.params?.arguments?.requested_scopes);
+      return capabilityResult(snapshot, msg.id);
     }
     if (name === "create_human_link_token") return humanLinkToken(req, msg);
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
@@ -398,10 +411,7 @@ export async function middleware(req: NextRequest) {
     if (TOOL_SCOPE[name] && MODERN_NATIVE_WRITES.has(name)) {
       if (!req.headers.get("authorization")) return modernWrite(req, msg, name);
       const boot = await capabilitySnapshot(req);
-      if (!boot.ok) {
-        const detail = await boot.text();
-        return jsonRpcError(msg?.id, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
-      }
+      if (!boot.ok) return capabilityResult(boot, msg.id);
       return modernWrite(req, msg, name);
     }
     return proxyLegacy(req);

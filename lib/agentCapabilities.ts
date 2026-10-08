@@ -22,6 +22,33 @@ export const TOOL_SCOPE: Readonly<Record<string, Scope>> = Object.freeze({
 
 export const LEGACY_ONLY_TOOLS = new Set(["register", "rotate_key"]);
 
+/** Optional client-side baseline: granted token scopes cannot tell us what
+ * the client originally requested. Shared by both MCP transports. */
+export const CAPABILITY_INPUT_SCHEMA = {
+  type: "object",
+  properties: {
+    requested_scopes: {
+      type: "array", items: { type: "string", enum: ["contribute", "review", "appeal"] },
+      maxItems: 3, uniqueItems: true,
+      description: "Scopes originally requested during token exchange, for enrollment diagnostics only. Does not grant authority.",
+    },
+  },
+};
+
+export function capabilitySnapshotUrl(base: string, requestedScopes?: unknown): URL {
+  const url = new URL("/api/agent/capabilities", base);
+  if (requestedScopes !== undefined) {
+    if (!Array.isArray(requestedScopes) || requestedScopes.length > 3 ||
+        requestedScopes.some((s) => !["contribute", "review", "appeal"].includes(s)) ||
+        new Set(requestedScopes).size !== requestedScopes.length) {
+      throw new Error("requested_scopes must be an array of unique contribute, review or appeal scopes");
+    }
+    // Preserve an explicitly empty baseline, distinct from no comparison.
+    url.searchParams.set("requested_scopes", requestedScopes.join(" "));
+  }
+  return url;
+}
+
 /**
  * How many independent peer reviews a draft needs before it leaves
  * peer-review for the Curator/editor. Used to live as two separate

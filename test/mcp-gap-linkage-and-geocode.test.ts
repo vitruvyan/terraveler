@@ -131,16 +131,28 @@ async function toolResult(res: Response) {
 }
 
 test("Phase 4: gap -> source linkage and geocode_place", async (t) => {
+  const backend = {
+    POSTGREST_URL: "https://mock-supabase.example.com",
+    POSTGREST_SERVICE_KEY: "mock-key",
+  };
+  const previousEnv = Object.fromEntries(
+    Object.keys(backend).map((key) => [key, process.env[key]]),
+  );
+  originalFetch = globalThis.fetch;
   t.before(async () => {
-    process.env.SUPABASE_URL = "https://mock-supabase.example.com";
-    process.env.SUPABASE_SERVICE_KEY = "mock-key";
+    // Canonical data-plane settings take precedence over compatibility aliases,
+    // including the placeholders inherited from Jenkins.
+    Object.assign(process.env, backend);
     const route = await import("../app/api/mcp/route");
     POST = route.POST;
-    originalFetch = globalThis.fetch;
   });
 
   t.after(() => {
     globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   });
 
   await t.test("list_gaps: a gap with a real 'Gap ID N' reference gets a non-empty, legible related_sources", async () => {
