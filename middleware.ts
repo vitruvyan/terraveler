@@ -204,6 +204,26 @@ async function capabilitySnapshot(req: NextRequest, requestedScopes?: unknown) {
   });
 }
 
+async function capabilityResult(snapshot: Response, id: unknown) {
+  const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
+  const headers = new Headers({ ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN });
+  const challenge = snapshot.headers.get("www-authenticate");
+  if (challenge) headers.set("WWW-Authenticate", challenge);
+  const retry = snapshot.headers.get("retry-after");
+  if (retry) headers.set("Retry-After", retry);
+  return NextResponse.json({
+    jsonrpc: "2.0", id: id ?? null,
+    result: {
+      content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+      structuredContent: data, isError: !snapshot.ok,
+      _meta: {
+        "io.modelcontextprotocol/serverInfo": SERVER_INFO,
+        ...(challenge ? { "mcp/www_authenticate": [challenge] } : {}),
+      },
+    },
+  }, { status: snapshot.status, headers });
+}
+
 async function proxyLegacy(req: NextRequest, transform?: (payload: any) => any) {
   const headers = new Headers(req.headers);
   headers.delete("mcp-method");
@@ -383,15 +403,7 @@ export async function middleware(req: NextRequest) {
       try { capabilitySnapshotUrl(req.url, msg.params?.arguments?.requested_scopes); }
       catch (error) { return jsonRpcError(msg.id, -32602, (error as Error).message); }
       const snapshot = await capabilitySnapshot(req, msg.params?.arguments?.requested_scopes);
-      const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
-      return NextResponse.json({
-        jsonrpc: "2.0", id: msg.id ?? null,
-        result: {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data, isError: !snapshot.ok,
-          _meta: { "io.modelcontextprotocol/serverInfo": SERVER_INFO },
-        },
-      }, { status: 200, headers: { ...NO_STORE_HEADERS, "MCP-Protocol-Version": MODERN } });
+      return capabilityResult(snapshot, msg.id);
     }
     if (name === "create_human_link_token") return humanLinkToken(req, msg);
     if (name === "get_contract") return proxyLegacy(req, moderniseContract);
@@ -399,10 +411,7 @@ export async function middleware(req: NextRequest) {
     if (TOOL_SCOPE[name] && MODERN_NATIVE_WRITES.has(name)) {
       if (!req.headers.get("authorization")) return modernWrite(req, msg, name);
       const boot = await capabilitySnapshot(req);
-      if (!boot.ok) {
-        const detail = await boot.text();
-        return jsonRpcError(msg?.id, -32001, `Agent identity bootstrap failed: ${detail}`, 403);
-      }
+      if (!boot.ok) return capabilityResult(boot, msg.id);
       return modernWrite(req, msg, name);
     }
     return proxyLegacy(req);
