@@ -63,6 +63,15 @@ declares its own replay capability rather than letting the default claim
 5. **Pigafetta** (gpt-4.1) — answers ONLY from retrieved sources and cites them; guarded by the Motus `evaluate` gate.
 6. **Human (Desk)** — authorizes publication, can retract. The Magna Carta's final authority.
 
+New waypoint research, enrichment and correction must follow
+`docs/WAYPOINT_RESEARCH_CONTRACT.md` and
+`contracts/waypoint-research-v1.schema.json`: evidence → atomic fact proposals →
+independent review → composition from approved IDs. The program renders approved
+fact text unchanged and preserves required gaps. Source fidelity, semantic review
+and human publication are separate gates; an automatic pass is not historical
+certification. Existing atlas records are not retrospectively certified by this
+contract.
+
 ## Principles (non-negotiable)
 1. **Sources are sacred.** PD/CC whitelist only; no fabricated quotes; copyrighted sites are linked, never ingested.
 2. **Human in the loop.** The machine proposes and prepares; a human authorizes what becomes public.
