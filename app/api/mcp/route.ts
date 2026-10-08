@@ -3039,11 +3039,20 @@ export async function POST(req: Request) {
           method: "GET", headers, cache: "no-store",
         });
         const data = await snapshot.json().catch(() => ({ error: "capability lookup failed" }));
-        return rpcResult(id, {
-          content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
-          structuredContent: data,
-          isError: !snapshot.ok,
-        });
+        const responseHeaders = new Headers({ "Cache-Control": "no-store, max-age=0" });
+        const snapshotChallenge = snapshot.headers.get("www-authenticate");
+        if (snapshotChallenge) responseHeaders.set("WWW-Authenticate", snapshotChallenge);
+        const retry = snapshot.headers.get("retry-after");
+        if (retry) responseHeaders.set("Retry-After", retry);
+        return NextResponse.json({
+          jsonrpc: "2.0", id,
+          result: {
+            content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+            structuredContent: data,
+            isError: !snapshot.ok,
+            ...(snapshotChallenge ? { _meta: { "mcp/www_authenticate": [snapshotChallenge] } } : {}),
+          },
+        }, { status: snapshot.status, headers: responseHeaders });
       }
       // Progressive: reading the atlas needs nothing, and demanding a login to
       // see it would be the opposite of the point. Authorisation appears at

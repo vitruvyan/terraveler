@@ -125,6 +125,8 @@ test("enrollment diagnostics execute the anonymous → registration → token �
     assert.equal(after.onboarding_transition.credential_bound, true);
     assert.equal(after.onboarding_transition.permissions_current, true);
     assert.equal(after.onboarding_transition.requested_scopes_satisfied, true);
+    assert.match(after.onboarding_transition.note, /supplied requested_scopes baseline were granted and are reflected in allowed/);
+    assert.doesNotMatch(after.onboarding_transition.note, /Supply requested_scopes|comparison is unknown/);
     assert.equal(after.publish, false);
     assert.ok(after.not_allowed.includes("publish"));
     assertNoSecrets(after);
@@ -144,6 +146,8 @@ test("enrollment diagnostics execute the anonymous → registration → token �
     assert.deepEqual(data.onboarding_transition.mutation_blocked_scopes, allScopes);
     assert.deepEqual(data.onboarding_transition.missing_scopes, []);
     assert.match(data.onboarding_transition.note, /paused globally/);
+    assert.match(data.onboarding_transition.note, /supplied requested_scopes baseline were granted/);
+    assert.doesNotMatch(data.onboarding_transition.note, /Supply requested_scopes|comparison is unknown/);
     assertNoSecrets(data);
   });
 
@@ -169,6 +173,13 @@ test("enrollment diagnostics execute the anonymous → registration → token �
     assert.equal(data.onboarding_transition.requested_scopes, null);
     assert.equal(data.onboarding_transition.requested_scopes_satisfied, null);
     assert.match(data.onboarding_transition.note, /comparison is unknown/);
+  });
+
+  await t.test("an explicitly empty requested scope baseline is satisfied", async () => {
+    const data = await (await GET(capabilityRequest(issued.access_token, []))).json();
+    assert.deepEqual(data.onboarding_transition.requested_scopes, []);
+    assert.equal(data.onboarding_transition.requested_scopes_satisfied, true);
+    assert.doesNotMatch(data.onboarding_transition.note, /Supply requested_scopes|comparison is unknown/);
   });
 
   await t.test("granted scopes without a policy capability fail current-permissions diagnosis", async () => {
@@ -237,10 +248,16 @@ test("enrollment diagnostics execute the anonymous → registration → token �
         const response = modern ? await middleware(new NextRequest(req)) : await mcp(req);
         const body = await response.json();
         assert.equal(body.result.isError, access !== issued.access_token);
+        assert.equal(response.status, access === issued.access_token ? 200 : 401);
         if (access === issued.access_token) {
           assert.deepEqual(body.result.structuredContent.onboarding_transition.requested_scopes, allScopes);
           assert.equal(body.result.structuredContent.onboarding_transition.permissions_current, true);
-        } else assert.equal(body.result.structuredContent.error, "invalid_token");
+        } else {
+          assert.equal(body.result.structuredContent.error, "invalid_token");
+          const challenge = response.headers.get("www-authenticate");
+          assert.match(challenge!, /invalid_token/);
+          assert.deepEqual(body.result._meta["mcp/www_authenticate"], [challenge]);
+        }
         assertNoSecrets(body);
       }
       const req = jsonRequest("/api/mcp", { jsonrpc: "2.0", id: 2, method: "tools/call",
@@ -252,6 +269,62 @@ test("enrollment diagnostics execute the anonymous → registration → token �
       }
       const response = modern ? await middleware(new NextRequest(req)) : await mcp(req);
       assert.equal((await response.json()).error.code, -32602);
+    }
+  });
+
+  await t.test("modern native write bootstrap preserves invalid-token challenges", async () => {
+    const stored = tables.oauth_tokens.find((row) => row.kind === "access");
+    for (const variant of ["unknown", "expired", "revoked"]) {
+      const expires = stored.expires_at;
+      if (variant === "expired") stored.expires_at = "2000-01-01T00:00:00Z";
+      if (variant === "revoked") stored.revoked_at = new Date().toISOString();
+      const req = jsonRequest("/api/mcp", { jsonrpc: "2.0", id: 9, method: "tools/call",
+        params: { name: "claim_gap", arguments: { gap_id: 1 } } });
+      req.headers.set("authorization", `Bearer ${variant === "unknown" ? "invalid-fixture" : issued.access_token}`);
+      req.headers.set("mcp-method", "tools/call");
+      req.headers.set("mcp-name", "claim_gap");
+      req.headers.set("mcp-protocol-version", "2026-07-28");
+      const response = await middleware(new NextRequest(req));
+      assert.equal(response.status, 401);
+      const challenge = response.headers.get("www-authenticate");
+      assert.match(challenge!, /invalid_token/);
+      const body = await response.json();
+      assert.equal(body.result.isError, true);
+      assert.deepEqual(body.result._meta["mcp/www_authenticate"], [challenge]);
+      assertNoSecrets(body);
+      stored.expires_at = expires;
+      delete stored.revoked_at;
+    }
+  });
+
+  await t.test("paused identity bootstrap preserves 503 and Retry-After in both transports", async () => {
+    const conn = tables.agent_connections[0];
+    const id = conn.agent_account_id;
+    conn.agent_account_id = null;
+    process.env.MCP_EXTERNAL_ENROLLMENT_ENABLED = "false";
+    try {
+      for (const name of ["get_capabilities", "claim_gap"]) {
+        for (const modern of name === "claim_gap" ? [true] : [false, true]) {
+          const req = jsonRequest("/api/mcp", { jsonrpc: "2.0", id: 10, method: "tools/call",
+            params: { name, arguments: {} } });
+          req.headers.set("authorization", `Bearer ${issued.access_token}`);
+          if (modern) {
+            req.headers.set("mcp-method", "tools/call");
+            req.headers.set("mcp-name", name);
+            req.headers.set("mcp-protocol-version", "2026-07-28");
+          }
+          const response = modern ? await middleware(new NextRequest(req)) : await mcp(req);
+          assert.equal(response.status, 503);
+          assert.equal(response.headers.get("retry-after"), "300");
+          assert.equal(response.headers.get("www-authenticate"), null);
+          const body = await response.json();
+          assert.equal(body.result.isError, true);
+          assert.equal(body.result.structuredContent.mode, "agent-bootstrap-paused");
+        }
+      }
+    } finally {
+      conn.agent_account_id = id;
+      process.env.MCP_EXTERNAL_ENROLLMENT_ENABLED = "true";
     }
   });
 });
