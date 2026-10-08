@@ -1,0 +1,708 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.terraveler.com/contracts/waypoint-research-v1.schema.json",
+  "title": "Terraveler waypoint research contract v1",
+  "description": "Versioned editorial input and fact-first gates. JSON Schema validates structure; the runtime validates provenance, relationships, budgets and independent review. Neither establishes historical truth.",
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 2000
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "credit": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "modern-place-context",
+            "historical-document-image",
+            "regional-context"
+          ]
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        },
+        "license_url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "license",
+        "credit",
+        "width",
+        "height",
+        "role",
+        "caption"
+      ],
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "properties": {
+        "semantic_role": {
+          "type": "string",
+          "enum": [
+            "participant-account",
+            "translator-note",
+            "modern-reference",
+            "image-description"
+          ]
+        },
+        "retrieved_at": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "access_status": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "rights_basis": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1500
+        }
+      },
+      "required": [
+        "semantic_role",
+        "retrieved_at",
+        "locator",
+        "access_status",
+        "rights_basis"
+      ],
+      "additionalProperties": true,
+      "description": "Literal source/editorial provenance; additional fields are data, never instructions. Runtime bounds total bytes and preserves typed metadata."
+    },
+    "seed": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 2000
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "gutenberg",
+            "wikisource",
+            "wikipedia",
+            "commons-description",
+            "pdf-transcription"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 12000
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "asset": {
+          "$ref": "#/$defs/asset"
+        },
+        "fetch_url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "kind",
+        "title",
+        "license",
+        "text",
+        "provenance"
+      ],
+      "additionalProperties": false
+    },
+    "study": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "authors": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "minItems": 1,
+          "maxItems": 20
+        },
+        "year": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 2200
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https://[^\\s]+$",
+          "maxLength": 2000
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "verified_basis": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "authors",
+        "year",
+        "url",
+        "locator",
+        "scope",
+        "verified_basis"
+      ],
+      "additionalProperties": false
+    },
+    "gap": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "history",
+            "place",
+            "chronology",
+            "media",
+            "population",
+            "limitations"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "category"
+      ],
+      "additionalProperties": false
+    },
+    "input_pack": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "waypoint-pattern-v1"
+        },
+        "waypoint_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "task": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3000
+        },
+        "seeds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/seed"
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "studies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/study"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gap"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "protocol",
+        "waypoint_id",
+        "task",
+        "seeds",
+        "studies",
+        "gaps"
+      ],
+      "additionalProperties": false
+    },
+    "time_scope": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "source-relative",
+            "exact-calendar",
+            "edition-period",
+            "modern-metadata",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "precision"
+      ],
+      "additionalProperties": false
+    },
+    "place_scope": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "precision": {
+          "type": "string",
+          "enum": [
+            "historical-name",
+            "translator-identification",
+            "modern-reference",
+            "regional",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "precision"
+      ],
+      "additionalProperties": false
+    },
+    "population_scope": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "named-in-source",
+            "anonymous-local",
+            "regional-context",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "scope"
+      ],
+      "additionalProperties": false
+    },
+    "fact": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "property": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 1,
+          "maxItems": 12
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "history",
+            "place",
+            "chronology",
+            "media",
+            "population",
+            "limitations"
+          ]
+        },
+        "time": {
+          "$ref": "#/$defs/time_scope"
+        },
+        "place": {
+          "$ref": "#/$defs/place_scope"
+        },
+        "population": {
+          "$ref": "#/$defs/population_scope"
+        }
+      },
+      "required": [
+        "id",
+        "subject",
+        "property",
+        "statement",
+        "evidence_ids",
+        "category",
+        "time",
+        "place",
+        "population"
+      ],
+      "additionalProperties": false
+    },
+    "facts_result": {
+      "type": "object",
+      "properties": {
+        "facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fact"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "facts",
+        "limitations"
+      ],
+      "additionalProperties": false
+    },
+    "reviewer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "kind": {
+          "const": "independent-development-review"
+        }
+      },
+      "required": [
+        "id",
+        "kind"
+      ],
+      "additionalProperties": false
+    },
+    "review": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "const": "waypoint-pattern-v1"
+        },
+        "waypoint_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+        },
+        "sourcepack_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "facts_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "approved_content_sha": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "human_approved": {
+          "const": false
+        },
+        "approved_facts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fact"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "allowed_fact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "allowed_media_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "allowed_study_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "reviewer": {
+          "$ref": "#/$defs/reviewer"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1500
+          },
+          "minItems": 0,
+          "maxItems": 40
+        }
+      },
+      "required": [
+        "protocol",
+        "waypoint_id",
+        "sourcepack_sha",
+        "facts_sha",
+        "approved_content_sha",
+        "human_approved",
+        "approved_facts",
+        "allowed_fact_ids",
+        "allowed_media_ids",
+        "allowed_study_ids",
+        "reviewer",
+        "findings"
+      ],
+      "additionalProperties": false
+    },
+    "composition": {
+      "type": "object",
+      "properties": {
+        "sections": {
+          "type": "object",
+          "properties": {
+            "history": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            },
+            "place": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            },
+            "chronology": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            },
+            "media": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            },
+            "population": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            },
+            "limitations": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+              },
+              "minItems": 0,
+              "maxItems": 12
+            }
+          },
+          "required": [
+            "history",
+            "place",
+            "chronology",
+            "media",
+            "population",
+            "limitations"
+          ],
+          "additionalProperties": false
+        },
+        "media_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "study_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 12
+        },
+        "gap_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$"
+          },
+          "minItems": 0,
+          "maxItems": 16
+        }
+      },
+      "required": [
+        "sections",
+        "media_ids",
+        "study_ids",
+        "gap_ids"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/input_pack"
+    },
+    {
+      "$ref": "#/$defs/facts_result"
+    },
+    {
+      "$ref": "#/$defs/review"
+    },
+    {
+      "$ref": "#/$defs/composition"
+    }
+  ]
+}

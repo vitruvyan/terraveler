@@ -1,0 +1,478 @@
+{
+  "schema_version": "waypoint-pattern-holdouts-v1",
+  "purpose": "Local offline semantic regressions for independent editorial review; no automatic paid-model calibration, training or publication. Proposed negative facts are intentionally unsupported and must never be treated as source material.",
+  "publication_authority": "human",
+  "human_approved": false,
+  "groundtruth_scope": "Source fidelity, entailment and attribution against pinned contexts; no claim of historical truth beyond those sources. These baseline contexts predate the new Motux source pack, which must be reviewed independently before execution.",
+  "contexts": [
+    {
+      "id": "xerez-rest",
+      "kind": "participant-testimony",
+      "artifact_path": "scripts/fixtures/content-swarm-pizarro.json",
+      "artifact_sha256": "5f5b79d18a66c00fd8446a51738b3971231fa31236e3a798f2ef43682be91f08",
+      "json_pointer": "/sources/0/text",
+      "value": "The Spaniards rested at\nMotux for four days, and, during that time, the Governor\nsaw some portion of the inhabited country belonging to the\nchief, which appeared to be extensive, and to include a\n\nfertile valley.",
+      "consulted_source_url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+      "locator": "Printed p.32 / PDF page60 (1-based)",
+      "scope_limits": "Translated conquest participant narrative: attributed testimony, not independently proved historical truth. Contains neither exact arrival date nor camp coordinates."
+    },
+    {
+      "id": "sancho-materials",
+      "kind": "participant-testimony",
+      "artifact_path": "scripts/fixtures/content-swarm-pizarro.json",
+      "artifact_sha256": "5f5b79d18a66c00fd8446a51738b3971231fa31236e3a798f2ef43682be91f08",
+      "json_pointer": "/sources/1/text",
+      "value": "It has a beautiful and fine\nfortress; there are many well built houses of stone",
+      "consulted_source_url": "https://www.gutenberg.org/cache/epub/26602/pg26602.txt",
+      "locator": "Chapter VIII; source-text offsets 3255:3334",
+      "scope_limits": "The selected span gives stone to houses, not to the fortress. The fortress is beautiful and fine; strong is absent.",
+      "value_span": {
+        "start": 3255,
+        "end": 3334,
+        "source_text_sha256": "d91adf9c24cbada3eb3e4228bee50569e1c21498abdfad60272fb43d7e6e0f53"
+      }
+    },
+    {
+      "id": "motupe-map",
+      "kind": "existing-application-reference",
+      "artifact_path": "out/content-swarm/pizarro-media-ethnography-audit.json",
+      "artifact_sha256": "1e54198c3c2bdeb9ce12f5e9c409f90aa066f2a98e2fd0676a6c283a470004bc",
+      "json_pointer": "/waypoints/3/current_coordinate",
+      "value": {
+        "latitude": -6.15443,
+        "longitude": -79.71707
+      },
+      "consulted_source_url": null,
+      "locator": "Existing application stage 4 coordinate copied into prior private audit",
+      "scope_limits": "Existing map reference only. No reviewed historical camp coordinate provenance, and no proof that this is an exact modern town centre."
+    },
+    {
+      "id": "cajamarca-photo",
+      "kind": "asset-metadata",
+      "artifact_path": "out/content-swarm/pizarro-media-ethnography-audit.json",
+      "artifact_sha256": "1e54198c3c2bdeb9ce12f5e9c409f90aa066f2a98e2fd0676a6c283a470004bc",
+      "json_pointer": "/media/0",
+      "value": {
+        "id": "cajamarca-square",
+        "commons_file_title": "File:Catedral de Cajamarca des de la Plaza de Armas02.jpg",
+        "item_url": "https://commons.wikimedia.org/wiki/File:Catedral_de_Cajamarca_des_de_la_Plaza_de_Armas02.jpg",
+        "asset_url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Catedral_de_Cajamarca_des_de_la_Plaza_de_Armas02.jpg",
+        "width": 3968,
+        "height": 2976,
+        "commons_sha1": "36b09fe56e6c873dcc9d1c1dd2fc27249bc49939",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "credit": "Pitxiquin",
+        "source_credit": "Own work",
+        "photo_date_metadata": "2017-01-18 18:21:00",
+        "upload_timestamp_metadata": "2017-05-26 18:27:35",
+        "date_metadata_present": true,
+        "coordinates": [
+          {
+            "latitude": -7.157026,
+            "longitude": -78.517723,
+            "meaning": "Commons image coordinate; not a historical waypoint coordinate"
+          }
+        ],
+        "item_description": "Catedral de Cajamarca des de la Plaza de Armas",
+        "categories": [
+          "Category:CC-BY-SA-4.0",
+          "Category:Cathedral of Cajamarca",
+          "Category:Files with coordinates missing SDC location of creation",
+          "Category:Plaza de Armas de Cajamarca",
+          "Category:Self-published work"
+        ],
+        "suggested_caption": "Cajamarca Cathedral viewed from Plaza de Armas, photographed on 18 January 2017. The modern square is geographic context, not a reconstruction of 1532.",
+        "verification": "Item API license, credit, dimensions, description and available coordinates inspected; no canonical database write or publication.",
+        "photo_geolocation_status": "item-coordinate-and-description",
+        "capture_date_independently_verified": false,
+        "date_evidence_note": "Camera or uploader metadata only; metadata inspection does not independently establish the capture date.",
+        "automatic_publication": false
+      },
+      "consulted_source_url": "https://commons.wikimedia.org/wiki/File:Catedral_de_Cajamarca_des_de_la_Plaza_de_Armas02.jpg",
+      "locator": "Commons item API metadata preserved separately",
+      "scope_limits": "CC BY-SA photograph of Cajamarca, not Motupe; licence does not establish geographical relevance. Date is metadata, not independently verified capture date."
+    },
+    {
+      "id": "motupe-photo",
+      "kind": "asset-metadata",
+      "artifact_path": "out/content-swarm/pizarro-media-ethnography-audit.json",
+      "artifact_sha256": "1e54198c3c2bdeb9ce12f5e9c409f90aa066f2a98e2fd0676a6c283a470004bc",
+      "json_pointer": "/media/5",
+      "value": {
+        "id": "motupe-town",
+        "commons_file_title": "File:Motupe.jpg",
+        "item_url": "https://commons.wikimedia.org/wiki/File:Motupe.jpg",
+        "asset_url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Motupe.jpg",
+        "width": 1280,
+        "height": 720,
+        "commons_sha1": "8d75155b81fedd94de77ee3942ce1c3245f3d49e",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+        "credit": "Municipalidad Distrital de Motupe.",
+        "source_credit": "https://web.facebook.com/MunicipalidadDeMotupe",
+        "photo_date_metadata": "2022-09-02",
+        "upload_timestamp_metadata": "2022-09-02 17:20:32",
+        "date_metadata_present": true,
+        "coordinates": [],
+        "item_description": "Ciudad de Motupe.",
+        "categories": [
+          "Category:CC-BY-SA-4.0",
+          "Category:Motupe"
+        ],
+        "suggested_caption": "Present-day Motupe, Lambayeque. Commons labels the photograph 2 September 2022; modern buildings are not presented as structures encountered in 1532.",
+        "verification": "Item API license, credit, dimensions, description and available coordinates inspected; no canonical database write or publication.",
+        "photo_geolocation_status": "item-place-description",
+        "capture_date_independently_verified": false,
+        "date_evidence_note": "Camera or uploader metadata only; metadata inspection does not independently establish the capture date.",
+        "automatic_publication": false
+      },
+      "consulted_source_url": "https://commons.wikimedia.org/wiki/File:Motupe.jpg",
+      "locator": "Commons item API metadata preserved separately",
+      "scope_limits": "Description identifies modern Motupe; no photo GPS. Uploader/camera date does not make the photograph contemporary with1532."
+    },
+    {
+      "id": "klaus-context",
+      "kind": "reviewed-link-only-scholarly-paraphrase",
+      "artifact_path": "out/content-swarm/pizarro-cultural-context.json",
+      "artifact_sha256": "8b539f85eb73f378885506966955828a7d3163bf47efd96aee9b2157063b19ac",
+      "json_pointer": "/sections/1",
+      "value": {
+        "id": "motupe-lambayeque",
+        "region": "Motupe / Lambayeque",
+        "candidate_original_stage_ids": [
+          4,
+          5
+        ],
+        "paragraph": "For the Lambayeque region around Motupe, a useful later context is the study of everyday life after conquest rather than a single ethnic label. Klaus (2016) brings documentary, archaeological and biological evidence together at Mórrope to investigate colonial changes in health, diet, physical activity, burial practice and identity. He also warns that European interpretations can obscure indigenous experience. His work opens questions about bodies, food and community beyond the conquerors’ narrative, but concerns Mórrope in 1536–1750; its abstract supplies neither a description of Motux in 1532 nor specific results that can safely be transferred there.",
+        "evidence_types": [
+          "colonial bioarchaeology",
+          "colonial-period ethnohistory"
+        ],
+        "period_limits": "Study scope 1536–1750, Mórrope in Lambayeque. Mórrope and Motupe are different places; regional relevance is contextual, not a claim of identical populations or practices.",
+        "source_viewpoint_limits": "Klaus explicitly discusses European ethnocentrism and misinterpretation. The abstract describes research questions and methods; no particular diet, disease rate or burial result is asserted here.",
+        "historic_encounter_narrative": "No claim that every Motux inhabitant was Muchik, Sicán or Lambayeque, and no reconstructed 1532 custom.",
+        "claims": [
+          {
+            "id": "M1",
+            "claim": "Mórrope study combines three evidence types to investigate bodies, diet, burials and identity.",
+            "supported_by": [
+              0
+            ],
+            "locator": "Abstract, paragraph 3."
+          },
+          {
+            "id": "M2",
+            "claim": "European ethnocentrism can distort Andean interpretation.",
+            "supported_by": [
+              0
+            ],
+            "locator": "Abstract, paragraphs 1–2."
+          }
+        ],
+        "sources": [
+          {
+            "bibliography_id": "lambayeque-klaus-2016",
+            "authors": [
+              "Haagen D. Klaus"
+            ],
+            "year": 2016,
+            "title": "Vida y muerte en el Perú colonial: inicios de la bioarqueología en Lambayeque histórico (1536–1750 d.C.)",
+            "bibliographic_page_range": "Boletín de Arqueología PUCP 20, 103–128",
+            "doi": "10.18800/boletindearqueologiapucp.201601.006",
+            "consulted_url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/en/article/view/18667",
+            "consulted_section": "Abstract, paragraphs 1–3; How to Cite",
+            "claims_supported_basis": "Abstract identifies Mórrope, methods and research questions; title gives dates; findings are not detailed.",
+            "access_used": "Freely readable publisher/institutional HTML abstract or conclusion; no PDF, full-text download, corpus ingestion or embedding.",
+            "body_page_claim_verified": false,
+            "rights_use": "Citation and brief original paraphrase only; this publisher is outside the ingestion whitelist."
+          }
+        ]
+      },
+      "consulted_source_url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/en/article/view/18667",
+      "locator": "Abstract, paragraphs 1–3; How to Cite",
+      "scope_limits": "No copyrighted abstract copied. This stores an existing original attributed paraphrase and citation: Mórrope1536–1750, research questions/methods, not Motux1532 population or dietary findings.",
+      "primary_consultation_review": {
+        "artifact_path": "out/content-swarm/pizarro-cultural-context-primary-review.json",
+        "artifact_sha256": "733642545fa528ce8542c75193408340dda663967ccf1d82978f917ab7b75e19",
+        "bibliography_id": "lambayeque-klaus-2016",
+        "status": "previous independent publisher reading; current URL fetch unavailable; full body pages not authenticated"
+      }
+    },
+    {
+      "id": "guaman-book-request",
+      "kind": "later-chronicle",
+      "artifact_path": "scripts/fixtures/content-swarm-pizarro.json",
+      "artifact_sha256": "5f5b79d18a66c00fd8446a51738b3971231fa31236e3a798f2ef43682be91f08",
+      "json_pointer": "/sources/3/text",
+      "value": "Y preguntó el dicho Ynga a fray Uisente quién se lo auía dicho. Responde fray Uisente que le auía dicho euangelio, el libro. Y dixo Atagualpa: “Dámelo a mí el libro para que me lo diga.” Y ancí se la dio y lo tomó en las manos, comensó a oxear las ojas del dicho libro. Y dize el dicho Ynga: “¿Qué, cómo no me lo dize? ¡Ni me habla a mí el dicho libro!” Hablando con grande magestad, asentado en su trono, y lo echó el dicho libro de las manos el dicho Ynga Ataguálpa. \n",
+      "consulted_source_url": "https://es.wikisource.org/w/index.php?title=Nueva_cor%C3%B3nica_y_buen_gobierno/El_cap%C3%ADtulo_de_la_conquista_espa%C3%B1ola_y_las_guerras_civiles&oldid=1665689",
+      "locator": "Selected chapter book-request paragraph",
+      "scope_limits": "Later Indigenous author’s portrayal, not established verbatim speech in1532; dialogue alone does not establish psychology or authorial causal intent.",
+      "value_span": {
+        "start": 3448,
+        "end": 3918,
+        "source_text_sha256": "242d122a32c98a4dada796f88751192aa27e71c11988164ddb648428b6ea4ad3"
+      }
+    },
+    {
+      "id": "drawing-description-rights",
+      "kind": "typed-rights-metadata",
+      "artifact_path": "scripts/fixtures/content-swarm-pizarro.json",
+      "artifact_sha256": "5f5b79d18a66c00fd8446a51738b3971231fa31236e3a798f2ef43682be91f08",
+      "json_pointer": "/sources/2/license",
+      "value": "CC BY-SA 4.0",
+      "consulted_source_url": "https://commons.wikimedia.org/wiki/File:Atawallpa_Pizarro_tinkuy.jpg",
+      "locator": "Previously vetted Commons description versus separate image asset metadata",
+      "scope_limits": "Description text rights and underlying image rights are distinct; no inferred historical event/date or site from this rights record."
+    },
+    {
+      "id": "drawing-asset-rights",
+      "kind": "typed-rights-metadata",
+      "artifact_path": "scripts/fixtures/content-swarm-pizarro.json",
+      "artifact_sha256": "5f5b79d18a66c00fd8446a51738b3971231fa31236e3a798f2ef43682be91f08",
+      "json_pointer": "/sources/2/asset",
+      "value": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Atawallpa_Pizarro_tinkuy.jpg",
+        "license": "PDM 1.0",
+        "credit": "Felipe Guaman Poma de Ayala; Wikimedia Commons",
+        "width": 400,
+        "height": 569,
+        "sha256": "8e3fa8fc4a613e09b3bbbc936ba1d33f9b5bf945fa45a41f5f251da74f0942ff"
+      },
+      "consulted_source_url": "https://commons.wikimedia.org/wiki/File:Atawallpa_Pizarro_tinkuy.jpg",
+      "locator": "Previously vetted Commons description versus separate image asset metadata",
+      "scope_limits": "Description text rights and underlying image rights are distinct; no inferred historical event/date or site from this rights record."
+    }
+  ],
+  "cases": [
+    {
+      "id": "regression-material-transfer",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "sancho-materials"
+      ],
+      "proposed_fact": {
+        "statement": "Sancho describes a strong stone fortress at Bilcas."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "Stone modifies houses; assigning it to fortress transfers a property across subjects.",
+        "Strong is an unsupported adjective. Exact selection fidelity would not repair either error."
+      ]
+    },
+    {
+      "id": "regression-valley-extent",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "Xerez describes an extensive fertile valley at Motux."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The inhabited country belonging to the chief appeared extensive and included a fertile valley.",
+        "The proposed wording transfers extent to the valley and loses the appearance qualifier."
+      ]
+    },
+    {
+      "id": "regression-map-as-camp",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "motupe-map",
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "Pizarro camped in1532 at latitude -6.15443, longitude -79.71707."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The coordinate is existing application reference data, without historical-camp provenance.",
+        "The rest narrative gives no coordinates. Modern reference and historical campsite are distinct roles."
+      ]
+    },
+    {
+      "id": "regression-regional-ethnicity",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "klaus-context",
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "All inhabitants encountered by Pizarro at Motux in1532 were the same Muchik population studied at Mórrope in1536–1750."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The consulted study concerns another place and a later period.",
+        "Regional context does not identify every historical encounter participant or demonstrate population identity."
+      ]
+    },
+    {
+      "id": "regression-right-license-wrong-place",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "cajamarca-photo"
+      ],
+      "proposed_fact": {
+        "statement": "This CC BY-SA4.0 photograph shows Motupe and is suitable as the photograph of the Motux waypoint."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The correctly licensed item depicts Cajamarca Cathedral from its Plaza de Armas, not Motupe.",
+        "Geographical relevance needs separate evidence; licensing is insufficient."
+      ]
+    },
+    {
+      "id": "regression-abstract-aim-as-result",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "klaus-context"
+      ],
+      "proposed_fact": {
+        "statement": "Klaus2016 proves that diet and health improved at Mórrope after conquest."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The consulted abstract-level basis identifies investigation topics and methods, not this directional result.",
+        "An article title, DOI and research aim cannot substitute for consulted evidence of findings."
+      ]
+    },
+    {
+      "id": "regression-photo-contemporaneity",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "motupe-photo"
+      ],
+      "proposed_fact": {
+        "statement": "The Motupe photograph documents the buildings encountered by Pizarro in1532."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The item is a modern photograph labelled2022, not a1532 visual record.",
+        "A photograph of the modern place cannot establish survival or identity of sixteenth-century buildings."
+      ]
+    },
+    {
+      "id": "regression-unmarked-psychology",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "guaman-book-request"
+      ],
+      "proposed_fact": {
+        "statement": "Atahualpa was confused by foreign religious symbols."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The passage portrays a request for the book to speak and an objection to its silence.",
+        "Psychological confusion is an unmarked inference; the later narrative is not a direct observation of mental state."
+      ]
+    },
+    {
+      "id": "regression-authorial-intent",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "guaman-book-request"
+      ],
+      "proposed_fact": {
+        "statement": "Guaman Poma wrote this passage in order to prove that the Spaniards deliberately deceived Atahualpa."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "The supplied passage does not state this authorial aim or establish deliberate deception.",
+        "Narrative selection and dialogue do not establish the author’s causal intent."
+      ]
+    },
+    {
+      "id": "positive-attributed-rest",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "Xerez reports that the Spaniards rested at Motux for four days."
+      },
+      "expected_editorial_verdict": "pass",
+      "reasons": [
+        "The source explicitly reports rest at Motux for four days.",
+        "Attribution preserves the distinction between narrator testimony and independently established history."
+      ]
+    },
+    {
+      "id": "positive-modern-photo-context",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "motupe-photo"
+      ],
+      "proposed_fact": {
+        "statement": "Commons describes this photograph as Ciudad de Motupe; it is modern town context, without photo GPS metadata."
+      },
+      "expected_editorial_verdict": "pass",
+      "reasons": [
+        "The item description explicitly names Motupe.",
+        "The coordinates list is empty; the statement is confined to supplied metadata and modern context."
+      ]
+    },
+    {
+      "id": "positive-scoped-study-context",
+      "task": "Assess whether this proposed fact is supported with its stated attribution and scope.",
+      "context_ids": [
+        "klaus-context"
+      ],
+      "proposed_fact": {
+        "statement": "Klaus2016 investigates colonial changes at Mórrope in1536–1750; this is later regional context, not an identification of Motux inhabitants in1532."
+      },
+      "expected_editorial_verdict": "pass",
+      "reasons": [
+        "The reviewed institutional abstract basis and title support the locality, period and investigation scope.",
+        "The explicit boundary prevents transfer to historical Motux populations; no particular result is asserted."
+      ]
+    },
+    {
+      "id": "positive-honest-unknown",
+      "task": "Provide the exact calendar arrival date and latitude/longitude of the historical Motux camp from this supplied passage; otherwise record these requested details as unsupported.",
+      "context_ids": [
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "The supplied Xerez passage establishes neither an exact calendar arrival date nor historical camp coordinates for Motux."
+      },
+      "expected_editorial_verdict": "pass",
+      "reasons": [
+        "This exact supplied passage contains four-day duration and country/valley description only.",
+        "The scoped negative concerns the consulted passage, not every surviving historical source."
+      ]
+    },
+    {
+      "id": "negative-arbitrary-abstention",
+      "task": "Report how many days Xerez says the Spaniards rested at Motux, with attribution.",
+      "context_ids": [
+        "xerez-rest"
+      ],
+      "proposed_fact": {
+        "statement": "The supplied Xerez passage cannot establish how many days the Spaniards rested at Motux."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "It explicitly states four days.",
+        "A well-formed abstention is not semantically honest when the requested information is present."
+      ]
+    },
+    {
+      "id": "regression-description-license-as-asset",
+      "task": "Assess whether the proposed underlying-image licence is supported by the correctly typed metadata.",
+      "context_ids": [
+        "drawing-description-rights",
+        "drawing-asset-rights"
+      ],
+      "proposed_fact": {
+        "statement": "The underlying Guaman Poma image is licensed CC BY-SA4.0 because its Commons description text has that licence."
+      },
+      "expected_editorial_verdict": "revise",
+      "reasons": [
+        "CC BY-SA4.0 labels the description text, while supplied image asset metadata labels the image PDM1.0.",
+        "Rights cannot transfer between description and asset; PDM is a public-domain mark, not this asserted CC BY-SA licence."
+      ]
+    }
+  ]
+}

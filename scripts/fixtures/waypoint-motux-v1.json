@@ -1,0 +1,267 @@
+{
+  "protocol": "waypoint-pattern-v1",
+  "waypoint_id": "motux",
+  "task": "Prepare a complete English editorial card for the Motux stop in Francisco Pizarro’s1532 expedition, usable as a reusable single-waypoint pattern. Describe the four-day rest from Xerez, retain the distinction between his translated participant account and Markham’s later Motupe identification, and bound chronology without inventing a calendar arrival date. Explain the modern reference location without claiming camp precision. Add attributed coastal-road cultural observations without assigning an ethnic identity. Provide a modern photograph with its supplied credit,licence and access caveats, and a linked regional study with its actual consultation basis and geographic/time limits. Each prose claim must be grounded in the supplied body spans or literal metadata. Evidence gaps must remain visible. Publication requires human approval; do not turn metadata into historic testimony.",
+  "seeds": [
+    {
+      "id": "xerez-motux-rest",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Francisco de Xerez: four-day rest at Motux",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "The Spaniards rested at\nMotux for four days, and, during that time, the Governor\nsaw some portion of the inhabited country belonging to the\nchief, which appeared to be extensive, and to include a\n\nfertile valley.",
+      "provenance": {
+        "author": "Francisco de Xerez; English translation by Clements R. Markham",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "participant-account",
+        "source_role": "historical-body",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 32; PDF page 60/176",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "xerez-coastal-clothing",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Francisco de Xerez: coastal-road clothing description",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "On this road all the people\nhave the same manner of living.            The women wear a long\nrobe which reaches to the ground, like the dresses of\nwomen in Castille.    The men have short shirts.",
+      "provenance": {
+        "author": "Francisco de Xerez; English translation by Clements R. Markham",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "participant-account",
+        "source_role": "historical-body",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 32; PDF page 60/176",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "xerez-coastal-irrigation",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Francisco de Xerez: coastal-road cultivation description",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "They sow the crops in the\nlevel   ground on the banks of the rivers, distributing water\nthrough channels.        They grow much maize, and other seeds\nand roots which they eat.             In that land there is little rain.",
+      "provenance": {
+        "author": "Francisco de Xerez; English translation by Clements R. Markham",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "participant-account",
+        "source_role": "historical-body",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 33; PDF page 61/176",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "xerez-departure-bound",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Francisco de Xerez: San Miguel departure date",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "The Governor departed from the city of San Miguel, 3 in\nsearch of Atabaliba, on the 24th of September, 1532, and",
+      "provenance": {
+        "author": "Francisco de Xerez; English translation by Clements R. Markham",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "participant-account",
+        "source_role": "historical-body",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 25; PDF page 53/176",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "xerez-arrival-bound",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Francisco de Xerez: Caxamalca arrival date",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "The Governor arrived at this town of Caxa-I\nmulca on Friday, the 15th of November, 1532, at the hour\nof vespers.",
+      "provenance": {
+        "author": "Francisco de Xerez; English translation by Clements R. Markham",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "participant-account",
+        "source_role": "historical-body",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 44; PDF page 72/176",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "markham-motux-note",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+      "kind": "pdf-transcription",
+      "title": "Markham editorial footnote7: proposed Motux/Motupe identification",
+      "license": "PD-US-expired (historical text; see rights_basis)",
+      "text": "This is a misprint for Motupe, a rich and fertile valley. Lorente\n     '\n\n\nidentifies it with Motupe. (Hist, del Peru, ii, p. 120.) Zarate gives the\nword correctly as Motupe, not Motux. (Zaraie, lib. n, cap. iii, p. 20.)\nIt is the Mutupi of Garcilasso de la Vega, ii, p. 424.",
+      "provenance": {
+        "author": "Clements R. Markham (editorial note)",
+        "edition": "Reports on the Discovery of Peru, Markham translation (1872); saved scan is a 1970 reprint, not an original manuscript",
+        "semantic_role": "translator-note",
+        "source_role": "editorial-note",
+        "retrieved_at": "2026-10-08T11:19:51.863625+00:00",
+        "locator": "Printed p. 32; PDF page 60/176; footnote 7",
+        "access_status": "Reused PDF/text snapshot; item HTTP200; original PDF HTTP429",
+        "rights_basis": "Historical 1872 translated text; Commons item PD-US-expired tag with missing source-country tag notice. Modern reprint front matter excluded.",
+        "snapshot_sha256": "c1990f4e32e40d4b44c51effc872b2e47d148e77574f1cb31b72245346c84c63",
+        "revision": "1211212979",
+        "notes": [
+          "Exact pdftotext span; OCR errors and whitespace retained. A deterministic reading copy is not a critical transcription.",
+          "PDF page60/printed32 visually checked, including footnote7.",
+          "Modern identity is an editorial identification by Markham citing Lorente/Zarate/Garcilasso; the cited books were not newly compared. No historic camp coordinates follow from it.",
+          "Detailed access basis: Reused existing PDF and pdftotext snapshot; current fixed Commons item HTTP200, current original PDF HTTP429. Original snapshot retrieval timestamp not recovered."
+        ]
+      }
+    },
+    {
+      "id": "modern-motupe-reference",
+      "url": "https://de.wikipedia.org/w/index.php?title=Motupe&oldid=265887783",
+      "kind": "wikipedia",
+      "title": "Motupe — fixed German Wikipedia revision 265887783",
+      "license": "CC BY-SA 4.0",
+      "text": "Motupe ist eine Stadt mit etwa 17.000 Einwohnern (Zensus 2017) in Nordwest- Peru in der Region Lambayeque .\n-6.1517 -79.71485",
+      "provenance": {
+        "author": "Wikipedia contributors",
+        "edition": "German Wikipedia revision 265887783",
+        "semantic_role": "modern-reference",
+        "source_role": "modern-reference",
+        "retrieved_at": "2026-10-08T11:11:48.012929+00:00",
+        "locator": "Motupe article first description paragraph and infobox geo element",
+        "access_status": "HTTP200; modern reference only",
+        "rights_basis": "Wikipedia article text CC BY-SA; attribution to fixed revision and contributors",
+        "snapshot_sha256": "676f0bcf639e2a034ca7b99d528a1669b0c1b226857e33bbeffad049da5a7df3",
+        "revision": "265887783",
+        "notes": [
+          "Selected DOM paragraph and geo text are separate modern-reference fields; not a single historical quote.",
+          "Coordinates -6.1517,-79.71485 mark the modern town; historic camp coordinate remains unresolved.",
+          "Detailed access basis: HTTP200; modern reference only, not historic camp geolocation"
+        ]
+      }
+    },
+    {
+      "id": "motupe-photo-record",
+      "url": "https://commons.wikimedia.org/w/index.php?title=File:Motupe.jpg&oldid=1047345898",
+      "kind": "commons-description",
+      "title": "Motupe.jpg — Commons description and licensing record",
+      "license": "CC BY-SA 4.0 (description and declared image licence)",
+      "text": "Description Motupe.jpg Español: Ciudad de Motupe.\nDate 2 September 2022\nSource https://web.facebook.com/MunicipalidadDeMotupe\nAuthor Municipalidad Distrital de Motupe.\nThis file is licensed under the Creative Commons Attribution-Share Alike 4.0 International license. You are free: to share – to copy, distribute and transmit the work to remix – to adapt the work Under the following conditions: attribution – You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use. share alike – If you remix, transform, or build upon the material, you must distribute your contributions under the same or compatible license as the original. https://creativecommons.org/licenses/by-sa/4.0 CC BY-SA 4.0 Creative Commons Attribution-Share Alike 4.0 true true",
+      "provenance": {
+        "author": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+        "edition": "Commons file description revision1047345898",
+        "semantic_role": "image-description",
+        "source_role": "image-metadata",
+        "retrieved_at": "2026-10-08T11:11:48.101383+00:00",
+        "locator": "File description Information table, licence template and file history; original1280×720",
+        "access_status": "Item HTTP200; original image HTTP429; alternate thumbnail HTTP403; image bytes unverified",
+        "rights_basis": "Commons declares CC BY-SA4.0 for image; description CC BY-SA. Image credited to municipality, sourced from its Facebook page and uploaded by TheJCNA; independent rights-holder permission verification not established.",
+        "snapshot_sha256": "4e3f1759b4874b1b73493b0fdcb02f7a450356075de121b3d66ac1a8a063168b",
+        "revision": "1047345898",
+        "notes": [
+          "2September2022 is file-description date and upload metadata; independent capture date not established.",
+          "Item identifies Ciudad de Motupe; no GPS/exact camera site independently verified.",
+          "Modern town context only; image cannot evidence buildings, people or camp location in1532.",
+          "A second file Motupe, Lambayeque, Perú.jpg has a Commons Flickr PDM review but direct item reads HTTP403; preserved as an alternate metadata-only candidate in private registry.",
+          "Detailed access basis: Item HTTP200; original image HTTP429; alternate thumbnail HTTP403. No new asset bytes or visual inspection obtained."
+        ]
+      },
+      "asset": {
+        "id": "motupe-modern-photo",
+        "url": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Motupe.jpg",
+        "license": "CC BY-SA 4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "credit": "Municipalidad Distrital de Motupe.; via Wikimedia Commons, uploaded by TheJCNA",
+        "width": 1280,
+        "height": 720,
+        "role": "modern-place-context",
+        "caption": "Modern Motupe, as identified by the Commons file description. Context for the modern place; the historic camp site is not identified by this photograph."
+      }
+    }
+  ],
+  "studies": [
+    {
+      "id": "klaus-lambayeque-2016",
+      "title": "Vida y muerte en el Perú colonial: inicios de la bioarqueología en Lambayeque histórico (1536–1750 d.C.)",
+      "authors": [
+        "Haagen D. Klaus"
+      ],
+      "year": 2016,
+      "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/es/article/view/18667",
+      "locator": "DOI10.18800/boletindearqueologiapucp.201601.006; Boletín de Arqueología PUCP20,pp.103–128 (bibliographic extent, not passage verification)",
+      "scope": "Regional and later context: Mórrope in Lambayeque,1536–1750; publisher abstract describes integration of ethnohistory, archaeology and bioarchaeology to investigate health,diet,activity and burial/identity. Another community and later period; does not identify Motux inhabitants in1532.",
+      "verified_basis": "Official publisher bibliographic record and abstract consulted2026-10-08,HTTP200. Full article not consulted or ingested; abstract scope and methods only, not independently verified results. Publisher is outside the corpus whitelist; link and bibliographic metadata only."
+    }
+  ],
+  "gaps": [
+    {
+      "id": "motux-arrival-date",
+      "category": "chronology",
+      "text": "The selected Xerez passage gives a four-day rest but no exact Motux arrival or departure date. Its narrative position falls after San Miguel departure24September1532 and before Caxamalca arrival15November1532."
+    },
+    {
+      "id": "motux-camp-location",
+      "category": "place",
+      "text": "Markham identifies Motux with Motupe, but the supplied sources do not establish exact historic camp coordinates. The modern Motupe point is a reference marker only."
+    },
+    {
+      "id": "motux-people-identity",
+      "category": "population",
+      "text": "The supplied sources do not establish an ethnic or linguistic identity for the people encountered at Motux. General coastal-road descriptions and a later Mórrope study cannot provide that assignment."
+    },
+    {
+      "id": "motux-modern-image-check",
+      "category": "media",
+      "text": "The Commons image item is accessible and declares CC BY-SA4.0; original asset returnedHTTP429 and alternate thumbnailHTTP403. New image bytes, visual contents, capture date,camera GPS and independent municipality permission have not been verified."
+    },
+    {
+      "id": "motux-study-scope",
+      "category": "limitations",
+      "text": "The linked study was consulted at official bibliographic-record and abstract level. Its regional,later scope is relevant background only; it cannot be treated as direct testimony about Motux1532."
+    },
+    {
+      "id": "motux-edition-limit",
+      "category": "history",
+      "text": "The evidence is an1872 English translation preserved in a1970 reprint scan and pdftotext extraction with OCR artifacts. It is neither an autograph nor the original Spanish manuscript; Markham editorial notes remain separate from Xerez narrative."
+    }
+  ]
+}
