@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { CARTA_VERSION } from "@/lib/carta";
-import { dataApi, dataRpc, requireEditor } from "@/lib/deskAuth";
+import { dataRpc, requireEditor } from "@/lib/deskAuth";
+import { readDeskRows } from "@/lib/deskQueue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,8 @@ export async function GET(req: Request) {
   const auth = await requireEditor(req);
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
   try {
-    const rows = await dataApi("GET",
-      `editorial_gaps?status=eq.claimed&order=claimed_at.asc.nullsfirst&select=${SELECT}`);
+    const rows = await readDeskRows(
+      `editorial_gaps?status=eq.claimed&order=claimed_at.asc.nullsfirst,id.asc&select=${SELECT}`);
     return NextResponse.json({ claims: rows });
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
