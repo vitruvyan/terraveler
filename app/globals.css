@@ -5386,6 +5386,9 @@ main.prose {
 }
 .dk-demand {
   min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -5414,10 +5417,7 @@ a.dk-demand:focus-visible { outline: 2px solid var(--accent); outline-offset: va
    §8, brake 2) — nothing else on this panel gets a border, because nothing
    else is a claim on the editor's attention rather than a workload count. */
 .dk-demand.is-alarm {
-  border: 1px solid var(--state-alarm);
-  border-radius: var(--radius-2);
-  padding: var(--space-2) var(--space-4);
-  margin: calc(-1 * var(--space-2)) 0;
+  border-color: var(--state-alarm);
 }
 .dk-demand.is-alarm .dk-demand-n { color: var(--state-alarm); }
 .dk-demand-l {
