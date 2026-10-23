@@ -19,7 +19,7 @@ import { ALL } from "@/lib/nav";
  * read it. The atlas door is not in this cluster — it belongs to the imprint,
  * where it says what you are looking at.
  */
-export default function MapDoors() {
+export default function MapDoors({ contextLink }: { contextLink?: { href: string; label: string } }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [acctOpen, setAcctOpen] = useState(false);
 
@@ -61,6 +61,7 @@ export default function MapDoors() {
               tabIndex={-1}
             />
             <div className="tr-menu" onClick={() => setMenuOpen(false)}>
+            {contextLink && <a href={contextLink.href}>{contextLink.label}</a>}
             {ALL.map((d) => (
               <a key={d.href} href={d.href}>
                 {d.label}

@@ -1,0 +1,3414 @@
+{
+  "schema_version": 1,
+  "slug": "pizarro-1532",
+  "title": "Pizarro 1532–1533: research edition",
+  "as_of": "2026-10-23",
+  "scope": "An open research dossier of the main march, subsidiary journeys, source testimony and unresolved questions.",
+  "summary": "Seventeen legacy entries have been audited. A ten-event core, twenty-three additional source-index entries and six regional cultural contexts are presented for discussion. Seven Motux statements have independent editorial review; this is not a complete or historically certified reconstruction.",
+  "notice": "Reviewed facts, source-backed proposals and documented gaps retain different statuses. Modern references and photographs do not identify exact historical camps. Publication for discussion does not upgrade the underlying research findings.",
+  "sections": [
+    {
+      "id": "scope",
+      "title": "Scope",
+      "status": "to_do",
+      "summary": "A proposed main march from Tumbez to Cuzco in 1532–1533, with three subsidiary or returning journeys kept separate.",
+      "gaps": []
+    },
+    {
+      "id": "itinerary",
+      "title": "Itinerary",
+      "status": "materials_collected",
+      "summary": "Ten core events and twenty-three additional source-index entries are available for comparison with all seventeen legacy records, including the duplicated Motux entries. Intermediate historical locations remain unresolved.",
+      "gaps": [
+        "The legacy route mixes main travel, side expeditions, repeated places and city events. A human scope decision and reviewed mapping are still required.",
+        "Markham identifies Motux with Motupe, but the supplied sources do not establish exact historic camp coordinates. The modern Motupe point is a reference marker only."
+      ]
+    },
+    {
+      "id": "chronology",
+      "title": "Chronology",
+      "status": "materials_collected",
+      "summary": "Dates retain their supported day, month or year precision. The Motux passage gives four days of rest; its exact arrival date remains unknown. Partial dates do not become invented travel days.",
+      "gaps": [
+        "The selected Xerez passage gives a four-day rest but no exact Motux arrival or departure date. Its narrative position falls after San Miguel departure24September1532 and before Caxamalca arrival15November1532."
+      ]
+    },
+    {
+      "id": "sources",
+      "title": "Sources",
+      "status": "materials_collected",
+      "summary": "Testimony comes from Xerez and Sancho in English translations: Markham’s 1872 edition, consulted in a 1970 reprint, and Means’s 1917 edition. These are translated witnesses; no original Pizarro manuscript has been authenticated here.",
+      "gaps": [
+        "The evidence is an1872 English translation preserved in a1970 reprint scan and pdftotext extraction with OCR artifacts. It is neither an autograph nor the original Spanish manuscript; Markham editorial notes remain separate from Xerez narrative."
+      ]
+    },
+    {
+      "id": "populations",
+      "title": "People and cultural context",
+      "status": "materials_collected",
+      "summary": "Fourteen linked studies support six scoped regional context sections. Consultation levels, places and periods remain explicit; they do not establish the identities of people encountered at individual stops.",
+      "gaps": [
+        "The supplied sources do not establish an ethnic or linguistic identity for the people encountered at Motux. General coastal-road descriptions and a later Mórrope study cannot provide that assignment."
+      ]
+    },
+    {
+      "id": "images",
+      "title": "Images",
+      "status": "materials_collected",
+      "summary": "Fifteen Commons records include three rejected place matches. One Motupe image has verified local bytes and visual inspection. Other candidates remain item links; all photographs serve modern or regional context.",
+      "gaps": [
+        "Earlier original/thumbnail requests returned HTTP429/403. In the supervised 2026-10-23 Europe/Rome trial, one fresh metadata request and one original-image request succeeded (HTTP200); the retrieved JPEG matches the Commons-reported SHA1 and has been visually inspected. It supports modern-place context only. Exact capture date, camera GPS, independent rights-holder confirmation and correspondence with the historic Motux camp remain unverified."
+      ]
+    },
+    {
+      "id": "narrative",
+      "title": "Narrative",
+      "status": "not_started",
+      "summary": "Seven Motux statements retain their independently reviewed wording. The wider itinerary and cultural contexts remain documented editorial proposals for discussion.",
+      "gaps": []
+    },
+    {
+      "id": "review",
+      "title": "Review and open questions",
+      "status": "materials_collected",
+      "summary": "Two bounded tasks have independent reviews: a documented arrival-date gap and a modern photo candidate. Six tasks await work and two depend on an editorial scope decision. No section or journey is certified complete.",
+      "gaps": [
+        "The linked study was consulted at official bibliographic-record and abstract level. Its regional,later scope is relevant background only; it cannot be treated as direct testimony about Motux1532."
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "id": "stage-1",
+      "seq": 1,
+      "historical_name": "Tumbez",
+      "modern_name": "Tumbes / Cabeza de Vaca area, Peru",
+      "event": "Xerez reports that Pizarro reached Tumbez by sea and found its inhabitants armed. The expedition remained there before beginning its southward march on 16 May 1532. The map uses a modern reference near the archaeological area of Cabeza de Vaca; it does not identify the exact landing or camp.",
+      "date": {
+        "value": "1532",
+        "note": "The arrival took place before the departure explicitly dated 16 May 1532 in Xerez, p. 20. The checked narrative does not supply a secure arrival month or day. Modern archaeological reference point; precise landing and lodging unverified.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": {
+        "latitude": -3.601014,
+        "longitude": -80.491784,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "In three days the ships reached the coast at\nTumbez, and when the Governor landed, he found that the\ninhabitants were in arms.",
+        "citation": "Francisco de Xerez (Xeres) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 16; PDF page 44 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 16; PDF page 44 (one-based)"
+      },
+      "media_ids": [
+        "tumbes-cabeza-vaca"
+      ],
+      "study_ids": [],
+      "cultural_context_ids": [],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-2",
+      "seq": 2,
+      "historical_name": "San Miguel de Tangarara",
+      "modern_name": "Tangarará, Chira valley, Peru",
+      "event": "Xerez describes the foundation of San Miguel near Tangarara on the Chira River. The town provided a base before Pizarro departed to seek Atahualpa on 24 September 1532. Its modern village marker is distinct from present-day Piura and does not prove the precise location of the 1532 buildings.",
+      "date": {
+        "value": "1532",
+        "note": "The foundation is recorded in 1532 without an exact day in the checked narrative. The departure is explicitly dated 24 September 1532 in Xerez, p. 25. Modern Tangarará village coordinates are approximate references, not proof of the original town site.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": {
+        "latitude": -4.885517,
+        "longitude": -80.824898,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "The Governor,\nwith the concurrence of his           officers, therefore,   established\nand founded a town in the name of his Majesty.",
+        "citation": "Francisco de Xerez (Xeres) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 23; PDF page 51 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 23; PDF page 51 (one-based)"
+      },
+      "media_ids": [
+        "tangarara-square"
+      ],
+      "study_ids": [
+        "tallan-arrizabalaga-2024",
+        "piura-diez-2006"
+      ],
+      "cultural_context_ids": [
+        "north-coast-tallan"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-3",
+      "seq": 3,
+      "historical_name": "the Piura valley",
+      "modern_name": "Piura Valley, Piura, Peru",
+      "event": "A few days after leaving San Miguel, Pizarro reached a fortress in the Piura valley. Xerez reports ten days of preparations there before the march continued. The map point represents the valley, rather than an independently identified fortress.",
+      "date": {
+        "value": "1532-09",
+        "note": "September is inferred from departure on 24 September and arrival a few days later. Markham’s itinerary gives 27 September, but the wording of the narrative’s day count is not adopted as an exact date here. Valley marker is approximate.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": null,
+      "testimony": {
+        "text": "After three more days he arrived\nat the valley of Piura, and came to a fortress belonging to\n\na chief, where they met a Captain with some Spaniards,\nwho had been            to subdue that chief, in order to\n                     sent\nrelieve the Chief of  San Miguel. The Governor remained\nthere for ten days, making preparations for the march.",
+        "citation": "Francisco de Xerez (Xeres) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 25; PDF page 53 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 25; PDF page 53 (one-based)"
+      },
+      "media_ids": [
+        "piura-river"
+      ],
+      "study_ids": [
+        "tallan-arrizabalaga-2024",
+        "piura-diez-2006"
+      ],
+      "cultural_context_ids": [
+        "north-coast-tallan"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": [
+        "No verified map reference is assigned to this regional stage."
+      ]
+    },
+    {
+      "id": "stage-4",
+      "seq": 4,
+      "historical_name": "Motux",
+      "modern_name": "Motupe, Lambayeque, Peru",
+      "event": "Xerez reports that the Spaniards rested at Motux for four days and that the governor observed an extensive inhabited country with a fertile valley. Markham identifies the place-name with Motupe; the exact historic lodging remains uncertain.",
+      "date": {
+        "value": "1532-10",
+        "note": "October 1532 follows the itinerary and surrounding narrative; the passage gives a four-day stay without an exact arrival day. Motupe is Markham’s editorial identification. Modern town marker is approximate.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": {
+        "latitude": -6.1517,
+        "longitude": -79.71485,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "The Spaniards rested at\nMotux for four days, and, during that time, the Governor\nsaw some portion of the inhabited country belonging to the\nchief, which appeared to be extensive, and to include a\n\nfertile valley.",
+        "citation": "Francisco de Xerez (Xeres) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 32; PDF page 60 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 32; PDF page 60 (one-based)"
+      },
+      "media_ids": [
+        "motupe-town"
+      ],
+      "study_ids": [
+        "lambayeque-klaus-2016"
+      ],
+      "cultural_context_ids": [
+        "motupe-lambayeque"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-5",
+      "seq": 5,
+      "historical_name": "La Ramada",
+      "modern_name": "Jequetepeque valley approach to Cajamarca, Peru",
+      "event": "Hernando Pizarro names La Ramada in his account of the approach to Cajamarca. The route then changed from relatively flat country to difficult mountainous passes. Its association with the Jequetepeque valley is Markham’s later editorial identification; the map point is a regional approximation.",
+      "date": {
+        "value": "1532-11",
+        "note": "November 1532 is reconstructed from the sequence shortly before the explicitly dated 15 November arrival at Cajamarca. The editor’s itinerary gives 10 November for the ascent; the cited primary passage itself is undated. Exact La Ramada site and this regional map point remain unverified.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": null,
+      "testimony": {
+        "text": "The Governor continued his march until he came to a town\ncalled La Ramada.",
+        "citation": "Hernando Pizarro, letter to the Royal Audience of Santo Domingo (November 1533) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 114; PDF page 142 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 114; PDF page 142 (one-based)"
+      },
+      "media_ids": [
+        "jequetepeque-river"
+      ],
+      "study_ids": [
+        "lambayeque-klaus-2016",
+        "caxamarca-watanabe-2002",
+        "cajamarca-andrade-2010"
+      ],
+      "cultural_context_ids": [
+        "cajamarca"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": [
+        "No verified map reference is assigned to this regional stage."
+      ]
+    },
+    {
+      "id": "stage-6",
+      "seq": 6,
+      "historical_name": "Caxamalca (Cassamarca)",
+      "modern_name": "Cajamarca, Peru",
+      "event": "Xerez dates Pizarro’s arrival at Cajamarca to the hour of vespers on 15 November 1532. He describes Atahualpa’s camp nearby and the Spaniards occupying the town’s open square. This records the governor’s arrival, before the capture of Atahualpa the following day.",
+      "date": {
+        "value": "1532-11-15",
+        "note": "Exact arrival date given by Xerez, p. 44. Caxamalca, Cassamarca and Cajamarca are variant names in these editions; the map point is a modern city reference.",
+        "precision": "explicit-primary-date"
+      },
+      "location": {
+        "latitude": -7.1575,
+        "longitude": -78.5175,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "On reaching the entrance to Caxamalca, they saw the camp\nof Atabaliba at a distance of a league, in the skirts of the\nmountains.",
+        "citation": "Francisco de Xerez (Xeres) — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 44; PDF page 72 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 44; PDF page 72 (one-based)"
+      },
+      "media_ids": [
+        "cajamarca-square"
+      ],
+      "study_ids": [
+        "caxamarca-watanabe-2002",
+        "cajamarca-andrade-2010"
+      ],
+      "cultural_context_ids": [
+        "cajamarca"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-7",
+      "seq": 7,
+      "historical_name": "Caxamalca",
+      "modern_name": "Cajamarca, Peru",
+      "event": "Pedro Sancho’s certification, dated 17 June 1533 at Cajamarca, records the accounting and distribution of the gold and silver collected as ransom. This is a later event at the same city, rather than a new arrival or a separate leg of the march.",
+      "date": {
+        "value": "1533-06-17",
+        "note": "Exact date of a certification and city event, not an arrival. The extraction reads “1 7th”; the underlying printed page supplies the document date. The same city point is repeated to keep the event in chronological order.",
+        "precision": "explicit-primary-date"
+      },
+      "location": {
+        "latitude": -7.1575,
+        "longitude": -78.5175,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "In the town of Caxamalca, of these kingdoms of New Cas-\ntille,   on the 1 7th day of the month of June, in the year of\nthe birth of our Lord Jesus Christ, 1533,",
+        "citation": "Pedro Sancho, certification of the ransom distribution — Reports on the Discovery of Peru, Clements R. Markham translation (1872); scanned Burt Franklin reprint (1970), printed p. 131; PDF page 159 (one-based)",
+        "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+        "locator": "printed p. 131; PDF page 159 (one-based)"
+      },
+      "media_ids": [
+        "cajamarca-rescate"
+      ],
+      "study_ids": [
+        "caxamarca-watanabe-2002",
+        "cajamarca-andrade-2010"
+      ],
+      "cultural_context_ids": [
+        "cajamarca"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-8",
+      "seq": 8,
+      "historical_name": "Xauxa",
+      "modern_name": "Jauja, Junín, Peru",
+      "event": "Sancho describes Pizarro and his horsemen entering Xauxa during the main march toward Cuzco in 1533. The governor remained to guard the town while other captains pursued forces across the river. This stage is distinct from earlier emissaries travelling through Xauxa and from Markham’s note about Huascar.",
+      "date": {
+        "value": "1533",
+        "note": "Sancho, Chapters III–IV, attests the main expedition’s arrival in 1533 before the final advance on Cuzco. No exact month or day is stated in this selected primary passage; the former August date is not retained. Modern city marker is approximate.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": {
+        "latitude": -11.775,
+        "longitude": -75.5,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "This having been heard, the Spaniards\nset spur to their horses, and, without delay, arrived at the city and\nentered it; and when they joined their companions, the latter told them\nwhat had occurred with those Indians.",
+        "citation": "Pedro Sancho — An Account of the Conquest of Peru, Philip Ainsworth Means translation (1917); Sancho narrative completed 1534, Chapter IV; local lines 652–655",
+        "url": "https://www.gutenberg.org/ebooks/26602",
+        "locator": "Chapter IV; local lines 652–655"
+      },
+      "media_ids": [
+        "jauja-square"
+      ],
+      "study_ids": [
+        "xauxa-daltroy-hastorf-2001",
+        "mantaro-sikkink-2001",
+        "huanca-perales-2011"
+      ],
+      "cultural_context_ids": [
+        "xauxa-mantaro"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-9",
+      "seq": 9,
+      "historical_name": "Bilcas (Vilcas)",
+      "modern_name": "Vilcashuamán area, Ayacucho, Peru",
+      "event": "Sancho reports Pizarro entering Bilcas early in the day and staying there rather than continuing immediately. His narrative places the stop between Xauxa and Cuzco. The name is associated with Vilcashuamán by later editorial identification; the passage does not state an exact calendar date.",
+      "date": {
+        "value": "1533",
+        "note": "Sancho, Chapter VIII, places the stop between Xauxa and the 15 November 1533 arrival at Cuzco. Neither the former October date nor a proposed 4 November date is established in this passage. Modern Vilcashuamán marker is approximate.",
+        "precision": "relative-or-coarse-reconstruction"
+      },
+      "location": {
+        "latitude": -13.65311,
+        "longitude": -73.95396,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "and in this way he set out for Bilcas which he\nentered very early the following day, and on that day he did not wish to\ngo further.",
+        "citation": "Pedro Sancho — An Account of the Conquest of Peru, Philip Ainsworth Means translation (1917); Sancho narrative completed 1534, Chapter VIII; local lines 1103–1105",
+        "url": "https://www.gutenberg.org/ebooks/26602",
+        "locator": "Chapter VIII; local lines 1103–1105"
+      },
+      "media_ids": [
+        "vilcas-plaza"
+      ],
+      "study_ids": [
+        "vilcas-gonzalez-pozzi-2002",
+        "vilcas-salas-2002",
+        "chanca-santillana-2002",
+        "chanka-bauer-2010"
+      ],
+      "cultural_context_ids": [
+        "vilcas"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    },
+    {
+      "id": "stage-10",
+      "seq": 10,
+      "historical_name": "Cuzco",
+      "modern_name": "Cusco, Peru",
+      "event": "Sancho dates the entry of the governor and his troops into Cuzco to high mass on 15 November 1533. The Spaniards lodged around the city’s plaza. This is the main expedition’s arrival, rather than the earlier report made by messengers sent to collect gold.",
+      "date": {
+        "value": "1533-11-15",
+        "note": "Exact arrival date given by Sancho, Chapter XI: 15 November 1533. This replaces a quotation about an earlier envoy report. The map point is a modern city reference.",
+        "precision": "explicit-primary-date"
+      },
+      "location": {
+        "latitude": -13.516944444444444,
+        "longitude": -71.9786111111111,
+        "label": "Approximate modern reference; exact historical site unverified."
+      },
+      "testimony": {
+        "text": "In this\nway the Governor and his troops entered that great city of Cuzco without\nany other resistance or battle on Friday, at the hour of high mass, on\nthe fifteenth day of the month of November of the year of the birth of\nour Saviour and Redeemer Jesus Christ MDXXXIII.",
+        "citation": "Pedro Sancho — An Account of the Conquest of Peru, Philip Ainsworth Means translation (1917); Sancho narrative completed 1534, Chapter XI; local lines 1513–1517",
+        "url": "https://www.gutenberg.org/ebooks/26602",
+        "locator": "Chapter XI; local lines 1513–1517"
+      },
+      "media_ids": [
+        "cusco-square"
+      ],
+      "study_ids": [
+        "quechua-allen-1981"
+      ],
+      "cultural_context_ids": [
+        "cusco-modern-ethnography"
+      ],
+      "status": "reviewed-proposal",
+      "gaps": []
+    }
+  ],
+  "intermediate_stages": [
+    {
+      "id": "gap-01",
+      "name": "Puechio / Turicarami river",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After the expressly dated Tumbez departure of 16 May 1532 and before San Miguel departure of 24 September 1532. Relative travel-day counts occur in Xerez; no calendar arrival day is assigned.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Do not map the vanished village onto a modern town without independent site evidence.",
+        "Tumbez → Puechio → chief Lachira’s place → San Miguel",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Having arrived at the river, which is called Turi-\ncarami, 6 he formed his       camp in a large village called Pue-\nchio, 7 and all the chiefs who lived on the lower course of the\nriver came to the Governor to make their peace, while the\ninhabitants of the village came out to meet him.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "20 printed page; 48 PDF page; 1824 first line; 1828 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "•   This is the river Chira.\n     T\n         See   my translation of Cieza de Leon, p. 213.    He calls the place\nPocheos.        Garcilasso de la Vega has Puchiu, ii, p. 424.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "20 printed page; 48 PDF page; 1848 first line; 1851 last line",
+          "role": "editorial-footnote",
+          "citation": "Clements R. Markham (editorial)"
+        }
+      ]
+    },
+    {
+      "id": "gap-02",
+      "name": "Pabor’s walled court",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After the expressly dated San Miguel departure of 24 September 1532 and before the expressly dated Cajamarca arrival of 15 November 1532. Exact October dates in Markham’s itinerary are editorial, not direct calendar dates in this quoted narrative.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Pabor is explicitly a chief’s name; this names his lodging complex, not proof of a town formally named Pabor.",
+        "Piura valley → Pabor court → Qaran/Zaran",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Having made all necessary arrangements, he set out with\nhis troops, and, after marching until noon, he arrived at a\nlarge court, surrounded by walls, belonging to a chief named\nPabor.     The Governor and his troops lodged             there.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "26 printed page; 54 PDF page; 2061 first line; 2064 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        }
+      ]
+    },
+    {
+      "id": "gap-03",
+      "name": "Qaran / Zaran",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After the expressly dated San Miguel departure of 24 September 1532 and before the expressly dated Cajamarca arrival of 15 November 1532. Exact October dates in Markham’s itinerary are editorial, not direct calendar dates in this quoted narrative.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "The passage contains an arrival at a fortress, followed next day by a camp in Qaran. Do not count Caxas or Gicabamba as Francisco’s visits.",
+        "Pabor → Qaran/Zaran; Governor waits while Soto visits Caxas and Gicabamba",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "On  that day the Captain departed.     The next day the\nGovernor set out, and reached a town called Qaran, 6 where\nhe waited for the Captain who had gone to Caxas. The\nchief of the town brought the Governor supplies of sheep\nand other things, to a fortress at which the Governor arrived\nat noon.  Next day he left the fortress and came to the\ntown of Qaran, where he ordered his camp to be formed, to\nwait for the Captain who had gone to Caxas.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "27 printed page; 55 PDF page; 2089 first line; 2096 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "Zaran, still in the Piura valley.           T",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "27 printed page; 55 PDF page; 2123 first line; 2123 last line",
+          "role": "editorial-footnote",
+          "citation": "Clements R. Markham (editorial)"
+        }
+      ]
+    },
+    {
+      "id": "gap-04",
+      "name": "Desert crossing and abandoned Copiz enclosure",
+      "route_relationship": "governor-mainline-unnamed-passages",
+      "date_note": "After the expressly dated San Miguel departure of 24 September 1532 and before the expressly dated Cajamarca arrival of 15 November 1532. Exact October dates in Markham’s itinerary are editorial, not direct calendar dates in this quoted narrative.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "The desert name Sechura is editorial. Xerez attests arrival at a fortress belonging to the lord of nearby Copiz; he does not say that Francisco entered Copiz village.",
+        "Qaran/Zaran → three-day dry crossing → abandoned enclosure owned by Copiz’s lord → Motux",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "As soon as the Governor had despatched his\nmessengers to the town of San Miguel, he set out, and\nmarched         for three days without        finding a village or any\nwater, except at one small spring where                  it   could only be\ngot at with difficulty. 6        At the end of three days he arrived\nat a large walled enclosure where no inhabitants were found.\nIt proved to        belong to the Lord of a village called Copiz,\nin an adjacent valley, and that fortress was abandoned be-\ncause there was no water.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "31 printed page; 59 PDF page; 2274 first line; 2282 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "He was crossing the vast sandy desert of Sechura.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "31 printed page; 59 PDF page; 2295 first line; 2295 last line",
+          "role": "editorial-footnote",
+          "citation": "Clements R. Markham (editorial)"
+        }
+      ]
+    },
+    {
+      "id": "gap-05",
+      "name": "Cinto fortress and river crossing",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After the expressly dated San Miguel departure of 24 September 1532 and before the expressly dated Cajamarca arrival of 15 November 1532. Exact October dates in Markham’s itinerary are editorial, not direct calendar dates in this quoted narrative.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Hernando swims ahead, but Francisco subsequently crosses with the army and lodges in the fortress. Cinto also names the absent chief, and Markham identifies the valley.",
+        "Motux → intervening valleys → river crossing / Cinto fortress → La Ramada",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Then\nthe Governor ordered trees to be cut down on both sides of\nthe river, on which the troops and baggage might pass.\nThree rafts were constructed, on which the men continued\nto cross over during the whole day, the horses                      swimming.\nIn all this the Governor worked hard, until the army had\ncrossed. He then went over, and lodged in the fortress\nwhere the Captain was.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "34 printed page; 62 PDF page; 2393 first line; 2400 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "The Chief of that         village   and\nfortress where the Governor lodged, was called Cinto, 3 and\nhe was then with Atabaliba.\n          Here the Governor and his troops rested during four\ndays,",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "34 printed page; 62 PDF page; 2415 first line; 2419 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "«   This was the valley of Cinto.        See Cieza de Leon, p. 240.   Lorente\nidentifies the river with that of Leche.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "33 printed page; 61 PDF page; 2386 first line; 2387 last line",
+          "role": "editorial-footnote",
+          "citation": "Clements R. Markham (editorial)"
+        }
+      ]
+    },
+    {
+      "id": "gap-06",
+      "name": "Unnamed Andean ascent and lodgings",
+      "route_relationship": "governor-mainline-unnamed-passages",
+      "date_note": "After La Ramada and before 15 November 1532; overnight on the last plain immediately precedes Cajamarca arrival, giving 14 November only as a relative inference. Other calendar days remain unassigned.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "This requested gap is a group of at least six distinguishable passage/lodging episodes, not a single named or geolocatable waypoint. No invented names or positions.",
+        "La Ramada → hilltop fort → unnamed walled village → summit plain by springs → valley villages → Atabaliba’s unnamed village → plain before Cajamarca",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "as to what he was to do. Having made these arrangements,\nthe Governor    commenced the ascent. The horsemen led\ntheir horses    up   until, at   noon, they reached a pallisaded\nfort on the top of a hill, in a narrow part of the road where,\n\nwith few Christians, the way might be made good against\na great army.    It was so steep that, in places, they had to\n\nascend by steps, and there was no other place but the road\nby which the ascent could be             effected.   This pass was\nascended without its being defended by anyone.             The for-\ntress was surrounded     by stone walls, and was built on a hill\nwith declivitous rocks on        all   sides.   Here the Governor\nstopped to rest and have some food.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "37 printed page; 65 PDF page; 2521 first line; 2534 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "Thence the\nGovernor went to sleep at a village, and sent a messenger to\nthe forces in his rear, with the news that they might safely\nadvance through the pass, and with orders that they were\nto push on, so as to pass the night at the fortress.            The\nGovernor lodged that night at a village, in a strong house\nsurrounded by a masonry wall, as extensive as a fort of Spain,\nwith its doorways.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "37 printed page; 65 PDF page; 2536 first line; 2543 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "The next morning the\nGovernor marched with his troops,                       still   ascending    the\nmountains, and stopped on a plain on the summit, near\nsome springs of water, to wait for those who were still be-\nhind.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "38 printed page; 66 PDF page; 2569 first line; 2573 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "The Governor dismissed them.The\nnext morning he continued the march, still over the moun-\ntains, and that night he slept at some villages he came to,\n\nin a valley.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "41 printed page; 69 PDF page; 2696 first line; 2700 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "Next morning the Governor started, his way leading over\nthe mountains as before, and he reached a village of Ataba-\nliba, where he rested for one day.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "41 printed page; 69 PDF page; 2723 first line; 2725 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        },
+        {
+          "text": "Next day the Governor departed, and slept on a plain,\nintending to reach Caxamalca at noon the day after, as they\ntold him it was near.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "44 printed page; 72 PDF page; 2824 first line; 2826 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        }
+      ]
+    },
+    {
+      "id": "gap-07",
+      "name": "Guamachucho",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Distinct from Huancabamba in Soto’s northern branch. Two days of rest follow.",
+        "Cajamarca → unnamed riverside halt → Guamachucho → erroneous Caxamalca / Adalmach candidate",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The next day the Governor\r\nset out from that place, and, by his marches, arrived in the land of\r\nGuamachucho, eighteen leagues from Caxamalca.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "496 first line; 498 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[14] Huamachuco.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2520 first line; 2520 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-08",
+      "name": "Adalmach / erroneous second Caxamalca",
+      "route_relationship": "editorially-associated-mainline-name",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Adalmach appears only in the chapter synopsis; narrative says Caxamalca again, and Means calls it a mistake. Do not silently substitute Andamarca into a source quotation or declare a modern identity proved.",
+        "After Guamachucho and before Puerto de Nevado; synopsis and body spellings do not agree",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Afterwards they passed through the land of Guamachucho,[14]\r\n    Adalmach,[15] Guaiglia,[16] Puerto Nevado, and Capo Tombo,[17] and\r\n    they hear that in Tarma many Indian warriors are waiting to attack\r\n    them, on account of which they take Calichuchima prisoner, and then\r\n    proceed intrepidly on their journey to Cachamarca,[18] where they",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "454 first line; 458 last line",
+          "role": "chapter-synopsis",
+          "citation": "Pedro Sancho, via Means’s 1917 translation; chapter synopsis not treated as a separate eyewitness claim"
+        },
+        {
+          "text": "Having rested there two\r\ndays, he set out for Caxamalca[21] nine leagues ahead, and arrived there\r\nin three days, and rested four in order that his troops might have\r\nrepose and opportunity to collect supplies for the march to Guaiglia,\r\ntwenty leagues from there.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "498 first line; 502 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[15] Andamarca.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2522 first line; 2522 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[21] This is obviously a mistake.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2542 first line; 2542 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-09",
+      "name": "Guaiglia",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "The narrative sequence puts Puerto de Nevado before Guaiglia, although the chapter synopsis lists the names differently. Arrival is a Sunday, without a calendar date; eight-day rest.",
+        "Puerto de Nevado → bridge taken by Almagro → Guaiglia → downstream bridge → Caxatambo",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The Governor did not\r\ndelay in arriving at the bridge with the rest of his men, and having\r\ncrossed it, he went on, in another morning, which was Sunday, to\r\nGuaiglia. Arrived there, they soon heard mass and afterwards entered\r\ncertain good rooms; having rested there eight days,",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "508 first line; 512 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[16] Huaylas.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2524 first line; 2524 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-10",
+      "name": "Puerto de Nevado",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Named snowy pass, not an attested modern town. No coordinate inferred from a generic pass name.",
+        "Erroneous Caxamalca / Adalmach candidate → Puerto de Nevado → Guaiglia",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Having left this village, he came in three\r\ndays to the Puerto de Nevado, and a morning's march brought him within a\r\nday's journey of Guaiglia;",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "502 first line; 504 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        }
+      ]
+    },
+    {
+      "id": "gap-11",
+      "name": "Caxatambo / Capo Tombo",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Main-march visit here is independently narrated by Sancho; Astete also has a Caxatambo on Hernando’s earlier branch. They must not be merged into one visit.",
+        "Guaiglia → Caxatambo → unnamed deserted settlement → Pombo",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Governor changed his route, and, by forced marches, arrived at the land\r\nof Caxatambo.[24] From there he went on without doing more than to ask\r\nfor some Indians who should carry the gold of H. M. and of the soldiers,",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "521 first line; 523 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[17] Cajatambo.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2526 first line; 2526 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[24] Cajatambo.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2555 first line; 2555 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-12",
+      "name": "Pombo / Pambo",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Narrative attests both the captain ahead and the Governor arriving. Identification Pumpu is editorial; historical site not independently located.",
+        "Caxatambo → snowy pass / waste overnight → Pombo → Cacamarca",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The Governor, before setting out from that place, sent a captain with\r\ntroops to take a snowy pass three leagues ahead and then to pass the\r\nnight in some fields near Pombo,[27] all of which the captain did, and\r\nhe passed the pass with much snow, but without encountering any\r\nobstacle. And the Governor crossed it likewise, without any opposition\r\nsave for the inconvenience caused by the snow falling upon them. They\r\nall spent the night in that waste without a single hut, and they lacked\r\nfor wood and victuals. Having arrived in the land of Pombo, the Governor\r\nprovided and commanded that the soldiers should be lodged with the best\r\norder and caution possible,",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "552 first line; 561 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "caused to be made ready seventy-five light horse, and with twenty peones\r\nwho guarded Chilichuchima, and without the impediment of baggage, he set\r\nout for Xauxa, leaving behind the treasurer with the other troops who\r\nwere guarding the camp baggage and the gold of H. M., and of the\r\ncompany. The day on which he set out from Pombo, he travelled some seven\r\nleagues, and he halted in a village called Cacamarca,[28]",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "573 first line; 578 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[25] Pambo = Pombo = Pumpu.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2557 first line; 2557 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[27] Pombo = Pambo = Pumpu.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2562 first line; 2562 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-13",
+      "name": "Cacamarca / Cachamarca",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Source names are unstable; preserve original spelling. The claimed gold amount is Sancho’s account, not independently certified.",
+        "Pombo → Cacamarca → Tarma → Porsi → Xauxa",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The day on which he set out from Pombo, he travelled some seven\r\nleagues, and he halted in a village called Cacamarca,[28] and here they\r\nfound seventy thousand pesos of gold in large pieces, to guard which the\r\nGovernor left two Christians from the cavalry in order that when the\r\nrear-guard should arrive, it might be conducted well guarded.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "577 first line; 581 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[18] Icazbalceta suggests that this place is Cajamarquilla. I do not\r\nagree with this opinion, because Cajamarquilla had long been in ruins\r\nwhen the Spaniards arrived. (Cf. Hodge, 1897, pp. 304 ff.) It was\r\nprobably Chacamarca, (see below).",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2528 first line; 2531 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[28] Chacamarca. See Raimondi's map, 1875.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2564 first line; 2564 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-14",
+      "name": "Tarma village and pass",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "The source provides a direct Governor arrival and camp, beyond the earlier report that troops waited there. Historical-to-modern site mapping remains unchecked.",
+        "Cacamarca → Tarma pass and overnight village → Porsi → Xauxa",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "At the hour of noon, they arrived at that bad\r\npass of Tarma where warriors were said to be waiting to defend it.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "586 first line; 587 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "afternoon, after the hour of vespers, the Governor and his men arrived\r\nat that village of Tarma where, because it was a bad site and because he\r\nhad news that Indians were coming to it to surprise the Christians, he\r\ndid not wish to linger longer than was necessary for feeding the horses\r\nand allaying their own hunger and fatigue so as to enable them to go\r\nforth prepared from that place which had no other level spot than the\r\nplaza as it was on a small slope surrounded by mountains for the space\r\nof a league. As it was already night, he made his camp here, being\r\nalways on the alert and having the horses saddled.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "594 first line; 602 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        }
+      ]
+    },
+    {
+      "id": "gap-15",
+      "name": "Panarai",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "No supported modern identification in the checked source. Previous unnamed burned village is a separate overnight halt.",
+        "After Xauxa and two river crossings / mountain ascent / first burned village → Panarai → Tarcos",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The\r\nnext day the Governor set out from there and went to sleep in another\r\nvillage which, although it was very large and fine and full of houses,\r\nhad as little food in it as the last one; and this village is called\r\nPanarai.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "940 first line; 944 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        }
+      ]
+    },
+    {
+      "id": "gap-16",
+      "name": "Parcos, reported vanguard passage",
+      "route_relationship": "reported-vanguard-passage",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Do not conflate Parcos with Tarcos. This passage establishes the advanced captain’s travel, not a separately stated personal arrival by Francisco.",
+        "Vanguard passed Parcos en route to Bilcas; Governor receives letter after departing Tarcos",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "the evening two Indian couriers, sent by the captain who was ahead,\r\narrived. They brought news, in letters to the Governor, that the captain\r\nhad arrived with all speed at the land of Parcos[36] which he had left\r\nbehind him, having had news that the [Indian] captains were thereabout\r\nwith all the hostile forces; [but] he did not encounter them, and it was\r\nheld to be certain that they had withdrawn to Bilcas,[37]",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "993 first line; 998 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[36] Parcostambo.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2594 first line; 2594 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-17",
+      "name": "Andabailla",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Soto’s earlier report that enemies waited at Andabailla is separate from the Governor’s subsequent personal overnight visit.",
+        "Bilcas → river camp → Andabailla → Airamba / editorial Curamba",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The Governor and company\r\nhaving arrived at that village of Andabailla, they supped and spent the\r\nnight there.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "1138 first line; 1140 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[42] Andahuaylas.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2611 first line; 2611 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[44] Andahuaylas.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2615 first line; 2615 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-18",
+      "name": "Curamba / Airamba",
+      "route_relationship": "editorially-associated-mainline-name",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Primary body attests personal Airamba arrival and a reported Curamba position. Their equivalence is the translator/editor’s correction, not an independently proved geographic fact.",
+        "Andabailla → Governor arrives at Airamba; Curamba previously named in captain’s report",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Scarcely had the\r\nGovernor arrived here, when he received a letter from the captain who\r\nwas reconnoitring in which the latter informed him that the enemy had\r\ngone on five leagues and were in waiting on the slope of a mountain in\r\na land called Curamba,[46] and that there were many warriors there, and\r\nthat they had made many preparations and had arranged great quantities\r\nof stones so that the Spaniards would not be able to go up.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "1113 first line; 1119 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "On the next day, they arrived at the village of Airamba\r\nfrom where the captain had written that he was with the armed troops\r\nwaiting for them upon the road.[47]",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "1140 first line; 1142 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[46] Curamba is the correct form for Airamba (given above).",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2619 first line; 2619 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-19",
+      "name": "Rimac",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "This is not proof of a detour to the coastal Rímac/Lima valley. Historical-to-modern mapping is editorial.",
+        "Last river crossing before Cuzco → Rimac overnight → reunification camp → Sachisagagna",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "Then, having crossed the river in the afternoon,\r\nthe Governor went forward with those soldiers and arrived by night in a\r\nvillage called Rimac[61] a league from that river.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "1382 first line; 1384 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[54] Limatambo (correctly, Rimactampu).",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2648 first line; 2648 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[61] The modern village of Limatambo. When I was there the fine walls so\r\noften spoken of were in a bad condition from neglect on the part of the\r\nnatives. Yet, in spite of the refuse piled around them and the throngs\r\nof pigs all about, one could see that the masonry was of the finest\r\nCyclopean type. Cf. Squier, 1877, p. 535; Markham, 1912, pp. 286 and\r\n319; Cieza, Tr., p. 320; Sarmiento, pp. 119 and 209. Garcilasso tells us\r\nthat it was founded by Manco Capac and that it was the place where\r\nViracocha waited for the Chanca. Garcilasso, I, p. 80, and II, p. 52.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2670 first line; 2677 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "gap-20",
+      "name": "Sachisagagna",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Narrative attests the Governor and reunited army. Footnotes identify both a regional name and a modern Zurite village; do not silently equate precise sites. Source reports burning of Chilichuchima here, with Means disputing the claim that his own intimates lit the fire.",
+        "Rimac → reunion camp → Sachisagagna → Cuzco approach",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "after they had talked\r\ntogether, they set out the next day for the camp of the Spaniards where\r\nthey arrived in the afternoon, the captain and many others having come\r\nout to meet them, and all rejoiced greatly at seeing themselves all\r\ntogether again. The Governor gave each one thanks, according to his\r\nmerits, for the valour they had shown, and all set out together in the\r\nevening and arrived two leagues further on at a village called\r\nSachisagagna.[62] The captains informed the Governor all that had\r\nhappened, just as I have related it.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "1385 first line; 1393 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        },
+        {
+          "text": "[55] Xaquixaguana or Sacsahuana.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2650 first line; 2650 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        },
+        {
+          "text": "[62] Now called Zurite. It was the site of a palace of Viracocha, who\r\nadded it to his realm once more by a victory (won by Pachacutec) over\r\nthe Chanca. Cf. Sarmiento, p. 85; Garcilasso, I, p. 53; Cieza, Chr., p.\r\n128; The \"Finca de los Andenes\" is doubtless the site of the palace.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "2679 first line; 2682 last line",
+          "role": "editorial-footnote",
+          "citation": "Philip Ainsworth Means (translator/editor)"
+        }
+      ]
+    },
+    {
+      "id": "extra-21",
+      "name": "Tarcos, Governor’s direct arrival",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After leaving Xauxa and before the expressly dated Cuzco arrival of 15 November 1533. Sancho chapter VII supplies a nearby All Saints’ Day anchor, but no exact date is assigned to this place.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Important omission discovered while auditing Parcos. Next chapter says the following day was Saturday, All Saints’ Day; this yields a contextual preceding-day anchor, but no exact date is assigned pending chronology review.",
+        "Panarai → Tarcos → unnamed partially burned village → Bilcas",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "The Spaniards sought so much, that they found\r\nsome maize and ewes, ... and the next day, early, they set out and\r\narrived at a village called Tarcos, where they met the cacique of the\r\ndistrict and some men who told them of the day on which had passed that\r\nway some Christians who were going to fight with the enemy who had\r\nestablished their camp in a neighboring settlement. All received this\r\nnews with great pleasure, and they found a good reception in that\r\nplace, because the cacique had brought to the plaza a large quantity of\r\nmaize, fire-wood, ewes, and other things of which the Spaniards had\r\ngreat need.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "955 first line; 964 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        }
+      ]
+    },
+    {
+      "id": "extra-22",
+      "name": "Porsi",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "Sancho’s 1533 main march from Cajamarca toward Xauxa, before the later Xauxa-to-Cuzco stages and the expressly dated Cuzco arrival of 15 November 1533. The quoted passage gives relative days or distances, not a calendar arrival date.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "A direct named route passage omitted from the supplied list. The subsequent small-village halt is not necessarily Porsi and is not given an invented name.",
+        "Tarma → Porsi, one league from Xauxa → unnamed small village → slope near Xauxa → Xauxa",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "In this order they journeyed to Porsi a league from Xauxa, having given\r\neach captain orders as to what he was to do, and they all halted in a\r\nsmall village which they encountered. Then they all marched on in\r\ncomplete accord, and gave a look at the city. They all halted again on a\r\nslope within a quarter of a league of it.",
+          "url": "https://www.gutenberg.org/ebooks/26602",
+          "locator": "614 first line; 618 last line",
+          "role": "primary-narrative",
+          "citation": "Pedro Sancho, via Means’s 1917 translation"
+        }
+      ]
+    },
+    {
+      "id": "extra-23",
+      "name": "Chief Lachira’s place",
+      "route_relationship": "governor-mainline-named-visit",
+      "date_note": "After the expressly dated Tumbez departure of 16 May 1532 and before San Miguel departure of 24 September 1532. Relative travel-day counts occur in Xerez; no calendar arrival day is assigned.",
+      "status": "source-indexed-proposal",
+      "notes": [
+        "Lachira is a named chief, not explicit proof of a town name. This is a documented Governor visit with unresolved geography; Almotaxe is another chief, not a proved separate Francisco stop.",
+        "Puechio → place inhabited by chief Lachira → foundation at San Miguel/Tangarara",
+        "Historical coordinates remain unverified; this is not a mapped daily camp."
+      ],
+      "quotes": [
+        {
+          "text": "As soon as the Governor heard that the\nships had arrived and landed the stores, he set out from the\nvillage of Puechio, with some troops, to descend the river.\nOn reaching a place, where dwelt a chief named Lachira, he\nfound certain Christians who had landed.             They complained\nto the Governor that the chief had ill-treated them, and that\nfear had prevented them         from sleeping during the previous\nnight, because they saw the Indians marching about under\narms.",
+          "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+          "locator": "22 printed page; 50 PDF page; 1906 first line; 1914 last line",
+          "role": "primary-narrative",
+          "citation": "Francisco de Xerez"
+        }
+      ]
+    }
+  ],
+  "branches": [
+    {
+      "id": "soto-caxas-guacamba-1532",
+      "records": [
+        {
+          "legacy_id": 8,
+          "name": "Caxas",
+          "event": "Xerez describes the captain’s mission to Caxas; Markham identifies the captain as Hernando de Soto.",
+          "note": "October 1532 subsidiary mission in the editor’s itinerary and surrounding narrative; no exact day retained.",
+          "evidence": [
+            {
+              "text": "This being known to the Governor, he sent a Captain4\nsecretly, with horse and foot, to the          town of Caxas,",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 26; PDF page 54 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Francisco de Xerez (Xeres) — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            },
+            {
+              "text": "This was Hernando de Soto.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 26; PDF page 54 (one-based)",
+              "role": "editorial-footnote",
+              "citation": "Clements R. Markham editorial footnote4 — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            },
+            {
+              "text": "The   village of\nCaxas is in a small valley surrounded by mountains.               The\npeople were in a commotion, but the Captain pacified them,\nand gave them to understand that he came, on the part\nof the Governor, to receive their submission as vassals of",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 27; PDF page 55 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Francisco de Xerez (Xeres) — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            }
+          ]
+        },
+        {
+          "legacy_id": 9,
+          "name": "Guacamba (Huanca-pampa)",
+          "event": "Xerez reports the captain continuing from Caxas to Guacamba, one day away. Markham identifies it as Huanca-pampa on a river flowing to the Marañón.",
+          "note": "October 1532 subsidiary mission. Exact day withheld.",
+          "evidence": [
+            {
+              "text": "As soon as this Captain had pacified the village of Caxas,\n he marched to Guacamba, 1 which is distant one day's journey,\n and is larger than Caxas, containing finer edifices, and a\n fortress built entirely of cut stones, the larger stones being",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 28; PDF page 56 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Francisco de Xerez (Xeres) — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            },
+            {
+              "text": "Huanca-pampa, on\n     1\n                           a river of the   same name, flowing into the\n Maranon.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 28; PDF page 56 (one-based)",
+              "role": "editorial-footnote",
+              "citation": "Clements R. Markham editorial footnote1 — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hernando-pachacamac-1533",
+      "records": [
+        {
+          "legacy_id": 6,
+          "name": "Guamamayo",
+          "event": "Astete reports a stop at Guamamayo on Hernando Pizarro’s expedition; Markham associates it with La Barranca.",
+          "note": "January 1533 branch itinerary; Astete says 9 January and Markham corrects it to 30 January. Exact day withheld.",
+          "evidence": [
+            {
+              "text": "He passed the night at a village called Gua-\nmamayo, 8 which is in a ravine near the sea. Near it they\nhad to cross another river with great difficulty by swimming,\nfor it was much swollen, and flowing rapidly.       They have\nno bridges across these coast rivers, because they become\nvery wide when they are swollen.               The lord of this village\nand his people did good service in assisting to carry the\nbaggage         across,    and they gave very good food to the\nChristians,       and men      to   carry their loads.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 80; PDF page 108 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Miguel de Astete — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            },
+            {
+              "text": "This is the Huarnan-mayu, or \" Falcon river\", mentioned by Cieza\nde Leon.      It is now called La Barranca.  The breadth of the channel\nis   about a quarter of a mile, and during the rains it is completely full,\nand often impassable. See also (Jarcilasso, ii, p. 185.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 80; PDF page 108 (one-based)",
+              "role": "editorial-footnote",
+              "citation": "Clements R. Markham editorial footnote8 — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            }
+          ]
+        },
+        {
+          "legacy_id": 12,
+          "name": "Pachacama",
+          "event": "Astete reports Hernando Pizarro reaching Pachacamac to demand the sanctuary’s gold.",
+          "note": "Astete says Sunday, 30 January; Markham corrects it to Sunday, 5 February 1533. Preserve both readings.",
+          "evidence": [
+            {
+              "text": "The next day was Sunday, the 30th of January. 5                    The\nCaptain departed from this village, and, without leaving\ngroves and villages, 6 he reached Pachacama, which is the\ntown where the mosque stands.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 81; PDF page 109 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Miguel de Astete — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            },
+            {
+              "text": "This date should be Sunday, February 5th. January 30th was on\na Monday.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 81; PDF page 109 (one-based)",
+              "role": "editorial-footnote",
+              "citation": "Clements R. Markham editorial footnote5 — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "homebound-conquistadors-1533",
+      "records": [
+        {
+          "legacy_id": 17,
+          "name": "San Miguel",
+          "event": "Xerez describes men granted leave returning toward San Miguel with their shares of gold and silver.",
+          "note": "No December date in the quoted passage. The narrative groups distinct homeward departures.",
+          "evidence": [
+            {
+              "text": "The Governor gave some sheep and Indians to the Spaniards\nwho had obtained leave to go home, to carry their gold and\n silver and clothes to thetown of San Miguel. On the road\n some of them lost gold and silver to the amount of more\n than 25,000 casiellanos, because the sheep ran away with\n the gold and silver, and some of the Indians also fled.           On\n this   journey they suffered much hunger and           thirst,   and\n many hardships from a want of people to carry their loads.",
+              "url": "https://commons.wikimedia.org/wiki/File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf",
+              "locator": "printed p. 107; PDF page 135 (one-based)",
+              "role": "translated-participant-account",
+              "citation": "Francisco de Xerez (Xeres) — C. R. Markham English translation 1872; scanned Burt Franklin reprint 1970"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "cultural_contexts": [
+    {
+      "id": "north-coast-tallan",
+      "title": "North coast / Tallán",
+      "text": "The north coast should be introduced through its linguistic and political diversity. Arrizabalaga (2024) distinguishes Mochica, Sechura, Catacaos and Colán in later historical records, and challenges the influential idea that Sec united the entire Piura region. For seventeenth-century Catacaos and Sechura, Diez (2006) examines colonial caciques as local authorities whose legitimacy and obligations connected their communities with the colonial administration. Together these studies offer context for language and negotiated authority; they do not identify the language or ethnic membership of every person met by Pizarro in 1532.",
+      "period_limits": "Arrizabalaga discusses Calancha (1638), Martínez Compañón (1783), and subsequent interpretation; Diez concerns the seventeenth century. Neither abstract establishes the identities or institutions of a specific 1532 encounter.",
+      "source_limits": "Arrizabalaga explicitly criticizes regionalist reconstruction and later historiographical transmission. Diez analyzes authority under institutions imposed by the colonial regime; those institutions cannot be projected unchanged onto pre-conquest society.",
+      "source_ids": [
+        "tallan-arrizabalaga-2024",
+        "piura-diez-2006"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    },
+    {
+      "id": "motupe-lambayeque",
+      "title": "Motupe / Lambayeque",
+      "text": "For the Lambayeque region around Motupe, a useful later context is the study of everyday life after conquest rather than a single ethnic label. Klaus (2016) brings documentary, archaeological and biological evidence together at Mórrope to investigate colonial changes in health, diet, physical activity, burial practice and identity. He also warns that European interpretations can obscure indigenous experience. His work opens questions about bodies, food and community beyond the conquerors’ narrative, but concerns Mórrope in 1536–1750; its abstract supplies neither a description of Motux in 1532 nor specific results that can safely be transferred there.",
+      "period_limits": "Study scope 1536–1750, Mórrope in Lambayeque. Mórrope and Motupe are different places; regional relevance is contextual, not a claim of identical populations or practices.",
+      "source_limits": "Klaus explicitly discusses European ethnocentrism and misinterpretation. The abstract describes research questions and methods; no particular diet, disease rate or burial result is asserted here.",
+      "source_ids": [
+        "lambayeque-klaus-2016"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    },
+    {
+      "id": "cajamarca",
+      "title": "Cajamarca / Caxamarca",
+      "text": "Cajamarca’s context includes political and linguistic histories that resist a uniform regional identity. Watanabe (2002), using Tantarica excavations and documents, reports stronger material connections with the north coast than with the Cajamarca valley and proposes that Cuismancu’s seven-waranga political unit formed under Inca rule. Andrade Ciudad (2010) likewise argues for successive linguistic strata, including Den and Culle, while warning against generalizing his model across Cajamarca. These are archaeological and linguistic interpretations of regional change, useful alongside the encounter narrative; neither establishes one ethnicity or language for everyone present at Cajamarca in 1532.",
+      "period_limits": "Watanabe treats formation and transformation under the Inca state; Andrade proposes earlier linguistic strata. Neither abstract supplies an individual-level population identification at the 1532 encounter.",
+      "source_limits": "Cuismancu formation and language strata are the authors’ interpretations, stated as proposals rather than settled universal facts. Andrade explicitly limits regional extrapolation.",
+      "source_ids": [
+        "caxamarca-watanabe-2002",
+        "cajamarca-andrade-2010"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    },
+    {
+      "id": "xauxa-mantaro",
+      "title": "Xauxa / Mantaro",
+      "text": "For Xauxa and the Mantaro valley, household archaeology provides a perspective beyond imperial leaders. In his openly readable conclusion, D’Altroy (2002) describes the last pre-Inca century, the archaeological Wanka II phase, as marked by local competition and limited social differentiation; he contrasts it with greater regional peace and political hierarchy under Inca rule. Perales Munguía (2011) adds a historiographical caution: accounts of the valley’s past also participate in modern constructions of ethnicity. These perspectives frame farming households and changing political relations without turning an archaeological phase, a modern identity or a general alliance story into proof about every person encountered at Xauxa.",
+      "period_limits": "D’Altroy contrasts pre-Inca and Inca household settings. Perales discusses modern historical memory. Wanka II is treated as an archaeological phase; no modern ethnography is used as evidence of 1533 custom.",
+      "source_limits": "D’Altroy’s contrast is an archaeological synthesis. The readable Perales abstract supports the role of historical representation in modern ethnicity, but its opening alone does not prove every detailed claim about a supposed Huanca kingdom false.",
+      "source_ids": [
+        "xauxa-daltroy-hastorf-2001",
+        "huanca-perales-2011"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    },
+    {
+      "id": "vilcas",
+      "title": "Vilcas / Vilcashuamán",
+      "text": "Vilcashuamán can be presented as a place with successive occupations rather than a timeless ethnic portrait. González Carré and Pozzi-Escot (2002) combine documents with ceramics and architecture to examine Late Intermediate Period settlement and subsequent Inca occupation. In a separate reassessment of colonial accounts, Santillana (2002) proposes several possible Chanca trajectories under Inca rule, including military incorporation, service to royal lineages and smaller settlements. His alternatives are hypotheses, not a census of Vilcas. Together the studies encourage a narrative about changing political arrangements and material life while leaving the identities of particular people in the 1533 encounter unassigned.",
+      "period_limits": "Local Vilcashuamán occupation phases are distinct from Santillana’s wider reconstruction of Chanca distribution. No Andahuaylas-to-Vilcas identity equivalence is asserted.",
+      "source_limits": "Santillana explicitly evaluates the quality of colonial sources and presents hypotheses. Terms for service and military incorporation in those sources require contextual reading, not a universal Chanca identity story.",
+      "source_ids": [
+        "vilcas-gonzalez-pozzi-2002",
+        "chanca-santillana-2002"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    },
+    {
+      "id": "cusco-modern-ethnography",
+      "title": "Cusco region — explicitly later ethnographic comparison",
+      "text": "A clearly dated ethnographic comparison can show a dimension of life in the wider Cusco region that conquest narratives overlook. Allen (1981) describes coca sharing in a Quechua-speaking community in Paucartambo: participants exchange leaves with invitations and thanks, and invoke spiritual beings. She interprets this etiquette as expressing ayllu, understood through common origin and relationships with sacred places. This concerns a modern community outside Cusco city. It offers a specific example of reciprocity and place-based belonging, not evidence that the same ceremony occurred at Pizarro’s arrival in 1533 or that all Quechua-speaking people shared identical customs.",
+      "period_limits": "Published in 1981; fieldwork dates are not specified in the consulted abstract and are not invented. Paucartambo is distinct from Cusco city. No continuity claim to 1533 is established.",
+      "source_limits": "The concepts are Allen’s ethnographic interpretation of one community; neither the study nor this paragraph speaks for all Quechua people. The abstract does not name the community, so this draft does not introduce a name from unverified secondary recollection.",
+      "source_ids": [
+        "quechua-allen-1981"
+      ],
+      "status": "reviewed-regional-context-proposal"
+    }
+  ],
+  "studies": [
+    {
+      "id": "tallan-arrizabalaga-2024",
+      "title": "Fray Antonio de la Calancha y las lenguas de la costa norte del Perú: La cuestión del sec y las lenguas de los tallanes",
+      "authors": [
+        "Carlos Arrizabalaga Lizarraga"
+      ],
+      "year": 2024,
+      "url": "https://revistas.ucsp.edu.pe/index.php/Allpanchis/article/view/1494",
+      "doi": "10.36901/allpanchis.v51i94.1490",
+      "locator": "Allpanchis 51(94), 63–97",
+      "scope": "Useful for distinguishing historical coastal languages and exposing the assumption that Sec unified all Tallán populations. It does not identify the ethnicity of unnamed people encountered at a waypoint.",
+      "consulted_basis": "Resumen, paragraphs 1–5; Cómo citar",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "piura-diez-2006",
+      "title": "Los problemas del poder: política local y gobierno en las reducciones de la costa de Piura, siglo XVII",
+      "authors": [
+        "Alejandro Diez"
+      ],
+      "year": 2006,
+      "url": "https://revistas.pucp.edu.pe/index.php/anthropologica/es/article/view/2090",
+      "doi": "10.18800/anthropologica.200601.005",
+      "locator": "Anthropologica 24(24), 107–127",
+      "scope": "Specific seventeenth-century Catacaos and Sechura institutions provide later colonial comparison. Do not move these practices back into 1532 or equate modern Piura with San Miguel Tangarará.",
+      "consulted_basis": "Abstract, paragraphs 2–3; How to Cite",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "lambayeque-klaus-2016",
+      "title": "Vida y muerte en el Perú colonial: inicios de la bioarqueología en Lambayeque histórico (1536–1750 d.C.)",
+      "authors": [
+        "Haagen D. Klaus"
+      ],
+      "year": 2016,
+      "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/en/article/view/18667",
+      "doi": "10.18800/boletindearqueologiapucp.201601.006",
+      "locator": "Boletín de Arqueología PUCP 20, 103–128",
+      "scope": "Evidence concerns Mórrope and post-contact health/burial change. Regional relevance to Motupe does not establish that every person met at Motux was Muchik, Sicán or Lambayeque.",
+      "consulted_basis": "Abstract, paragraphs 1–3; How to Cite",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "caxamarca-watanabe-2002",
+      "title": "El reino de Cuismancu: orígenes y transformación en el Tawantinsuyu",
+      "authors": [
+        "Shinya Watanabe"
+      ],
+      "year": 2002,
+      "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/article/view/1847/0",
+      "doi": "10.18800/boletindearqueologiapucp.200201.006",
+      "locator": "Boletín de Arqueología PUCP 6, 107–136",
+      "scope": "Tantarica material and colonial documents challenge a single pre-Inca Cuismancu identity; the author proposes political formation under Inca rule. Use this to qualify, not flatten, Caxamarca populations.",
+      "consulted_basis": "Resumen, paragraphs 1–2; Cómo citar",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "cajamarca-andrade-2010",
+      "title": "Contactos y fronteras de lenguas en la Cajamarca prehispánica",
+      "authors": [
+        "Luis Andrade Ciudad"
+      ],
+      "year": 2010,
+      "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/article/view/1213/0",
+      "doi": "10.18800/boletindearqueologiapucp.201001.008",
+      "locator": "Boletín de Arqueología PUCP 14, 165–180",
+      "scope": "Competing linguistic strata and borders prevent equating Cajamarca location with one language or ethnicity. This is contextual scholarship, not direct testimony of the 1532 encounter.",
+      "consulted_basis": "Resumen, final three paragraphs; Cómo citar",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "xauxa-daltroy-hastorf-2001",
+      "title": "Empire and Domestic Economy",
+      "authors": [
+        "Terence N. D’Altroy",
+        "Christine A. Hastorf (volume editors)"
+      ],
+      "year": 2001,
+      "url": "https://link.springer.com/book/10.1007/b110591",
+      "doi": "10.1007/b110591",
+      "locator": "The Cultural Setting, 27–53; The Architecture and Organization of Xauxa Settlements, 115–153; The Xauxa Andean Life, 315–324",
+      "scope": "Investigate Xauxa settlement and imperial changes before using a generic Huanca label. Archaeological categories and historical groups require careful distinction. This volume does not validate the copied Huanca-pampa row 14.",
+      "consulted_basis": "Conclusion, paragraphs 1–2; Cite this chapter",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "mantaro-sikkink-2001",
+      "title": "Ethnoarchaeology and Contemporary Domestic Economy in the Mantaro Valley",
+      "authors": [
+        "Lynn Sikkink"
+      ],
+      "year": 2001,
+      "url": "https://link.springer.com/book/10.1007/b110591",
+      "doi": "10.1007/b110591",
+      "locator": "In Empire and Domestic Economy, 97–111 (publisher table of contents)",
+      "scope": "A comparative modern domestic-economy study. It must be dated as later ethnography and cannot supply customs or ethnic identities for 1533 without a separate argument.",
+      "consulted_basis": "Bibliographic research record; no page-level encounter claim verified.",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "huanca-perales-2011",
+      "title": "El antiguo «Reino Huanca»: deslindes y alcances sobre un mito en la historia prehispánica del Valle del Mantaro",
+      "authors": [
+        "Manuel Perales Munguía"
+      ],
+      "year": 2011,
+      "url": "https://revistas.continental.edu.pe/index.php/apuntes/en/article/view/31",
+      "doi": "10.18259/acs.2011012",
+      "locator": "Apuntes de Ciencia & Sociedad 1(1); exact PDF page locator not verified in this metadata-only audit",
+      "scope": "Adversarial reading on modern construction of an ancient unified Huanca kingdom. Do not present the label or a blanket alliance as settled merely because a waypoint is in today’s Mantaro Valley.",
+      "consulted_basis": "Abstract, opening discussion and final paragraph; Published",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "vilcas-gonzalez-pozzi-2002",
+      "title": "Arqueología y etnohistoria en Vilcashuamán",
+      "authors": [
+        "Enrique González Carré",
+        "Denise Pozzi-Escot"
+      ],
+      "year": 2002,
+      "url": "https://repositorio.pucp.edu.pe/items/86a0ec65-6e1a-47ca-83c6-f8b0306ec623",
+      "doi": "10.18800/boletindearqueologiapucp.200201.005",
+      "locator": "Boletín de Arqueología PUCP 6, 79–105",
+      "scope": "Study local written/material evidence rather than equating all modern Ayacucho residents with Chanca. Specific claims require cited pages and separation of occupation phases.",
+      "consulted_basis": "Abstract, sole paragraph; How to Cite",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "vilcas-salas-2002",
+      "title": "Advenedizos y traspuestos: los mitmaquna o mitimaes de Vilcashuamán en su tránsito de los tiempos del Inka al de los «Señores de los mares»",
+      "authors": [
+        "Miriam Salas Olivari"
+      ],
+      "year": 2002,
+      "url": "https://www.pucp.edu.pe/profesor/miriam-salas-olivari-de-coloma/publicaciones/?orden=titulo&pagina=0&x=",
+      "doi": null,
+      "locator": "Boletín de Arqueología PUCP 6, 57–78",
+      "scope": "Investigates resettled populations and colonial encounter/resistance; useful corrective to a single ethnic label for Vilcas. Author’s institutional publications verify bibliographic details; exact encounter claim needs the paper.",
+      "consulted_basis": "Bibliographic research record; no page-level encounter claim verified.",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "chanca-santillana-2002",
+      "title": "Chancas e Incas: un nuevo examen",
+      "authors": [
+        "Julián I. Santillana"
+      ],
+      "year": 2002,
+      "url": "https://repositorio.pucp.edu.pe/items/97a549ba-4862-44b8-be6c-a527e78d5512/full",
+      "doi": "10.18800/9789972425127.030",
+      "locator": "El hombre y los Andes: homenaje a Franklin Pease G.Y., tomo 2, 553–565",
+      "scope": "The author explicitly proposes hypotheses about migration and the range of Chanca outcomes after Inca expansion. Do not promote these hypotheses to a waypoint’s ethnic certainty.",
+      "consulted_basis": "dc.description.abstract, opening and final paragraphs; dc.description; dc.identifier.doi",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "chanka-bauer-2010",
+      "title": "The Chanka: Archaeological Research in Andahuaylas (Apurimac), Peru",
+      "authors": [
+        "Brian S. Bauer",
+        "Lucas C. Kellett",
+        "Miriam Aráoz Silva"
+      ],
+      "year": 2010,
+      "url": "https://escholarship.org/uc/item/8j84657n",
+      "doi": null,
+      "locator": "Cotsen monograph 68; chapters on Chanka phase and Inca occupation; page-specific locator not verified",
+      "scope": "Comparative Chanka homeland research, not proof that every inhabitant of Vilcas was Chanka. Keep Andahuaylas/Vilcas spatial distinction explicit.",
+      "consulted_basis": "Bibliographic research record; no page-level encounter claim verified.",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "quechua-allen-1981",
+      "title": "To be Quechua: the symbolism of coca chewing in highland Peru",
+      "authors": [
+        "Catherine J. Allen"
+      ],
+      "year": 1981,
+      "url": "https://anthrosource.onlinelibrary.wiley.com/doi/abs/10.1525/ae.1981.8.1.02a00100",
+      "doi": "10.1525/ae.1981.8.1.02a00100",
+      "locator": "American Ethnologist 8(1), 157–171",
+      "scope": "Modern community-based ethnography of coca, reciprocity and ritual. It is not direct indigenous testimony of 1533, a universal Quechua culture description, or a map of sixteenth-century ethnicity.",
+      "consulted_basis": "Abstract, paragraphs 1–3; article header and How to cite",
+      "status": "link-only-regional-research"
+    },
+    {
+      "id": "pachacamac-cornejo-2002",
+      "title": "Sacerdotes y tejedores en la provincia inka de Pachacamac",
+      "authors": [
+        "Miguel Cornejo"
+      ],
+      "year": 2002,
+      "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/es/article/view/1850",
+      "doi": "10.18800/boletindearqueologiapucp.200201.008",
+      "locator": "Boletín de Arqueología PUCP 6, 171–204",
+      "scope": "Specific social-specialist evidence for the separate Hernando branch. Occupations do not establish ethnicity; avoid treating reconstructed Acllawasi descriptions as eyewitness testimony.",
+      "consulted_basis": "Bibliographic research record; no page-level encounter claim verified.",
+      "status": "link-only-regional-research"
+    }
+  ],
+  "media": [
+    {
+      "id": "cajamarca-square",
+      "title": "File:Catedral de Cajamarca des de la Plaza de Armas02.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Catedral_de_Cajamarca_des_de_la_Plaza_de_Armas02.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Pitxiquin",
+      "width": 3968,
+      "height": 2976,
+      "caption": "Cajamarca Cathedral viewed from Plaza de Armas, photographed on 18 January 2017. The modern square is geographic context, not a reconstruction of 1532.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2017-01-18 18:21:00",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "cajamarca-rescate",
+      "title": "File:Cuarto del Rescate - Linea límite del Rescate - Cajamarca.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Cuarto_del_Rescate_-_Linea_l%C3%ADmite_del_Rescate_-_Cajamarca.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Polmartin14+",
+      "width": 2576,
+      "height": 1932,
+      "caption": "Present-day interior of the Cuarto del Rescate in Cajamarca, photographed on 9 September 2016. The visible marker is not independently verified evidence of an original sixteenth-century line.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2016-09-09 16:00:44",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "huamachuco-rejected",
+      "title": "File:Huamachuco- Plaza de Armas & Gallardete.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Huamachuco-_Plaza_de_Armas_%26_Gallardete.jpg",
+      "license": "CC BY-SA 2.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+      "credit": "David Almeida from Lima, Peru",
+      "width": 2592,
+      "height": 1944,
+      "caption": "Present-day Plaza de Armas in Huamachuco. Rejected as an illustration of the historical Huanca-pampa linked to Soto’s Caxas branch.",
+      "status": "rejected-wrong-place",
+      "local_url": null,
+      "date": "2009-11-19 23:04",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "This candidate was rejected for the historical place identification."
+      ]
+    },
+    {
+      "id": "huancayo-rejected",
+      "title": "File:Hyowiki.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Hyowiki.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Jesushuaraz",
+      "width": 2038,
+      "height": 981,
+      "caption": "Present-day Plaza Constitución in Huancayo. Rejected as an illustration of Huanca-pampa in the copied Caxas passage.",
+      "status": "rejected-wrong-place",
+      "local_url": null,
+      "date": "2014-10-15",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "This candidate was rejected for the historical place identification."
+      ]
+    },
+    {
+      "id": "cusco-square",
+      "title": "File:La Catedral, en Plaza de Armas del Cuzco - panoramio.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:La_Catedral,_en_Plaza_de_Armas_del_Cuzco_-_panoramio.jpg",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Jorge Manriquez P.",
+      "width": 1536,
+      "height": 2048,
+      "caption": "The cathedral at Cusco’s Plaza de Armas, photographed on 27 January 2007. This is modern context; the colonial cathedral was not part of the city entered in 1533.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "Taken on 27 January 2007",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "motupe-town",
+      "title": "File:Motupe.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Motupe.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Municipalidad Distrital de Motupe.",
+      "width": 1280,
+      "height": 720,
+      "caption": "Present-day Motupe, Lambayeque. Commons labels the photograph 2 September 2022; modern buildings are not presented as structures encountered in 1532.",
+      "status": "reviewed-modern-context-candidate",
+      "local_url": "/media/research/motupe.jpg",
+      "date": "2022-09-02",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Actual JPEG received and visually inspected in the supervised 23 October trial."
+      ]
+    },
+    {
+      "id": "pacasmayo-rejected",
+      "title": "File:Pier of Pacasmayo.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Pier_of_Pacasmayo.jpg",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Bernard Gagnon",
+      "width": 4890,
+      "height": 3298,
+      "caption": "Present-day Pacasmayo pier. Rejected for Guamamayo/Guamanmayo, which belongs to the Hernando coastal branch near La Barranca.",
+      "status": "rejected-wrong-place",
+      "local_url": null,
+      "date": "2014-11-24",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "This candidate was rejected for the historical place identification."
+      ]
+    },
+    {
+      "id": "jauja-square",
+      "title": "File:Plaza de armas Jauja 01.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Plaza_de_armas_Jauja_01.jpg",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0",
+      "credit": "Ordzonhyd Rudyard Tarco Palomino",
+      "width": 4080,
+      "height": 3072,
+      "caption": "Plaza de Armas in present-day Jauja, photographed on 9 December 2024. This shows the modern city rather than proving the location or appearance of Inca Xauxa.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2024-12-09 11:50:09",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "tumbes-cabeza-vaca",
+      "title": "File:Qhapaq ñan tumbes.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Qhapaq_%C3%B1an_tumbes.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Qhapaq Ñan Perú",
+      "width": 960,
+      "height": 639,
+      "caption": "Present-day archaeological remains at Cabeza de Vaca, Corrales, Tumbes. Commons records this photograph on 30 April 2019; it does not establish the exact 1532 landing location.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2019-04-30",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "jequetepeque-river",
+      "title": "File:RIO JEQUETEPEQUE.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:RIO_JEQUETEPEQUE.jpg",
+      "license": "CC BY-SA 3.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+      "credit": "Quicewi",
+      "width": 640,
+      "height": 480,
+      "caption": "The Jequetepeque River at Yatahual, according to the photographer’s description. Regional river context only; not a photograph identifying historical La Ramada.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2013-06-16 02:26:30",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "piura-river",
+      "title": "File:Río Piura en Piura.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:R%C3%ADo_Piura_en_Piura.jpg",
+      "license": "Public domain",
+      "license_url": null,
+      "credit": "No machine-readable author provided. Alfredobi assumed (based on copyright claims).",
+      "width": 2032,
+      "height": 1354,
+      "caption": "The Río Piura and a bridge in present-day Piura. This regional context image does not identify the expedition’s exact valley campsite.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "31 March 2006 (original upload date)",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "tangarara-square",
+      "title": "File:Tangarara.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Tangarara.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Henrywcl68",
+      "width": 320,
+      "height": 240,
+      "caption": "Present-day square and commemorative monuments in Tangarará. The camera EXIF timestamp is 20 August 2008 at 17:54; its accuracy is not independently confirmed. This image is not evidence of the appearance of the 1532 settlement.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2008-08-20 17:54 (camera EXIF: generation and digitization)",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "tangarara-church",
+      "title": "File:Tangarara 2.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Tangarara_2.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Henrywcl68",
+      "width": 320,
+      "height": 240,
+      "caption": "Present-day church and cross in Tangarará. The small photograph documents the modern place; no date or origin is asserted for the cross.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "unknown",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "vilcas-plaza",
+      "title": "File:Vilcashuaman ruins and main plaza.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Vilcashuaman_ruins_and_main_plaza.jpg",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+      "credit": "Rodtru",
+      "width": 2160,
+      "height": 2160,
+      "caption": "Inca remains and the main plaza at Vilcashuamán, photographed on 3 June 2017. Conservation and later buildings must be distinguished from the sixteenth-century site.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2017-06-03 13:31:27",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    },
+    {
+      "id": "pachacamac-acllawasi",
+      "title": "File:Vista lejana del 'Acllawasi de Pachacamac' -2025-.jpg",
+      "item_url": "https://commons.wikimedia.org/wiki/File:Vista_lejana_del_%27Acllawasi_de_Pachacamac%27_-2025-.jpg",
+      "license": "CC0",
+      "license_url": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "credit": "Leonardo Mauricio Domínguez Chávez",
+      "width": 3264,
+      "height": 2448,
+      "caption": "The Acllawasi at Pachacamac in a photograph dated 2 November 2025. This present-day view is for the separate Hernando Pizarro branch; descriptions of historical women require independent sources.",
+      "status": "metadata-checked-context-candidate",
+      "local_url": null,
+      "date": "2025-11-02 16:06:48",
+      "date_note": "Commons item date; capture date is not independently verified.",
+      "limits": [
+        "Modern context only; no proof of the 1532–1533 event location or appearance.",
+        "Credit and licence are Commons item declarations; independent rights-holder confirmation is not established.",
+        "Item metadata inspected; this edition does not claim new image-byte or visual verification."
+      ]
+    }
+  ],
+  "legacy_rows": [
+    {
+      "id": 1,
+      "seq": 1,
+      "name": "San Miguel",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The existing quotation is Markham’s commentary on earlier coastal reconnaissance and interpreters, not a San Miguel entry.",
+        "The founding settlement was at Tangarara on the Chira, rather than the modern city centre of Piura.",
+        "Tumbez precedes San Miguel. The primary narrative explicitly dates departure to 24 September 1532, rather than founding or arrival."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 2,
+      "seq": 2,
+      "name": "Tumbez",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The October 1532 arrival contradicts the primary narrative’s departure from Tumbez on 16 May 1532.",
+        "This stop must precede San Miguel. The exact arrival month and day are not established by the checked passage.",
+        "The existing coordinate is not justified by a site-level source; a modern regional reference must not imply an exact historical landing."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 3,
+      "seq": 3,
+      "name": "the Piura valley",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The existing quotation concerns intelligence received at San Miguel, rather than entry into the Piura valley.",
+        "Xerez describes arrival a few days after departure on 24 September; October is not the arrival month.",
+        "The editor’s itinerary gives 27 September, but its interpretation is not adopted as an exact primary date."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 4,
+      "seq": 4,
+      "name": "Motux",
+      "status": "legacy-requires-research",
+      "findings": [
+        "No quotation or event is present.",
+        "This and seq 5 duplicate the same place, coordinates and date. The source attests one four-day stay.",
+        "Motupe is Markham’s later identification, and an exact historical lodging is not located."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 5,
+      "seq": 5,
+      "name": "Motux",
+      "status": "legacy-requires-research",
+      "findings": [
+        "This is an exact duplicate of seq 4.",
+        "The source does not supply evidence of a second Motux stay. Merge the records and preserve the disposition in an audit."
+      ],
+      "proposed_action": "merge-into-seq4"
+    },
+    {
+      "id": 6,
+      "seq": 6,
+      "name": "Guamamayo",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The quotation belongs to Astete’s account of Hernando Pizarro’s expedition in 1533, rather than Francisco’s main march in October 1532.",
+        "Markham identifies Guamamayo with La Barranca, not Pacasmayo.",
+        "Astete’s 9 January departure is corrected to 30 January by the editor; an exact day must retain this disagreement.",
+        "Keep this expedition separate from the main itinerary."
+      ],
+      "proposed_action": "move-to-explicit-branch"
+    },
+    {
+      "id": 7,
+      "seq": 7,
+      "name": "La Ramada",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The existing excerpt is Markham’s footnote, rather than contemporary diary prose.",
+        "Hernando Pizarro’s letter directly names La Ramada on the approach to Cajamarca.",
+        "An October arrival is unsupported by the checked sequence; November is reconstructed from the approach to the 15 November arrival.",
+        "The Jequetepeque identification is editorial; the exact historic site remains unresolved."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 8,
+      "seq": 8,
+      "name": "Caxas",
+      "status": "legacy-requires-research",
+      "findings": [
+        "This is Soto’s subsidiary mission before Motux and La Ramada, not a later stage of the governor’s main march.",
+        "The editor’s itinerary places the dispatch in October; November is unsupported.",
+        "The excerpt ends mid-sentence. The exact Caxas site needs independent geographic identification."
+      ],
+      "proposed_action": "move-to-explicit-branch"
+    },
+    {
+      "id": 9,
+      "seq": 9,
+      "name": "Huanca-pampa",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The quote describes Caxas and accidentally includes unrelated editorial footnotes.",
+        "Guacamba / Huanca-pampa is associated with northern Huancabamba on the Marañón watershed, not Huamachuco.",
+        "The latitude, longitude and November date are wrong for the described mission. Keep the stop in Soto’s separate branch."
+      ],
+      "proposed_action": "move-to-explicit-branch"
+    },
+    {
+      "id": 10,
+      "seq": 10,
+      "name": "Caxamalca",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The primary narrative explicitly gives 15 November 1532.",
+        "Caxamalca and Cassamarca are variant names for Cajamarca in the editions.",
+        "The old paragraph carries OCR and footnote artifacts; replace it with a source-copied clean sentence and retain the dated context separately."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 11,
+      "seq": 11,
+      "name": "Caxamalca",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The old excerpt ends within the word “declared”; the full quote fails token-boundary matching, while its complete-word prefix matches the source.",
+        "17 June 1533 is the date of Sancho’s certification and ransom accounting, rather than a new arrival.",
+        "Retain this as a city event at Cajamarca without inventing another travel leg."
+      ],
+      "proposed_action": "retain-as-city-event"
+    },
+    {
+      "id": 12,
+      "seq": 12,
+      "name": "Pachacama",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The leader is Hernando Pizarro and the source author is Miguel de Astete.",
+        "The body says Sunday, 30 January; Markham’s note corrects it to Sunday, 5 February 1533.",
+        "The exact date is disputed in the supplied edition. Keep both readings explicit and place the stop in a separate branch before the June ransom accounting."
+      ],
+      "proposed_action": "move-to-explicit-branch"
+    },
+    {
+      "id": 13,
+      "seq": 13,
+      "name": "Xauxa",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The existing quotation is Markham’s footnote about earlier emissaries and Huascar, not Francisco’s August arrival.",
+        "Sancho, Chapters III–IV, attests the main expedition at Xauxa during the later 1533 march.",
+        "The selected primary passage does not establish the former August month; use coarse dating and the correct narrative."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 14,
+      "seq": 14,
+      "name": "Huanca-pampa",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The excerpt is copied from Soto’s Caxas mission in 1532 and does not describe Huancayo in September 1533.",
+        "Huanca-pampa has been incorrectly mapped a second time, here to Huancayo.",
+        "Sancho records travel down the Xauxa river valley, but this does not attest a stop at a town named Huancayo. Remove the town claim or represent an explicitly approximate regional passage."
+      ],
+      "proposed_action": "replace-with-regional-passage"
+    },
+    {
+      "id": 15,
+      "seq": 15,
+      "name": "Vilcas",
+      "status": "legacy-requires-research",
+      "findings": [
+        "No quotation or event is present.",
+        "Sancho, Chapter VIII, directly attests a stop at Bilcas between Xauxa and Cuzco.",
+        "Neither the former October date nor a proposed 4 November date is stated in the checked passage.",
+        "Identification with Vilcashuamán is later editorial geography, rather than primary numeric coordinates."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 16,
+      "seq": 16,
+      "name": "Cuzco",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The existing Xerez excerpt describes an earlier messenger’s report, not the governor’s main entry into Cuzco.",
+        "The existing event incorrectly attributes the main entry to Hernando Pizarro.",
+        "Sancho, Chapter XI, explicitly dates the governor’s entry to 15 November 1533. The PDF page header is not narrative content."
+      ],
+      "proposed_action": "correct"
+    },
+    {
+      "id": 17,
+      "seq": 17,
+      "name": "San Miguel",
+      "status": "legacy-requires-research",
+      "findings": [
+        "The quotation is genuine Xerez, but its travellers are men returning home with their shares, not Francisco Pizarro.",
+        "December 1533 is not dated in the cited passage, which describes more than one departure.",
+        "A return to San Miguel must be kept as a distinct branch, and the original settlement must not be silently equated with present-day Piura."
+      ],
+      "proposed_action": "move-to-explicit-branch"
+    }
+  ],
+  "motux": {
+    "facts": [
+      {
+        "id": "motux-1-xerez-rest",
+        "text": "Xerez reports that the Spaniards rested at Motux for four days.",
+        "evidence": [
+          {
+            "id": "ev-a66ce772865c1433363d85d1",
+            "kind": "source-text",
+            "semantic_role": "participant-account",
+            "text": "The Spaniards rested at\nMotux for four days, and, during that time, the Governor\nsaw some portion of the inhabited country belonging to the\nchief, which appeared to be extensive, and to include a\n\nfertile valley.",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+            "title": "Francisco de Xerez: four-day rest at Motux",
+            "author": "Francisco de Xerez; English translation by Clements R. Markham",
+            "license": "PD-US-expired (historical text; see rights_basis)",
+            "license_url": null,
+            "locator": "Printed p. 32; PDF page 60/176"
+          }
+        ]
+      },
+      {
+        "id": "motux-2-markham-motupe-ident",
+        "text": "Markham’s editorial footnote identifies Motux as a misprint for Motupe, citing Lorente, Zarate and Garcilasso.",
+        "evidence": [
+          {
+            "id": "ev-15a52c35a927a6c9d7f4ebfe",
+            "kind": "source-text",
+            "semantic_role": "translator-note",
+            "text": "This is a misprint for Motupe, a rich and fertile valley. Lorente\n     '\n\n\nidentifies it with Motupe. (Hist, del Peru, ii, p. 120.) Zarate gives the\nword correctly as Motupe, not Motux. (Zaraie, lib. n, cap. iii, p. 20.)\nIt is the Mutupi of Garcilasso de la Vega, ii, p. 424.",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+            "title": "Markham editorial footnote7: proposed Motux/Motupe identification",
+            "author": "Clements R. Markham (editorial note)",
+            "license": "PD-US-expired (historical text; see rights_basis)",
+            "license_url": null,
+            "locator": "Printed p. 32; PDF page 60/176; footnote 7"
+          }
+        ]
+      },
+      {
+        "id": "motux-3-modern-motupe-ref",
+        "text": "The fixed Wikipedia reference describes Motupe as a Lambayeque town with about 17,000 residents in the 2017 census and gives modern reference coordinates −6.1517, −79.71485.",
+        "evidence": [
+          {
+            "id": "ev-046eaa0e95133261c0e6090d",
+            "kind": "source-text",
+            "semantic_role": "modern-reference",
+            "text": "Motupe ist eine Stadt mit etwa 17.000 Einwohnern (Zensus 2017) in Nordwest- Peru in der Region Lambayeque .\n-6.1517 -79.71485",
+            "url": "https://de.wikipedia.org/w/index.php?title=Motupe&oldid=265887783",
+            "title": "Motupe — fixed German Wikipedia revision 265887783",
+            "author": "Wikipedia contributors",
+            "license": "CC BY-SA 4.0",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "locator": "Motupe article first description paragraph and infobox geo element"
+          }
+        ]
+      },
+      {
+        "id": "motux-4-chron-bounds",
+        "text": "Xerez dates the Governor’s San Miguel departure to 24 September 1532 and Caxamalca arrival to 15 November 1532.",
+        "evidence": [
+          {
+            "id": "ev-2ccb66a6a9d98941c45dbf22",
+            "kind": "source-text",
+            "semantic_role": "participant-account",
+            "text": "The Governor departed from the city of San Miguel, 3 in\nsearch of Atabaliba, on the 24th of September, 1532, and",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+            "title": "Francisco de Xerez: San Miguel departure date",
+            "author": "Francisco de Xerez; English translation by Clements R. Markham",
+            "license": "PD-US-expired (historical text; see rights_basis)",
+            "license_url": null,
+            "locator": "Printed p. 25; PDF page 53/176"
+          },
+          {
+            "id": "ev-0c303c5255854bb0d3e6378f",
+            "kind": "source-text",
+            "semantic_role": "participant-account",
+            "text": "The Governor arrived at this town of Caxa-I\nmulca on Friday, the 15th of November, 1532, at the hour\nof vespers.",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+            "title": "Francisco de Xerez: Caxamalca arrival date",
+            "author": "Francisco de Xerez; English translation by Clements R. Markham",
+            "license": "PD-US-expired (historical text; see rights_basis)",
+            "license_url": null,
+            "locator": "Printed p. 44; PDF page 72/176"
+          }
+        ]
+      },
+      {
+        "id": "motux-5-coastal-culture",
+        "text": "Xerez’s coastal-road account describes women’s ground-length robes, compared with Castilian dresses, and men’s short shirts.",
+        "evidence": [
+          {
+            "id": "ev-036b7c3f8d6f3e088c410649",
+            "kind": "source-text",
+            "semantic_role": "participant-account",
+            "text": "On this road all the people\nhave the same manner of living.            The women wear a long\nrobe which reaches to the ground, like the dresses of\nwomen in Castille.    The men have short shirts.",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Reports_on_the_discovery_of_Peru_(IA_reportsondiscove00markrich).pdf&oldid=1211212979",
+            "title": "Francisco de Xerez: coastal-road clothing description",
+            "author": "Francisco de Xerez; English translation by Clements R. Markham",
+            "license": "PD-US-expired (historical text; see rights_basis)",
+            "license_url": null,
+            "locator": "Printed p. 32; PDF page 60/176"
+          }
+        ]
+      },
+      {
+        "id": "motux-7-modern-photo-meta",
+        "text": "The Commons description identifies a Motupe image, credits Municipalidad Distrital de Motupe, and labels its date 2 September 2022.",
+        "evidence": [
+          {
+            "id": "ev-b929eca97b40fef2860fd844",
+            "kind": "source-text",
+            "semantic_role": "image-description",
+            "text": "Description Motupe.jpg Español: Ciudad de Motupe.\nDate 2 September 2022\nSource https://web.facebook.com/MunicipalidadDeMotupe\nAuthor Municipalidad Distrital de Motupe.\nThis file is licensed under the Creative Commons Attribution-Share Alike 4.0 International license. You are free: to share – to copy, distribute and transmit the work to remix – to adapt the work Under the following conditions: attribution – You must give appropriate",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Motupe.jpg&oldid=1047345898",
+            "title": "Motupe.jpg — Commons description and licensing record",
+            "author": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+            "license": "CC BY-SA 4.0 (description and declared image licence)",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "locator": "File description Information table, licence template and file history; original1280×720"
+          },
+          {
+            "id": "ev-43da4bcc6e2d3b3644ba9d1d",
+            "kind": "source-text",
+            "semantic_role": "image-description",
+            "text": "credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use. share alike – If you remix, transform, or build upon the material, you must distribute your contributions under the same or compatible license as the",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Motupe.jpg&oldid=1047345898",
+            "title": "Motupe.jpg — Commons description and licensing record",
+            "author": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+            "license": "CC BY-SA 4.0 (description and declared image licence)",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "locator": "File description Information table, licence template and file history; original1280×720"
+          },
+          {
+            "id": "ev-039790ef9e413c390a64ff34",
+            "kind": "source-text",
+            "semantic_role": "image-description",
+            "text": "original. https://creativecommons.org/licenses/by-sa/4.0 CC BY-SA 4.0 Creative Commons Attribution-Share Alike 4.0 true true",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Motupe.jpg&oldid=1047345898",
+            "title": "Motupe.jpg — Commons description and licensing record",
+            "author": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+            "license": "CC BY-SA 4.0 (description and declared image licence)",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "locator": "File description Information table, licence template and file history; original1280×720"
+          },
+          {
+            "id": "ev-05ef25f332b1ce2eabaef01c",
+            "kind": "provenance-metadata",
+            "semantic_role": "image-description",
+            "text": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+            "url": "https://commons.wikimedia.org/w/index.php?title=File:Motupe.jpg&oldid=1047345898",
+            "title": "Motupe.jpg — Commons description and licensing record",
+            "author": "Municipalidad Distrital de Motupe. (image author stated by Commons); Commons contributors (description)",
+            "license": "CC BY-SA 4.0 (description and declared image licence)",
+            "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+            "locator": "File description Information table, licence template and file history; original1280×720"
+          }
+        ]
+      },
+      {
+        "id": "motux-8-study-regional-limit",
+        "text": "The supplied record scopes Klaus’s study to Mórrope in 1536–1750; consultation covered the publisher bibliography and abstract, rather than the full article.",
+        "evidence": [
+          {
+            "id": "ev-a664d91b05092fd513c54819",
+            "kind": "study-metadata",
+            "semantic_role": "study-metadata",
+            "text": "Regional and later context: Mórrope in Lambayeque,1536–1750; publisher abstract describes integration of ethnohistory, archaeology and bioarchaeology to investigate health,diet,activity and burial/identity. Another community and later period; does not identify Motux inhabitants in1532.",
+            "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/es/article/view/18667",
+            "title": "Vida y muerte en el Perú colonial: inicios de la bioarqueología en Lambayeque histórico (1536–1750 d.C.)",
+            "author": "",
+            "license": "Bibliographic metadata and original scope note; publisher text remains link-only.",
+            "license_url": null,
+            "locator": "DOI10.18800/boletindearqueologiapucp.201601.006; Boletín de Arqueología PUCP20,pp.103–128 (bibliographic extent, not passage verification)"
+          },
+          {
+            "id": "ev-a0beca9ef51c52fae0c24141",
+            "kind": "study-metadata",
+            "semantic_role": "study-metadata",
+            "text": "Official publisher bibliographic record and abstract consulted2026-10-08,HTTP200. Full article not consulted or ingested; abstract scope and methods only, not independently verified results. Publisher is outside the corpus whitelist; link and bibliographic metadata only.",
+            "url": "https://revistas.pucp.edu.pe/index.php/boletindearqueologia/es/article/view/18667",
+            "title": "Vida y muerte en el Perú colonial: inicios de la bioarqueología en Lambayeque histórico (1536–1750 d.C.)",
+            "author": "",
+            "license": "Bibliographic metadata and original scope note; publisher text remains link-only.",
+            "license_url": null,
+            "locator": "DOI10.18800/boletindearqueologiapucp.201601.006; Boletín de Arqueología PUCP20,pp.103–128 (bibliographic extent, not passage verification)"
+          }
+        ]
+      }
+    ],
+    "gaps": [
+      "Markham identifies Motux with Motupe, but the supplied sources do not establish exact historic camp coordinates. The modern Motupe point is a reference marker only.",
+      "The selected Xerez passage gives a four-day rest but no exact Motux arrival or departure date. Its narrative position falls after San Miguel departure24September1532 and before Caxamalca arrival15November1532.",
+      "The evidence is an1872 English translation preserved in a1970 reprint scan and pdftotext extraction with OCR artifacts. It is neither an autograph nor the original Spanish manuscript; Markham editorial notes remain separate from Xerez narrative.",
+      "The supplied sources do not establish an ethnic or linguistic identity for the people encountered at Motux. General coastal-road descriptions and a later Mórrope study cannot provide that assignment.",
+      "Earlier original/thumbnail requests returned HTTP429/403. In the supervised 2026-10-23 Europe/Rome trial, one fresh metadata request and one original-image request succeeded (HTTP200); the retrieved JPEG matches the Commons-reported SHA1 and has been visually inspected. It supports modern-place context only. Exact capture date, camera GPS, independent rights-holder confirmation and correspondence with the historic Motux camp remain unverified.",
+      "The linked study was consulted at official bibliographic-record and abstract level. Its regional,later scope is relevant background only; it cannot be treated as direct testimony about Motux1532."
+    ],
+    "image_update": {
+      "as_of": "2026-10-23",
+      "text": "Earlier original/thumbnail requests returned HTTP429/403. In the supervised 2026-10-23 Europe/Rome trial, one fresh metadata request and one original-image request succeeded (HTTP200); the retrieved JPEG matches the Commons-reported SHA1 and has been visually inspected. It supports modern-place context only. Exact capture date, camera GPS, independent rights-holder confirmation and correspondence with the historic Motux camp remain unverified."
+    },
+    "study_ids": [
+      "lambayeque-klaus-2016"
+    ],
+    "media_ids": [
+      "motupe-town"
+    ]
+  },
+  "board": {
+    "sections": [
+      "scope",
+      "itinerary",
+      "chronology",
+      "sources",
+      "populations",
+      "images",
+      "narrative",
+      "review"
+    ],
+    "units": [
+      {
+        "id": "journey",
+        "kind": "journey",
+        "label": "Pizarro 1532–1533: scope and branches awaiting editorial decision",
+        "legacy_id": null,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "to_do",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": [
+              "The legacy route mixes main travel, side expeditions, repeated places and city events. A human scope decision and reviewed mapping are still required."
+            ]
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "materials_collected",
+            "summary": "No section-wide approval or completeness determination.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-01",
+        "kind": "waypoint",
+        "label": "San Miguel (legacy row 1)",
+        "legacy_id": 1,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "to_do",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-02",
+        "kind": "waypoint",
+        "label": "Tumbez (legacy row 2)",
+        "legacy_id": 2,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-03",
+        "kind": "waypoint",
+        "label": "the Piura valley (legacy row 3)",
+        "legacy_id": 3,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-04",
+        "kind": "waypoint",
+        "label": "Motux (legacy row 4)",
+        "legacy_id": 4,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "to_do",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": [
+              "Markham identifies Motux with Motupe, but the supplied sources do not establish exact historic camp coordinates. The modern Motupe point is a reference marker only."
+            ]
+          },
+          {
+            "id": "chronology",
+            "state": "reviewed_with_gaps",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": [
+              "The selected Xerez passage gives a four-day rest but no exact Motux arrival or departure date. Its narrative position falls after San Miguel departure24September1532 and before Caxamalca arrival15November1532."
+            ]
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": [
+              "The evidence is an1872 English translation preserved in a1970 reprint scan and pdftotext extraction with OCR artifacts. It is neither an autograph nor the original Spanish manuscript; Markham editorial notes remain separate from Xerez narrative."
+            ]
+          },
+          {
+            "id": "populations",
+            "state": "to_do",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": [
+              "The supplied sources do not establish an ethnic or linguistic identity for the people encountered at Motux. General coastal-road descriptions and a later Mórrope study cannot provide that assignment."
+            ]
+          },
+          {
+            "id": "images",
+            "state": "reviewed_task_results",
+            "summary": "One modern-context candidate retrieved and visually inspected in the supervised trial; task review and remaining gap limits must be read separately from section completeness.",
+            "gaps": [
+              "Earlier original/thumbnail requests returned HTTP429/403. In the supervised 2026-10-23 Europe/Rome trial, one fresh metadata request and one original-image request succeeded (HTTP200); the retrieved JPEG matches the Commons-reported SHA1 and has been visually inspected. It supports modern-place context only. Exact capture date, camera GPS, independent rights-holder confirmation and correspondence with the historic Motux camp remain unverified."
+            ]
+          },
+          {
+            "id": "narrative",
+            "state": "materials_collected",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "materials_collected",
+            "summary": "Existing reviewed Motux material is available; review applies to selected atoms and retained limits only. New tasks still need their own result/review receipts.",
+            "gaps": [
+              "The linked study was consulted at official bibliographic-record and abstract level. Its regional,later scope is relevant background only; it cannot be treated as direct testimony about Motux1532."
+            ]
+          }
+        ]
+      },
+      {
+        "id": "wp-05",
+        "kind": "waypoint",
+        "label": "Motux (legacy row 5)",
+        "legacy_id": 5,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-06",
+        "kind": "waypoint",
+        "label": "Guamamayo (legacy row 6)",
+        "legacy_id": 6,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-07",
+        "kind": "waypoint",
+        "label": "La Ramada (legacy row 7)",
+        "legacy_id": 7,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "blocked",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-08",
+        "kind": "waypoint",
+        "label": "Caxas (legacy row 8)",
+        "legacy_id": 8,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "blocked",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-09",
+        "kind": "waypoint",
+        "label": "Huanca-pampa (legacy row 9)",
+        "legacy_id": 9,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-10",
+        "kind": "waypoint",
+        "label": "Caxamalca (legacy row 10)",
+        "legacy_id": 10,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "to_do",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-11",
+        "kind": "waypoint",
+        "label": "Caxamalca (legacy row 11)",
+        "legacy_id": 11,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-12",
+        "kind": "waypoint",
+        "label": "Pachacama (legacy row 12)",
+        "legacy_id": 12,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-13",
+        "kind": "waypoint",
+        "label": "Xauxa (legacy row 13)",
+        "legacy_id": 13,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-14",
+        "kind": "waypoint",
+        "label": "Huanca-pampa (legacy row 14)",
+        "legacy_id": 14,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-15",
+        "kind": "waypoint",
+        "label": "Vilcas (legacy row 15)",
+        "legacy_id": 15,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "to_do",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-16",
+        "kind": "waypoint",
+        "label": "Cuzco (legacy row 16)",
+        "legacy_id": 16,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      },
+      {
+        "id": "wp-17",
+        "kind": "waypoint",
+        "label": "San Miguel (legacy row 17)",
+        "legacy_id": 17,
+        "sections": [
+          {
+            "id": "scope",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "itinerary",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "chronology",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "sources",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "populations",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "images",
+            "state": "materials_collected",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "narrative",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          },
+          {
+            "id": "review",
+            "state": "not_started",
+            "summary": "Legacy atlas content requires scoped research and review.",
+            "gaps": []
+          }
+        ]
+      }
+    ],
+    "tasks": [
+      {
+        "id": "decide-route-scope",
+        "unit_id": "journey",
+        "section": "scope",
+        "state": "todo",
+        "objective": "Record one editorial decision defining the main journey and treatment of side expeditions.",
+        "reasons": []
+      },
+      {
+        "id": "map-duplicate-motux",
+        "unit_id": "wp-04",
+        "section": "itinerary",
+        "state": "todo",
+        "objective": "Propose one mapping decision for legacy Motux rows 4 and 5; preserve both original identities.",
+        "reasons": []
+      },
+      {
+        "id": "check-motux-arrival",
+        "unit_id": "wp-04",
+        "section": "chronology",
+        "state": "documented_gap",
+        "objective": "Determine whether one supplied Motux passage establishes an exact arrival date or only a duration.",
+        "reasons": []
+      },
+      {
+        "id": "check-one-motupe-photo",
+        "unit_id": "wp-04",
+        "section": "images",
+        "state": "approved",
+        "objective": "Verify the one existing Motupe photograph candidate through its fixed official Commons metadata record and, only if the recorded license permits, the returned original asset. No alternative image search.",
+        "reasons": []
+      },
+      {
+        "id": "check-cajamarca-arrival",
+        "unit_id": "wp-10",
+        "section": "chronology",
+        "state": "todo",
+        "objective": "Prepare one attributed date proposal from the arrival passage already identified by the route audit.",
+        "reasons": []
+      },
+      {
+        "id": "check-tangarara-reference",
+        "unit_id": "wp-01",
+        "section": "itinerary",
+        "state": "todo",
+        "objective": "Assess one proposed modern Tangarara reference point and its distinction from the historical settlement site.",
+        "reasons": []
+      },
+      {
+        "id": "check-la-ramada-reference",
+        "unit_id": "wp-07",
+        "section": "itinerary",
+        "state": "blocked",
+        "objective": "Assess one La Ramada location proposal, leaving a historical point unassigned when unsupported.",
+        "reasons": [
+          "dependency_not_approved:decide-route-scope"
+        ]
+      },
+      {
+        "id": "check-vilcas-attribution",
+        "unit_id": "wp-15",
+        "section": "sources",
+        "state": "todo",
+        "objective": "Identify the narrator/editorial voice behind one Bilcas–Vilcas identification in the supplied audit.",
+        "reasons": []
+      },
+      {
+        "id": "check-morrope-study-scope",
+        "unit_id": "wp-04",
+        "section": "populations",
+        "state": "todo",
+        "objective": "Assess one Mórrope bibliography record for its actual consultation level and relevance to Motux.",
+        "reasons": []
+      },
+      {
+        "id": "classify-caxas-branch",
+        "unit_id": "wp-08",
+        "section": "itinerary",
+        "state": "blocked",
+        "objective": "Prepare one route-actor attribution for the Caxas record as a proposed branch.",
+        "reasons": [
+          "dependency_not_approved:decide-route-scope"
+        ]
+      }
+    ],
+    "counts": {
+      "tasks": {
+        "todo": 6,
+        "documented_gap": 1,
+        "approved": 1,
+        "blocked": 2
+      },
+      "sections": {
+        "to_do": 6,
+        "materials_collected": 84,
+        "not_started": 50,
+        "reviewed_with_gaps": 1,
+        "reviewed_task_results": 1,
+        "blocked": 2
+      }
+    }
+  },
+  "provenance": {
+    "edition_notes": [
+      "Xerez and related accounts: Clements R. Markham English translation (1872), consulted through a scan of the 1970 reprint. Historical translated body only; no autograph authentication.",
+      "Sancho: Philip Ainsworth Means English translation (1917), via the public-domain Gutenberg witness.",
+      "Quotations preserve the saved source witness, including OCR artifacts; exact copying does not certify historical truth.",
+      "Some extracted quotation line endings were normalized from CRLF to LF in the original route audit; wording and source spelling are retained.",
+      "Scholarly publications are linked bibliography and brief original contextual paraphrases only; publisher full text is not reproduced."
+    ],
+    "review_scopes": [
+      "Seven Motux editorial statements: exact reviewed wording and selected evidence retained.",
+      "Ten-event core and supplemental source index: independently checked private proposal, now exposed as a research proposal.",
+      "Journey v2: a reviewed date gap and a reviewed modern image candidate; task status is not section completeness.",
+      "Current user authorization covers publication of this research edition for discussion, not canonical atlas replacement or historical certification.",
+      "The original private snapshots and their approval flags are preserved; current visibility authorization is a separate publication decision."
+    ],
+    "limits": [
+      "No exact historical camp coordinates are certified.",
+      "Piura valley and La Ramada have no map coordinates in this edition; all 23 additional entries remain unmapped.",
+      "Months and years are displayed at their supplied precision, with no inferred animation or travel speed.",
+      "No encountered population identity is inferred from modern geography or later scholarship.",
+      "No original Pizarro autograph or Archivo General de Indias manuscript image has been authenticated in this research."
+    ]
+  }
+}

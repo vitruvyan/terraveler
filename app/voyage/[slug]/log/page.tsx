@@ -131,6 +131,19 @@ export default async function VoyageLog({
           {voyage.ships ? ` · ${voyage.ships}` : ""}
         </p>
         {voyage.summary && <p style={{ margin: "14px 0" }}>{voyage.summary}</p>}
+        {slug === "pizarro-1532" && (
+          <aside aria-label="Pizarro research edition" style={{
+            marginBlock: "var(--space-5)", padding: "var(--space-4)",
+            border: "1px solid var(--rule-mid)", background: "var(--parchment-raised)",
+          }}>
+            <p style={{ margin: 0 }}>An edition for joint review now brings together the proposed main itinerary,
+              subsidiary expeditions, source passages, images, studies and unresolved questions.
+              The legacy itinerary below has not yet been replaced by that proposal.</p>
+            <a className="log-full-link" href="/voyage/pizarro-1532/research">
+              Open the Pizarro research edition →
+            </a>
+          </aside>
+        )}
         </div>
 
         {illustration?.opener && <VoyageEngraving scene={illustration.opener} />}
