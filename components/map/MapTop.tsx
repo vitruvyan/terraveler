@@ -25,11 +25,13 @@ export default function MapTop({
   atlasCount,
   pickerOpen,
   onTogglePicker,
+  researchLink,
 }: {
   title: string;
   atlasCount?: number;
   pickerOpen: boolean;
   onTogglePicker: () => void;
+  researchLink?: { href: string; label: string };
 }) {
   return (
     <div className="map-top">
@@ -38,8 +40,9 @@ export default function MapTop({
         atlasCount={atlasCount}
         pickerOpen={pickerOpen}
         onTogglePicker={onTogglePicker}
+        researchLink={researchLink}
       />
-      <MapDoors />
+      <MapDoors contextLink={researchLink} />
     </div>
   );
 }

@@ -21,11 +21,13 @@ export default function MapImprint({
   atlasCount,
   pickerOpen,
   onTogglePicker,
+  researchLink,
 }: {
   title: string;
   atlasCount?: number;
   pickerOpen: boolean;
   onTogglePicker: () => void;
+  researchLink?: { href: string; label: string };
 }) {
   /* Opening the atlas hides the welcome cartouche, and closing it brings the
      cartouche back — it is not dismissed, because opening a panel is not the
@@ -49,7 +51,11 @@ export default function MapImprint({
           inside the button, which made half the control naked text on the map
           and left the whole thing reading as a subtitle under the wordmark
           however it was positioned. */}
-      <span className="map-here">{title}</span>
+      {researchLink ? (
+        <a className="map-here" href={researchLink.href}>{researchLink.label}</a>
+      ) : (
+        <span className="map-here">{title}</span>
+      )}
 
       {/* The door. All of it one dark pill, so there is no half of it that
           could be mistaken for a caption. Keep a real touch target here: on

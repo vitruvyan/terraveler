@@ -677,6 +677,10 @@ export default function VoyageExperience({
         atlasCount={atlasCount}
         pickerOpen={pickerOpen}
         onTogglePicker={() => setPickerOpen((o) => !o)}
+        researchLink={voyage.slug === "pizarro-1532" ? {
+          href: "/voyage/pizarro-1532/research",
+          label: "Pizarro · Research edition →",
+        } : undefined}
       />
 
       {/* Vertical lens rail — left edge, vertically centred. On mobile it
@@ -1092,6 +1096,11 @@ export default function VoyageExperience({
                     beside it, the provenance Carta §3.5 promises: who asked
                     for this voyage and what drafted it. */}
                 <div style={{ display: "flex", flexWrap: "wrap", columnGap: 16 }}>
+                  {voyage.slug === "pizarro-1532" && (
+                    <a className="log-full-link" href="/voyage/pizarro-1532/research">
+                      <Icon name="scroll" size={16} /> Research edition: sources, images and gaps →
+                    </a>
+                  )}
                   <a className="log-full-link" href={voyageLogPath(voyage.slug)}>
                     <Icon name="scroll" size={16} /> Read the whole log as text →
                   </a>
