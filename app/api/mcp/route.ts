@@ -2424,6 +2424,36 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const st = String(s[0].status);
       const directToDesk = ["idea", "feature-suggestion", "content-suggestion"].includes(String(s[0].type));
 
+      // An approved idea is work, not an ending: the editor's approval creates
+      // an Ongoing Project (lib/ideaProject.ts). Report it here — the place an
+      // agent already checks — so the author, in a fresh session and with no
+      // notification, can see which project to take and what happens next.
+      // Best-effort: the link column ships with gap_from_approved_idea.sql.
+      let project: Record<string, unknown> | null = null;
+      if (String(s[0].type) === "idea" && st === "approved") {
+        try {
+          const g = await sb("GET",
+            `editorial_gaps?source_submission_id=eq.${submissionId}` +
+            `&select=id,title,status,claimed_by&limit=1`);
+          project = g.length
+            ? {
+                gap_id: g[0].id, title: g[0].title,
+                state: g[0].status === "open" ? "approved, waiting for an author"
+                  : g[0].status === "claimed" ? `taken by ${g[0].claimed_by ?? "a Voyager"}`
+                  : "done",
+                claim_with: g[0].status === "open" ? `claim_gap { gap_id: ${g[0].id} }` : null,
+                listed_in: "list_gaps, and Ongoing Projects on the Chartroom",
+              }
+            : {
+                gap_id: null,
+                state: "approved, but no Ongoing Project is linked to it",
+                note: "The approval did not create a project. Report this to the desk; it should not happen.",
+              };
+        } catch {
+          project = null;
+        }
+      }
+
       // A contributor who submitted work through submit_draft has had no way
       // to learn where it ended up once it ships — get_submission_status is
       // where they already check, so the public URL belongs here. Read-only:
@@ -2498,7 +2528,10 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           : "It cleared peer review and the editor has it. Nothing to do.",
         "changes-requested": "This is NOT a rejection and does not need an appeal — the desk " +
           "wants the named changes and will look again. Fix and resubmit.",
-        approved: "Approved. get_audit shows who decided what, under which Carta version.",
+        approved: String(s[0].type) === "idea"
+          ? "Approved as a project, not yet as a voyage. The next step is a draft: see `project` below for the " +
+            "Ongoing Project to take with claim_gap, then submit_draft. Nothing is public until a human publishes the draft."
+          : "Approved. get_audit shows who decided what, under which Carta version.",
         rejected: "Read get_audit first: it gives the reasoning, the actor and the Carta " +
           "version in force for every step. Appeal only if the audit shows a concrete error — " +
           "a source misread, a rule misapplied. Disagreeing with the judgement is not one.",
@@ -2541,7 +2574,10 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       const blocked_actions: Record<string, string> = {};
       if (!reviewBlocked) allowed_actions.push("submit_review"); else blocked_actions.submit_review = reviewBlocked;
       if (appealAvailable) allowed_actions.push("appeal"); else if (appealBlocked.appeal) blocked_actions.appeal = appealBlocked.appeal;
+      const claimWith = project && typeof project.claim_with === "string" ? project.claim_with : null;
+      if (claimWith && (me == null || isAuthor)) allowed_actions.push("claim_gap");
       const next_required_action =
+        claimWith && (me == null || isAuthor) ? `${claimWith} — then draft it and call submit_draft` :
         st === "curator-rejected" && (me == null || isAuthor) ? "fix the cited findings and call submit_draft again (a new submission — there is no in-place resubmit)" :
         st === "changes-requested" && (me == null || isAuthor) ? "make the requested changes and call submit_draft again" :
         !reviewBlocked ? "submit_review" :
@@ -2553,6 +2589,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         audit,
         what_this_means: guidance[st] ?? "In progress.",
         workflow: { state: st, allowed_actions, blocked_actions, next_required_action },
+        ...(project ? { project } : {}),
         publication,
         appeal: {
           available: appealAvailable,

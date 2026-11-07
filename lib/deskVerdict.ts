@@ -10,6 +10,7 @@
 import { sb } from "@/lib/deskAuth";
 import { CARTA_VERSION } from "@/lib/carta";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
+import { projectFromApprovedIdea } from "@/lib/ideaProject";
 
 const STATUS: Record<string, string> = {
   approve: "approved",
@@ -83,6 +84,23 @@ export async function resolveVerdict(
       `audit_log?submission_id=eq.${submissionId}&action=eq.appeal&select=created_at&order=id.desc&limit=1`);
     const filedOn = priorAppeals[0]?.created_at ? String(priorAppeals[0].created_at).slice(0, 10) : "unknown date";
     findings.push(["APPEAL-RULING", 0, `answers the appeal filed ${filedOn}`]);
+  }
+
+  // Approving an idea is the moment it becomes work. Without this the approval
+  // changed one status and the idea vanished from every list (Cabeza de Vaca,
+  // proposal #111). The ruling stands even if this fails — the audit says so.
+  if (verdict === "approve" && String(rows[0].type) === "idea") {
+    try {
+      const project = await projectFromApprovedIdea(submissionId);
+      if (project) {
+        findings.push(["PROJECT", 4,
+          `${project.created ? "created" : "already open as"} Ongoing Project #${project.gapId} ` +
+          `from this proposal; claim_gap { gap_id: ${project.gapId} } to start the draft`]);
+      }
+    } catch (e: any) {
+      findings.push(["PROJECT-NOT-CREATED", 2,
+        `approved, but the Ongoing Project could not be created: ${String(e?.message || e).slice(0, 300)}`]);
+    }
   }
 
   await sb("POST", "audit_log", {
