@@ -9,7 +9,7 @@
  * fourth kind of thing to learn.
  */
 
-export type Section = "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
+export type Section = "content" | "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 /* Replaces the old four (pending/flagged/drift/resolved), which were
  * organised by which source table held the row rather than by the editor's
@@ -25,6 +25,7 @@ export type DeskSidebarCounts = {
   /** Endpoints needs_human_review or quarantined — the old `flagged` tab's
    *  own badge, now surfaced on the Dossier that folded that tab in. */
   flagged: number;
+  sources?: number;
   claimed: number;
   claimedOverdue: number;
   humans: number;
@@ -57,19 +58,22 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, users
           aria-current={section === "overview"}
           onClick={() => onNavigate?.("overview")}
         >
-          Quarterdeck
+          Overview · Quarterdeck
         </button>
       </div>
 
       <div className="dk-nav-group">
-        <span className="dk-nav-heading">Submissions</span>
+        <button type="button" className="dk-nav-heading is-link" aria-current={section === "content"} onClick={() => onNavigate?.("content")}>Content catalogue</button>
+      </div>
+      <div className="dk-nav-group">
+        <span className="dk-nav-heading">Reviews & decisions</span>
         <button
           type="button"
           className="dk-nav-sub"
           aria-current={section === "submissions" && submissionsSub === "needs_verdict"}
           onClick={() => onNavigate?.("submissions", "needs_verdict")}
         >
-          Needs your verdict <Badge n={counts.needsVerdict} alarm />
+          Your decisions <Badge n={counts.needsVerdict} alarm />
         </button>
         <button
           type="button"
@@ -77,7 +81,7 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, users
           aria-current={section === "submissions" && submissionsSub === "peer_review"}
           onClick={() => onNavigate?.("submissions", "peer_review")}
         >
-          In peer review <Badge n={counts.peerReview} />
+          Agent review <Badge n={counts.peerReview} />
         </button>
         <button
           type="button"
@@ -105,7 +109,7 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, users
           aria-current={section === "sources" && sourcesSub === "dossier"}
           onClick={() => onNavigate?.("sources", "dossier")}
         >
-          Source dossier <Badge n={counts.flagged} alarm />
+          Source dossier <span className="ec-meta">{counts.sources ?? "—"} sources · {counts.flagged} to examine</span>
         </button>
         <button
           type="button"
