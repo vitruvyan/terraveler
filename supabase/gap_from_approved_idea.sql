@@ -31,7 +31,9 @@ select
   'Approved proposal #' || s.id || '. The editor approved the idea; the work itself is still to be done. '
     || 'Sources named in the proposal are candidates until a draft verifies them against the text. '
     || 'Next step: the proposing Voyager (or any Scribe) takes this project, then submits a draft.'
-    || coalesce(E'\n\n' || nullif(trim(coalesce(s.payload->>'description', s.payload->>'why')), ''), ''),
+    || coalesce(E'\n\n' || nullif(trim(coalesce(s.payload->>'description', s.payload->>'why')), ''), '')
+    || coalesce(E'\n\nRelated context, as proposed: ' || nullif(trim(s.payload->>'context'), ''), '')
+    || coalesce(E'\n\nCandidate sources named in the proposal, not yet verified: ' || nullif(trim(s.payload->>'evidence'), ''), ''),
   case when s.payload->>'kind' in ('voyage','waypoint','media','perspective','translation','correction')
        then s.payload->>'kind' else 'voyage' end,
   2, 'open', s.id, s.contributor_id

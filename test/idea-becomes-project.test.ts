@@ -101,6 +101,17 @@ test("approving an idea creates its Ongoing Project", async (t) => {
     assert.equal(calls.some((c) => c.url.includes("editorial_gaps")), false);
   });
 
+  await t.test("web proposals carry their context and candidate sources into the brief", () => {
+    const d = projectDescription(7, {
+      description: "Why it belongs.",
+      context: "Related to the Narváez expedition.",
+      evidence: "Relación (1542), Gutenberg.",
+    });
+    assert.match(d, /Why it belongs\./);
+    assert.match(d, /Related context, as proposed: Related to the Narváez expedition\./);
+    assert.match(d, /Candidate sources named in the proposal, not yet verified: Relación \(1542\), Gutenberg\./);
+  });
+
   await t.test("description keeps the proposal text and labels sources as candidates", () => {
     const d = projectDescription(111, { description: "Primary: Relación (1542)." });
     assert.match(d, /^Approved proposal #111/);

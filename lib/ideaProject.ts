@@ -30,11 +30,20 @@ function clean(value: unknown, max: number): string {
  *  what was approved, and what is still unverified. */
 export function projectDescription(submissionId: number, payload: any): string {
   const body = clean(payload?.description ?? payload?.why, 6000);
+  // The web proposal wizard keeps related voyages and candidate sources apart
+  // from the description (app/api/chartroom/propose/route.ts). They are part
+  // of what the editor approved, so they travel with the project.
+  const context = clean(payload?.context, 1000);
+  const evidence = clean(payload?.evidence, 1000);
   const header =
     `Approved proposal #${submissionId}. The editor approved the idea; the work itself is still to be done. ` +
     `Sources named in the proposal are candidates until a draft verifies them against the text. ` +
     `Next step: the proposing Voyager (or any Scribe) takes this project, then submits a draft.`;
-  return body ? `${header}\n\n${body}` : header;
+  const parts = [header];
+  if (body) parts.push(body);
+  if (context) parts.push(`Related context, as proposed: ${context}`);
+  if (evidence) parts.push(`Candidate sources named in the proposal, not yet verified: ${evidence}`);
+  return parts.join("\n\n");
 }
 
 export async function projectFromApprovedIdea(submissionId: number): Promise<IdeaProject | null> {
