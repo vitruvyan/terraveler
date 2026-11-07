@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
-import SubmissionBrief from "@/components/desk/SubmissionBrief";
+import SubmissionQueue, { type VerdictFeedback } from "@/components/desk/SubmissionQueue";
+import ContentCatalogue from "@/components/desk/ContentCatalogue";
+import type { DeskContent } from "@/lib/deskContent";
+import { decisionQueues, type DeskSubmission } from "@/lib/deskPresentation";
+import "./editorial.css";
 import {
   PendingSourceProposals, SourceDossier, ReverificationStatus,
   type PendingProposal, type ResolvedDecision, type DossierEndpoint,
@@ -15,19 +19,7 @@ import type { PromptKey } from "@/lib/promptRegistry";
 import { PENDING_STATUSES } from "@/lib/deskEscalation";
 import { CLAIM_TTL_DAYS } from "@/lib/agentCapabilities";
 
-type Sub = {
-  id: number;
-  type: string;
-  target_voyage: string | null;
-  status: string;
-  carta_version: string;
-  created_at: string;
-  payload: any;
-  contributor: { handle: string; rank: string } | null;
-  audit: { actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
-  reviews: { reviewer: { handle: string; rank: string } | null; verdict: string; findings: any; created_at: string }[];
-  escalated: boolean;
-};
+type Sub = DeskSubmission;
 
 type SubGroups = { needs_verdict: Sub[]; peer_review: Sub[]; history: Sub[] };
 const EMPTY_SUB_GROUPS: SubGroups = { needs_verdict: [], peer_review: [], history: [] };
@@ -124,39 +116,11 @@ type Analytics = {
   topPaths: { path: string; n: number }[];
 };
 
-/* Where a submission stands. The values live in :root — four of the seven
-   hexes that used to sit here failed AA on parchment while being the text
-   colour of the badge that carries them. */
-const STATUS_COLOR: Record<string, string> = {
-  submitted: "var(--state-wait)",
-  "peer-review": "var(--state-review)",
-  "human-review": "var(--state-desk)",
-  approved: "var(--state-ok)",
-  rejected: "var(--state-no)",
-  "curator-rejected": "var(--state-no)",
-  "changes-requested": "var(--state-changes)",
-  // Carta §5: appealable to the Editor-in-chief alone, and nobody else's to
-  // rule on (Ship's Officers §4.1). Alarm, not one of the six ordinary
-  // states — it is a claim on the editor's attention, not a stage a
-  // submission is passing through.
-  appealed: "var(--state-alarm)",
-};
-
-/** The grounds a contributor filed with `appeal` (app/api/mcp/route.ts),
- *  recorded as audit_log findings [["APPEAL", 0, grounds]]. Read here so the
- *  editor rules with them beside the draft rather than inside the collapsed
- *  audit trail. */
-function appealGrounds(s: Sub): string | null {
-  const row = [...s.audit].reverse().find((a) => a.action === "appeal");
-  const f = Array.isArray(row?.findings) ? row!.findings[0] : null;
-  return Array.isArray(f) ? String(f[2] ?? "") : null;
-}
-
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
+const SECTIONS: Section[] = ["content", "overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
-  overview: "Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
+  content: "Content", overview: "Overview · Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
   waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
@@ -168,7 +132,7 @@ const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "his
 const SOURCES_SUBS: SourcesSub[] = ["pending", "dossier", "reverify"];
 const USERS_SUBS: UsersSub[] = ["humans", "agents"];
 const SUB_LABEL: Record<string, string> = {
-  needs_verdict: "Needs your verdict", peer_review: "In peer review", history: "History",
+  needs_verdict: "Your decisions", peer_review: "Agent review", history: "History",
   pending: "Pending proposals", dossier: "Source dossier", reverify: "Reverification",
   humans: "Humans", agents: "Agents",
 };
@@ -225,7 +189,11 @@ export default function Desk() {
   const [promptVersions, setPromptVersions] = useState<PromptVersion[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [note, setNote] = useState<Record<number, string>>({});
+  const [subLoading, setSubLoading] = useState(true);
+  const [subError, setSubError] = useState("");
+  const [content, setContent] = useState<DeskContent | null>(null);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [contentError, setContentError] = useState("");
   const [rankPick, setRankPick] = useState<Record<number, string>>({});
   const [busy, setBusy] = useState(false);
 
@@ -234,29 +202,53 @@ export default function Desk() {
      form of its own — the five API routes behind it each call requireEditor,
      so the role is enforced where it matters rather than at a second front
      door with its own copy to keep in step. */
-  async function load() {
-    const who = await fetch("/api/desk/me").then((r) => r.json()).catch(() => ({ signed_in: false }));
-    if (!who.signed_in) { window.location.href = "/login?next=/desk"; return; }
-    setMe({ email: who.email });
-    if (!who.is_editor) { setStanding("not-editor"); return; }
-    setStanding("editor");
+  async function refreshContent() {
+    setContentLoading(true); setContentError("");
+    try {
+      const r = await fetch("/api/desk/content");
+      if (!r.ok) throw new Error("Could not load the content catalogue.");
+      setContent(await r.json());
+    } catch { setContentError("Could not load the content catalogue. Please retry."); }
+    finally { setContentLoading(false); }
+  }
 
-    const r = await fetch("/api/desk/overview");
-    if (r.ok) setOverview(await r.json());
-    const [rs, rc, ra, rp, rw] = await Promise.all([
-      fetch("/api/desk/submissions"), fetch("/api/desk/users"), fetch("/api/desk/analytics"),
-      fetch("/api/desk/prompts"), fetch("/api/desk/claims"),
-    ]);
-    if (rs.ok) setSubGroups({ ...EMPTY_SUB_GROUPS, ...(await rs.json()) });
-    if (rc.ok) {
-      const u = await rc.json();
-      setHumans(u.humans ?? []);
-      setAgentUsers(u.agents ?? []);
-    }
-    if (ra.ok) setAnalytics(await ra.json());
-    if (rp.ok) setPromptVersions((await rp.json()).versions ?? []);
-    if (rw.ok) setClaims((await rw.json()).claims ?? []);
-    await refreshGovernance();
+  async function load() {
+    setErr(""); setSubLoading(true); setSubError("");
+    try {
+      const response = await fetch("/api/desk/me");
+      if (!response.ok) throw new Error("Could not check your editor session.");
+      const who = await response.json();
+      if (!who.signed_in) { window.location.href = "/login?next=/desk"; return; }
+      setMe({ email: who.email });
+      if (!who.is_editor) { setStanding("not-editor"); return; }
+      setStanding("editor");
+      await Promise.all([
+        (async () => {
+          try {
+            const r = await fetch("/api/desk/submissions");
+            if (!r.ok) throw new Error();
+            const groups: SubGroups = { ...EMPTY_SUB_GROUPS, ...(await r.json()) };
+            setSubGroups(decisionQueues(groups));
+          } catch { setSubError("Could not load contributions. This is not an empty review queue."); }
+          finally { setSubLoading(false); }
+        })(),
+        refreshContent(),
+        ...[
+          ["overview", (v: any) => setOverview(v)],
+          ["users", (v: any) => { setHumans(v.humans ?? []); setAgentUsers(v.agents ?? []); }],
+          ["analytics", (v: any) => setAnalytics(v)],
+          ["prompts", (v: any) => setPromptVersions(v.versions ?? [])],
+          ["claims", (v: any) => setClaims(v.claims ?? [])],
+        ].map(async ([path, apply]) => {
+          try {
+            const r = await fetch(`/api/desk/${path}`);
+            if (!r.ok) throw new Error();
+            (apply as (v: any) => void)(await r.json());
+          } catch { setErr((old) => `${old} Could not load ${path}.`); }
+        }),
+        refreshGovernance(),
+      ]);
+    } catch { setErr("Could not load the desk. Check your connection and retry."); setSubLoading(false); }
   }
 
   /* The source lists (pending proposals, the dossier, reverification) are
@@ -265,7 +257,7 @@ export default function Desk() {
      opened earlier must not stay frozen at what was true when it loaded. */
   async function refreshGovernance() {
     const rg = await fetch("/api/desk/governance").catch(() => null);
-    if (!rg?.ok) return;
+    if (!rg?.ok) { setErr((old) => `${old} Could not load sources.`); return; }
     const gov = await rg.json();
     setPendingSources(gov.queue?.pending_proposals ?? []);
     setResolvedSources(gov.queue?.recent_decisions ?? []);
@@ -276,6 +268,18 @@ export default function Desk() {
     setEndpointContext(gov.queue?.endpoint_context ?? {});
     setReverificationEvidence(gov.queue?.reverification_evidence ?? { any_reverifications: false, any_drift_evaluations: false });
   }
+
+  useEffect(() => {
+    const sync = () => {
+      setSection(initialSection());
+      setSubmissionsSub(initialSub(SUBMISSIONS_SUBS, "needs_verdict"));
+      setSourcesSub(initialSub(SOURCES_SUBS, "pending"));
+      setUsersSub(initialSub(USERS_SUBS, "humans"));
+      setSubmissionFilter(new URLSearchParams(window.location.search).get("filter") ?? "");
+    };
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
 
   /** Sets the sidebar's own state and rewrites ?tab=&sub= to match, so a
    *  reload or a shared link lands back on the exact same subsection. */
@@ -288,7 +292,8 @@ export default function Desk() {
     const params = new URLSearchParams();
     params.set("tab", next);
     if (sub) params.set("sub", sub);
-    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    window.history.pushState(null, "", `${window.location.pathname}?${params.toString()}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 
   async function savePrompt(key: PromptKey, body: string, notes: string) {
@@ -359,30 +364,19 @@ export default function Desk() {
   }, []);
 
 
-  /** lib/deskVerdict.ts's Carta §10.4 dossier guard refuses an approve whose
-   *  reviewers' dossier isn't clean (fewer than 2 reviews, or any refute)
-   *  unless it's told this is deliberate. Nothing here ever collected that
-   *  reason, so the guard was unconditional in practice — this is the one
-   *  place the editor's own authority to overrule the dossier gets exercised. */
-  async function verdict(id: number, v: string, override?: string) {
+  async function verdict(id: number, v: string, note: string, override?: string): Promise<VerdictFeedback> {
     setBusy(true);
-    const r = await fetch("/api/desk/verdict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submission_id: id, verdict: v, note: note[id] || undefined, override }),
-    });
-    setBusy(false);
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      if (v === "approve" && !override && String(j.error ?? "").includes("dossier is not clean")) {
-        const reason = prompt(`${j.error}\n\nOverride reason (leave blank to cancel):`);
-        if (reason && reason.trim()) verdict(id, v, reason.trim());
-        return;
-      }
-      alert(j.error ?? "failed");
-      return;
-    }
-    load();
+    try {
+      const r = await fetch("/api/desk/verdict", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submission_id: id, verdict: v, note: note || undefined, override }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return { error: j.error ?? "Could not record your decision.", needsOverride: v === "approve" && String(j.error ?? "").includes("dossier is not clean") };
+      await load();
+      return {};
+    } catch { return { error: "Could not record your decision. Check the audit before retrying." }; }
+    finally { setBusy(false); }
   }
 
   async function demandAction(id: number, action: "promote" | "dismiss", query: string) {
@@ -493,12 +487,13 @@ export default function Desk() {
     <>
     <SiteHeader />
     <main className="dk-page">
+      <p className="ec-meta">Agents prepare and review. You authorize publication; approval alone does not put content online.</p>
       <DeskHeading
         eyebrow={eyebrow}
         title={title}
         aside={
-          <button className="desk-btn" onClick={async () => { await fetch("/api/desk/logout", { method: "POST" }); window.location.href = "/"; }}>
-            Sign out
+          <button className="desk-btn" onClick={() => navigate(section === "content" ? "submissions" : "content", section === "content" ? "needs_verdict" : undefined)}>
+            {section === "content" ? "Your decisions" : "Browse content"}
           </button>
         }
       />
@@ -515,6 +510,7 @@ export default function Desk() {
             history: subGroups.history.length,
             pending: pendingSources.length,
             flagged: flaggedEndpoints.length,
+            sources: allEndpoints.length,
             claimed: claims.length,
             claimedOverdue: claims.filter((c) =>
               c.claimed_at && Date.now() - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000
@@ -526,6 +522,8 @@ export default function Desk() {
         />
 
         <div className="dk-content">
+      {err && <div className="ec-error" role="alert"><p>{err}</p><button className="desk-btn" onClick={load}>Retry desk data</button></div>}
+      {section === "content" && <ContentCatalogue data={content} loading={contentLoading} error={contentError} onRetry={refreshContent} />}
       {section === "overview" && overview && (
         <>
           {/* Numbers that ask something of you, and a ledger for what is
@@ -535,6 +533,8 @@ export default function Desk() {
               (Ship's Officers §8, brake 2): the automated desk could not
               settle these, and until this panel existed neither reached the
               editor at all. */}
+          {!contentLoading && !contentError && content && <p className="ec-next"><a href="/desk?tab=content&contentStatus=open">{content.projects.filter((p) => p.status === "open").length} projects waiting for an author →</a></p>}
+          {subError && <p className="ec-error" role="alert">{subError}</p>}
           <DeskStanding
             demands={[
               { label: "appealed", n: overview.counts.appealed ?? 0, alarm: true, href: "/desk?tab=submissions&sub=needs_verdict&filter=appealed" },
@@ -591,157 +591,20 @@ export default function Desk() {
             </>
           )}
 
-          <h2 className="dk-section-title">Ship&apos;s log</h2>
-          <ShipsLog feed={overview.feed} />
+          <h2 className="dk-section-title">Recent activity</h2>
+          <ShipsLog feed={overview.feed.slice(0, 8)} />
         </>
       )}
 
       {section === "submissions" && (() => {
-        const list = submissionFilter
+        const directSubmission = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("submission");
+        const list = directSubmission ? Object.values(subGroups).flat() : submissionFilter
           ? Object.values(subGroups).flat().filter((s) => submissionFilter === "escalated"
             ? s.escalated && PENDING_STATUSES.includes(s.status)
             : s.status === submissionFilter)
           : subGroups[submissionsSub];
         return (
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
-          {list.length === 0 && (
-            <p className="dk-empty">
-              {submissionFilter ? `No submissions ${submissionFilter === "human-review" ? "awaiting the desk" : submissionFilter === "peer-review" ? "in peer review" : submissionFilter}.`
-                : submissionsSub === "needs_verdict" ? "Nothing waiting on your verdict."
-                : submissionsSub === "peer_review" ? "Nothing currently with the Scribes."
-                : "No settled submissions yet."}
-            </p>
-          )}
-          {list.map((s) => (
-            <div key={s.id} style={{ border: "1px solid var(--parchment-deep)", borderRadius: 10, background: "rgba(255,255,255,0.35)", padding: "14px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                <strong style={{ fontFamily: "var(--font-display)" }}>
-                  #{s.id} · {s.type}{s.target_voyage ? ` → ${s.target_voyage}` : ""}
-                </strong>
-                <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  {s.contributor && (
-                    <span className="conf-badge">{s.contributor.handle} · {s.contributor.rank}</span>
-                  )}
-                  {s.escalated && (
-                    <span
-                      className="conf-badge"
-                      title="the Curator's mechanical pass could not settle this — it needs a reader"
-                      style={{ borderColor: "var(--state-alarm)", color: "var(--state-alarm)" }}
-                    >
-                      escalated
-                    </span>
-                  )}
-                  <span className="conf-badge" style={{ borderColor: STATUS_COLOR[s.status], color: STATUS_COLOR[s.status] }}>
-                    {s.status}
-                  </span>
-                </span>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--ink-soft)", margin: "4px 0 8px" }}>
-                {new Date(s.created_at).toLocaleString()} · Carta v{s.carta_version}
-              </div>
-
-              {/* An appeal contests a verdict already given (Carta §5), so the
-                  grounds belong beside the draft the same way the brief does
-                  — not inside the collapsed audit trail below, where ruling
-                  on it would mean reading past everything else first. */}
-              {s.status === "appealed" && (
-                <section className="sb sb-appeal">
-                  <p className="sb-lede">
-                    <span className="sb-verb">Appeal</span> — grounds for contesting the prior
-                    verdict, for the editor to weigh before ruling again.
-                  </p>
-                  <p className="sb-idea">
-                    {appealGrounds(s) ?? "No grounds found in the audit trail — see the record below."}
-                  </p>
-                </section>
-              )}
-
-              {/* What is being proposed. The record of it follows, below and
-                  shut: an audit trail has to be inspectable, but it is a poor
-                  thing to ask a verdict from. */}
-              <SubmissionBrief type={s.type} payload={s.payload} />
-
-              <details>
-                <summary style={{ cursor: "pointer", fontSize: "var(--step--1)", color: "var(--ink-faint)" }}>
-                  The record as submitted
-                </summary>
-                <pre style={{ maxHeight: 300, overflow: "auto", fontSize: "var(--step--2)", background: "rgba(43,33,23,0.05)", padding: "var(--space-3)", borderRadius: "var(--radius-2)" }}>
-                  {JSON.stringify(s.payload, null, 2)}
-                </pre>
-              </details>
-
-              {(s.reviews?.length ?? 0) > 0 && (
-                <details style={{ marginTop: 6 }} open={s.status === "human-review"}>
-                  <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--accent)" }}>
-                    Peer reviews ({s.reviews.length})
-                  </summary>
-                  <div style={{ fontSize: 12.5, marginTop: 6, display: "flex", flexDirection: "column", gap: 8 }}>
-                    {s.reviews.map((rv, i) => (
-                      <div key={i} style={{ borderLeft: "3px solid var(--parchment-deep)", paddingLeft: 10 }}>
-                        <strong>{rv.reviewer?.handle ?? "?"}</strong> · verdict: <strong>{rv.verdict}</strong>
-                        <span style={{ color: "var(--ink-soft)" }}> · {new Date(rv.created_at).toLocaleString()}</span>
-                        {Array.isArray(rv.findings) && (
-                          <ul style={{ margin: "4px 0 0 18px", color: "var(--ink-soft)" }}>
-                            {rv.findings.slice(0, 10).map((f: any, j: number) => (
-                              <li key={j}>
-                                {f.claim}: <strong>{f.assessment}</strong>
-                                {f.evidence_url ? <> · <a href={f.evidence_url} target="_blank" rel="noreferrer">evidence</a></> : null}
-                                {f.note ? ` — ${f.note}` : ""}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
-
-              {s.audit.length > 0 && (
-                <details style={{ marginTop: 6 }}>
-                  <summary style={{ cursor: "pointer", fontSize: 13, color: "var(--ink-soft)" }}>
-                    Audit trail ({s.audit.length})
-                  </summary>
-                  <div style={{ fontSize: 12.5, marginTop: 6, display: "flex", flexDirection: "column", gap: 6 }}>
-                    {s.audit.map((a, i) => (
-                      <div key={i}>
-                        <strong>{a.actor}</strong> · {a.action}
-                        {a.verdict ? ` → ${a.verdict}` : ""} ·{" "}
-                        <span style={{ color: "var(--ink-soft)" }}>{new Date(a.created_at).toLocaleString()}</span>
-                        {Array.isArray(a.findings) && a.findings.length > 0 && (
-                          <ul style={{ margin: "4px 0 0 18px", color: "var(--ink-soft)" }}>
-                            {a.findings.slice(0, 12).map((f: any, j: number) => (
-                              <li key={j}>{Array.isArray(f) ? f.join(" · ") : String(f)}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </details>
-              )}
-
-              {/* 'appealed' belongs here too: ruling on an appeal is the
-                  editor's job precisely (Carta §5; Ship's Officers §4.1
-                  forbids the Curator this one thing), and the desk must not
-                  be a dead end for it. */}
-              {["submitted", "peer-review", "human-review", "changes-requested", "appealed"].includes(s.status) && (
-                <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                  <input
-                    value={note[s.id] ?? ""}
-                    onChange={(e) => setNote({ ...note, [s.id]: e.target.value })}
-                    placeholder="verdict note (recorded in the audit trail)"
-                    className="desk-input"
-                    style={{ flex: 1, minWidth: 220 }}
-                  />
-                  <button className="desk-btn desk-btn-approve" disabled={busy} onClick={() => verdict(s.id, "approve")}>Approve</button>
-                  <button className="desk-btn desk-btn-changes" disabled={busy} onClick={() => verdict(s.id, "changes")}>Changes</button>
-                  <button className="desk-btn desk-btn-reject" disabled={busy} onClick={() => verdict(s.id, "reject")}>Reject</button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <SubmissionQueue key={`${submissionsSub}:${submissionFilter}`} submissions={list} loading={subLoading} error={subError} onRetry={load} onVerdict={verdict} busy={busy} />
         );
       })()}
 

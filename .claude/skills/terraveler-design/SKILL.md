@@ -479,8 +479,9 @@ are editing is already migrated; check it. As of the typography commit:
   literal sizes.
 - The **Quarterdeck overview is done** and is the reference for how a surface
   looks on this system — see `components/desk/Quarterdeck.tsx`, the first
-  thing here built with no literal size, radius or colour. Its **submissions
-  and crew tabs are not**: they are still inline styles and raw px.
+  thing here built with no literal size, radius or colour. The contributions queue now uses `SubmissionQueue` and the token-based
+  editorial stylesheet, with compact title-first records and contextual decisions.
+  The **crew tabs remain off the system**: inline styles and raw px.
 - Other surfaces still off the system: `/account/agents`, the contribute
   panel, and `/connect` (which still has no opening at all).
 - **Colour set on a canvas escapes the cascade entirely.** MapLibre paints the

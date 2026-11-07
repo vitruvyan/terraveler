@@ -131,10 +131,10 @@ export function ShipsLog({ feed }: { feed: LogEntry[] }) {
               {e.count > 1 ? (
                 <span className="dk-count">
                   ×{e.count}
-                  {e.ids.length > 0 ? `  ${e.ids.map((n) => `#${n}`).join(" ")}` : ""}
+                  {e.ids.map((n) => <a key={n} href={`/desk?tab=submissions&submission=${n}`}> #{n}</a>)}
                 </span>
               ) : (
-                e.ids.length > 0 && <span className="dk-action">· #{e.ids[0]}</span>
+                e.ids.length > 0 && <a className="dk-action" href={`/desk?tab=submissions&submission=${e.ids[0]}`}>· #{e.ids[0]}</a>
               )}
 
               {findingLines(e.findings).map((line, j) =>
