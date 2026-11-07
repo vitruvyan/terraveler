@@ -58,6 +58,7 @@ test("catalogue endpoint enforces editor auth and reads the entire queue", async
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
     if (url.pathname.endsWith("/auth/v1/user")) return Response.json({ email: "editor@example.com" });
+    if (url.pathname.endsWith("/audit_log")) return Response.json([]);
     reads++;
     assert.match(url.pathname, /editorial_gaps$/);
     const offset = Number(url.searchParams.get("offset"));

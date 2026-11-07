@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
-import { PENDING_STATUSES, hasEscalateFinding } from "@/lib/deskEscalation";
+import { PENDING_STATUSES, hasEscalateFinding, isEditorialAnnotation } from "@/lib/deskEscalation";
 import { readDeskRows } from "@/lib/deskQueue";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
       // it. Rows with no submission (registrations, crew actions, oauth) are
       // filtered server-side. Paginate the rest so an old pending escalation
       // cannot age out of a response window and falsely read as resolved.
-      readDeskRows("audit_log?submission_id=not.is.null&order=id.desc&select=submission_id,findings"),
+      readDeskRows("audit_log?submission_id=not.is.null&order=id.desc&select=submission_id,action,findings"),
     ]);
     const tally = (rows: any[]) =>
       rows.reduce((acc: Record<string, number>, r: any) => {
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
 
     const latestFindingsBySubmission = new Map<number, unknown>();
     for (const row of escalationAudit) {
-      if (row.submission_id == null || latestFindingsBySubmission.has(row.submission_id)) continue;
+      if (isEditorialAnnotation(row.action) || row.submission_id == null || latestFindingsBySubmission.has(row.submission_id)) continue;
       latestFindingsBySubmission.set(row.submission_id, row.findings);
     }
     const escalations = subs.filter((s: any) =>

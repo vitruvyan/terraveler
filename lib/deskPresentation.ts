@@ -1,15 +1,16 @@
 /** Presentation derived from records, never an inferred project/draft link. */
 export type DeskSubmission = {
   id: number; type: string; target_voyage: string | null; status: string;
+  editorial_title?: string | null; title_version?: number;
   carta_version: string; created_at: string; payload: any;
   contributor: { handle: string; rank: string } | null;
-  audit: { actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
+  audit: { id?: number; actor: string; action: string; verdict: string | null; findings: any; created_at: string }[];
   reviews: { reviewer: { handle: string; rank: string } | null; verdict: string; findings: any; created_at: string }[];
   escalated: boolean;
 };
 export const INTENT_TYPES = new Set(['idea', 'content-suggestion', 'feature-suggestion']);
-export function submissionTitle(s: Pick<DeskSubmission, 'id'|'payload'|'target_voyage'|'type'>): string {
-  const candidates = [s.payload?.title, s.payload?.meta?.title, s.payload?.meta?.voyage_title, s.payload?.voyage?.title, s.target_voyage];
+export function submissionTitle(s: Pick<DeskSubmission, 'id'|'payload'|'target_voyage'|'type'|'editorial_title'>): string {
+  const candidates = [s.editorial_title, s.payload?.title, s.payload?.meta?.title, s.payload?.meta?.voyage_title, s.payload?.voyage?.title, s.target_voyage];
   return candidates.find(v => typeof v === 'string' && v.trim()) ?? `Untitled ${s.type} #${s.id}`;
 }
 export function publicationRecord(s: DeskSubmission) {
@@ -46,4 +47,11 @@ export function appealReason(s: DeskSubmission): string {
   const row = [...s.audit].reverse().find(a => a.action === 'appeal');
   const first = Array.isArray(row?.findings) ? row.findings[0] : null;
   return Array.isArray(first) ? String(first[2] ?? 'Grounds not recorded') : 'Grounds not found in the record. Inspect the audit trail.';
+}
+
+export type EditorialLane = 'drafts' | 'ready' | 'published';
+export function editorialLane(s: DeskSubmission): EditorialLane {
+  if (publicationRecord(s)) return 'published';
+  if (!INTENT_TYPES.has(s.type) && (s.status === 'approved' || (s.status === 'human-review' && s.reviews.length >= 2 && !s.reviews.some(r => r.verdict === 'refute')))) return 'ready';
+  return 'drafts';
 }

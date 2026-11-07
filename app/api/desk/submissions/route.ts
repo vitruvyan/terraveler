@@ -1,6 +1,7 @@
+import { editorialTitleFromAudit } from "@/lib/editorActions";
 import { NextResponse } from "next/server";
 import { requireEditor, sb } from "@/lib/deskAuth";
-import { PENDING_STATUSES, hasEscalateFinding } from "@/lib/deskEscalation";
+import { PENDING_STATUSES, hasEscalateFinding, isEditorialAnnotation } from "@/lib/deskEscalation";
 import { readDeskRows } from "@/lib/deskQueue";
 
 export const runtime = "nodejs";
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
       "submissions?order=id.desc&select=id,type,target_voyage,status,carta_version,created_at,payload,contributor_id");
     const contributors = await sb("GET", "contributors?select=id,handle,rank");
     const audit = await readDeskRows(
-      "audit_log?order=id.asc&select=submission_id,actor,action,verdict,findings,created_at");
+      "audit_log?order=id.asc&select=id,submission_id,actor,action,verdict,findings,created_at");
     const reviews = await sb("GET",
       "reviews?order=id.asc&select=submission_id,reviewer_id,verdict,findings,created_at")
       .catch(() => []); // table may predate the peer-review migration
@@ -56,9 +57,11 @@ export async function GET(req: Request) {
       { needs_verdict: [], peer_review: [], history: [] };
     for (const s of subs) {
       const subAudit = auditBySub[s.id] ?? [];
-      const escalated = subAudit.length > 0 && hasEscalateFinding(subAudit[subAudit.length - 1].findings);
+      const substantiveAudit = subAudit.filter((a) => !isEditorialAnnotation(a.action));
+      const escalated = substantiveAudit.length > 0 && hasEscalateFinding(substantiveAudit[substantiveAudit.length - 1].findings);
+      const title = editorialTitleFromAudit(subAudit, "submission", s.id);
       const full = {
-        ...s,
+        ...s, editorial_title: title.title, title_version: title.version,
         contributor: byId[s.contributor_id] ?? null,
         audit: subAudit,
         reviews: reviewsBySub[s.id] ?? [],
