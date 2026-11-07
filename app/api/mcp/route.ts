@@ -2442,6 +2442,7 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
                   : g[0].status === "claimed" ? `taken by ${g[0].claimed_by ?? "a Voyager"}`
                   : "done",
                 claim_with: g[0].status === "open" ? `claim_gap { gap_id: ${g[0].id} }` : null,
+                page: `https://www.terraveler.com/project/${g[0].id}`,
                 listed_in: "list_gaps, and Ongoing Projects on the Chartroom",
               }
             : {

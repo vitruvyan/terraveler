@@ -496,6 +496,8 @@ export default function ChartroomBoard({
                         <span className="ed-muted" style={{ alignSelf: "center" }}>Waiting for requested Voyager</span>
                       )}
 
+                      <Link href={`/project/${waypoint.id}`} className="welcome-btn">Open project page</Link>
+
                       {!following.has(waypoint.id) && (
                         <button type="button" className="welcome-btn chartroom-follow" disabled={busy?.id === waypoint.id} onClick={() => act(waypoint.id, "follow")}>Follow Need</button>
                       )}
