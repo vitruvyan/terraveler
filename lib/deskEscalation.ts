@@ -22,3 +22,8 @@ export function hasEscalateFinding(findings: unknown): boolean {
   if (!Array.isArray(findings)) return false;
   return findings.some((f) => Array.isArray(f) && typeof f[0] === "string" && f[0].toLowerCase() === "escalate");
 }
+
+/** Desk annotations do not supersede a Curator's unresolved finding. */
+export function isEditorialAnnotation(action: unknown): boolean {
+  return ['editorial-title','editorial-assistant','editorial-revision-request'].includes(String(action));
+}

@@ -9,7 +9,7 @@
  * fourth kind of thing to learn.
  */
 
-export type Section = "content" | "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
+export type Section = "workspace" | "content" | "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 /* Replaces the old four (pending/flagged/drift/resolved), which were
  * organised by which source table held the row rather than by the editor's

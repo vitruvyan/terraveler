@@ -1,6 +1,7 @@
 import { ATLAS } from "@/lib/voyages";
 
 export type DeskProject = {
+  title_version?: number;
   id: number;
   title: string;
   description: string | null;
@@ -13,6 +14,7 @@ export type DeskProject = {
 };
 
 export type DeskVoyage = {
+  title_version?: number; editorial_title?: string | null;
   slug: string;
   title: string;
   href: string;

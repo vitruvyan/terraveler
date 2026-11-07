@@ -1,5 +1,6 @@
 "use client";
 
+import ChatBubble from "@/components/ChatBubble";
 import Icon from "@/components/Icon";
 import { useEffect, useRef, useState } from "react";
 import DraggableWindow from "@/components/DraggableWindow";
@@ -99,7 +100,7 @@ export default function Pigafetta({ voyage }: { voyage?: string }) {
       <div className="pig-msgs">
         {msgs.map((m, i) => (
           <div key={i} className={`pig-msg pig-${m.role}`}>
-            <div className="pig-bubble">{m.content}</div>
+            <ChatBubble content={m.content} />
             {m.sources && m.sources.length > 0 && (
               <div className="pig-sources">
                 <span className="pig-src-label">Sources</span>

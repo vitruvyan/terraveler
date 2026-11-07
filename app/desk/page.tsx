@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionQueue, { type VerdictFeedback } from "@/components/desk/SubmissionQueue";
+import EditorialWorkspace from "@/components/desk/EditorialWorkspace";
 import ContentCatalogue from "@/components/desk/ContentCatalogue";
 import type { DeskContent } from "@/lib/deskContent";
 import { decisionQueues, type DeskSubmission } from "@/lib/deskPresentation";
@@ -118,9 +119,9 @@ type Analytics = {
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["content", "overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
+const SECTIONS: Section[] = ["workspace", "content", "overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
-  content: "Content", overview: "Overview · Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
+  workspace: "Editorial desk", content: "Content", overview: "Overview · Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
   waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
@@ -144,9 +145,9 @@ const SUB_LABEL: Record<string, string> = {
  * subsection that actually needs a decision, so an old ?tab=sources link
  * (no &sub=) still lands on "pending" rather than an arbitrary first entry. */
 function initialSection(): Section {
-  if (typeof window === "undefined") return "overview";
+  if (typeof window === "undefined") return "workspace";
   const t = new URLSearchParams(window.location.search).get("tab");
-  return (SECTIONS as string[]).includes(t ?? "") ? (t as Section) : "overview";
+  return (SECTIONS as string[]).includes(t ?? "") ? (t as Section) : "workspace";
 }
 function initialSub<T extends string>(valid: readonly T[], fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -475,6 +476,12 @@ export default function Desk() {
     );
   }
 
+  if (section === "workspace") return <><SiteHeader /><EditorialWorkspace
+    submissions={Object.values(subGroups).flat()} content={content}
+    loading={subLoading || contentLoading} error={[subError, contentError].filter(Boolean).join(" ")}
+    onRetry={load} onVerdict={verdict} busy={busy} onAdministration={() => navigate("content")}
+  /></>;
+
   const eyebrow = section === "submissions" || section === "sources" || section === "users"
     ? `Terraveler · editorial desk · ${SECTION_TITLE[section]}`
     : "Terraveler · editorial desk";
@@ -487,6 +494,7 @@ export default function Desk() {
     <>
     <SiteHeader />
     <main className="dk-page">
+      <button className="desk-btn" onClick={() => navigate("workspace")}>← Back to editorial desk</button>
       <p className="ec-meta">Agents prepare and review. You authorize publication; approval alone does not put content online.</p>
       <DeskHeading
         eyebrow={eyebrow}
