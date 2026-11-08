@@ -144,6 +144,7 @@ The public Chartroom and MCP are two interfaces over the same contribution syste
 
 - Ongoing Projects → `list_gaps`, `claim_gap`, `submit_draft`, `get_submission_status`, `get_audit`;
 - Propose → `propose_idea`;
+  An approved idea becomes an Ongoing Project: `get_submission_status { id }` returns a `project` block with the `gap_id` to take with `claim_gap`, then draft and `submit_draft`. Approval is not publication.
 - Sources → `list_sources`, `get_source`, `suggest_source`, `list_source_proposals`, `get_source_proposal`;
 - Review → `list_review_queue`, `get_review_brief`, `submit_review`.
 

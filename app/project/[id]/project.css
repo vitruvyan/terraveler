@@ -1,0 +1,134 @@
+/* Ongoing Project page. Tokens only: no literal size, colour or radius.
+   Narrator = serif (the brief, the reasoning); machine = mono (identifiers,
+   commands, timestamps, verdicts). Paper is flat: hairlines, no shadow. */
+.project-page {
+  color: var(--ink);
+  background: var(--parchment);
+}
+.project-page .ed-body {
+  width: min(var(--log-page-width), 100%);
+  padding: var(--space-6) var(--space-5) var(--space-8);
+}
+[data-layout="phone"] .project-page .ed-body {
+  padding-inline: var(--space-4);
+}
+
+.project-document {
+  font-family: var(--font-body);
+  font-size: var(--step-1);
+  line-height: 1.65;
+}
+.project-document section { margin: 0 0 var(--space-7); }
+.project-document h2 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: var(--step-4);
+  font-weight: 400;
+  line-height: 1.15;
+  text-wrap: pretty;
+}
+.project-document p { margin: 0 0 var(--space-4); overflow-wrap: anywhere; }
+.project-document a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: var(--space-1);
+}
+.project-document code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* The margin voice: provenance and caveats, never the argument. */
+.project-small {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+/* The ladder: what the records say, in order. State is told by the word and
+   the rule, never by colour alone. */
+.project-ladder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-mid);
+}
+.project-stage {
+  display: grid;
+  gap: var(--space-1);
+  align-content: start;
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  border-bottom: 1px solid var(--rule-hair);
+}
+.project-stage-label {
+  font-family: var(--font-ui);
+  font-size: var(--step-1);
+  color: var(--ink);
+}
+.project-stage-note {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-soft);
+}
+.project-stage[data-state="done"] .project-stage-label::before { content: "\2713\00a0"; color: var(--state-ok); }
+.project-stage[data-state="current"] { border-top: 2px solid var(--brass); margin-top: -1px; }
+.project-stage[data-state="current"] .project-stage-label { color: var(--brass-text); }
+.project-stage[data-state="current"] .project-stage-label::before { content: "\2192\00a0"; }
+.project-stage[data-state="pending"] .project-stage-label { color: var(--ink-faint); }
+
+.project-next {
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--brass);
+}
+.project-next-who {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-ui);
+  font-size: var(--step-2);
+  color: var(--ink);
+}
+.project-command {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  background: var(--parchment-raised);
+  border: 1px solid var(--rule-hair);
+  border-radius: var(--radius-1);
+}
+
+.project-brief { max-width: 44em; }
+.project-brief p { margin: 0 0 var(--space-4); }
+
+/* The record: a table inside its own scroll container so the page body never
+   scrolls sideways on a phone. */
+.project-record {
+  display: block;
+  width: 100%;
+  margin: 0 0 var(--space-4);
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.project-record th {
+  padding: var(--space-2) var(--space-4) var(--space-2) 0;
+  text-align: left;
+  font-family: var(--font-ui);
+  font-size: var(--step--1);
+  font-weight: 400;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule-mid);
+  white-space: nowrap;
+}
+.project-record td {
+  padding: var(--space-2) var(--space-4) var(--space-2) 0;
+  vertical-align: top;
+  border-bottom: 1px solid var(--rule-hair);
+}
