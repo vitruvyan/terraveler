@@ -33,3 +33,13 @@ test("missing gateway and failed gateway never fall back", async () => {
   await assert.rejects(askEditorialCoordinator("Hi", {}, [], agent, env, fetcher as typeof fetch));
   assert.equal(calls, 1);
 });
+test("long dossier context preserves newest complete turns and valid JSON", async () => {
+ const { coordinatorContext } = await import("../lib/editorialCoordinator");
+ const latest = { role: "assistant", content: "The archive date is 1767." };
+ const context = coordinatorContext({ title: "Voyage", latest_draft: { title: "Draft", body: "x".repeat(50000) } },
+  [{ role: "user", content: "old".repeat(6000) }, { role: "user", content: "What was the date?" }, latest]);
+ assert.deepEqual(context.history.at(-1), latest);
+ assert.equal(context.project.latest_draft?.truncated, true);
+ assert.ok(JSON.stringify(context).length < 48000);
+ assert.equal(JSON.parse(JSON.stringify(context)).history.at(-1).content, latest.content);
+});

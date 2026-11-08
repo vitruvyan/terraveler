@@ -1,5 +1,5 @@
 import { dataApi, dataRpc } from "@/lib/deskAuth";
-import { parseEditorialStart, startEditorialWork } from "@/lib/editorialWorkflow";
+import { parseEditorialStart } from "@/lib/editorialWorkflow";
 
 type Read = (method: string, path: string) => Promise<any>;
 export function editorialExecution(env: Record<string, string | undefined> = process.env) {
@@ -88,6 +88,6 @@ export function parseProjectAction(value: unknown) {
   return { action: "start", input: { topic_id: input.topic_id, brief: input.brief.trim(), request_id: input.request_id } } as const;
 }
 export async function applyProjectAction(action: NonNullable<ReturnType<typeof parseProjectAction>>, rpc = dataRpc) {
-  if (action.action === "attach") return startEditorialWork(action.input, rpc);
+  if (action.action === "attach") return rpc("editorial_attach", { p_submission_id: action.input.submission_id, p_topic_key: action.input.topic_key, p_title: action.input.title, p_objective: action.input.objective });
   return rpc("editorial_start_pipeline", { p_topic_id: action.input.topic_id, p_brief: action.input.brief, p_request_id: action.input.request_id });
 }

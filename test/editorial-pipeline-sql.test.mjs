@@ -70,3 +70,12 @@ test('foreign results and stale completion cannot advance the current pipeline',
  assert.deepEqual(await state(db,run.run_id),before);
  assert.equal(await scalar(db,'select count(*)::int from editorial_pipeline_tasks'),2);
  }finally{await db.close();}});
+test('attachment organizes proposals without enqueueing work, including retries',async()=>{const {db,topic}=await setup();try{
+ await db.exec(`insert into submissions values(112,'approved','{"title":"More evidence"}')`);
+ const before=await scalar(db,'select count(*)::int from editorial_tasks');
+ const first=await scalar(db,`select editorial_attach(112,'cabeza','Cabeza','Reconcile sources')`);
+ assert.equal(first.topic_id,topic);assert.equal(first.task_id,undefined);
+ assert.equal((await scalar(db,`select editorial_attach(112,'cabeza','Cabeza','Reconcile sources')`)).replayed,true);
+ assert.equal(await scalar(db,'select count(*)::int from editorial_tasks'),before);
+ await db.exec('set role visitor');await assert.rejects(scalar(db,`select editorial_attach(112,'cabeza','Cabeza','Reconcile sources')`),/permission denied/);
+ }finally{await db.close();}});

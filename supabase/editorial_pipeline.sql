@@ -33,6 +33,33 @@ drop trigger if exists editorial_pipeline_tasks_immutable on public.editorial_pi
 create trigger editorial_pipeline_tasks_immutable before update or delete or truncate on public.editorial_pipeline_tasks
  for each statement execute function public.editorial_append_only();
 
+create or replace function public.editorial_attach(p_submission_id bigint,p_topic_key text,p_title text,p_objective text)
+returns jsonb language plpgsql security definer set search_path=pg_catalog,public,pg_temp as $$
+declare s public.submissions; d public.editorial_topics; existing bigint; task jsonb; replayed bool; begin
+ if p_topic_key is null or p_topic_key !~ '^[a-z0-9][a-z0-9-]{0,99}$' or p_title is null or length(trim(p_title)) not between 1 and 240
+   or p_objective is null or length(trim(p_objective)) not between 1 and 12000 then raise exception 'invalid dossier'; end if;
+ -- Serialize same key before creating the dossier and lock the source so an
+ -- approval cannot be revoked halfway through the snapshot.
+ perform pg_advisory_xact_lock(hashtextextended('editorial-topic:'||p_topic_key,0));
+ select * into s from public.submissions where id=p_submission_id for update;
+ if not found or s.status<>'approved' then raise exception 'approved submission required'; end if;
+ select * into d from public.editorial_topics where topic_key=p_topic_key;
+ if found then
+   if d.title<>trim(p_title) or d.objective<>trim(p_objective) then raise exception 'idempotency conflict'; end if;
+ else
+   insert into public.editorial_topics(topic_key,title,objective) values(p_topic_key,trim(p_title),trim(p_objective)) returning * into d;
+ end if;
+ select topic_id into existing from public.editorial_topic_submissions where submission_id=p_submission_id;
+ replayed:=found;
+ if replayed and existing<>d.id then raise exception 'submission already linked to another topic'; end if;
+ if not replayed then
+   insert into public.editorial_topic_submissions(submission_id,topic_id,snapshot) values(s.id,d.id,to_jsonb(s));
+ end if;
+ return jsonb_build_object('topic_id',d.id,'replayed',replayed);
+end $$;
+revoke all on function public.editorial_attach(bigint,text,text,text) from public;
+grant execute on function public.editorial_attach(bigint,text,text,text) to terraveler_service;
+
 create or replace function public.editorial_start_pipeline(p_topic_id bigint,p_brief text,p_request_id text)
 returns jsonb language plpgsql security definer set search_path=pg_catalog,public,pg_temp as $$
 declare r public.editorial_pipeline_runs; t jsonb; begin

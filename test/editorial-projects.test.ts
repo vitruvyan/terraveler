@@ -20,6 +20,9 @@ test("project work uses explicit topic and typed idempotent start, never title m
     return { run_id: 7, task_id: 4 };
   });
   assert.equal(calls, 1);
+  const attach = parseProjectAction({ action: "attach", submission_id: 111, topic_key: "cabeza", title: "Cabeza", objective: "Research" });
+  assert.ok(attach);
+  await applyProjectAction(attach, async (name) => { assert.equal(name, "editorial_attach"); return { topic_id: 1 }; });
   assert.deepEqual(editorialExecution({ EDITORIAL_WORKFLOW_ENABLED: "1" }), { configured: true, worker_health: "not-observed" });
 });
 
