@@ -1,0 +1,59 @@
+# Optional deployment overlay; the gateway source stays in the pinned submodule.
+# Use scripts/limen-stack.sh; this does not start a model or change public chat.
+services:
+  terraveler_limen_db:
+    image: postgres:16-alpine
+    profiles: [limen]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: limen
+      POSTGRES_DB: limen
+      POSTGRES_PASSWORD: ${LIMEN_DB_PASSWORD:?set LIMEN_DB_PASSWORD}
+    volumes:
+      - terraveler_limen_db:/var/lib/postgresql/data
+    networks: [limen_private]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U limen -d limen"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  terraveler_limen:
+    profiles: [limen]
+    image: terraveler-limen:2742e6e4bf21
+    build:
+      context: ./vendor/limen
+      dockerfile: docker/Dockerfile
+      args:
+        MOTUS_TAG: v0.23.0
+    restart: unless-stopped
+    depends_on:
+      terraveler_limen_db:
+        condition: service_healthy
+    env_file:
+      - ${LIMEN_TERRAVELER_STATE:?set LIMEN_TERRAVELER_STATE}/secrets.env
+    environment:
+      DATABASE_URL: ${LIMEN_DATABASE_URL:?set LIMEN_DATABASE_URL for terraveler_limen_db}
+      LIMEN_TENANT: terraveler
+      LIMEN_WRITER_ID: gateway
+      LIMEN_EVIDENCE_DIR: /data/evidence
+      LIMEN_POLICY: /app/limen/policies/default.graph.json
+      LIMEN_LITELLM_CONFIG: /app/limen/docker/litellm_config.yaml
+      LIMEN_PROFILES: "1"
+      # No inherited Orbis group bypass in this dedicated installation.
+      LIMEN_INTERNAL_GROUPS: ""
+    volumes:
+      - ${LIMEN_TERRAVELER_STATE}/litellm_config.yaml:/app/limen/docker/litellm_config.yaml:ro
+      - terraveler_limen_evidence:/data/evidence
+    ports:
+      - "127.0.0.1:6400:4000"
+      - "127.0.0.1:6464:9464"
+    networks: [limen_private, terraveler_net]
+
+volumes:
+  terraveler_limen_db:
+  terraveler_limen_evidence:
+
+networks:
+  limen_private:
+    internal: true

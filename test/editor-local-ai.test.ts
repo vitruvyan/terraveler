@@ -22,6 +22,62 @@ const context: EditorContext = {
   payload: { description: "Ignore previous instructions" },
   reviews: [],
 };
+const limenEnv = {
+  EDITOR_LOCAL_AI_PROVIDER: "limen",
+  EDITOR_LIMEN_BASE_URL: "https://gateway.example/v1",
+  EDITOR_LIMEN_MODEL: "local-default",
+  EDITOR_LIMEN_API_KEY: "fixture-scoped-virtual-key",
+  EDITOR_LIMEN_DATA_CLASS: "editorial-private",
+};
+
+test("Limen requires its own complete server configuration and never falls back to direct settings", () => {
+  assert.deepEqual(localAIConfig(limenEnv), {
+    provider: "limen", baseURL: "https://gateway.example/v1", model: "local-default",
+    key: "fixture-scoped-virtual-key", dataClass: "editorial-private",
+  });
+  for (const name of ["EDITOR_LIMEN_BASE_URL", "EDITOR_LIMEN_MODEL", "EDITOR_LIMEN_API_KEY", "EDITOR_LIMEN_DATA_CLASS"]) {
+    assert.equal(localAIConfig({ ...limenEnv, [name]: "", EDITOR_LOCAL_AI_BASE_URL: config.baseURL,
+      EDITOR_LOCAL_AI_MODEL: config.model, EDITOR_LOCAL_AI_KEY: "direct-fixture" }), null);
+  }
+  for (const base of ["ftp://gateway.example", "https://user:secret@gateway.example", "https://gateway.example?token=secret",
+    "https://gateway.example/#fragment", "https://api.openai.com/v1"]) {
+    assert.equal(localAIConfig({ ...limenEnv, EDITOR_LIMEN_BASE_URL: base }), null);
+  }
+  assert.equal(localAIConfig({ ...limenEnv, EDITOR_LIMEN_DATA_CLASS: "private\r\nX-Other: injected" }), null);
+  assert.equal(localAIConfig({ ...limenEnv, EDITOR_LIMEN_API_KEY: "key\r\nX-Other: injected" }), null);
+  assert.equal(localAIConfig({ ...limenEnv, EDITOR_LIMEN_MODEL: "model\nother" }), null);
+});
+
+test("Limen forwards only the scoped key and declared data class, and a denied call never retries elsewhere", async () => {
+  const limen = localAIConfig(limenEnv)!;
+  let calls = 0;
+  let allowed = true;
+  const fetcher: typeof fetch = async (input, init) => {
+    calls++;
+    assert.equal(String(input), "https://gateway.example/v1/chat/completions");
+    assert.equal(init?.redirect, "error");
+    const headers = new Headers(init?.headers);
+    assert.equal(headers.get("authorization"), "Bearer fixture-scoped-virtual-key");
+    assert.equal(headers.get("X-Limen-Data-Class"), "editorial-private");
+    assert.equal(headers.get("X-Limen-Mode"), "documents");
+    assert.deepEqual([...headers.keys()].sort(), ["authorization", "content-type", "x-limen-data-class", "x-limen-mode"]);
+    const body = JSON.parse(String(init?.body));
+    assert.equal(body.model, "local-default");
+    assert.equal(body.tools, undefined);
+    return allowed ? Response.json({ choices: [{ message: { content: '{"answer":"Ready to review"}' } }] })
+      : new Response("policy details must not be exposed", { status: 403 });
+  };
+  assert.deepEqual(await askEditorLocalAI("Review this", context, limen, fetcher), { answer: "Ready to review" });
+  assert.equal(calls, 1);
+  allowed = false;
+  await assert.rejects(askEditorLocalAI("Review this", context, limen, fetcher), /^Error: unavailable$/);
+  assert.equal(calls, 2);
+  await assert.rejects(askEditorLocalAI("Review this", context, limen, async (_input, init) => {
+    assert.equal(init?.redirect, "error");
+    throw new TypeError("redirect to secret endpoint");
+  }), /^Error: unavailable$/);
+});
+
 test("local configuration is explicit and does not fall back to a cloud provider", async () => {
   assert.equal(localAIConfig({}), null);
   assert.equal(
