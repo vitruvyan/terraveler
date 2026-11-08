@@ -1,0 +1,22 @@
+.projects-intro { max-width: var(--measure); }
+.projects-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-4); margin-block: var(--space-5); }
+.projects-item h2 { margin: 0; }
+.projects-title { background: none; border: 0; padding: 0; min-height: var(--tap-min); color: var(--ink); font: 500 var(--step-3)/1.2 var(--font-display); text-align: left; text-decoration: underline; text-underline-offset: var(--radius-2); cursor: pointer; overflow-wrap: anywhere; }
+.projects-state { font-family: var(--font-ui); font-weight: 600; }
+.projects-detail { margin-inline-start: var(--space-5); padding: var(--space-4) var(--space-5); border-left: var(--radius-2) solid var(--brass); margin-bottom: var(--space-6); }
+[data-layout="phone"] .projects-detail { margin-inline-start: 0; padding-inline: var(--space-3); }
+.projects-detail h3, .projects-form h2 { font: 500 var(--step-3)/1.2 var(--font-display); margin-block: var(--space-4) var(--space-3); }
+.projects-detail section + section, .projects-form, .projects-chat { margin-top: var(--space-5); border-top: 1px solid var(--rule-hair); padding-top: var(--space-4); }
+.projects-form fieldset { border: 0; padding: 0; min-width: 0; }
+.projects-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+[data-layout="phone"] .projects-fields { grid-template-columns: minmax(0, 1fr); }
+.projects-form label, .projects-chat label { display: block; font-family: var(--font-ui); }
+.editorial-projects .desk-input { display: block; width: 100%; min-width: 0; min-height: var(--tap-min); margin-block: var(--space-2) var(--space-4); }
+.editorial-projects textarea { resize: vertical; }
+.editorial-projects .desk-btn { min-height: var(--tap-min); }
+.projects-contributions { padding-inline-start: var(--space-5); }
+.projects-contributions li { padding-block: var(--space-2); overflow-wrap: anywhere; }
+.projects-draft, .projects-message-body { white-space: pre-wrap; overflow-wrap: anywhere; }
+.projects-draft { max-width: var(--measure); }
+.projects-messages { list-style: none; padding: 0; }
+.projects-messages li { border-bottom: 1px solid var(--rule-hair); padding-block: var(--space-3); }

@@ -82,7 +82,7 @@ test("team API protects configs and permits pausing during a gateway outage", as
   assert.equal((await POST(request())).status, 409);
   const status = await GET(new Request("https://terraveler.example/api/desk/team", { headers: { cookie: "desk_token=fixture" } }));
   const body = await status.json();
-  assert.equal(body.execution, "not-connected");
+  assert.equal(body.execution, "not-observed");
   assert.equal(body.gateway.status, "not-configured");
   assert.deepEqual(body.agents, []);
 });

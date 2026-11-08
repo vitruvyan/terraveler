@@ -1,11 +1,9 @@
 # Durable editorial worker — first foundation
 
-This is a backend foundation, not an operational autonomous newsroom. It adds
-recoverable task execution; it does not research, write, review or publish live
-content until evidence-bound production handlers have been implemented and
-reviewed. The registered production handler map is intentionally empty. A
-proposal can become a dossier and a queued research task without inference
-starting or an agent silently claiming it.
+The worker implements recoverable, explicitly enabled candidate research, writing
+and review. It has no publication authority. The operator runbook and migration
+order are in [EDITORIAL_PIPELINE.md](EDITORIAL_PIPELINE.md). Live gateway/model
+execution and production deployment remain unverified.
 
 ## Authority and state
 
@@ -67,17 +65,16 @@ is explicit and does not run any model:
 EDITORIAL_WORKER_ENABLED=1 python -m orchestration.editorial --recover
 ```
 
-Even with opt-in, `--once` currently returns `no-handlers`. Before registering
-production handlers, implement research/writer/reviewer output schemas,
-source-policy enforcement, grounding checks, independent review and local
-model configuration with no silent cloud fallback. Register reviewed,
-importable top-level callables in `PRODUCTION_HANDLERS`; spawn requires them to
-be pickleable. The worker supports dependency injection for executable tests.
+With only the worker gate enabled, `--once` returns `no-handlers`. Set
+`EDITORIAL_HANDLERS_ENABLED=1` as well to register the reviewed top-level role
+handlers. `EDITORIAL_HANDLER_ROLES` optionally restricts claims to a comma-separated
+subset of `research,writer,reviewer`. Limen configuration and eligible versioned
+agents are also required. No direct-provider fallback is available.
 
-There is no daemon or compose service enabled by this change. An explicit
-scheduler will need to run recovery periodically and workers for supported
-roles after deployment validation. Existing human publication authorization is
-unchanged; completion of a reviewer task confers no publish capability.
+`--serve` explicitly opts into continuous polling and periodic expired-lease
+recovery. SIGTERM/SIGINT interrupt the idle wait; an in-progress task first ends
+or reaches its bounded deadline. The optional `compose.editorial.yml` profile
+provides this entry point, disabled by default and without automatic restart.
 
 ## Current limits
 
@@ -86,8 +83,9 @@ unchanged; completion of a reviewer task confers no publish capability.
   Motus traces are not yet persisted. Provider exception messages are not saved
   because they may contain credentials or sensitive endpoints.
 - No auto-generated facts are accepted as verified evidence by this worker.
-- No automatic handoff to the live publication pipeline, no production local
-  model handler, no chat wiring, and no daemon deployment are included.
+- No automatic handoff to the live publication pipeline is included. Candidate
+  completion and coordinator chat never authorize publication. The optional
+  worker deployment still needs live operator verification.
 - A crash during inference loses that attempt's unsaved computation. Recovery
   restarts from the last accepted result, not from an arbitrary model token.
 - PostgreSQL lease/transaction behavior is exercised separately by the SQL

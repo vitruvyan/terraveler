@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+# The worker uses the application's pinned kernel, independently of Limen's
+# Motus 0.23 gateway wheels. Build from the repository root.
+COPY officers/wheels/vitruvyan_motus-0.14.0-py3-none-any.whl /tmp/wheels/
+RUN pip install --no-cache-dir psycopg2-binary==2.9.10 /tmp/wheels/vitruvyan_motus-0.14.0-py3-none-any.whl \
+ && rm -rf /tmp/wheels
+COPY orchestration/ /app/orchestration/
+COPY ingest/source_governance_shadow.py ingest/whitelist.py /app/ingest/
+RUN useradd --system --no-create-home editorial
+USER editorial
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+CMD ["python", "-m", "orchestration.editorial", "--serve"]

@@ -1,4 +1,4 @@
-"""Durable editorial worker foundation; no live research or publishing handlers.
+"""Durable editorial worker with explicitly enabled candidate handlers.
 
 PostgreSQL owns leases, accepted results and recovery. Redis may wake a future
 worker but is never the source of truth. Handlers are trusted, read-only tool
@@ -15,6 +15,8 @@ import multiprocessing
 import math
 import os
 import re
+import signal
+import threading
 import time
 from typing import Any, Callable, Protocol
 from uuid import uuid4
@@ -23,8 +25,8 @@ ROLES = frozenset({"research", "writer", "reviewer"})
 RESULT_BYTES = 1024 * 1024
 TRACE_BYTES = 8 * 1024 * 1024
 Handler = Callable[[dict[str, Any]], dict[str, Any]]
-# Intentionally empty. Provider/model selection and evidence-bound production
-# handlers are a separate change; never drain a queue with a placeholder.
+# Explicit production activation is resolved at CLI startup; importing this
+# module never enables inference or opens a database connection.
 PRODUCTION_HANDLERS: dict[str, Handler] = {}
 
 
@@ -116,7 +118,7 @@ class PostgresStore:
 
 def run_handler_graph(handler: Handler, task: dict) -> tuple[dict, dict]:
     """The real native Motus graph. Recorded effects do not claim pure replay."""
-    from vitruvyan_motus import EffectDescriptor, Fact, GraphSpec, Runtime, State
+    from vitruvyan_motus import EffectDescriptor, Fact, GraphSpec, ReplayStatus, Runtime, State
     from vitruvyan_motus.effects import EffectClass
 
     spec = GraphSpec.from_dict({
@@ -140,7 +142,8 @@ def run_handler_graph(handler: Handler, task: dict) -> tuple[dict, dict]:
     run_id = f"editorial-{task['id']}-{uuid4()}"
     completed = Runtime(spec, {"execute": execute}).run(
         State.new(f"editorial:{task['id']}", facts=[Fact("task", task, "worker",
-                  datetime.now(timezone.utc))]), run_id=run_id)
+                  datetime.now(timezone.utc))]), run_id=run_id,
+        replay=ReplayStatus.declared("none", ("registered-handlers-use-recorded-effects",)))
     trace = {"run_id": run_id, "root": completed.trace.root,
              "status": completed.status, "evidence": completed.evidence,
              "trace_jsonl": completed.trace.to_jsonl()}
@@ -262,17 +265,42 @@ class EditorialWorker:
                 process.close()
 
 
+def serve(worker, *, poll_seconds=5.0, recovery_seconds=60.0, stop=None):
+    """Bounded polling with recovery; stop waits are interruptible by signals."""
+    if (not math.isfinite(poll_seconds) or not 0.1 <= poll_seconds <= 300
+            or not math.isfinite(recovery_seconds) or not 1 <= recovery_seconds <= 3600):
+        raise ValueError("invalid worker polling interval")
+    stop = stop or threading.Event()
+    if not worker.cfg.enabled or not worker.handlers:
+        return worker.run_once()
+    next_recovery = 0.0
+    while not stop.is_set():
+        if time.monotonic() >= next_recovery:
+            worker.store.recover()
+            next_recovery = time.monotonic() + recovery_seconds
+        outcome = worker.run_once()
+        print(json.dumps(outcome), flush=True)
+        if outcome.get("status") != "completed":
+            stop.wait(poll_seconds)
+    return {"status": "stopped"}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--once", action="store_true", help="attempt one registered task")
-    parser.add_argument("--recover", action="store_true", help="recover expired leases only")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--serve", action="store_true", help="explicit continuous polling and lease recovery")
+    parser.add_argument("--poll-seconds", type=float, default=5)
+    mode.add_argument("--once", action="store_true", help="attempt one registered task")
+    mode.add_argument("--recover", action="store_true", help="recover expired leases only")
     args = parser.parse_args(argv)
     if os.environ.get("EDITORIAL_WORKER_ENABLED") != "1":
         print(json.dumps({"status": "disabled"}))
         return 0
-    if not args.once and not args.recover:
-        parser.error("choose --once or --recover; there is no implicit daemon")
-    if not args.recover and not PRODUCTION_HANDLERS:
+    if not args.once and not args.recover and not args.serve:
+        parser.error("choose --once, --recover or --serve; there is no implicit daemon")
+    from orchestration.editorial_handlers import production_handlers
+    handlers = PRODUCTION_HANDLERS or production_handlers()
+    if not args.recover and not handlers:
         print(json.dumps({"status": "no-handlers"}))
         return 0
     # libpq PG* environment variables; no fallback credentials or .env parsing.
@@ -281,7 +309,19 @@ def main(argv=None) -> int:
         print(json.dumps({"status": "recovered", "count": store.recover()}))
     else:
         cfg = WorkerConfig(enabled=True, worker_id=os.environ.get("EDITORIAL_WORKER_ID", "editorial-worker"))
-        print(json.dumps(EditorialWorker(store, PRODUCTION_HANDLERS, cfg).run_once()))
+        worker = EditorialWorker(store, handlers, cfg)
+        if args.serve:
+            stop = threading.Event()
+            previous = {}
+            try:
+                for sig in (signal.SIGTERM, signal.SIGINT):
+                    previous[sig] = signal.signal(sig, lambda *_: stop.set())
+                print(json.dumps(serve(worker, poll_seconds=args.poll_seconds, stop=stop)))
+            finally:
+                for sig, handler in previous.items():
+                    signal.signal(sig, handler)
+        else:
+            print(json.dumps(worker.run_once()))
     return 0
 
 

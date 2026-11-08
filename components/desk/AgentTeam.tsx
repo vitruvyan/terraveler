@@ -10,7 +10,7 @@ export type AgentTeamData = {
   agents: TeamAgent[];
   models: { id: string }[];
   gateway: { status: "ready" | "not-configured" | "unavailable" };
-  execution: "not-connected";
+  execution: "not-observed";
 };
 type Draft = Omit<TeamAgent, "created_at" | "version"> & { expected_version: number };
 const ROLES: Record<Role, { label: string; description: string }> = {
@@ -104,7 +104,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
       }
       setForm(null);
       requestId.current = null;
-      setMessage(`Configuration saved as version ${body.result.version}. Agent execution is not connected yet.`);
+      setMessage(`Configuration saved as version ${body.result.version}. Use Proposals & projects to commission work.`);
       await load();
     } catch {
       setSaveError("The save response was not received. Your changes are still here; retrying will reuse the same save request.");
@@ -125,7 +125,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
     <section className="agent-team" aria-label="Editorial agent team">
       <p className="agent-team-intro">Configure the editorial team here. Each save records a new version of the agent’s model, role and instructions.</p>
       <div className="ec-notice">
-        <strong>Execution is not connected yet.</strong> Saving or enabling a configuration does not start an agent or publish content. Work assignment and execution are the next step.
+        <strong>Configuration and execution are separate.</strong> Saving or enabling a configuration does not start an agent or publish content. Commission work in <a href="/desk/projects">Proposals &amp; projects</a>; execution also requires the editorial worker and Limen.
       </div>
       <div className="agent-team-toolbar">
         <p className="ec-meta">Limen: {data ? ({ ready: "model catalogue available", "not-configured": "not configured", unavailable: "unavailable" }[data.gateway.status]) : "not checked"}</p>
@@ -147,7 +147,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
           </div>
           <div>
             <p><strong>{agent.enabled ? "Configuration enabled" : "Paused configuration"}</strong></p>
-            <p className="ec-meta">No execution connected</p>
+            <p className="ec-meta">Worker health not observed here</p>
             <button type="button" className="desk-btn" disabled={saving} onClick={() => open(agent)}>Edit {agent.name}</button>
           </div>
         </article>)}

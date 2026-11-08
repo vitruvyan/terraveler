@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       readDeskRows("editorial_agents_current?select=agent_key,version,name,role,model,instructions,enabled,created_at&order=agent_key.asc"),
       teamModelCatalogue(),
     ]);
-    return reply({ agents, models: catalogue.models, gateway: { status: catalogue.status }, execution: "not-connected" });
+    return reply({ agents, models: catalogue.models, gateway: { status: catalogue.status }, execution: "not-observed" });
   } catch { return reply({ error: "The team registry is unavailable. Apply the editorial team migration to the canonical VPS database.", code: "team-unavailable" }, 503); }
 }
 export async function POST(req: Request) {
@@ -38,6 +38,6 @@ export async function POST(req: Request) {
   try {
     const result = await saveAgentConfiguration(config);
     if (result?.error) return reply(result, ["conflict", "idempotency-conflict"].includes(result.error) ? 409 : 400);
-    return reply({ ok: true, result, execution: "not-connected" });
+    return reply({ ok: true, result, execution: "not-observed" });
   } catch { return reply({ error: "Could not save the configuration. Retry with the same request ID.", code: "team-unavailable" }, 503); }
 }

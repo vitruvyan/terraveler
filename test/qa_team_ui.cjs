@@ -47,7 +47,7 @@ async function main() {
         agents = [{ ...value, version: 1, created_at: '2026-11-08T12:00:00Z' }];
         return route.fulfill({ json: { ok: true, result: { version: 1 } } });
       }
-      return route.fulfill({ json: { agents, models: [], gateway: { status: 'not-configured' }, execution: 'not-connected' } });
+      return route.fulfill({ json: { agents, models: [], gateway: { status: 'not-configured' }, execution: 'not-observed' } });
     });
     await page.goto(`${base}/desk/team`);
     await page.getByText('No agents configured yet.', { exact: false }).waitFor();

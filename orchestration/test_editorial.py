@@ -231,3 +231,48 @@ class DurableWorkerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContinuousWorkerTests(unittest.TestCase):
+    def test_serve_recovers_and_stops_without_extra_claim(self):
+        from orchestration.editorial import serve
+        import threading
+        stop = threading.Event()
+        store = MemoryStore()
+        worker = EditorialWorker(store, {"research": research}, WorkerConfig(enabled=True))
+        outcomes = []
+        def run_once():
+            outcomes.append("called")
+            stop.set()
+            return {"status": "idle"}
+        worker.run_once = run_once
+        with patch.object(store, "recover", return_value=0) as recovery:
+            self.assertEqual(serve(worker, stop=stop), {"status": "stopped"})
+        recovery.assert_called_once()
+        self.assertEqual(outcomes, ["called"])
+
+    def test_serve_empty_registry_does_not_touch_database(self):
+        from orchestration.editorial import serve
+        store = MemoryStore()
+        worker = EditorialWorker(store, {}, WorkerConfig(enabled=True))
+        with patch.object(store, "recover", side_effect=AssertionError("database touched")):
+            self.assertEqual(serve(worker), {"status": "no-handlers"})
+        self.assertEqual(store.calls, [])
+
+    def test_poll_intervals_are_bounded(self):
+        from orchestration.editorial import serve
+        worker = EditorialWorker(MemoryStore(), {}, WorkerConfig(enabled=True))
+        for interval in (0, float("nan"), 301):
+            with self.assertRaises(ValueError):
+                serve(worker, poll_seconds=interval)
+
+
+class ReplayDeclarationTests(unittest.TestCase):
+    def test_recorded_handler_trace_declares_nonreplayability_explicitly(self):
+        from orchestration.editorial import run_handler_graph
+        task = MemoryStore().task
+        task.pop("lease_token")
+        _, trace = run_handler_graph(research, task)
+        header = json.loads(trace["trace_jsonl"].splitlines()[0])
+        self.assertEqual(header["run"]["replay"]["capability"], "none")
+        self.assertIn("registered-handlers-use-recorded-effects", header["run"]["replay"]["constraints"])

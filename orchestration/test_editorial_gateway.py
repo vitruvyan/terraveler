@@ -41,6 +41,30 @@ class GatewayTests(unittest.TestCase):
         self.assertNotIn("fixture-private-key", json.dumps(result))
         self.assertNotIn("fixture-private-key", repr(self.config))
 
+    def test_repair_prompt_deduplicates_snapshots_without_losing_accepted_evidence(self):
+        value = task()
+        value["role"] = value["agent_config"]["role"] = "writer"
+        references = [{"id": "rag:1", "text": "Historical text. " * 700}]
+        raw = {"candidate": {"references": references, "unrelated": "x" * 40000}}
+        research = {"kind": "research", "references": references, "findings": [{"text": "Claim", "source_ids": ["rag:1"]}], "uncertainties": [], "candidate": raw}
+        draft = {"kind": "draft", "title": "Draft", "body": "Claim", "citations": [{"source_id": "rag:1", "claim": "Claim"}], "references": references, "candidate": raw}
+        value["input"] = {"brief": "Revise", "research_result": research, "draft_result": draft,
+                          "review_result": {"kind": "review", "verdict": "changes-requested", "issues": ["Clarify"], "candidate": raw}}
+        value["dependency_result"] = value["input"]["review_result"]
+        calls = []
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+        generate_candidate(value, self.config, open_request=transport)
+        record = json.loads(calls[0]["messages"][-1]["content"].split("\n", 1)[1])
+        self.assertEqual(record["input"]["research_result"]["references"], references)
+        self.assertEqual(record["input"]["draft_result"]["body"], "Claim")
+        self.assertEqual(record["input"]["review_result"]["issues"], ["Clarify"])
+        self.assertNotIn("dependency_result", record)
+        self.assertNotIn("candidate", record["input"]["research_result"])
+        self.assertNotIn("references", record["input"]["draft_result"])
+        self.assertIn("candidate", value["input"]["research_result"])
+
     def test_missing_or_wrong_role_binding_never_calls_transport(self):
         for value in [{"id": 1, "role": "research"}, {**task(), "role": "writer"}]:
             with self.assertRaisesRegex(GatewayError, "agent-binding-invalid"):

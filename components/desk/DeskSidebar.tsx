@@ -52,6 +52,7 @@ export default function DeskSidebar({ section, submissionsSub, sourcesSub, users
   return (
     <nav className="dk-sidebar" aria-label="desk sections">
       <div className="dk-nav-group">
+        <a className="dk-nav-heading is-link" href="/desk/projects">Proposals &amp; projects</a>
         <a className="dk-nav-heading is-link" href="/desk/team">Agent team</a>
       </div>
       <div className="dk-nav-group">
