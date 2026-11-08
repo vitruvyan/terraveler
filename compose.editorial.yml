@@ -1,0 +1,31 @@
+# Optional overlay: merely loading this file does not start editorial workers.
+# Use with docker-compose.yml; add compose.limen.yml when using the local gateway.
+services:
+  terraveler_editorial:
+    profiles: [editorial]
+    image: terraveler-editorial:local
+    build:
+      context: .
+      dockerfile: orchestration/Dockerfile.editorial
+    restart: "no"
+    init: true
+    env_file:
+      - ${EDITORIAL_WORKER_ENV_FILE:?set EDITORIAL_WORKER_ENV_FILE to the external worker env file}
+    depends_on:
+      terraveler_postgres:
+        condition: service_healthy
+    command: [python, -m, orchestration.editorial, --serve]
+    networks: [terraveler_net]
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 15s
+    mem_limit: 512m
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

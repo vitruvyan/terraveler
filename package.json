@@ -12,7 +12,8 @@
     "mcp:probe": "node scripts/probe_mcp.mjs",
     "events:build": "python3 scripts/build_world_events.py && tsx scripts/build_world_event_projection.ts",
     "events:project": "tsx scripts/build_world_event_projection.ts",
-    "rank:reconcile": "tsx scripts/reconcile_ranks.ts"
+    "rank:reconcile": "tsx scripts/reconcile_ranks.ts",
+    "test:editorial-db": "node --test --test-concurrency=1 test/editorial-*-sql.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
@@ -24,6 +25,7 @@
     "three": "^0.171.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.15",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",

@@ -1,13 +1,18 @@
-/** Server-only adapter. Local providers are explicit; there is no cloud fallback.
- * Limen's provider contract supplies an address for local Ollama and keeps
- * credentials on the server. This adapter follows that boundary without
- * copying the private Python implementation into the public frontend repo. */
-export type LocalAIConfig = {
-  provider: "localai" | "ollama";
+/** Server-only adapter. Providers are explicit; there is no fallback between
+ * Limen and a direct provider. Limen receives a scoped virtual key; its policy
+ * owns local-only routing. Credentials and data-class selection stay server-side. */
+type AIEndpoint = {
   baseURL: string;
   model: string;
-  key?: string;
 };
+export type LocalAIConfig = AIEndpoint & ({
+  provider: "localai" | "ollama";
+  key?: string;
+} | {
+  provider: "limen";
+  key: string;
+  dataClass: string;
+});
 export type EditorTarget = {
   target_type: "submission" | "project" | "voyage";
   target_id: string;
@@ -41,14 +46,19 @@ export function localAIConfig(
   env: Record<string, string | undefined> = process.env,
 ): LocalAIConfig | null {
   const provider = env.EDITOR_LOCAL_AI_PROVIDER ?? "localai";
-  const base = env.EDITOR_LOCAL_AI_BASE_URL?.trim();
-  const model = env.EDITOR_LOCAL_AI_MODEL?.trim();
+  const governed = provider === "limen";
+  const base = (governed ? env.EDITOR_LIMEN_BASE_URL : env.EDITOR_LOCAL_AI_BASE_URL)?.trim();
+  const model = (governed ? env.EDITOR_LIMEN_MODEL : env.EDITOR_LOCAL_AI_MODEL)?.trim();
+  const key = (governed ? env.EDITOR_LIMEN_API_KEY : env.EDITOR_LOCAL_AI_KEY)?.trim();
+  const dataClass = env.EDITOR_LIMEN_DATA_CLASS?.trim();
   if (
     !base ||
     !model ||
-    !["localai", "ollama"].includes(provider) ||
+    !["localai", "ollama", "limen"].includes(provider) ||
     model.length > 200 ||
-    /[\r\n]/.test(model)
+    /[\r\n]/.test(model) ||
+    (key != null && (key.length > 4096 || /[\r\n]/.test(key))) ||
+    (governed && (!key || !dataClass || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/.test(dataClass)))
   )
     return null;
   try {
@@ -68,12 +78,13 @@ export function localAIConfig(
       )
     )
       return null;
-    return {
-      provider: provider as LocalAIConfig["provider"],
+    const endpoint = {
       baseURL: url.toString().replace(/\/$/, ""),
       model,
-      key: env.EDITOR_LOCAL_AI_KEY?.trim() || undefined,
     };
+    return governed
+      ? { ...endpoint, provider: "limen", key: key!, dataClass: dataClass! }
+      : { ...endpoint, provider: provider as "localai" | "ollama", key: key || undefined };
   } catch {
     return null;
   }
@@ -203,6 +214,10 @@ export async function askEditorLocalAI(
       headers: {
         "Content-Type": "application/json",
         ...(config.key ? { Authorization: `Bearer ${config.key}` } : {}),
+        ...(config.provider === "limen" ? {
+          "X-Limen-Data-Class": config.dataClass,
+          "X-Limen-Mode": "documents",
+        } : {}),
       },
       body: JSON.stringify(body),
     });
