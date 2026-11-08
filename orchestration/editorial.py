@@ -14,6 +14,7 @@ import json
 import multiprocessing
 import math
 import os
+import re
 import time
 from typing import Any, Callable, Protocol
 from uuid import uuid4
@@ -25,6 +26,43 @@ Handler = Callable[[dict[str, Any]], dict[str, Any]]
 # Intentionally empty. Provider/model selection and evidence-bound production
 # handlers are a separate change; never drain a queue with a placeholder.
 PRODUCTION_HANDLERS: dict[str, Handler] = {}
+
+
+def _agent_configuration(task: dict) -> dict:
+    """A claim must carry one explicit, frozen execution configuration.
+
+    Only these six fields may reach the handler and Motus trace. Credentials,
+    mutable registry state and request internals are not configuration fields.
+    The database separately checks current pause/role authority on renew and
+    completion; this snapshot must never be refreshed from the live registry.
+    """
+    value = task.get("agent_config")
+    fields = {"agent_key", "version", "name", "role", "model", "instructions"}
+    if not isinstance(value, dict) or set(value) != fields:
+        raise ValueError("invalid agent configuration")
+    if (not isinstance(value["agent_key"], str)
+            or re.fullmatch(r"[a-z0-9][a-z0-9-]{1,79}", value["agent_key"]) is None
+            or type(value["version"]) is not int or value["version"] < 1
+            or not isinstance(value["role"], str)
+            or value["role"] not in ROLES or value["role"] != task.get("role")):
+        raise ValueError("invalid agent configuration")
+    for field, limit in (("name", 120), ("model", 200), ("instructions", 12000)):
+        text = value[field]
+        if not isinstance(text, str) or not text.strip() or len(text) > limit:
+            raise ValueError("invalid agent configuration")
+    if "\r" in value["model"] or "\n" in value["model"]:
+        raise ValueError("invalid agent configuration")
+    # String values are copied without trimming or normalization: the trace
+    # must carry exactly the version accepted by the binding transaction.
+    return dict(value)
+
+
+def validated_agent_config(task: dict) -> dict | None:
+    """The bound configuration for worker/tool adapters, or a declared absence."""
+    try:
+        return _agent_configuration(task)
+    except ValueError:
+        return None
 
 
 class Store(Protocol):
@@ -157,9 +195,14 @@ class EditorialWorker:
         task = self.store.claim(self.cfg.worker_id, sorted(self.handlers), self.cfg.lease_seconds)
         if task is None:
             return {"status": "idle"}
+        agent_config = validated_agent_config(task)
+        if agent_config is None:
+            recorded = self.store.fail(task, "editorial-agent-config-invalid")
+            return {"status": "failed" if recorded else "lease-lost", "task_id": task["id"]}
         # Only the explicit context reaches an agent/model, never its lease token.
         context = {k: task[k] for k in ("id", "topic_id", "role", "input", "topic", "sources",
                    "dependency_result") if k in task}
+        context["agent_config"] = agent_config
         if task.get("role") not in self.handlers:
             return {"status": "unsupported-task", "task_id": task["id"]}
         mp = multiprocessing.get_context("spawn")

@@ -29,14 +29,17 @@ it stores internal execution configurations, not identities or credentials.
 ## 2. Verify the dedicated Limen deployment
 
 - Initialize the pinned private submodule, build private wheels and image.
-- Provision server credentials, restricted virtual key and a local-only class.
-- Choose actual local models, then verify catalogue, generation and policy denial.
+- Provision server credentials, a restricted virtual key and permitted data classes.
+- Choose local models or explicitly authorized cloud routes, then verify catalogue,
+  generation and policy denial. Preserve local-only restrictions where applicable.
 - Configure protected TLS connectivity from Vercel and validate the Desk request.
 
 Acceptance: a real approved call passes through Limen; a refused request never
 retries directly; no administrative credential reaches the browser. See
-`LIMEN_INTEGRATION.md`. This step is pending deployment Git access, runtime
-configuration and model selection; checking in a gitlink does not activate it.
+`LIMEN_INTEGRATION.md`. The operator reported the pinned Limen checkout and
+Motus wheels built successfully. Runtime configuration, image startup and a
+usable model route are still unverified. Live LLM testing is deferred; it does
+not block work on durable assignment and mocked request contracts.
 
 ## 3. Bind durable tasks to agent versions
 
@@ -50,6 +53,11 @@ configuration and model selection; checking in a gitlink does not activate it.
 Acceptance: a recovered task cannot silently switch to a newer configuration;
 disabled agents cannot take new tasks; late outputs cannot overwrite a newer
 attempt; no configuration receives publication or unrestricted tool authority.
+
+Implementation progress: immutable task-to-version binding, current pause/role
+checks, trace context and a tested Limen generation port are prepared. See
+`EDITORIAL_AGENT_BINDING.md`. Production role handlers, scoped retrieval and
+automatic scheduling are still pending; the registry remains empty.
 
 ## 4. Automate research, writing and independent review
 

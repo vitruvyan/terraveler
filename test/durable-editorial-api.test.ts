@@ -83,5 +83,6 @@ test("dossier detail filters results through their task relation and excludes le
   assert.ok(calls.some(path => path.includes("editorial_tasks!inner(topic_id)")));
   assert.ok(calls.some(path => path.includes("editorial_tasks.topic_id=eq.7")));
   assert.ok(calls.some(path => path.startsWith("editorial_tasks?") && path.includes("id=lt.20")));
+  assert.ok(calls.some(path => path.includes("editorial_task_agents(agent_version_id,editorial_agent_versions(agent_key,version,name,model))")));
   assert.ok(calls.every(path => !path.includes("lease_token")));
 });

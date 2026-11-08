@@ -37,7 +37,7 @@ export async function readEditorialWork(topicId: number | null, before: number |
   }
   const [topics, tasks, results] = await Promise.all([
     read("GET", `editorial_topics?id=eq.${topicId}&select=*&limit=1`),
-    read("GET", `editorial_tasks?topic_id=eq.${topicId}&select=id,topic_id,role,state,attempt,created_at&order=id.desc&limit=100${before === null ? "" : `&id=lt.${before}`}`),
+    read("GET", `editorial_tasks?topic_id=eq.${topicId}&select=id,topic_id,role,state,attempt,created_at,editorial_task_agents(agent_version_id,editorial_agent_versions(agent_key,version,name,model))&order=id.desc&limit=100${before === null ? "" : `&id=lt.${before}`}`),
     read("GET", `editorial_results?editorial_tasks.topic_id=eq.${topicId}&select=id,task_id,created_at,editorial_tasks!inner(topic_id)&order=id.desc&limit=100`),
   ]);
   if (![topics, tasks, results].every(Array.isArray)) throw new Error("Invalid workflow response");

@@ -16,7 +16,8 @@ from orchestration.editorial import EditorialWorker, WorkerConfig, PostgresStore
 def research(task):
     if "lease_token" in task:
         raise AssertionError("lease leaked into handler context")
-    return {"kind": "research-notes", "candidate_sources": [], "topic": task["topic"]["title"]}
+    return {"kind": "research-notes", "candidate_sources": [], "topic": task["topic"]["title"],
+            "used_agent": dict(task["agent_config"])}
 
 
 def slow_research(task):
@@ -37,7 +38,10 @@ class MemoryStore:
     def __init__(self):
         self.task = {"id": 1, "topic_id": 2, "role": "research", "input": {},
                      "topic": {"title": "Cabeza de Vaca"}, "sources": [],
-                     "lease_token": "attempt-1", "dependency_result": None}
+                     "lease_token": "attempt-1", "dependency_result": None,
+                     "agent_config": {"agent_key": "historical-researcher", "version": 1,
+                                      "name": "Historical researcher", "role": "research",
+                                      "model": "fixture-local-model", "instructions": "Preserve the Spanish source provenance."}}
         self.calls = []
         self.renewable = True
         self.saved = []
@@ -97,6 +101,9 @@ class DurableWorkerTests(unittest.TestCase):
         self.assertIn("Cabeza de Vaca", trace["trace_jsonl"])
         self.assertIn('"sources"', trace["trace_jsonl"])
         self.assertIn('"dependency_result"', trace["trace_jsonl"])
+        self.assertEqual(result["used_agent"], store.task["agent_config"])
+        for value in ("historical-researcher", "fixture-local-model", "Preserve the Spanish source provenance."):
+            self.assertIn(value, trace["trace_jsonl"])
         self.assertEqual(EditorialWorker(store, {"research": research}, self.cfg()).run_once()["status"], "idle")
 
     def test_lease_loss_terminates_work_and_never_commits_or_fails_stale_attempt(self):
@@ -112,6 +119,46 @@ class DurableWorkerTests(unittest.TestCase):
         done = EditorialWorker(store, {"research": slow_research}, self.cfg(heartbeat_seconds=0.1)).run_once()
         self.assertEqual(done["status"], "completed")
         self.assertGreater(len([c for c in store.calls if c[0] == "renew"]), 2)
+
+    def test_invalid_or_unbound_configuration_never_launches_handler(self):
+        valid = MemoryStore().task["agent_config"]
+        invalid = [None, {}, {**valid, "version": True}, {**valid, "version": 0},
+                   {**valid, "role": "writer"}, {**valid, "role": []}, {**valid, "model": "bad\nmodel"},
+                   {**valid, "instructions": " "}, {**valid, "api_key": "never-forward-this"}]
+        for value in invalid:
+            with self.subTest(configuration=value):
+                store = MemoryStore()
+                if value is None:
+                    store.task.pop("agent_config")
+                else:
+                    store.task["agent_config"] = value
+                with patch("orchestration.editorial.multiprocessing.get_context") as context:
+                    done = EditorialWorker(store, {"research": research}, self.cfg()).run_once()
+                    context.assert_not_called()
+                self.assertEqual(done["status"], "failed")
+                self.assertIn(("fail", "editorial-agent-config-invalid"), store.calls)
+                self.assertNotIn("never-forward-this", repr(store.calls))
+                self.assertFalse(store.saved)
+
+    def test_pause_before_acceptance_discards_successful_handler_output(self):
+        # SQL renew returns False when the current agent has been paused,
+        # even if this task's historical configuration was enabled at claim.
+        store = MemoryStore()
+        store.renewable = False
+        done = EditorialWorker(store, {"research": research}, self.cfg()).run_once()
+        self.assertEqual(done["status"], "lease-lost")
+        self.assertFalse(store.saved)
+        self.assertFalse(any(c[0] in {"complete", "fail"} for c in store.calls))
+
+    def test_bound_agent_configuration_is_preserved_without_normalization(self):
+        store = MemoryStore()
+        store.task["agent_config"] = {**store.task["agent_config"], "version": 7,
+                                      "instructions": "Exact instructions.\n  Preserve formatting.\n"}
+        done = EditorialWorker(store, {"research": research}, self.cfg()).run_once()
+        self.assertEqual(done["status"], "completed")
+        result, trace = store.saved[0]
+        self.assertEqual(result["used_agent"], store.task["agent_config"])
+        self.assertIn('"version":7', trace["trace_jsonl"].replace(" ", ""))
 
     def test_timeout_records_bounded_failure_and_never_commits_output(self):
         store = MemoryStore()
