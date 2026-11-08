@@ -1,0 +1,17 @@
+.agent-team-intro { max-width: var(--measure); }
+.agent-team-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4); margin-block: var(--space-4); }
+.agent-team-name { font: 600 var(--step-1)/1.4 var(--font-ui); margin: 0; overflow-wrap: anywhere; }
+.agent-team-list .ec-row { align-items: start; }
+.agent-team-list .desk-btn { min-height: var(--tap-min); }
+.agent-team-form { margin-top: var(--space-6); padding-top: var(--space-5); border-top: var(--radius-2) solid var(--brass); }
+.agent-team-form h2 { font: 500 var(--step-4)/1.2 var(--font-display); margin-top: 0; overflow-wrap: anywhere; }
+.agent-team-form fieldset { padding: 0; border: 0; min-width: 0; }
+.agent-team-legend { font-family: var(--font-ui); margin-bottom: var(--space-4); }
+.agent-team-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); margin-bottom: var(--space-5); }
+.agent-team-form label { display: block; font-family: var(--font-ui); overflow-wrap: anywhere; }
+.agent-team-form label > span { display: block; }
+.agent-team-form .desk-input { display: block; width: 100%; min-width: 0; min-height: var(--tap-min); margin-block: var(--space-2); }
+.agent-team-instructions { font: var(--step--1)/1.6 var(--font-mono); resize: vertical; }
+.agent-team-form .agent-team-enabled { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); min-height: var(--tap-min); }
+.agent-team-form .ec-actions .desk-btn { min-height: var(--tap-min); }
+[data-layout="phone"] .agent-team-fields { grid-template-columns: minmax(0, 1fr); }

@@ -125,6 +125,7 @@ export default function EditorialWorkspace({
         <div>
           <span className="dk-eyebrow">Terraveler · editorial desk</span>
           <h1 className="dk-title">Your editorial desk</h1>
+          <a className="desk-btn" href="/desk/team">Agent team</a>
           <p>Find the work. Ask for changes. Decide what goes public.</p>
         </div>
         <button className="desk-btn" onClick={onAdministration}>

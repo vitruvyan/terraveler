@@ -13,7 +13,7 @@
     "events:build": "python3 scripts/build_world_events.py && tsx scripts/build_world_event_projection.ts",
     "events:project": "tsx scripts/build_world_event_projection.ts",
     "rank:reconcile": "tsx scripts/reconcile_ranks.ts",
-    "test:editorial-db": "node --test test/editorial-workflow-sql.test.mjs"
+    "test:editorial-db": "node --test --test-concurrency=1 test/editorial-*-sql.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
