@@ -1,15 +1,10 @@
 "use client";
+import AdminNavigation from "./AdminNavigation";
 
-/* The desk's own index. Reads like the table of contents of a bound ledger,
- * not an app's icon rail — flat, brass rule for "you are here", mono badges
- * for the counts (see the design law: chrome that states a fact is the
- * machine speaking). Quarterdeck/Crew/Analytics are single entries; only
- * Submissions and Sources have earned subsections, which is exactly why
- * they get a non-clickable group label above theirs instead of being a
- * fourth kind of thing to learn.
- */
+/* Shared navigation replaces the old sidebar. Keep these section and count
+ * types for existing admin callers and specimen fixtures. */
 
-export type Section = "workspace" | "content" | "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
+export type Section = "dashboard" | "workspace" | "content" | "overview" | "submissions" | "sources" | "users" | "waypoints" | "prompts" | "analytics";
 export type SubmissionsSub = "needs_verdict" | "peer_review" | "history";
 /* Replaces the old four (pending/flagged/drift/resolved), which were
  * organised by which source table held the row rather than by the editor's
@@ -44,149 +39,11 @@ export type DeskSidebarProps = {
   onNavigate?: (section: Section, sub?: string) => void;
 };
 
-function Badge({ n, alarm }: { n: number; alarm?: boolean }) {
-  return <span className={`dk-nav-badge${alarm && n > 0 ? " is-alarm" : ""}`}>{n}</span>;
-}
-
-export default function DeskSidebar({ section, submissionsSub, sourcesSub, usersSub, counts, onNavigate }: DeskSidebarProps) {
-  return (
-    <nav className="dk-sidebar" aria-label="desk sections">
-      <div className="dk-nav-group">
-        <a className="dk-nav-heading is-link" href="/desk/projects">Proposals &amp; projects</a>
-        <a className="dk-nav-heading is-link" href="/desk/team">Agent team</a>
-      </div>
-      <div className="dk-nav-group">
-        <button
-          type="button"
-          className="dk-nav-heading is-link"
-          aria-current={section === "overview"}
-          onClick={() => onNavigate?.("overview")}
-        >
-          Overview · Quarterdeck
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <button type="button" className="dk-nav-heading is-link" aria-current={section === "content"} onClick={() => onNavigate?.("content")}>Content catalogue</button>
-      </div>
-      <div className="dk-nav-group">
-        <span className="dk-nav-heading">Reviews & decisions</span>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "submissions" && submissionsSub === "needs_verdict"}
-          onClick={() => onNavigate?.("submissions", "needs_verdict")}
-        >
-          Your decisions <Badge n={counts.needsVerdict} alarm />
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "submissions" && submissionsSub === "peer_review"}
-          onClick={() => onNavigate?.("submissions", "peer_review")}
-        >
-          Agent review <Badge n={counts.peerReview} />
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "submissions" && submissionsSub === "history"}
-          onClick={() => onNavigate?.("submissions", "history")}
-        >
-          History <Badge n={counts.history} />
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <span className="dk-nav-heading">Sources</span>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "pending"}
-          onClick={() => onNavigate?.("sources", "pending")}
-        >
-          Pending proposals <Badge n={counts.pending} alarm />
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "dossier"}
-          onClick={() => onNavigate?.("sources", "dossier")}
-        >
-          Source dossier <span className="ec-meta">{counts.sources ?? "—"} sources · {counts.flagged} to examine</span>
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "sources" && sourcesSub === "reverify"}
-          onClick={() => onNavigate?.("sources", "reverify")}
-        >
-          Reverification
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <span className="dk-nav-heading">Users</span>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "users" && usersSub === "humans"}
-          onClick={() => onNavigate?.("users", "humans")}
-        >
-          Humans <Badge n={counts.humans} />
-        </button>
-        <button
-          type="button"
-          className="dk-nav-sub"
-          aria-current={section === "users" && usersSub === "agents"}
-          onClick={() => onNavigate?.("users", "agents")}
-        >
-          Agents <Badge n={counts.agents} />
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <button
-          type="button"
-          className="dk-nav-heading is-link"
-          aria-current={section === "waypoints"}
-          onClick={() => onNavigate?.("waypoints")}
-        >
-          Waypoints, taken <Badge n={counts.claimed} alarm={counts.claimedOverdue > 0} />
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <button
-          type="button"
-          className="dk-nav-heading is-link"
-          aria-current={section === "prompts"}
-          onClick={() => onNavigate?.("prompts")}
-        >
-          Prompts
-        </button>
-      </div>
-
-      <div className="dk-nav-group">
-        <button
-          type="button"
-          className="dk-nav-heading is-link"
-          aria-current={section === "analytics"}
-          onClick={() => onNavigate?.("analytics")}
-        >
-          Analytics
-        </button>
-      </div>
-
-      {/* The specimen chapters are working documents about the site, not
-          part of its own navigation tree — kept visually apart, never
-          taking the aria-current treatment above. */}
-      <div className="dk-nav-footer">
-        <span className="dk-nav-footer-label">the system</span>
-        <a className="dk-tab-link" href="/specimen">type</a>
-        <a className="dk-tab-link" href="/specimen/palette">colour</a>
-        <a className="dk-tab-link" href="/specimen/mark">mark</a>
-      </div>
-    </nav>
-  );
+/** Compatibility wrapper for specimen callers; the application uses the same navigation on every admin page. */
+export default function DeskSidebar({ section, submissionsSub, sourcesSub, usersSub }: DeskSidebarProps) {
+  const params = new URLSearchParams({ tab: section });
+  if (section === "submissions") params.set("sub", submissionsSub);
+  if (section === "sources") params.set("sub", sourcesSub);
+  if (section === "users") params.set("sub", usersSub);
+  return <AdminNavigation active={section === "dashboard" ? "dashboard" : section === "workspace" ? "workspace" : "administration"} currentHref={`/desk?${params}`} />;
 }
