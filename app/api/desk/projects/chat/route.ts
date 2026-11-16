@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireEditor, dataRpc } from "@/lib/deskAuth";
 import { editorialExecution, readEditorialProject, readEditorialMessages } from "@/lib/editorialProjects";
 import { askEditorialCoordinator } from "@/lib/editorialCoordinator";
+import { readEditorialPreview } from "@/lib/editorialPreview";
 import { EditorAIError } from "@/lib/editorLocalAI";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,21 +19,25 @@ export async function POST(req: Request) {
   let body: any;
   try { body = JSON.parse(raw); } catch { return reply({ error: "invalid-json" }, 400); }
   if (!body || typeof body !== "object" || Array.isArray(body) ||
-      Object.keys(body).some(k => !["topic_id", "message", "request_id"].includes(k)) ||
+      Object.keys(body).some(k => !["topic_id", "message", "request_id", "draft_result_id"].includes(k)) ||
       !Number.isSafeInteger(body.topic_id) || body.topic_id <= 0 ||
+      (body.draft_result_id !== undefined && (!Number.isSafeInteger(body.draft_result_id) || body.draft_result_id <= 0)) ||
       typeof body.message !== "string" || !body.message.trim() || body.message.length > 12000 ||
       typeof body.request_id !== "string" || !/^[A-Za-z0-9_-]{8,160}$/.test(body.request_id))
     return reply({ error: "invalid-message" }, 400);
   if (!editorialExecution().configured) return reply({ error: "Coordinator requests are disabled by the operator.", code: "workflow-disabled" }, 503);
   let turn: any;
   try {
+    const inspected = body.draft_result_id === undefined ? null : await readEditorialPreview(body.topic_id, body.draft_result_id);
+    if (body.draft_result_id !== undefined && !inspected) return reply({ error: "The selected saved draft was not found in this project." }, 404);
+    const question = inspected ? `Regarding saved draft result #${inspected.result_id}:\n${body.message.trim()}` : body.message.trim();
     turn = await dataRpc("editorial_chat_begin", { p_topic_id: body.topic_id,
-      p_message: body.message.trim(), p_request_id: body.request_id });
+      p_message: question, p_request_id: body.request_id });
     if (turn?.state === "completed") return reply({ ...turn, recorded: true });
     if (!turn?.lease_token) return reply({ ...turn, error: turn?.error === "coordinator-unavailable" ? "No enabled coordinator is available. Your message was saved." : turn?.error, recorded: !!turn?.state }, turn?.error === "coordinator-unavailable" ? 503 : turn?.error === "request-in-progress" ? 409 : 400);
     const [project, history] = await Promise.all([readEditorialProject(body.topic_id), readEditorialMessages(body.topic_id)]);
     if (!project) throw new Error("project-unavailable");
-    const answer = await askEditorialCoordinator(body.message.trim(), project, history, turn.agent_config);
+    const answer = await askEditorialCoordinator(question, { ...project, inspected_draft: inspected ? { result_id: inspected.result_id, title: inspected.title, body: inspected.paragraphs.map(p => p.text).join("\n\n") } : null }, history, turn.agent_config);
     const completed = await dataRpc("editorial_chat_complete", { p_request_id: body.request_id,
       p_lease_token: turn.lease_token, p_action: answer.action, p_reply: answer.reply, p_brief: answer.brief ?? null });
     return reply({ ...completed, recorded: true }, completed?.error ? 409 : 200);

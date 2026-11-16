@@ -66,7 +66,11 @@ export default function EditorialProjects() {
       setAgents(Array.isArray(data.agents) ? data.agents : []); setTeamError("");
     } catch { setAgents([]); setTeamError("Agent choices are unavailable. Refresh to retry."); }
   }, []);
-  useEffect(() => { void load(); void loadTeam(); }, [load, loadTeam]);
+  useEffect(() => {
+    void load(); void loadTeam();
+    const id = Number(new URLSearchParams(window.location.search).get("topic_id"));
+    if (Number.isSafeInteger(id) && id > 0) { selectedRef.current = id; setSelected(id); void loadDetail(id); }
+  }, [load, loadTeam, loadDetail]);
   async function assign(event: React.FormEvent, projectId: number, taskId: number, role: string) {
     event.preventDefault(); setBusy(true); setError(""); setNotice("");
     const key = `assign:${taskId}`;
@@ -123,6 +127,7 @@ export default function EditorialProjects() {
     {loading ? <p role="status">Loading projects…</p> : projects.length === 0 ? <p className="ec-empty">No editorial projects yet. Attach an approved proposal to collect its contributions and commission agent work.</p> : <div className="projects-ledger">{projects.map(project => <article key={project.id} className="projects-item">
       <div className="ec-row"><div><h2><button type="button" className="projects-title" disabled={busy} aria-expanded={selected === project.id} aria-controls={`project-${project.id}`} onClick={() => select(project.id)}>{project.title}</button></h2><p className="ec-meta">{project.topic_key} · {project.contributions.length} contributions</p><p>{project.objective || "No editorial objective recorded."}</p></div><div><p className="projects-state">{status(project)}</p><p>{project.pipeline?.next_step || "Next: define the brief and start editorial work."}</p><button className="desk-btn" type="button" disabled={busy} onClick={() => select(project.id)}>{selected === project.id ? "Close project" : "Open project"}</button></div></div>
       {selected === project.id && <div className="projects-detail" id={`project-${project.id}`}>{detailLoading && <p role="status">Refreshing project…</p>}{detail && <>
+        <section><h3>Read the agents’ work</h3><p>Open the saved draft as a private reading edition, with sources and its review. You can request changes there before deciding what should become public.</p><a className="desk-btn" href={`/desk/projects/${project.id}/preview`}>Open private preview</a></section>
         <section><h3>Collected contributions</h3>{detail.contributions.length ? <ul className="projects-contributions">{detail.contributions.map(c => <li key={c.submission_id}><a href={`/desk?tab=submissions&submission_id=${c.submission_id}`}>{c.title || `Proposal #${c.submission_id}`}</a><span className="ec-meta"> #{c.submission_id} · {c.type} · {c.status}</span></li>)}</ul> : <p>No contributions attached.</p>}</section>
         <section><h3>Agent work</h3>{teamError && <p className="ec-meta">{teamError}</p>}{detail.tasks.length ? <ul className="projects-contributions">{detail.tasks.map(t => {
           const specialty = taskSpecialty[t.role];
@@ -137,7 +142,7 @@ export default function EditorialProjects() {
             </form>}
           </li>;
         })}</ul> : <p>No agent work has been requested.</p>}{detail.pipeline && <p className="ec-meta">Pipeline #{detail.pipeline.id} · revision {detail.pipeline.revision}</p>}</section>
-        {detail.latest_draft && <section><h3>Latest draft · {detail.latest_draft.title}</h3><div className="projects-draft">{detail.latest_draft.body}</div><p>Draft only. Publication requires your authorization in the editorial desk.</p></section>}
+        {detail.latest_draft && <section><h3>Latest draft · {detail.latest_draft.title}</h3><div className="projects-draft">{detail.latest_draft.body}</div><p>Working text only. Open the private preview to read this draft with its sources and review.</p></section>}
         <form className="projects-form" onSubmit={event => start(event, project.id)}><h3>Commission editorial work</h3><p>Agents research this topic, combine the contributions into a draft and review it. A request records work for the worker; refresh to see progress.</p><label>Brief<textarea aria-label="Brief" className="desk-input" required rows={3} disabled={busy} value={briefs[project.id] || ""} onChange={e => { setBriefs({ ...briefs, [project.id]: e.target.value }); delete requestIds.current[`start:${project.id}`]; }} /></label><button type="submit" className="desk-btn desk-btn-primary" disabled={busy || !configured || !(briefs[project.id] || "").trim()}>Start editorial work</button></form>
         <section className="projects-chat"><h3>Talk to the editorial coordinator</h3><p>Ask about this project or request a specific change. A reply confirms whether work was recorded; it does not publish content.</p><ol className="projects-messages" aria-label="Project conversation">{messages.map((m, index) => <li key={`${m.created_at}-${index}`}><p className="ec-meta">{m.role === "user" ? "You" : m.role === "assistant" ? "Coordinator" : m.role}{m.created_at ? ` · ${m.created_at}` : ""}</p><p className="projects-message-body">{m.content}</p></li>)}</ol><form onSubmit={event => chat(event, project.id)}><label>Message<textarea aria-label="Message" className="desk-input" rows={3} required disabled={busy} value={inputs[project.id] || ""} onChange={e => { setInputs({ ...inputs, [project.id]: e.target.value }); delete requestIds.current[`chat:${project.id}`]; }} /></label><button type="submit" className="desk-btn desk-btn-primary" disabled={busy || !configured || !(inputs[project.id] || "").trim()}>Send</button></form></section>
       </>}</div>}
