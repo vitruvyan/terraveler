@@ -1,0 +1,12 @@
+.preview-note { border-left: var(--radius-2) solid var(--brass); padding: var(--space-3) var(--space-4); background: var(--parchment-raised); margin-block: var(--space-5); }
+.preview-note p { margin-block: var(--space-2); }
+.preview-article { max-width: var(--measure); margin-inline: auto; }
+.preview-paragraph { white-space: pre-wrap; overflow-wrap: anywhere; }
+.preview-citations { font: var(--step--2)/1.6 var(--font-mono); color: var(--ink-soft); overflow-wrap: anywhere; }
+.preview-section { border-top: 1px solid var(--rule-mid); padding-top: var(--space-4); margin-top: var(--space-6); overflow-wrap: anywhere; }
+.preview-section h2 { font: 500 var(--step-3)/1.2 var(--font-display); }
+.preview-section li { margin-block: var(--space-3); scroll-margin-top: var(--space-8); }
+.preview-revision { max-width: var(--measure); margin: var(--space-6) auto; padding-inline: var(--space-4); }
+.preview-revision label { display: block; }
+.preview-revision textarea { display: block; width: 100%; margin-block: var(--space-3); resize: vertical; }
+.preview-revision .desk-btn { min-height: var(--tap-min); }

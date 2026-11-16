@@ -70,3 +70,35 @@ actions are still future work.
 No autonomous discovery, image assessment, ethnohistorical entity storage,
 parallel specialist scheduler or exact-version publication bridge is claimed by
 this increment. Existing publication checks and human authority remain unchanged.
+
+## Private reading preview
+
+The editor needs to see the assembled result before authorizing it, not evaluate
+an opaque task ledger. `/desk/projects/<topic>/preview` now resolves the latest
+saved writer result to `?result=<immutable-result-id>`. The editor session is
+required before any data read. The page is dynamic, private/no-store and noindex;
+it writes nothing to the public atlas, sitemap, corpus or publication tables.
+No new migration is needed for the preview: it reads existing append-only results.
+
+The current writer contract produces only title, paragraphs, citations and source
+records. The preview renders those as a reading edition using the site's public
+TitlePage typography. It includes paragraph-linked sources and a review matched
+to that exact writer task; it excludes source passages, raw model envelopes and
+trace internals. Missing itinerary, waypoint diary, images and population sections
+are explicitly declared. This is not yet a complete voyage preview.
+
+A revision request sends a typed draft_result_id to the existing project chat.
+The server resolves that result within the project, stamps its identity into the
+persisted question and supplies inspected_draft rather than the latest draft to
+the coordinator. A reply without a task receipt is not presented as scheduled work.
+The existing coordinator can start a new research/writing/review pipeline, not
+edit arbitrary content or publish. It does not yet provide deterministic rewriting
+of the whole inspected draft; the bounded brief is still LLM-generated.
+
+Next acceptance target: agents must produce a versioned, structured voyage
+candidate containing narrative, itinerary, waypoint diaries, media with complete
+credits/rights, population sections and unresolved gaps. Render that candidate
+through the same public voyage components inside the private preview. Human
+publication must promote precisely that inspected candidate, never another/latest
+version. Do not add an apparent Publish button until this exact-version bridge
+and the existing content gates are connected end to end.
