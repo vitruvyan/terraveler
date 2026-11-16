@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireEditor } from "@/lib/deskAuth";
 import { readDeskRows } from "@/lib/deskQueue";
-import { parseAgentConfiguration, saveAgentConfiguration, teamModelCatalogue } from "@/lib/editorialTeam";
+import { teamModelCatalogue } from "@/lib/editorialTeam";
+
+import { parseSpecialistConfiguration, saveSpecialistConfiguration } from "@/lib/editorialSpecialistConfig";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +13,7 @@ export async function GET(req: Request) {
   if (!auth.ok) return reply({ error: auth.error }, 401);
   try {
     const [agents, catalogue] = await Promise.all([
-      readDeskRows("editorial_agents_current?select=agent_key,version,name,role,model,instructions,enabled,created_at&order=agent_key.asc"),
+      readDeskRows("editorial_specialist_agents_current?select=agent_key,version,name,role,model,instructions,enabled,created_at,specialty&order=agent_key.asc"),
       teamModelCatalogue(),
     ]);
     return reply({ agents, models: catalogue.models, gateway: { status: catalogue.status }, execution: "not-observed" });
@@ -27,7 +29,7 @@ export async function POST(req: Request) {
   if (raw.length > 80000) return reply({ error: "request-too-large" }, 413);
   let value: unknown;
   try { value = JSON.parse(raw); } catch { return reply({ error: "invalid-json" }, 400); }
-  const config = parseAgentConfiguration(value);
+  const config = parseSpecialistConfiguration(value);
   if (!config) return reply({ error: "invalid-agent" }, 400);
   // Pausing or drafting a configuration must remain possible during a gateway outage.
   if (config.enabled) {
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
     if (!catalogue.models.some(m => m.id === config.model)) return reply({ error: "Choose a model currently visible through Limen.", code: "model-unavailable" }, 400);
   }
   try {
-    const result = await saveAgentConfiguration(config);
+    const result = await saveSpecialistConfiguration(config);
     if (result?.error) return reply(result, ["conflict", "idempotency-conflict"].includes(result.error) ? 409 : 400);
     return reply({ ok: true, result, execution: "not-observed" });
   } catch { return reply({ error: "Could not save the configuration. Retry with the same request ID.", code: "team-unavailable" }, 503); }

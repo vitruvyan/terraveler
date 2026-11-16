@@ -11,10 +11,10 @@ the complete parallel newsroom or activate any production agents.
   ethnohistorian, itinerary researcher, photo editor, diary writer, caption writer,
   editorialist, copy editor and fact checker. Names, model and instructions remain
   editable. Templates do not grant tools or publication authority.
-- Templates label missing specialist tools and start paused. Template selection
-  is a creation aid, not a new field persisted in the versioned agent registry.
-  Existing edits still edit the four operational role kinds. Do not interpret a
-  configured specialist name as certification of its capabilities.
+- Templates label missing specialist tools and start paused. Specialties are saved as immutable metadata for each configuration version.
+  Reopening a configuration restores its specialty. Planned specialties cannot
+  be enabled by omitting that metadata. The four operational role kinds remain.
+  A configured specialist name still does not certify unimplemented tools.
 - Immutable task assignment to an explicit agent key plus specialty. Only history,
   diary and factcheck currently map to generic executable handlers. Other named
   specialties are rejected by assignment until their handler contracts exist.
@@ -34,6 +34,11 @@ Back up the database and stop editorial workers while migrating. No migration is
 performed by a frontend deploy. This change does not configure model aliases,
 change the scoped Limen key, start workers, or publish content.
 
+Also apply `supabase/editorial_agent_specialties.sql` after the specialists migration.
+This revokes the service role’s old save RPC; deploy the updated Team API together
+with this migration. The old RPC remains callable by the owner-backed wrapper,
+which preserves versioning, specialty constraints and idempotency.
+
 The editor-only POST `/api/desk/projects/assign` accepts exactly:
 
 ```json
@@ -44,17 +49,19 @@ The task must be queued, never claimed, compatible with the specialty, and the
 agent must currently be enabled in the matching operational role. The operation
 uses `editorial_assign_specialist` and records an immutable receipt. Retries must
 reuse identical arguments and request ID; changed intent conflicts. Pausing the
-agent prevents claim without silently selecting another agent. There is no
-assignment picker in the Projects UI yet; this is the typed API/SQL boundary for
-that future interaction and coordinator action.
+agent prevents claim without silently selecting another agent. The Projects UI now offers a named-agent picker for eligible unassigned tasks.
+It filters paused, wrong-role and explicitly incompatible-specialty agents; a
+successful assignment is immutable and removes the picker. Coordinator assignment
+actions are still future work.
 
 ## Next acceptance slices
 
 1. Expose explicit local model aliases in Limen and the scoped key, and verify
    actual served-model evidence for two assignments. Current local-default-only
    deployment does not provide multi-model operation.
-2. Persist agent capabilities/specialties as versioned configuration, and make
-   assignment available in the existing project UI and coordinator typed actions.
+2. Extend persisted specialties into implemented capability contracts and expose
+   assignment through bounded coordinator typed actions. Versioned specialty
+   persistence and the project assignment picker are now implemented.
 3. Add multi-dependency task graphs and artifact checkpoints for parallel source,
    itinerary, image and ethnohistory work, with bounded hardware concurrency.
 4. Adapt governed discovery/extraction, vision-based image assessment, population

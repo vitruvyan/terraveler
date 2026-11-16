@@ -20,14 +20,16 @@ const ROLES: Record<Role, { label: string; description: string }> = {
   writer: { label: "Writer", description: "Combines the collected material into a sourced draft." },
   reviewer: { label: "Reviewer", description: "Checks a draft and reports issues that need correction." },
 };
-const blank = (): Draft => ({ agent_key: `agent-${crypto.randomUUID()}`, expected_version: 0, name: "", role: "research", model: "", instructions: "", enabled: false });
-const draftOf = (agent: TeamAgent): Draft => ({ agent_key: agent.agent_key, expected_version: agent.version, name: agent.name, role: agent.role, model: agent.model, instructions: agent.instructions, enabled: agent.enabled });
+const blank = (): Draft => ({ agent_key: `agent-${crypto.randomUUID()}`, expected_version: 0, name: "", role: "research", model: "", instructions: "", enabled: false, specialty: null });
+const draftOf = (agent: TeamAgent): Draft => ({ agent_key: agent.agent_key, expected_version: agent.version, name: agent.name, role: agent.role, model: agent.model, instructions: agent.instructions, enabled: agent.enabled, specialty: agent.specialty ?? null });
 
 function errorMessage(code: unknown, fallback: string): string {
   if (code === "conflict") return "Another version was saved. Your changes are still here. Reload the saved configuration before editing again.";
   if (code === "idempotency-conflict") return "This save request conflicts with an earlier request. Edit the configuration before saving again.";
   if (code === "model-unavailable") return "The model is no longer available through Limen. Choose an available model or save the configuration as paused.";
   if (code === "gateway-unavailable" || code === "gateway-not-configured") return "Limen is not available. You can save a paused configuration; model access must be verified before enabling it.";
+  if (code === "specialty-role-mismatch") return "Choose a role compatible with the saved editorial specialty.";
+  if (code === "specialist-handler-not-implemented") return "This specialist cannot run yet. Save it as paused until its tools are implemented.";
   if (code === "team-unavailable") return "Agent configuration is not available yet. The team database setup must be completed before configurations can be saved.";
   return fallback;
 }
@@ -73,7 +75,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
     requestId.current = null;
     setSaveError("");
     setMessage("");
-    setSpecialtyId("");
+    setSpecialtyId(agent?.specialty ?? "");
     setForm(agent ? draftOf(agent) : blank());
   }
 
@@ -88,8 +90,8 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
   function applySpecialty(id: string) {
     setSpecialtyId(id);
     const template = EDITORIAL_SPECIALISTS.find(item => item.id === id);
-    if (!template) return;
-    update({ name: template.label, role: template.role, instructions: template.instructions, enabled: false });
+    if (!template) { update({ specialty: null }); return; }
+    update({ name: template.label, role: template.role, instructions: template.instructions, enabled: false, specialty: template.id });
   }
 
   const gatewayReady = data?.gateway.status === "ready";
@@ -155,7 +157,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
           <div>
             <h2 className="agent-team-name">{agent.name}</h2>
             <p>{ROLES[agent.role]?.label ?? agent.role} — {ROLES[agent.role]?.description}</p>
-            <p className="ec-meta">{agent.model} · version {agent.version}</p>
+            <p className="ec-meta">{agent.model} · version {agent.version}{agent.specialty ? ` · ${EDITORIAL_SPECIALISTS.find(s => s.id === agent.specialty)?.label || agent.specialty}` : ""}</p>
           </div>
           <div>
             <p><strong>{agent.enabled ? "Configuration enabled" : "Paused configuration"}</strong></p>
@@ -169,14 +171,14 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
         <p>{form.expected_version ? `Save a new version after version ${form.expected_version}. Earlier configurations remain recorded.` : "New agents start paused. Define the agent’s responsibility, model and instructions."}</p>
         <fieldset disabled={saving}>
           <legend className="agent-team-legend">Agent configuration</legend>
-          {!form.expected_version && <div>
+          {<div>
             <label htmlFor="team-agent-specialty">Editorial specialty
               <select className="desk-input" id="team-agent-specialty" value={specialtyId} onChange={event => applySpecialty(event.target.value)} aria-describedby="team-agent-specialty-help">
-                <option value="">Custom configuration</option>
+                <option value="" disabled={!!form.expected_version && !!form.specialty}>Custom configuration</option>
                 {EDITORIAL_SPECIALISTS.map(template => <option key={template.id} value={template.id}>{template.label}{template.implementation === "planned" ? " — planned tools" : ""}</option>)}
               </select>
             </label>
-            <p id="team-agent-specialty-help">A starting template fills the name, role and instructions below. Choosing another replaces those fields and pauses the configuration. The model remains your choice. Templates do not register tools or grant capabilities.</p>
+            <p id="team-agent-specialty-help">The specialty is saved with this configuration version. Selecting one fills the name, role and instructions below. Choosing another replaces those fields and pauses the configuration. The model remains your choice. Templates do not register tools or grant capabilities.</p>
             {specialty && <p className="ec-notice" role="status">{plannedSpecialty ? "Specialist tool integration is planned. Save this as a paused configuration draft; its specialized work is not executable yet." : "This template uses an existing editorial handler. Execution still requires an assigned task, the worker and an authorized model route."}</p>}
           </div>}
           <div className="agent-team-fields">
@@ -184,7 +186,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
               <input className="desk-input" id="team-agent-name" required maxLength={120} value={form.name} onChange={event => update({ name: event.target.value })} />
             </label>
             <label htmlFor="team-agent-role">Role
-              <select className="desk-input" id="team-agent-role" value={form.role} onChange={event => update({ role: event.target.value as Role })}>
+              <select className="desk-input" id="team-agent-role" disabled={!!specialtyId} value={form.role} onChange={event => update({ role: event.target.value as Role })}>
                 {Object.entries(ROLES).map(([role, entry]) => <option value={role} key={role}>{entry.label}</option>)}
               </select>
               <span>{ROLES[form.role].description}</span>
