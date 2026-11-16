@@ -17,10 +17,21 @@ async function main() {
     const anon=await browser.newPage();await anon.goto(`${base}/desk/projects`);assert.equal(new URL(anon.url()).pathname,'/desk');await anon.close();
     const page=await browser.newPage({viewport:{width:1440,height:1000}});
     await page.context().addCookies([{name:'desk_token',value:'fixture',url:base}]);
-    const projects=[{id:1,topic_key:'boudeuse-1766',title:'Boudeuse voyage',objective:'Combine source contributions into one historical account.',contributions:[{submission_id:33,title:'Boudeuse source notes',type:'content-suggestion',status:'approved'},{submission_id:34,title:'Boudeuse imagery',type:'content-suggestion',status:'approved'}],tasks:[{id:12,role:'researcher',state:'queued',attempt:0}],pipeline:{id:4,state:'researching',revision:1,next_step:'Research task queued; waiting for an available worker.'},latest_draft:{title:'Boudeuse combined draft',body:'A source-grounded draft awaiting review.'}},{id:2,topic_key:'cook-1768',title:'Cook first voyage',objective:'Assess candidate archive material.',contributions:[],tasks:[],pipeline:null,latest_draft:null}];
-    const posts=[],chatPosts=[],messages=[];let failChat=true,configured=true;
+    const projects=[{id:1,topic_key:'boudeuse-1766',title:'Boudeuse voyage',objective:'Combine source contributions into one historical account.',contributions:[{submission_id:33,title:'Boudeuse source notes',type:'content-suggestion',status:'approved'},{submission_id:34,title:'Boudeuse imagery',type:'content-suggestion',status:'approved'}],tasks:[{id:12,role:'research',state:'queued',attempt:0}],pipeline:{id:4,state:'researching',revision:1,next_step:'Research task queued; waiting for an available worker.'},latest_draft:{title:'Boudeuse combined draft',body:'A source-grounded draft awaiting review.'}},{id:2,topic_key:'cook-1768',title:'Cook first voyage',objective:'Assess candidate archive material.',contributions:[],tasks:[],pipeline:null,latest_draft:null}];
+    const posts=[],chatPosts=[],assignmentPosts=[],messages=[];let failChat=true,configured=true,failAssign=true;
+    await page.route('**/api/desk/team', route => route.fulfill({json:{agents:[
+      {agent_key:'historian-a',name:'Historical reporter',role:'research',enabled:true,specialty:'history'},
+      {agent_key:'paused-research',name:'Paused researcher',role:'research',enabled:false},
+      {agent_key:'ethno',name:'Ethnohistorian',role:'research',enabled:true,specialty:'ethnohistory'}
+    ]}}));
     await page.route('**/api/desk/projects**',async route=>{
       const req=route.request();const url=new URL(req.url());
+      if(url.pathname.endsWith('/assign')){
+        const data=req.postDataJSON();assignmentPosts.push(data);
+        if(failAssign){failAssign=false;return route.abort();}
+        projects[0].tasks[0].assignment={agent_key:data.agent_key,specialty:data.specialty};
+        return route.fulfill({json:{result:{task_id:12}}});
+      }
       if(url.pathname.endsWith('/chat')){
         const data=req.postDataJSON();chatPosts.push(data);
         if(failChat){failChat=false;messages.push({role:'user',content:data.message,created_at:'2026-11-08T12:00:00Z'});return route.fulfill({status:503,json:{error:'Model unavailable.',recorded:true}});}
@@ -37,6 +48,15 @@ async function main() {
     await page.getByText('Boudeuse source notes',{exact:true}).waitFor();
     await page.getByText('A source-grounded draft awaiting review.',{exact:true}).waitFor();
     await page.getByText('· task #12 · queued · attempt 0',{exact:false}).waitFor();
+    await page.locator('#assign-agent-12').selectOption('historian-a');
+    assert.equal(await page.locator('#assign-agent-12 option').count(),2,'only compatible enabled agent plus placeholder');
+    await page.getByRole('button',{name:'Assign task #12',exact:true}).click();
+    await page.locator('.ec-error[role="alert"]').waitFor();
+    assert.equal(await page.locator('#assign-agent-12').inputValue(),'historian-a');
+    await page.getByRole('button',{name:'Assign task #12',exact:true}).click();
+    await page.getByText('Assigned to Historical reporter · history',{exact:true}).waitFor();
+    assert.equal(assignmentPosts[0].request_id,assignmentPosts[1].request_id,'assignment retries retain request identity');
+    assert.equal(await page.locator('#assign-agent-12').count(),0,'immutable assignment hides picker');
     await page.getByLabel('Brief',{exact:true}).fill('Reconcile the sources and explain geographic uncertainty.');
     await page.getByRole('button',{name:'Start editorial work',exact:true}).click();
     await page.getByRole('status').filter({hasText:'task #13'}).waitFor();

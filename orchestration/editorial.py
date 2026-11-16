@@ -204,7 +204,7 @@ class EditorialWorker:
             return {"status": "failed" if recorded else "lease-lost", "task_id": task["id"]}
         # Only the explicit context reaches an agent/model, never its lease token.
         context = {k: task[k] for k in ("id", "topic_id", "role", "input", "topic", "sources",
-                   "dependency_result") if k in task}
+                   "dependency_result", "specialist_assignment") if k in task}
         context["agent_config"] = agent_config
         if task.get("role") not in self.handlers:
             return {"status": "unsupported-task", "task_id": task["id"]}

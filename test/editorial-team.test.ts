@@ -60,10 +60,10 @@ test("team API protects configs and permits pausing during a gateway outage", as
     if (u.pathname.endsWith("/auth/v1/user")) return Response.json({ email: editor ? "editor@example.com" : "reader@example.com" });
     if (init?.method === "POST") {
       mutations++;
-      assert.equal(u.pathname, "/rest/v1/rpc/desk_save_editorial_agent");
+      assert.equal(u.pathname, "/rest/v1/rpc/desk_save_editorial_specialist_agent");
       return Response.json(conflict ? { error: "conflict", current_version: 2 } : { agent_key: input.agent_key, version: 1 });
     }
-    assert.match(u.pathname, /editorial_agents_current$/);
+    assert.match(u.pathname, /editorial_specialist_agents_current$/);
     return Response.json([]);
   };
   const { GET, POST } = await import("../app/api/desk/team/route");

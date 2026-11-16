@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { EditorialAgent, TeamRole } from "@/lib/editorialTeam";
+import { EDITORIAL_SPECIALISTS } from "@/lib/editorialSpecialists";
 import "./AgentTeam.css";
 
 type Role = TeamRole;
@@ -19,14 +20,16 @@ const ROLES: Record<Role, { label: string; description: string }> = {
   writer: { label: "Writer", description: "Combines the collected material into a sourced draft." },
   reviewer: { label: "Reviewer", description: "Checks a draft and reports issues that need correction." },
 };
-const blank = (): Draft => ({ agent_key: `agent-${crypto.randomUUID()}`, expected_version: 0, name: "", role: "research", model: "", instructions: "", enabled: false });
-const draftOf = (agent: TeamAgent): Draft => ({ agent_key: agent.agent_key, expected_version: agent.version, name: agent.name, role: agent.role, model: agent.model, instructions: agent.instructions, enabled: agent.enabled });
+const blank = (): Draft => ({ agent_key: `agent-${crypto.randomUUID()}`, expected_version: 0, name: "", role: "research", model: "", instructions: "", enabled: false, specialty: null });
+const draftOf = (agent: TeamAgent): Draft => ({ agent_key: agent.agent_key, expected_version: agent.version, name: agent.name, role: agent.role, model: agent.model, instructions: agent.instructions, enabled: agent.enabled, specialty: agent.specialty ?? null });
 
 function errorMessage(code: unknown, fallback: string): string {
   if (code === "conflict") return "Another version was saved. Your changes are still here. Reload the saved configuration before editing again.";
   if (code === "idempotency-conflict") return "This save request conflicts with an earlier request. Edit the configuration before saving again.";
   if (code === "model-unavailable") return "The model is no longer available through Limen. Choose an available model or save the configuration as paused.";
   if (code === "gateway-unavailable" || code === "gateway-not-configured") return "Limen is not available. You can save a paused configuration; model access must be verified before enabling it.";
+  if (code === "specialty-role-mismatch") return "Choose a role compatible with the saved editorial specialty.";
+  if (code === "specialist-handler-not-implemented") return "This specialist cannot run yet. Save it as paused until its tools are implemented.";
   if (code === "team-unavailable") return "Agent configuration is not available yet. The team database setup must be completed before configurations can be saved.";
   return fallback;
 }
@@ -37,6 +40,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
   const [loadError, setLoadError] = useState("");
   const [form, setForm] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [specialtyId, setSpecialtyId] = useState("");
   const [saveError, setSaveError] = useState("");
   const [message, setMessage] = useState("");
   const requestId = useRef<string | null>(null);
@@ -71,6 +75,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
     requestId.current = null;
     setSaveError("");
     setMessage("");
+    setSpecialtyId(agent?.specialty ?? "");
     setForm(agent ? draftOf(agent) : blank());
   }
 
@@ -80,9 +85,18 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
     setForm(current => current ? { ...current, ...patch } : null);
   }
 
+  const specialty = EDITORIAL_SPECIALISTS.find(item => item.id === specialtyId);
+  const plannedSpecialty = specialty?.implementation === "planned";
+  function applySpecialty(id: string) {
+    setSpecialtyId(id);
+    const template = EDITORIAL_SPECIALISTS.find(item => item.id === id);
+    if (!template) { update({ specialty: null }); return; }
+    update({ name: template.label, role: template.role, instructions: template.instructions, enabled: false, specialty: template.id });
+  }
+
   const gatewayReady = data?.gateway.status === "ready";
   const modelAvailable = !!form && !!data?.models.some(model => model.id === form.model);
-  const canSave = !!form && /^[a-z0-9][a-z0-9-]{1,79}$/.test(form.agent_key) && !!form.name.trim() && !!form.model.trim() && !!form.instructions.trim() && (!form.enabled || (gatewayReady && modelAvailable));
+  const canSave = !!form && /^[a-z0-9][a-z0-9-]{1,79}$/.test(form.agent_key) && !!form.name.trim() && !!form.model.trim() && !!form.instructions.trim() && (!form.enabled || (gatewayReady && modelAvailable && !plannedSpecialty));
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -143,7 +157,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
           <div>
             <h2 className="agent-team-name">{agent.name}</h2>
             <p>{ROLES[agent.role]?.label ?? agent.role} — {ROLES[agent.role]?.description}</p>
-            <p className="ec-meta">{agent.model} · version {agent.version}</p>
+            <p className="ec-meta">{agent.model} · version {agent.version}{agent.specialty ? ` · ${EDITORIAL_SPECIALISTS.find(s => s.id === agent.specialty)?.label || agent.specialty}` : ""}</p>
           </div>
           <div>
             <p><strong>{agent.enabled ? "Configuration enabled" : "Paused configuration"}</strong></p>
@@ -157,12 +171,22 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
         <p>{form.expected_version ? `Save a new version after version ${form.expected_version}. Earlier configurations remain recorded.` : "New agents start paused. Define the agent’s responsibility, model and instructions."}</p>
         <fieldset disabled={saving}>
           <legend className="agent-team-legend">Agent configuration</legend>
+          {<div>
+            <label htmlFor="team-agent-specialty">Editorial specialty
+              <select className="desk-input" id="team-agent-specialty" value={specialtyId} onChange={event => applySpecialty(event.target.value)} aria-describedby="team-agent-specialty-help">
+                <option value="" disabled={!!form.expected_version && !!form.specialty}>Custom configuration</option>
+                {EDITORIAL_SPECIALISTS.map(template => <option key={template.id} value={template.id}>{template.label}{template.implementation === "planned" ? " — planned tools" : ""}</option>)}
+              </select>
+            </label>
+            <p id="team-agent-specialty-help">The specialty is saved with this configuration version. Selecting one fills the name, role and instructions below. Choosing another replaces those fields and pauses the configuration. The model remains your choice. Templates do not register tools or grant capabilities.</p>
+            {specialty && <p className="ec-notice" role="status">{plannedSpecialty ? "Specialist tool integration is planned. Save this as a paused configuration draft; its specialized work is not executable yet." : "This template uses an existing editorial handler. Execution still requires an assigned task, the worker and an authorized model route."}</p>}
+          </div>}
           <div className="agent-team-fields">
             <label htmlFor="team-agent-name">Name
               <input className="desk-input" id="team-agent-name" required maxLength={120} value={form.name} onChange={event => update({ name: event.target.value })} />
             </label>
             <label htmlFor="team-agent-role">Role
-              <select className="desk-input" id="team-agent-role" value={form.role} onChange={event => update({ role: event.target.value as Role })}>
+              <select className="desk-input" id="team-agent-role" disabled={!!specialtyId} value={form.role} onChange={event => update({ role: event.target.value as Role })}>
                 {Object.entries(ROLES).map(([role, entry]) => <option value={role} key={role}>{entry.label}</option>)}
               </select>
               <span>{ROLES[form.role].description}</span>
@@ -181,10 +205,10 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
             <span id="team-agent-instructions-help">Describe this agent’s responsibility and expected result. Instructions do not grant tools, change source rules or authorize publication.</span>
           </label>
           <label className="agent-team-enabled" htmlFor="team-agent-enabled">
-            <input type="checkbox" id="team-agent-enabled" checked={form.enabled} disabled={!form.enabled && (!gatewayReady || !modelAvailable)} onChange={event => update({ enabled: event.target.checked })} />
+            <input type="checkbox" id="team-agent-enabled" checked={form.enabled} disabled={plannedSpecialty || (!form.enabled && (!gatewayReady || !modelAvailable))} onChange={event => update({ enabled: event.target.checked })} />
             Enable this configuration for future work
           </label>
-          <p className="ec-meta">Execution remains disconnected. An enabled configuration is not a running agent.</p>
+          <p className="ec-meta">An enabled configuration is not a running agent. Follow assigned work in Proposals & projects.</p>
           {saveError && <p className="ec-error" role="alert">{saveError}</p>}
           <div className="ec-actions">
             <button className="desk-btn desk-btn-primary" type="submit" disabled={!canSave || saving}>{saving ? "Saving…" : "Save configuration"}</button>

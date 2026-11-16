@@ -7,7 +7,7 @@ export type AgentConfiguration = {
   instructions: string; enabled: boolean; expected_version: number; request_id: string;
 };
 export type EditorialAgent = Omit<AgentConfiguration, "expected_version" | "request_id"> & {
-  version: number; created_at: string;
+  version: number; created_at: string; specialty?: string | null;
 };
 export function parseAgentConfiguration(value: unknown): AgentConfiguration | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;

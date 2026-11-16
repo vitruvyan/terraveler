@@ -25,7 +25,7 @@ function taskAgent(task: any) {
   const agent = Array.isArray(value) ? value[0] : value;
   return agent ? { name: agent.name, version: agent.version, model: agent.model } : null;
 }
-const taskFields = "id,topic_id,role,state,attempt,editorial_task_agents(editorial_agent_versions(name,version,model))";
+const taskFields = "id,topic_id,role,state,attempt,editorial_specialist_assignments(agent_key,specialty),editorial_task_agents(editorial_agent_versions(name,version,model))";
 function projectView(topic: any, links: any[], tasks: any[], runs: any[], draft: any = null) {
   const run = runs.find(r => r.topic_id === topic.id);
   const current = run ? tasks.find(t => t.id === run.current_task_id) : null;
@@ -39,7 +39,7 @@ function projectView(topic: any, links: any[], tasks: any[], runs: any[], draft:
       return { submission_id: l.submission_id, title: snapshot.payload?.title || snapshot.payload?.meta?.title || snapshot.payload?.target_voyage || `Proposal #${l.submission_id}`,
         type: snapshot.type || "contribution", status: snapshot.status || "approved" };
     }),
-    tasks: tasks.filter(t => t.topic_id === topic.id).map(t => ({ id: t.id, role: t.role, state: t.state, attempt: t.attempt, agent: taskAgent(t) })),
+    tasks: tasks.filter(t => t.topic_id === topic.id).map(t => ({ id: t.id, role: t.role, state: t.state, attempt: t.attempt, agent: taskAgent(t), assignment: (Array.isArray(t.editorial_specialist_assignments) ? t.editorial_specialist_assignments[0] : t.editorial_specialist_assignments) || null })),
     pipeline: run ? { id: run.id, state: run.state, revision: run.revision, next_step: next } : null,
     latest_draft: draft?.kind === "draft" && typeof draft.title === "string" && typeof draft.body === "string" ? { title: draft.title, body: draft.body } : null };
 }

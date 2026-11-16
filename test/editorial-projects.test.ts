@@ -34,7 +34,7 @@ test("project detail nests same-topic contributions, stored draft and actual que
     if (path.includes("offset=1")) return [];
     if (path.startsWith("editorial_topics?")) return [{ id: 1, topic_key: "cabeza", title: "Cabeza", objective: "One article" }];
     if (path.startsWith("editorial_topic_submissions?")) return [{ topic_id: 1, submission_id: 111, snapshot: { type: "idea", status: "approved", payload: { title: "Cabeza research" } } }];
-    if (path.startsWith("editorial_tasks?")) return [{ topic_id: 1, id: 8, role: "reviewer", state: "queued", attempt: 0 }];
+    if (path.startsWith("editorial_tasks?")) return [{ topic_id: 1, id: 8, role: "reviewer", state: "queued", attempt: 0, editorial_specialist_assignments: [{ agent_key: "checker-a", specialty: "factcheck" }] }];
     if (path.startsWith("editorial_pipeline_runs?")) return [{ topic_id: 1, id: 3, state: "reviewing", current_task_id: 8, draft_task_id: 7, revision: 0 }];
     if (path.startsWith("editorial_results?")) return [{ result: { kind: "draft", title: "Consolidated", body: "Sourced draft", provider_secret: "do-not-return" } }];
     if (path.startsWith("editorial_chat_messages?")) return [{ role: "assistant", content: "Latest", created_at: "2" }, { role: "user", content: "First", created_at: "1" }];
@@ -42,11 +42,13 @@ test("project detail nests same-topic contributions, stored draft and actual que
   };
   const view = await readEditorialProject(1, read);
   assert.equal(view?.contributions[0].submission_id, 111);
+  assert.deepEqual(view?.tasks[0].assignment, { agent_key: "checker-a", specialty: "factcheck" });
   assert.deepEqual(view?.latest_draft, { title: "Consolidated", body: "Sourced draft" });
   assert.match(view!.pipeline!.next_step, /Waiting/);
   assert.doesNotMatch(JSON.stringify(view), /do-not-return/);
   assert.equal((await readEditorialMessages(1, read))[0].content, "First");
   assert.ok(requested.some(p => p.startsWith("editorial_results?task_id=eq.7")));
+  assert.ok(requested.some(p => p.includes("editorial_specialist_assignments(agent_key,specialty)")));
 });
 
 test("projects route checks editor, origin and disabled work before mutation", async () => {
