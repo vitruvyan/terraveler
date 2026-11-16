@@ -6623,3 +6623,7 @@ a.dk-demand:focus-visible { outline: 2px solid var(--accent); outline-offset: va
   background: rgba(43, 33, 23, 0.05);
   border-radius: var(--radius-2);
 }
+
+/* Editorial shortcuts lead; personal contribution tools stay available on demand. */
+.acct-contributor-tools { border-top: 1px solid var(--rule-mid); margin-top: var(--space-3); }
+.acct-contributor-tools summary { font-family: var(--font-ui); color: var(--ink-soft); cursor: pointer; min-height: var(--tap-min); align-content: center; }

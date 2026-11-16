@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionQueue, { type VerdictFeedback } from "@/components/desk/SubmissionQueue";
+import AdminDashboard from "@/components/desk/AdminDashboard";
+import AdminNavigation from "@/components/desk/AdminNavigation";
 import EditorialWorkspace from "@/components/desk/EditorialWorkspace";
 import ContentCatalogue from "@/components/desk/ContentCatalogue";
 import type { DeskContent } from "@/lib/deskContent";
@@ -14,7 +16,7 @@ import {
   type PendingProposal, type ResolvedDecision, type DossierEndpoint,
   type EndpointDossierEntry, type EndpointContext, type MaterialDrift,
 } from "@/components/desk/SourceGovernance";
-import DeskSidebar, { type Section, type SubmissionsSub, type SourcesSub, type UsersSub } from "@/components/desk/DeskSidebar";
+import { type Section, type SubmissionsSub, type SourcesSub, type UsersSub } from "@/components/desk/DeskSidebar";
 import { PromptEditor, type PromptVersion } from "@/components/desk/PromptRegistry";
 import type { PromptKey } from "@/lib/promptRegistry";
 import { PENDING_STATUSES } from "@/lib/deskEscalation";
@@ -119,9 +121,9 @@ type Analytics = {
 
 const RANKS = ["cabin-boy", "deckhand", "navigator", "captain", "admiral"];
 
-const SECTIONS: Section[] = ["workspace", "content", "overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
+const SECTIONS: Section[] = ["dashboard", "workspace", "content", "overview", "submissions", "sources", "users", "waypoints", "prompts", "analytics"];
 const SECTION_TITLE: Record<Section, string> = {
-  workspace: "Editorial desk", content: "Content", overview: "Overview · Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
+  dashboard: "Editorial desk", workspace: "Review & publish", content: "Content", overview: "Overview · Quarterdeck", submissions: "Submissions", sources: "Sources", users: "Users",
   waypoints: "Waypoints, taken", prompts: "Prompts", analytics: "Analytics",
 };
 const SUBMISSIONS_SUBS: SubmissionsSub[] = ["needs_verdict", "peer_review", "history"];
@@ -145,9 +147,9 @@ const SUB_LABEL: Record<string, string> = {
  * subsection that actually needs a decision, so an old ?tab=sources link
  * (no &sub=) still lands on "pending" rather than an arbitrary first entry. */
 function initialSection(): Section {
-  if (typeof window === "undefined") return "workspace";
+  if (typeof window === "undefined") return "dashboard";
   const t = new URLSearchParams(window.location.search).get("tab");
-  return (SECTIONS as string[]).includes(t ?? "") ? (t as Section) : "workspace";
+  return (SECTIONS as string[]).includes(t ?? "") ? (t as Section) : "dashboard";
 }
 function initialSub<T extends string>(valid: readonly T[], fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -223,6 +225,7 @@ export default function Desk() {
       setMe({ email: who.email });
       if (!who.is_editor) { setStanding("not-editor"); return; }
       setStanding("editor");
+      if (initialSection() === "dashboard") { setSubLoading(false); return; }
       await Promise.all([
         (async () => {
           try {
@@ -476,7 +479,9 @@ export default function Desk() {
     );
   }
 
-  if (section === "workspace") return <><SiteHeader /><EditorialWorkspace
+  if (section === "dashboard") return <><SiteHeader /><main className="dk-page"><AdminNavigation active="dashboard" /><DeskHeading eyebrow="Terraveler · administration" title="Editorial desk" /><AdminDashboard /></main></>;
+
+  if (section === "workspace") return <><SiteHeader /><div className="dk-page"><AdminNavigation active="workspace" /></div><EditorialWorkspace
     submissions={Object.values(subGroups).flat()} content={content}
     loading={subLoading || contentLoading} error={[subError, contentError].filter(Boolean).join(" ")}
     onRetry={load} onVerdict={verdict} busy={busy} onAdministration={() => navigate("content")}
@@ -494,7 +499,7 @@ export default function Desk() {
     <>
     <SiteHeader />
     <main className="dk-page">
-      <button className="desk-btn" onClick={() => navigate("workspace")}>← Back to editorial desk</button>
+      <AdminNavigation active="administration" currentHref={`/desk?tab=${section}${section === "sources" ? `&sub=${sourcesSub}` : section === "submissions" ? `&sub=${submissionsSub}` : section === "users" ? `&sub=${usersSub}` : ""}`} />
       <p className="ec-meta">Agents prepare and review. You authorize publication; approval alone does not put content online.</p>
       <DeskHeading
         eyebrow={eyebrow}
@@ -506,29 +511,7 @@ export default function Desk() {
         }
       />
 
-      <div className="dk-shell">
-        <DeskSidebar
-          section={section}
-          submissionsSub={submissionsSub}
-          sourcesSub={sourcesSub}
-          usersSub={usersSub}
-          counts={{
-            needsVerdict: subGroups.needs_verdict.length,
-            peerReview: subGroups.peer_review.length,
-            history: subGroups.history.length,
-            pending: pendingSources.length,
-            flagged: flaggedEndpoints.length,
-            sources: allEndpoints.length,
-            claimed: claims.length,
-            claimedOverdue: claims.filter((c) =>
-              c.claimed_at && Date.now() - new Date(c.claimed_at).getTime() > CLAIM_TTL_DAYS * 86_400_000
-            ).length,
-            humans: humans.length,
-            agents: agentUsers.length,
-          }}
-          onNavigate={navigate}
-        />
-
+      <div>
         <div className="dk-content">
       {err && <div className="ec-error" role="alert"><p>{err}</p><button className="desk-btn" onClick={load}>Retry desk data</button></div>}
       {section === "content" && <ContentCatalogue data={content} loading={contentLoading} error={contentError} onRetry={refreshContent} />}

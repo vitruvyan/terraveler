@@ -21,9 +21,9 @@ const READER: Item[] = [
 ];
 
 const EDITOR: Item[] = [
-  ...READER,
-  { href: "/desk", icon: "scroll", label: "The editorial desk", note: "Submissions waiting on a verdict" },
-  { href: "/specimen", icon: "plates", label: "The design system", note: "Type, colour, mark and plates" },
+  { href: "/desk", icon: "scroll", label: "Editorial desk", note: "Platform status, current work and drafts to inspect" },
+  { href: "/desk/projects", icon: "map", label: "Projects", note: "Contributions, assigned work and private previews" },
+  { href: "/desk/team", icon: "wheel", label: "Agent team", note: "Editorial roles, models and instructions" },
 ];
 
 /* The destination cannot survive the Google round trip in a query string — the
@@ -91,7 +91,7 @@ export default function AccountPanel({ open, onClose }: { open: boolean; onClose
               </span>
             </div>
 
-            <nav className="acct-menu">
+            <nav className="acct-menu" aria-label={me.is_editor ? "Administration shortcuts" : "Contributor workspace"}>
               {items.map((i) => (
                 <a className="acct-menu-item" href={i.href} key={i.label}>
                   <Icon name={i.icon} size={17} />
@@ -102,6 +102,7 @@ export default function AccountPanel({ open, onClose }: { open: boolean; onClose
                 </a>
               ))}
             </nav>
+            {me.is_editor && <details className="acct-contributor-tools"><summary>My contributor workspace</summary><nav className="acct-menu" aria-label="Contributor workspace">{READER.map(i => <a className="acct-menu-item" href={i.href} key={i.href}><Icon name={i.icon} size={17} /><span className="acct-menu-label">{i.label}<span className="acct-menu-note">{i.note}</span></span></a>)}</nav></details>}
 
             <button
               type="button"
