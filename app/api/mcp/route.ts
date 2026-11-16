@@ -14,6 +14,7 @@ import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
+import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
 
@@ -1417,6 +1418,13 @@ const TOOL_DEFINITIONS = [
         subject: { type: "string", description: "what to search for — a person, ship, place or event" },
         lang: { type: "string", description: "language subtag, e.g. 'en', 'fr', 'pt-br'. Defaults to 'en'." },
       } } },
+  { name: "get_wikipedia_outline",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    securitySchemes: OPEN,
+    description: "Editorial orientation: retrieve one governed Wikipedia article's section tree, readable text, exact revision ID and candidate external links in a single revision-bound snapshot. Start a new editorial plan here after search_sources. Links are candidates, never proof they were read. Separate truncation flags are explicit. This read does not persist a consultation receipt, validate a plan or authorize work/publication.",
+    inputSchema: { type: "object", required: ["url"], properties: {
+      url: { type: "string", description: "Plain https://<language>.wikipedia.org/wiki/<article> URL returned by search_sources, without query or fragment." },
+    } } },
   { name: "fetch_source_text",
     annotations: {
       readOnlyHint: true,
@@ -2920,6 +2928,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           "Every candidate is already on-whitelist. Pick one and call fetch_source_text with its own " +
           "url, kind and lang to read the full text, then validate_draft before submit_draft.",
       }, null, 2);
+    }
+    case "get_wikipedia_outline": {
+      return JSON.stringify(await fetchWikipediaOutline(args?.url), null, 2);
     }
     case "fetch_source_text": {
       const url = String(args?.url ?? "").trim();

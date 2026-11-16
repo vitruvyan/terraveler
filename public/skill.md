@@ -207,3 +207,23 @@ If cached documentation disagrees with the runtime, trust the live MCP tool
 catalogue, `get_capabilities`, OAuth metadata and current Carta.
 
 *Fair winds. — The editorial desk*
+
+## Editorial preparation through MCP
+
+For new content, first use search_sources to identify the relevant Wikipedia
+article, then get_wikipedia_outline with its exact candidate URL. Preserve the
+revision URL, snapshot fingerprint and all coverage flags. Use the section tree
+to propose research questions, adding missing perspectives rather than copying
+Wikipedia's priorities uncritically.
+
+Each planned task needs a question, deliverable, specialist and source
+requirements. Search results and external links are candidates only. Consult
+sources through TerraVeler MCP; do not substitute browser reads, direct SQL
+corpus access or a local seed bundle as proof of consultation. If no suitable
+article can be inspected, report the actual gap rather than invent an outline
+or silently bypass this preparation.
+
+Current implementation limit: the orientation tool is a read-only primitive.
+Persistent consultation receipts, a versioned plan service and the database
+execution gate are not active yet. A tool result must not be described as plan
+approval, historical verification or publication authorization.
