@@ -8,7 +8,7 @@ async function main() {
   const backend = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
     if (req.url.startsWith('/auth/v1/user')) return res.end(JSON.stringify({email:'editor@example.com'}));
-    dataReads++;
+    if (req.url.includes("/editorial_")) dataReads++;
     const url = new URL(req.url, 'http://fixture');
     if (url.pathname.endsWith('/editorial_topics')) return res.end(JSON.stringify([{id:1,title:'Cabeza de Vaca research'}]));
     if (url.pathname.endsWith('/editorial_results') && url.searchParams.get('editorial_tasks.role') === 'eq.writer') {
