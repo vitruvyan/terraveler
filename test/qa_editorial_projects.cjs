@@ -51,7 +51,7 @@ async function main() {
     await page.locator('#assign-agent-12').selectOption('historian-a');
     assert.equal(await page.locator('#assign-agent-12 option').count(),2,'only compatible enabled agent plus placeholder');
     await page.getByRole('button',{name:'Assign task #12',exact:true}).click();
-    await page.getByRole('alert').waitFor();
+    await page.locator('.ec-error[role="alert"]').waitFor();
     assert.equal(await page.locator('#assign-agent-12').inputValue(),'historian-a');
     await page.getByRole('button',{name:'Assign task #12',exact:true}).click();
     await page.getByText('Assigned to Historical reporter · history',{exact:true}).waitFor();
