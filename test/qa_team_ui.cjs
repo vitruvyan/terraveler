@@ -52,6 +52,11 @@ async function main() {
     await page.goto(`${base}/desk/team`);
     await page.getByText('No agents configured yet.', { exact: false }).waitFor();
     await page.getByRole('button', { name: 'Create agent', exact: true }).click();
+    await page.locator('#team-agent-specialty').selectOption('ethnohistory');
+    assert.match(await page.getByLabel('Specific instructions').inputValue(), /indigenous voices/);
+    assert.ok(await page.getByRole('checkbox').isDisabled(), 'planned template cannot enable during creation');
+    await page.locator('#team-agent-specialty').selectOption('history');
+    assert.match(await page.getByLabel('Specific instructions').inputValue(), /approved retrieved corpus/);
     await page.getByLabel('Name', { exact: true }).fill('Historical researcher');
     await page.locator('#team-agent-model').fill('local-default');
     await page.getByLabel('Specific instructions').fill('Compare sources and preserve citations.');

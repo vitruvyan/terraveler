@@ -96,7 +96,7 @@ def _prompt_material(task: dict) -> dict:
     research, current draft and review, rather than repeated references inside
     dependency_result, draft.references and candidate.candidate at every repair.
     """
-    material = {k: task[k] for k in ("id", "topic", "sources") if k in task}
+    material = {k: task[k] for k in ("id", "topic", "sources", "specialist_assignment") if k in task}
     original = task.get("input", {})
     if not isinstance(original, dict):
         raise GatewayError("gateway-input-invalid")

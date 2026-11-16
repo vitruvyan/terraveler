@@ -103,5 +103,16 @@ class GatewayTests(unittest.TestCase):
                 GatewayConfig.from_environment(env)
 
 
+class AssignmentContextTests(unittest.TestCase):
+    def test_prompt_keeps_assignment_metadata_without_lease_credentials(self):
+        from orchestration.editorial_gateway import _prompt_material
+        value = task()
+        value["specialist_assignment"] = {"agent_key": "historian", "specialty": "history"}
+        value["lease_token"] = "must-not-reach-model"
+        material = _prompt_material(value)
+        self.assertEqual(material["specialist_assignment"], value["specialist_assignment"])
+        self.assertNotIn("lease_token", material)
+
+
 if __name__ == "__main__":
     unittest.main()
