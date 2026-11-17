@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+<title id="title">Terraveler — Classic Sun Compass micro</title>
+<circle cx="32" cy="32" r="25" fill="none" stroke="#A9772F" stroke-width="2.6"/>
+<g stroke="#7C5723" stroke-width="1" stroke-linejoin="round">
+<path d="M32 2 38 21 53 11 43 26 62 32 43 38 53 53 38 43 32 62 26 43 11 53 21 38 2 32 21 26 11 11 26 21Z" fill="#E4CFA8"/>
+<path d="M32 2 38 21 32 32ZM62 32 43 38 32 32ZM32 62 26 43 32 32ZM2 32 21 26 32 32Z" fill="#A9772F"/>
+</g>
+<circle cx="32" cy="32" r="12.5" fill="#F2E6CF" stroke="#7C5723" stroke-width="1.7"/>
+<g fill="#2B2117"><circle cx="28" cy="30" r="1.6"/><circle cx="36" cy="30" r="1.6"/></g>
+<path d="M32 30.5 31 34 33 34M28.5 37Q32 39 35.5 37" fill="none" stroke="#7C5723" stroke-width="1.3" stroke-linecap="round"/>
+</svg>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icon from "@/components/Icon";
 
 const SEEN_KEY = "tv-welcome-seen";
 const ALWAYS_KEY = "tv-welcome-always";
@@ -49,11 +50,26 @@ export default function WelcomeCartouche() {
     } catch {}
   };
 
+  useEffect(() => {
+    if (!open || atlasOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const target = e.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable=true]")) return;
+      try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
+      setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, atlasOpen]);
+
   if (!open || atlasOpen) return null;
 
   return (
     <aside className="welcome-cart" role="dialog" aria-modal="false" aria-label="Welcome to Terraveler">
-      <button className="welcome-x" aria-label="Close invitation" onClick={dismiss}>×</button>
+      <button type="button" className="welcome-x" aria-label="Close invitation" title="Close invitation" onClick={dismiss}>
+        <Icon name="close" size={28} />
+      </button>
 
       <div className="welcome-copy">
         <div className="welcome-kicker">Welcome to Terraveler</div>

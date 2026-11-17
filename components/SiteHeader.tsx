@@ -87,7 +87,7 @@ export default function SiteHeader() {
     <header className="site-header">
       <div className="sh-inner">
         <div className="sh-brand">
-          <Link href="/" className="wordmark sh-wordmark">Terraveler</Link>
+          <Link href="/" className="wordmark sh-wordmark brand-lockup">Terraveler</Link>
           <span className="sh-tagline">History, mapped by humans and agents.</span>
         </div>
 

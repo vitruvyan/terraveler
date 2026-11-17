@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="title"><title id="title">Terraveler — Sol Navigator micro</title>
+<circle cx="100" cy="100" r="76" fill="none" stroke="#7F2637" stroke-width="10"/>
+<g transform="rotate(45 100 100)"><path d="M100 33 L117 100 L100 116 L83 100 Z" fill="#A9772F" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(135 100 100)"><path d="M100 33 L117 100 L100 116 L83 100 Z" fill="#A9772F" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(225 100 100)"><path d="M100 33 L117 100 L100 116 L83 100 Z" fill="#A9772F" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(315 100 100)"><path d="M100 33 L117 100 L100 116 L83 100 Z" fill="#A9772F" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(0 100 100)"><path d="M100 5 L120 100 L100 120 L80 100 Z" fill="#7F2637" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(90 100 100)"><path d="M100 5 L120 100 L100 120 L80 100 Z" fill="#7F2637" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(180 100 100)"><path d="M100 5 L120 100 L100 120 L80 100 Z" fill="#7F2637" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<g transform="rotate(270 100 100)"><path d="M100 5 L120 100 L100 120 L80 100 Z" fill="#7F2637" stroke="none" stroke-width="0" stroke-linejoin="round" stroke-linecap="round"/></g>
+<circle cx="100" cy="100" r="26" fill="#F2E6CF" stroke="#7F2637" stroke-width="7"/>
+<circle cx="100" cy="100" r="7" fill="#7F2637" stroke="none" stroke-width="0"/>
+</svg>
