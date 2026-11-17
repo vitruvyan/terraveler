@@ -1,16 +1,30 @@
-.admin-dashboard-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-4); }
-.admin-dashboard .desk-btn { min-height: var(--tap-min); }
-.admin-dashboard-section { border-top: 1px solid var(--rule-mid); margin-top: var(--space-6); padding-top: var(--space-4); }
-.admin-dashboard-section h2 { font: 500 var(--step-3)/1.2 var(--font-display); margin-top: 0; }
+.admin-dashboard-toolbar, .admin-dashboard-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.admin-dashboard-toolbar > p { max-width: var(--measure-narrow); margin: 0; }
+.admin-dashboard .desk-btn { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); text-decoration: none; }
+.admin-dashboard-section { border-top: 1px solid var(--rule-mid); margin-top: var(--space-5); padding-top: var(--space-4); min-width: 0; }
+.admin-dashboard-section h2 { display: flex; align-items: center; gap: var(--space-2); font: 500 var(--step-3)/1.2 var(--font-display); margin: 0 0 var(--space-3); }
+.admin-dashboard-section h2 svg { color: var(--brass-text); }
 .admin-dashboard-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-3); padding-block: var(--space-3); border-bottom: 1px solid var(--rule-hair); overflow-wrap: anywhere; }
 .admin-dashboard-row h3 { font: 600 var(--step-1)/1.4 var(--font-ui); margin: 0; }
 .admin-dashboard-row p { margin-block: var(--space-2); }
 .admin-dashboard-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
 .admin-dashboard-status dt { font-weight: 600; }
 .admin-dashboard-status dd { margin: var(--space-2) 0 0; }
+.admin-dashboard-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,calc(var(--space-8) * 2)),1fr)); gap: var(--space-3); margin-block: var(--space-5); }
+.admin-metric { background: var(--parchment-raised); border: 1px solid var(--rule-hair); border-top: var(--radius-2) solid var(--rule-mid); padding: var(--space-3); min-width: 0; }
+.admin-metric-urgent { border-top-color: var(--state-no); }
+.admin-metric dt a { display: flex; align-items: center; gap: var(--space-2); min-height: var(--tap-min); font: var(--step-0)/1.25 var(--font-ui); }
+.admin-metric dt svg { color: var(--brass-text); }
+.admin-metric dd { font: 500 var(--step-3)/1.3 var(--font-mono); font-variant-numeric: lining-nums tabular-nums; margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+.admin-metric-urgent dd { color: var(--state-no); }
+.admin-attention { padding: var(--space-4); border: 1px solid var(--rule-hair); border-left: var(--radius-2) solid var(--brass); background: var(--parchment-raised); }
+.admin-platform summary { cursor: pointer; min-height: var(--tap-min); font: 600 var(--step-0)/1.4 var(--font-ui); }
 [data-layout="phone"] .admin-dashboard-status { grid-template-columns: minmax(0, 1fr); }
+[data-layout="phone"] .admin-dashboard-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
 
-.admin-dashboard-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); margin-block: var(--space-5); }
-.admin-dashboard-summary div { border-bottom: 1px solid var(--rule-mid); padding-bottom: var(--space-3); }
-.admin-dashboard-summary dd { font: 500 var(--step-3)/1.3 var(--font-mono); font-variant-numeric: lining-nums tabular-nums; margin: var(--space-2) 0 0; }
-[data-layout="phone"] .admin-dashboard-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* The state word is a machine record; colour corroborates the word. */
+.admin-record-state { display: inline-block; border-left: var(--radius-2) solid currentColor; padding-inline: var(--space-2); color: var(--ink-soft); font: var(--step--2)/1.5 var(--font-mono); }
+.admin-record-state[data-state="enabled"] { color: var(--state-ok); }
+.admin-record-state[data-state="reviewing"] { color: var(--state-review); }
+.admin-record-state[data-state="awaiting-editor"] { color: var(--state-desk); }
+.admin-record-state[data-state="attention"] { color: var(--state-no); }

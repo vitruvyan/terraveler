@@ -1,4 +1,7 @@
 "use client";
+import Chapters from "../Chapters";
+import { AdminShell } from "@/components/desk/AdminNavigation";
+import "../specimen.css";
 import EditorialWorkspace from "@/components/desk/EditorialWorkspace";
 import type { DeskSubmission } from "@/lib/deskPresentation";
 import "../../desk/editorial.css";
@@ -17,7 +20,7 @@ const sample: DeskSubmission = {
 };
 export default function EditorialSpecimen() {
   return (
-    <EditorialWorkspace
+    <><div className="dk-page"><Chapters current="/specimen/editorial" /><p>Illustrative records, read-only review workspace.</p></div><AdminShell active="workspace"><EditorialWorkspace
       readOnly
       submissions={[
         sample,
@@ -67,6 +70,6 @@ export default function EditorialSpecimen() {
       onRetry={async () => {}}
       onVerdict={async () => ({})}
       onAdministration={() => {}}
-    />
+    /></AdminShell></>
   );
 }

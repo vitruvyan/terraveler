@@ -5,7 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading, DeskStanding, DeskLedger, ShipsLog } from "@/components/desk/Quarterdeck";
 import SubmissionQueue, { type VerdictFeedback } from "@/components/desk/SubmissionQueue";
 import AdminDashboard from "@/components/desk/AdminDashboard";
-import AdminNavigation from "@/components/desk/AdminNavigation";
+import { AdminShell } from "@/components/desk/AdminNavigation";
 import EditorialWorkspace from "@/components/desk/EditorialWorkspace";
 import ContentCatalogue from "@/components/desk/ContentCatalogue";
 import type { DeskContent } from "@/lib/deskContent";
@@ -479,13 +479,13 @@ export default function Desk() {
     );
   }
 
-  if (section === "dashboard") return <><SiteHeader /><main className="dk-page"><AdminNavigation active="dashboard" /><DeskHeading eyebrow="Terraveler · administration" title="Editorial desk" /><AdminDashboard /></main></>;
+  if (section === "dashboard") return <><SiteHeader /><AdminShell active="dashboard"><main className="dk-page"><DeskHeading eyebrow="Terraveler · administration" title="Editorial desk" /><AdminDashboard /></main></AdminShell></>;
 
-  if (section === "workspace") return <><SiteHeader /><div className="dk-page"><AdminNavigation active="workspace" /></div><EditorialWorkspace
+  if (section === "workspace") return <><SiteHeader /><AdminShell active="workspace"><EditorialWorkspace
     submissions={Object.values(subGroups).flat()} content={content}
     loading={subLoading || contentLoading} error={[subError, contentError].filter(Boolean).join(" ")}
     onRetry={load} onVerdict={verdict} busy={busy} onAdministration={() => navigate("content")}
-  /></>;
+  /></AdminShell></>;
 
   const eyebrow = section === "submissions" || section === "sources" || section === "users"
     ? `Terraveler · editorial desk · ${SECTION_TITLE[section]}`
@@ -498,8 +498,7 @@ export default function Desk() {
   return (
     <>
     <SiteHeader />
-    <main className="dk-page">
-      <AdminNavigation active="administration" currentHref={`/desk?tab=${section}${section === "sources" ? `&sub=${sourcesSub}` : section === "submissions" ? `&sub=${submissionsSub}` : section === "users" ? `&sub=${usersSub}` : ""}`} />
+    <AdminShell active="administration" currentHref={`/desk?tab=${section}${section === "sources" ? `&sub=${sourcesSub}` : section === "submissions" ? `&sub=${submissionsSub}` : section === "users" ? `&sub=${usersSub}` : ""}`}><main className="dk-page">
       <p className="ec-meta">Agents prepare and review. You authorize publication; approval alone does not put content online.</p>
       <DeskHeading
         eyebrow={eyebrow}
@@ -880,7 +879,7 @@ export default function Desk() {
       )}
         </div>
       </div>
-    </main>
+    </main></AdminShell>
     </>
   );
 }
