@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
-const [workflow, migration, team, preparation] = await Promise.all(['editorial_workflow', 'editorial_mcp_plans','editorial_team','editorial_preparation'].map(n => readFile(new URL(`../supabase/${n}.sql`, import.meta.url), 'utf8')));
+const [workflow, migration, team, preparation, corpus] = await Promise.all(['editorial_workflow', 'editorial_mcp_plans','editorial_team','editorial_preparation','editorial_mcp_corpus'].map(n => readFile(new URL(`../supabase/${n}.sql`, import.meta.url), 'utf8')));
 const url = 'https://en.wikipedia.org/wiki/Example';
 const fakeId = '00000000-0000-4000-8000-000000000099';
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -15,6 +15,7 @@ async function setup() {
  alter default privileges in schema public grant all on tables to anon,authenticated,terraveler_editorial_worker;
  alter default privileges in schema public grant execute on functions to anon,authenticated,terraveler_editorial_worker;`);
  await db.exec(workflow);await db.exec(migration);await db.exec(team);await db.exec(preparation);
+ await db.exec(`create table rag_docs(id bigint primary key,voyage_slug text,type text,title text,content text,source_url text,license text);create table source_endpoints(id bigint primary key,host_pattern text,match_type text,status text,trust_mode text);create table source_policy_decisions(id bigint primary key,endpoint_id bigint,decision_outcome text,trust_mode text,rights_class text,timestamp timestamptz);`);await db.exec(corpus);
  await db.exec("insert into editorial_topics(topic_key,title,objective) values('example','Example','Research'),('another','Another','Research');");
  return db;
 }
@@ -102,4 +103,24 @@ test('prepared plan and independent review are atomic, immutable and grant no ta
  for(const role of ['visitor','anon','authenticated','terraveler_editorial_worker']){
   await db.exec('set role '+role);await assert.rejects(invoke(),/permission denied/);await db.exec('reset role');
  }
+ }finally{await db.close();}});
+
+test('MCP corpus is scoped to a live research attempt and persists current policy receipt',async()=>{const db=await setup();try{
+ await db.exec(`insert into submissions values(7,'approved','{}');
+ insert into editorial_topic_submissions(submission_id,topic_id,snapshot) values(7,1,'{"target_voyage":"voyage"}');
+ insert into rag_docs values(1,'voyage','text','Journal','A source fragment','https://example.org/book','Public domain'),(2,'other','text','Other','unscoped','https://example.org/book','Public domain'),(3,'voyage','text','Restricted','private text','https://example.org/restricted','Copyright');
+ insert into source_endpoints values(1,'example.org','exact','active','domain_trusted');
+ insert into source_policy_decisions values(1,1,'approve','domain_trusted','public_domain',now());`);
+ await scalar(db,"select editorial_enqueue(1,'research','test-corpus','{}',null)");
+ await scalar(db,"select editorial_claim('worker-1',array['research'],120)");
+ const invoke=(attempt=1,worker='worker-1')=>scalar(db,'select editorial_read_mcp_corpus(1,$1,$2)',[attempt,worker]);
+ await db.exec('set role terraveler_service');
+ await assert.rejects(invoke(2),/active research task required/);await assert.rejects(invoke(1,'foreign'),/active research task required/);
+ const result=await invoke();assert.equal(result.sources.length,1);assert.equal(result.sources[0].id,'rag:1');assert.equal(result.sources[0].governance.policy_decision_id,1);
+ assert.match(result.consultation.snapshot_sha256,/^[a-f0-9]{64}$/);
+ await db.exec('reset role');
+ await db.exec("insert into source_policy_decisions values(2,1,'reject',null,'unknown',now()+interval '1 second')");
+ await assert.rejects(invoke(),/no approved corpus sources/);
+ await assert.rejects(db.exec('delete from editorial_corpus_consultations'),/append-only/);
+ await db.exec('set role terraveler_editorial_worker');await assert.rejects(invoke(),/permission denied/);await db.exec('reset role');
  }finally{await db.close();}});

@@ -106,6 +106,25 @@ bootstrap queue, model-level resolution of ambiguous topics and persisted
 failure history remain outstanding. Existing execution is not yet gated;
 do not enable mandatory policy yet.
 
+## Task-scoped MCP corpus increment
+
+Apply `supabase/editorial_mcp_corpus.sql` after the workflow, source governance
+and RAG migrations. This internal tool is absent from the public catalogue and
+requires a dedicated configured key, independent of Limen or database keys.
+Set server EDITORIAL_MCP_CORPUS_WORKER_ID to the actual worker identity. Only an
+active matching research attempt may read its dossier's approved voyage scope.
+The database returns a bounded PD/CC corpus snapshot and immutable receipt
+with current endpoint and policy IDs; no source URL, scope or text is accepted
+from the caller. Each attempt permits at most three consultations.
+
+Set EDITORIAL_MCP_CORPUS_ENABLED=1 and the same dedicated secret on the server
+and worker after validation. The enabled worker uses only this MCP port,
+without fallback to direct corpus SQL; its result retains receipt metadata.
+Defaults remain disabled. The legacy worker is intentionally unchanged until
+mandatory plan dispatch, source discovery for new topics, and completion-time
+receipt/policy validation are implemented. This tool is not a general search
+engine or a publication decision.
+
 ## Remaining slices before mandatory execution
 
 1. Add bounded agent preparation/bootstrap tasks, plus versioned independent

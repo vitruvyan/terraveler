@@ -16,6 +16,7 @@ import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
 import { recordMCPConsultation } from "@/lib/mcpConsultations";
+import { editorialMcpCorpus } from "@/lib/editorialMcpCorpus";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
 
@@ -3040,6 +3041,10 @@ export async function POST(req: Request) {
   if (method === "ping") return rpcResult(id, {});
   if (method === "tools/list") return rpcResult(id, { tools: PUBLIC_TOOLS });
   if (method === "tools/call") {
+    if (params?.name === "read_editorial_corpus") {
+      const value = await editorialMcpCorpus(params?.arguments, req.headers.get("x-editorial-mcp-key"));
+      return NextResponse.json({jsonrpc:"2.0",id,result:value.error ? {content:[{type:"text",text:"ERROR: "+value.error}],isError:true} : resultFromText(JSON.stringify(value))}, {headers:{"Cache-Control":"private, no-store"}});
+    }
     try {
       const argumentError = invalidPublicArguments(String(params?.name ?? ""), params?.arguments);
       if (argumentError) return rpcError(id, -32602, argumentError);
