@@ -1,4 +1,4 @@
-/* Sol Navigator — approved atlas identity. The original pigments live in the
+/* Classic Sun Compass — approved atlas identity. The original pigments live in the
    SVG assets, not in component styles. The wordmark remains the existing type. */
 .brand-lockup {
   display: inline-flex;
@@ -11,23 +11,24 @@
   flex: none;
   width: 40px;
   height: 40px;
-  background: url("/brand/terraveler-header.svg") center / contain no-repeat;
+  background: url("/brand/classic-sun-header.svg") center / contain no-repeat;
 }
 .sh-wordmark.brand-lockup::before { width: 32px; height: 32px; }
 .space .brand-lockup::before {
-  background-color: rgb(242 230 207);
-  border-radius: 50%;
+  background-image: url("/brand/classic-sun-dark.svg");
+  background-color: transparent;
 }
 @media (max-width: 680px) {
-  .sh-wordmark.brand-lockup::before { width: 24px; height: 24px; background-image: url("/brand/terraveler-favicon.svg"); }
+  .sh-wordmark.brand-lockup::before { width: 24px; height: 24px; background-image: url("/brand/classic-sun-micro.svg"); }
   .sh-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .12em; }
 }
 [data-layout="phone"] .map-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .08em; }
 [data-layout="phone"] .map-wordmark.brand-lockup::before {
   width: 22px;
   height: 22px;
-  background-image: url("/brand/terraveler-favicon.svg");
+  background-image: url("/brand/classic-sun-micro.svg");
 }
+[data-layout="phone"] .space .map-wordmark.brand-lockup::before { background-image: url("/brand/classic-sun-micro.svg"); background-color: transparent; }
 @media (max-width: 375px) {
   [data-layout="phone"] .map-wordmark.brand-lockup { font-size: clamp(.86rem, 4.5vw, 1rem); letter-spacing: .04em; }
   [data-layout="phone"] .map-wordmark.brand-lockup::before { width: 18px; height: 18px; }
@@ -50,7 +51,7 @@
   flex: none;
   margin: 0 auto var(--space-1);
   border-radius: 50%;
-  background: url("/brand/terraveler-sol-navigator.svg") center / 100% no-repeat,
+  background: url("/brand/classic-sun-full.svg") center / 100% no-repeat,
     radial-gradient(circle closest-side, var(--parchment-raised) 87%, transparent 99%);
 }
 .welcome-kicker { margin-top: var(--space-1); color: var(--ink); }
@@ -90,8 +91,12 @@
 
 .spec-brand-plate { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-block: var(--space-5); }
 .spec-brand-plate > div { flex: 1 1 240px; }
-.spec-brand-emblem { display: block; width: min(200px, 100%); aspect-ratio: 1; background: url("/brand/terraveler-sol-navigator.svg") center / contain no-repeat; }
+.spec-brand-emblem { display: block; width: min(200px, 100%); aspect-ratio: 1; background: url("/brand/classic-sun-full.svg") center / contain no-repeat; }
 .spec-brand-sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4); margin-block: var(--space-4); }
 .spec-brand-size { display: grid; justify-items: center; align-content: end; gap: var(--space-2); }
-.spec-brand-compact { display: block; background: url("/brand/terraveler-header.svg") center / contain no-repeat; }
-.spec-brand-micro { display: block; background: url("/brand/terraveler-favicon.svg") center / contain no-repeat; }
+.spec-brand-compact { display: block; background: url("/brand/classic-sun-header.svg") center / contain no-repeat; }
+.spec-brand-micro { display: block; background: url("/brand/classic-sun-micro.svg") center / contain no-repeat; }
+
+/* Dark register proof: no opaque parchment roundel, same face and compass silhouette. */
+.spec-brand-dark { background: var(--parchment); color: var(--ink); padding: var(--space-4); margin-block: var(--space-4); }
+.spec-brand-dark .spec-brand-compact { background-image: url("/brand/classic-sun-dark.svg"); }
