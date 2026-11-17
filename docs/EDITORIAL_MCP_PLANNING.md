@@ -78,10 +78,33 @@ is rejected; missing/ambiguous/insufficient Wikipedia needs a typed exception
 workflow rather than a caller-controlled bypass.
 
 The editor-only GET/POST `/api/desk/projects/plan` supports bounded private reads
-and validated saves. It is not a public receipt-write API. No UI form, automatic
-planner, plan approval or execution dispatch is added here. Proposed plans do not
+and validated saves. It is not a public receipt-write API. The optional preparation endpoint below adds a model-generated proposed plan and an independent review. No UI form, execution approval or dispatch is added here. Proposed plans do not
 create tasks, validate historical content, or authorize publication. Routine
 plan review is intended to be agentic, not an extra human approval queue.
+
+## Bounded preparation increment
+
+After the receipt migration and editorial team migration, apply
+`supabase/editorial_preparation.sql` to canonical VPS PostgreSQL. Leave
+`EDITORIAL_PREPARATION_ENABLED` off until integration tests pass. Configure
+`EDITORIAL_MCP_URL` as the canonical HTTPS /api/mcp endpoint, receipt recording
+on that server, scoped Limen and one enabled coordinator and reviewer
+(or explicit EDITORIAL_PLANNER_AGENT_KEY / EDITORIAL_PLAN_REVIEWER_AGENT_KEY).
+The private POST /api/desk/projects/prepare takes topic_id, expected_version,
+request_id and optional wikipedia_url. Without an explicit URL discovery via MCP
+auto-selects only a unique exact title; other matches are returned as candidates.
+The orientation must have a recorded receipt in canonical PostgreSQL. The
+managing editor and reviewer operate on that snapshot and the exact proposed plan.
+SQL atomically saves the proposed plan and independent review with pinned
+agent version IDs, rejecting changed/paused configurations and invented claims
+of completed source analysis. A review verdict is not execution authorization.
+
+The preparation attempt is bounded and synchronous; failed or timed-out
+attempts do not enqueue work. Replaying a saved request returns its receipt;
+retrying an interrupted request may repeat MCP calls or inference. A durable
+bootstrap queue, model-level resolution of ambiguous topics and persisted
+failure history remain outstanding. Existing execution is not yet gated;
+do not enable mandatory policy yet.
 
 ## Remaining slices before mandatory execution
 

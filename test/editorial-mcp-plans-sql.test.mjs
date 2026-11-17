@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { PGlite } from '@electric-sql/pglite';
-const [workflow, migration] = await Promise.all(['editorial_workflow', 'editorial_mcp_plans'].map(n => readFile(new URL(`../supabase/${n}.sql`, import.meta.url), 'utf8')));
+const [workflow, migration, team, preparation] = await Promise.all(['editorial_workflow', 'editorial_mcp_plans','editorial_team','editorial_preparation'].map(n => readFile(new URL(`../supabase/${n}.sql`, import.meta.url), 'utf8')));
 const url = 'https://en.wikipedia.org/wiki/Example';
 const fakeId = '00000000-0000-4000-8000-000000000099';
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -14,7 +14,7 @@ async function setup() {
  create table submissions(id bigint primary key,status text,payload jsonb);
  alter default privileges in schema public grant all on tables to anon,authenticated,terraveler_editorial_worker;
  alter default privileges in schema public grant execute on functions to anon,authenticated,terraveler_editorial_worker;`);
- await db.exec(workflow);await db.exec(migration);
+ await db.exec(workflow);await db.exec(migration);await db.exec(team);await db.exec(preparation);
  await db.exec("insert into editorial_topics(topic_key,title,objective) values('example','Example','Research'),('another','Another','Research');");
  return db;
 }
@@ -79,4 +79,27 @@ test('plans require real complete orientation, known receipts and an acyclic bou
  await assert.rejects(record(db,orientation({text:''})),/text and URL/);
  await assert.rejects(record(db,orientation({text:'\n\t'})),/text and URL/);
  await assert.rejects(record(db,source,'fetch_source_text',{url,kind:'gutenberg',lang:null}),/invalid source response/);
+ }finally{await db.close();}});
+
+test('prepared plan and independent review are atomic, immutable and grant no task authority',async()=>{const db=await setup();try{
+ const rec=await record(db); const body=plan(rec);body.work_items[1].source_receipt_ids=[];
+ await db.exec('set role terraveler_service');
+ for(const [key,role] of [['planner','coordinator'],['reviewer','reviewer']]){
+  await scalar(db,'select desk_save_editorial_agent($1,$1,$2,$3,$4,true,0,$5)',[key,role,'local','instructions','agent-request-'+key+'-0001']);
+ }
+ const review={verdict:'adequate-for-next-stage',issues:[]},req='preparation-request-0001';
+ const invoke=(p=body,r=review,reviewer=2,request=req)=>scalar(db,'select editorial_record_preparation($1,$2,$3,$4,$5,$6,$7,$8,$9)',[1,0,request,null,url,p,1,reviewer,r]);
+ await assert.rejects(invoke(body,review,1),/independent configured agents/);
+ await assert.rejects(invoke(body,{verdict:'adequate-for-next-stage',issues:['unresolved']}),/invalid plan review issues/);
+ const forged=structuredClone(body);forged.work_items[0].source_receipt_ids=[rec.id];
+ await assert.rejects(invoke(forged),/cannot claim completed source analysis/);
+ const saved=await invoke();assert.equal(saved.plan_id,1);assert.equal(saved.replayed,false);
+ assert.equal((await invoke()).replayed,true);
+ await assert.rejects(db.exec("update editorial_plan_preparations set review=review"),/permission denied/);
+ await db.exec('reset role');
+ await assert.rejects(db.exec('delete from editorial_plan_preparations'),/append-only/);
+ assert.equal(await scalar(db,'select count(*)::int from editorial_tasks'),0);
+ for(const role of ['visitor','anon','authenticated','terraveler_editorial_worker']){
+  await db.exec('set role '+role);await assert.rejects(invoke(),/permission denied/);await db.exec('reset role');
+ }
  }finally{await db.close();}});
