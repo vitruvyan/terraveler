@@ -82,3 +82,20 @@ read it before styling rather than after. The tokens it points at live in
 `:root` of `app/globals.css` and the system is rendered with real content at
 `/specimen`. More than one agent works in this repo: the law is written down so
 we build the same site.
+
+## Mandatory editorial preparation (new work)
+
+Before new content development, obtain a Wikipedia orientation through TerraVeler
+MCP, turn its sections into an explicit editorial plan, and record gaps and the
+questions/deliverables assigned to specialists. Wikipedia is an orientation, not
+a substitute for independent source analysis. All source consultation/analysis
+for this editorial flow must use TerraVeler MCP. Bibliography entries, search
+hits and link-only metadata are candidates, not consulted evidence.
+
+Implementation status: get_wikipedia_outline supplies a revision-bound read.
+With the receipt migration and recording enabled, consultations and proposed
+plan versions are persisted. It does NOT yet enforce a validated plan at database
+enqueue/claim boundaries. The current editorial_sources.py direct SQL port
+is a known migration gap, not compliance with this rule. Do not claim that the
+mandatory runtime gate is active until the receipt/plan/bootstrap integration
+and bypass tests described in docs/EDITORIAL_MCP_PLANNING.md pass.

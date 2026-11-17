@@ -14,6 +14,9 @@ import worldEventsCoverage from "@/data/world-events-coverage.json";
 import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from "@/lib/contentFingerprint";
 import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
+import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
+import { recordMCPConsultation } from "@/lib/mcpConsultations";
+import { editorialMcpCorpus } from "@/lib/editorialMcpCorpus";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
 
@@ -1417,6 +1420,13 @@ const TOOL_DEFINITIONS = [
         subject: { type: "string", description: "what to search for — a person, ship, place or event" },
         lang: { type: "string", description: "language subtag, e.g. 'en', 'fr', 'pt-br'. Defaults to 'en'." },
       } } },
+  { name: "get_wikipedia_outline",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    securitySchemes: OPEN,
+    description: "Editorial orientation: retrieve one governed Wikipedia article's section tree, readable text, exact revision ID and candidate external links in a single revision-bound snapshot. Start a new editorial plan here after search_sources. Links are candidates, never proof they were read. Separate truncation flags are explicit. When server receipt recording is enabled, a database-owned consultation receipt accompanies the snapshot. Otherwise consultation_status is disabled and this result cannot satisfy a receipt-backed plan. This read never validates a plan or authorizes work/publication.",
+    inputSchema: { type: "object", required: ["url"], properties: {
+      url: { type: "string", description: "Plain https://<language>.wikipedia.org/wiki/<article> URL returned by search_sources, without query or fragment." },
+    } } },
   { name: "fetch_source_text",
     annotations: {
       readOnlyHint: true,
@@ -2921,14 +2931,19 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
           "url, kind and lang to read the full text, then validate_draft before submit_draft.",
       }, null, 2);
     }
+    case "get_wikipedia_outline": {
+      const snapshot = await fetchWikipediaOutline(args?.url, process.env.EDITORIAL_MCP_RECEIPTS_ENABLED === "1");
+      const consultation = await recordMCPConsultation("get_wikipedia_outline", { url: snapshot.requested_url }, snapshot);
+      return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
+    }
     case "fetch_source_text": {
       const url = String(args?.url ?? "").trim();
       const kind = String(args?.kind ?? "").trim();
       if (!url) return "ERROR: url is required.";
       if (!kind) return "ERROR: kind is required.";
       const lang = args?.lang != null ? String(args.lang) : undefined;
-      const fetched = await fetchSourceText(url, kind, lang);
-      return JSON.stringify({
+      const fetched = await fetchSourceText(url, kind, lang, process.env.EDITORIAL_MCP_RECEIPTS_ENABLED === "1");
+      const snapshot = {
         url, kind, lang: lang ?? null,
         text: fetched.text,
         truncated: fetched.truncated,
@@ -2936,7 +2951,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: fetched.truncated
           ? `Truncated to ${fetched.text.length} of ${fetched.total_length} characters — this is NOT the full text.`
           : "Full text. This tool does not verify your citations against it — the Curator does, at submit_draft review.",
-      }, null, 2);
+      };
+      const consultation = await recordMCPConsultation("fetch_source_text", { url, kind, lang: lang ?? null }, snapshot);
+      return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
     }
     default:
       throw new Error(`unknown tool: ${name}`);
@@ -3024,6 +3041,10 @@ export async function POST(req: Request) {
   if (method === "ping") return rpcResult(id, {});
   if (method === "tools/list") return rpcResult(id, { tools: PUBLIC_TOOLS });
   if (method === "tools/call") {
+    if (params?.name === "read_editorial_corpus") {
+      const value = await editorialMcpCorpus(params?.arguments, req.headers.get("x-editorial-mcp-key"));
+      return NextResponse.json({jsonrpc:"2.0",id,result:value.error ? {content:[{type:"text",text:"ERROR: "+value.error}],isError:true} : resultFromText(JSON.stringify(value))}, {headers:{"Cache-Control":"private, no-store"}});
+    }
     try {
       const argumentError = invalidPublicArguments(String(params?.name ?? ""), params?.arguments);
       if (argumentError) return rpcError(id, -32602, argumentError);
