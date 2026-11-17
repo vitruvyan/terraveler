@@ -194,3 +194,7 @@ This gate covers the internal durable task path, not the external contributor
 MCP submit/publication flows, which remain separate. Do not enable until the
 complete pilot and UI integration are verified. Existing completed history is
 retained. No external publication authority is created.
+
+The graph integration test uses fresh Python processes for the actual three
+handlers and the MCP corpus client, with offline model/transport fixtures and
+PGlite SQL. It is not evidence of a live Cabeza de Vaca dossier or VPS readiness.
