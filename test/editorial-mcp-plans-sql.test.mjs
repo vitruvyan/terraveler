@@ -57,7 +57,7 @@ test('plan versions lock intent, replay exact requests and never become executio
  await assert.rejects(save(db,body,0,'editorial-plan-request-0001',2),/idempotency conflict/);
  await assert.rejects(db.exec('update editorial_plans set state=state'),/permission denied/);
  await db.exec('reset role');
- for(const q of ['update editorial_plans set state=state','delete from editorial_plans','truncate editorial_plans']) await assert.rejects(db.exec(q),/append-only/);
+ for(const q of ['update editorial_plans set state=state','delete from editorial_plans','truncate editorial_plans cascade']) await assert.rejects(db.exec(q),/append-only/);
  assert.equal(await scalar(db,'select count(*)::int from editorial_tasks'),0,'proposing a plan never starts work');
  }finally{await db.close();}});
 

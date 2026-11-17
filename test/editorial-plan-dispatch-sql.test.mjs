@@ -106,8 +106,9 @@ test('reviewed plan schedules all dependencies, blocks legacy bypass, requires r
  await scalar(db,'select editorial_complete($1,$2,$3,$4)',[reviewer.id,reviewer.lease_token,executeHandler(reviewer),{}]);
  assert.equal(await scalar(db,'select state from editorial_graph_status where id=$1',[run.run_id]),'awaiting-editor');
  assert.equal(await scalar(db,'select count(*)::int from editorial_results where id=$1',[saved.result_id]),1);
- assert.equal(await scalar(db,'select count(*)::int from submissions'),1);
  await db.exec('reset role');
+ // The test observer, not the service role, inspects the publication table.
+ assert.equal(await scalar(db,'select count(*)::int from submissions'),1);
  await db.exec('set role terraveler_editorial_worker');await assert.rejects(scalar(db,'select editorial_dispatch_plan(1,1,\'another-dispatch-0001\')'),/permission denied/);
  }finally{await db.close();}
 });
