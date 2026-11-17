@@ -1,6 +1,6 @@
 # Living Newsroom — preview-only UX laboratory
 
-Open /specimen/living-newsroom on the Vercel Preview deployment and sign in with an editor session (same existing specimen gate). Local development is also permitted. Production deliberately returns not found. The current desk, atlas, log and crew remain unchanged.
+Open /living-newsroom on the Vercel Preview deployment directly; no Terraveler editor session is required for this fixture-only route. Vercel deployment protection, if configured, still applies. The original /specimen/living-newsroom route retains the existing editor session gate. Local development is also permitted. Production deliberately returns not found. The current desk, atlas, log and crew remain unchanged.
 
 This increment is a design prototype, not an editorial backend. All records are static fixtures. Interactions are in memory and reset on refresh. No new database, requests to editorial APIs, external agent calls, or publication operations. Timeline replay is labelled, not live; the public toggle is a simulation within the private lab, not an authorization boundary.
 
