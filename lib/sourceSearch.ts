@@ -2,7 +2,7 @@ import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
 import { getWithExtraCa } from "@/lib/tlsFetch";
 import PARES_SHAPE from "@/vocab/pares.json";
 import {
-  effectiveEndpoints, resolveTrust, SEED_ENDPOINTS,
+  effectiveEndpoints, resolveTrust, SEED_ENDPOINTS, SEED_DECISIONS,
   type RegistryRow, type RightsClass, type SourceEndpoint,
 } from "@/lib/source-governance";
 
@@ -62,7 +62,8 @@ import {
 const UA = "Terraveler-AgentSourceSearch/1.0 (contact: dbaldoni@gmail.com)";
 const HTTP_TIMEOUT_MS = 20_000;
 
-async function getJson(url: string): Promise<any> {
+async function getJson(url: string, retentionRequired = false): Promise<any> {
+  if (retentionRequired) return JSON.parse(await getGovernedText(url, fetch, true));
   const r = await fetch(url, {
     headers: { "User-Agent": UA, Accept: "application/json" },
     signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
@@ -106,9 +107,11 @@ export function redirectStaysGoverned(asked: string, answered: string): boolean 
  * GET a governed source's text, following redirects by hand so every hop is
  * re-checked. `fetchImpl` is a seam for tests.
  */
-export async function getGovernedText(startUrl: string, fetchImpl: typeof fetch = fetch): Promise<string> {
+export async function getGovernedText(startUrl: string, fetchImpl: typeof fetch = fetch, retentionRequired = false): Promise<string> {
   let url = startUrl;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (retentionRequired && !await sourceTextRetentionAllowed(url))
+      throw new Error("Source redirect or endpoint is not authorized for raw-text retention.");
     const r = await fetchImpl(url, {
       headers: { "User-Agent": UA },
       redirect: "manual",
@@ -167,7 +170,7 @@ const REGISTRY_MAX_STALE_MS = 10 * 60_000;
 // Bounded well inside a request's budget: this read is in front of every fetch.
 const REGISTRY_LOAD_TIMEOUT_MS = 2_500;
 
-let registry: { endpoints: SourceEndpoint[]; loadedAt: number } | null = null;
+let registry: { endpoints: SourceEndpoint[]; rows: RegistryRow[]; loadedAt: number } | null = null;
 let registryLoad: Promise<void> | null = null;
 // Whether a registry is expected at all. Where no backend is configured (a
 // local checkout, the unit tests) the seed hosts are the only authority there
@@ -261,7 +264,7 @@ export function ensureRegistry(
   registryLoad = (async () => {
     try {
       const rows = await withTimeout(loadRegistryRows(fetchJson), timeoutMs);
-      registry = { endpoints: effectiveEndpoints(rows), loadedAt: now };
+      registry = { endpoints: effectiveEndpoints(rows), rows, loadedAt: now };
     } catch {
       if (registry && now - registry.loadedAt >= REGISTRY_MAX_STALE_MS) registry = null;
     } finally {
@@ -269,6 +272,20 @@ export function ensureRegistry(
     }
   })();
   return registryLoad;
+}
+
+/** Persistence is stricter than reading a governed source. Item/collection/link
+ * trust and unknown/mixed rights never authorize retaining its raw body here. */
+export async function sourceTextRetentionAllowed(url: string): Promise<boolean> {
+  await ensureRegistry();
+  const resolved = resolveTrust(url, currentEndpoints());
+  if (!resolved || resolved.endpoint.trust_mode !== "domain_trusted") return false;
+  const endpoint = resolved.endpoint;
+  const row = registry?.rows.find(r => r.host_pattern === endpoint.host_pattern && r.match_type === endpoint.match_type);
+  if (row) return row.status === "active" && row.trust_mode === "domain_trusted" && ["public_domain", "creative_commons"].includes(row.rights_class ?? "");
+  const seed = SEED_ENDPOINTS.find(e => e.host_pattern === endpoint.host_pattern && e.match_type === endpoint.match_type);
+  const decision = seed && SEED_DECISIONS.find(d => d.endpoint_id === seed.id);
+  return !!decision && ["public_domain", "creative_commons"].includes(decision.rights_class);
 }
 
 /** Test seam: drop any cached view so the next ensureRegistry() reloads. */
@@ -710,15 +727,15 @@ export function wikisourceRenderToText(rawHtml: string): string {
 /** `ingest/fetch.py::fetch_mediawiki_extract()` — Wikisource goes through
  *  `action=parse&prop=text` + `wikisourceRenderToText`; everything else
  *  (Wikipedia) keeps the plain `prop=extracts` call. */
-async function fetchMediawikiExtract(host: string, title: string): Promise<string> {
+async function fetchMediawikiExtract(host: string, title: string, retentionRequired = false): Promise<string> {
   if (host.endsWith(".wikisource.org")) {
     const q = new URLSearchParams({ action: "parse", prop: "text", page: title, redirects: "1", format: "json" });
-    const data = await getJson(`https://${host}/w/api.php?${q.toString()}`);
+    const data = await getJson(`https://${host}/w/api.php?${q.toString()}`, retentionRequired);
     const rawHtml = data?.parse?.text?.["*"] ?? "";
     return wikisourceRenderToText(rawHtml);
   }
   const q = new URLSearchParams({ action: "query", prop: "extracts", explaintext: "1", titles: title, redirects: "1", format: "json" });
-  const data = await getJson(`https://${host}/w/api.php?${q.toString()}`);
+  const data = await getJson(`https://${host}/w/api.php?${q.toString()}`, retentionRequired);
   const pages = data?.query?.pages ?? {};
   return Object.values(pages).map((p: any) => p?.extract ?? "").join(" ").trim();
 }
@@ -727,8 +744,8 @@ async function fetchMediawikiExtract(host: string, title: string): Promise<strin
  *  markers to strip. Licence is NOT established here; per-item PD
  *  verification (`whitelist.verify_archive_item`) stays the Curator's job at
  *  review time — this tool only fetches the text to read. */
-async function fetchArchiveText(url: string): Promise<string> {
-  return (await getGovernedText(url)).trim();
+async function fetchArchiveText(url: string, retentionRequired = false): Promise<string> {
+  return (await getGovernedText(url, fetch, retentionRequired)).trim();
 }
 
 // ------------------------------------------------------------------ PARES
@@ -814,7 +831,7 @@ export const MAX_FETCHED_TEXT_CHARS = 60_000;
  * exists in Python; the same fix is preserved here, not re-broken in the
  * port).
  */
-export async function fetchSourceText(rawUrl: string, kind: string, lang?: string): Promise<FetchedText> {
+export async function fetchSourceText(rawUrl: string, kind: string, lang?: string, retentionRequired = false): Promise<FetchedText> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -836,6 +853,8 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       `fetch_source_text: ${JSON.stringify(url.host)} is not an active Terraveler source endpoint — refusing to fetch.`,
     );
 
+  if (retentionRequired && !await sourceTextRetentionAllowed(rawUrl))
+    throw new Error("This source requires per-item verification or link-only handling before raw-text receipt storage.");
   const host = url.hostname.toLowerCase();
   let text: string;
   switch (kind) {
@@ -845,14 +864,14 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
       // longer a sufficient reason to run the Gutenberg one.
       if (host !== "gutenberg.org" && !host.endsWith(".gutenberg.org"))
         throw new Error(`fetch_source_text: kind="gutenberg" but ${JSON.stringify(host)} is not a gutenberg.org host.`);
-      text = stripGutenbergBoilerplate(await getGovernedText(rawUrl));
+      text = stripGutenbergBoilerplate(await getGovernedText(rawUrl, fetch, retentionRequired));
       break;
     case "wikipedia": {
       if (!host.endsWith(".wikipedia.org"))
         throw new Error(`fetch_source_text: kind="wikipedia" but ${JSON.stringify(host)} is not a wikipedia.org host.`);
       if (lang && !host.startsWith(`${lang.toLowerCase()}.`))
         throw new Error(`fetch_source_text: lang=${JSON.stringify(lang)} does not match host ${JSON.stringify(host)}.`);
-      text = await fetchMediawikiExtract(host, titleFromWikiUrl(url));
+      text = await fetchMediawikiExtract(host, titleFromWikiUrl(url), retentionRequired);
       break;
     }
     case "wikisource": {
@@ -860,7 +879,7 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
         throw new Error(`fetch_source_text: kind="wikisource" but ${JSON.stringify(host)} is not a wikisource.org host.`);
       if (lang && !host.startsWith(`${lang.toLowerCase()}.`))
         throw new Error(`fetch_source_text: lang=${JSON.stringify(lang)} does not match host ${JSON.stringify(host)}.`);
-      text = await fetchMediawikiExtract(host, titleFromWikiUrl(url));
+      text = await fetchMediawikiExtract(host, titleFromWikiUrl(url), retentionRequired);
       break;
     }
     case "pares":
@@ -871,7 +890,7 @@ export async function fetchSourceText(rawUrl: string, kind: string, lang?: strin
     case "archive":
       if (host !== "archive.org" && host !== "www.archive.org")
         throw new Error(`fetch_source_text: kind="archive" but ${JSON.stringify(host)} is not an archive.org host.`);
-      text = await fetchArchiveText(rawUrl);
+      text = await fetchArchiveText(rawUrl, retentionRequired);
       break;
     default:
       throw new Error(`fetch_source_text: no fetcher registered for kind=${JSON.stringify(kind)} (known kinds: gutenberg, wikipedia, wikisource, archive, pares).`);

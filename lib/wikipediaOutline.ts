@@ -76,13 +76,13 @@ export function normalizeWikipediaOutline(rawUrl: string, payload: unknown, retr
 
 /** Called by the MCP dispatcher only. All outbound I/O remains behind the
  * existing live source registry and governed redirect checks. No fallback. */
-export async function fetchWikipediaOutline(rawUrl: unknown): Promise<WikipediaOutline> {
+export async function fetchWikipediaOutline(rawUrl: unknown, retentionRequired = false): Promise<WikipediaOutline> {
   const { url, title } = wikipediaPage(rawUrl);
   await ensureRegistry();
   if (!isGovernedHost(url.href)) throw Error("Wikipedia source is not currently governed; refusing orientation.");
   const query = new URLSearchParams({ action: "parse", page: title, redirects: "1",
     prop: "sections|text|revid|externallinks", format: "json" });
-  const raw = await getGovernedText(`https://${url.hostname}/w/api.php?${query}`);
+  const raw = await getGovernedText(`https://${url.hostname}/w/api.php?${query}`, fetch, retentionRequired);
   if (raw.length > 4_000_000) throw Error("Wikipedia orientation response exceeds the inspection limit.");
   let payload: unknown;
   try { payload = JSON.parse(raw); } catch { throw Error("Wikipedia orientation response was not JSON."); }

@@ -15,6 +15,7 @@ import { DuplicateSubmissionError, contentFingerprint, isUniqueViolation } from 
 import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_ONLY_TOOLS, RANK_QUOTA, REVIEWS_TO_ADVANCE, TOOL_SCOPE } from "@/lib/agentCapabilities";
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
+import { recordMCPConsultation } from "@/lib/mcpConsultations";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
 
@@ -1421,7 +1422,7 @@ const TOOL_DEFINITIONS = [
   { name: "get_wikipedia_outline",
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     securitySchemes: OPEN,
-    description: "Editorial orientation: retrieve one governed Wikipedia article's section tree, readable text, exact revision ID and candidate external links in a single revision-bound snapshot. Start a new editorial plan here after search_sources. Links are candidates, never proof they were read. Separate truncation flags are explicit. This read does not persist a consultation receipt, validate a plan or authorize work/publication.",
+    description: "Editorial orientation: retrieve one governed Wikipedia article's section tree, readable text, exact revision ID and candidate external links in a single revision-bound snapshot. Start a new editorial plan here after search_sources. Links are candidates, never proof they were read. Separate truncation flags are explicit. When server receipt recording is enabled, a database-owned consultation receipt accompanies the snapshot. Otherwise consultation_status is disabled and this result cannot satisfy a receipt-backed plan. This read never validates a plan or authorizes work/publication.",
     inputSchema: { type: "object", required: ["url"], properties: {
       url: { type: "string", description: "Plain https://<language>.wikipedia.org/wiki/<article> URL returned by search_sources, without query or fragment." },
     } } },
@@ -2930,7 +2931,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       }, null, 2);
     }
     case "get_wikipedia_outline": {
-      return JSON.stringify(await fetchWikipediaOutline(args?.url), null, 2);
+      const snapshot = await fetchWikipediaOutline(args?.url, process.env.EDITORIAL_MCP_RECEIPTS_ENABLED === "1");
+      const consultation = await recordMCPConsultation("get_wikipedia_outline", { url: snapshot.requested_url }, snapshot);
+      return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
     }
     case "fetch_source_text": {
       const url = String(args?.url ?? "").trim();
@@ -2938,8 +2941,8 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
       if (!url) return "ERROR: url is required.";
       if (!kind) return "ERROR: kind is required.";
       const lang = args?.lang != null ? String(args.lang) : undefined;
-      const fetched = await fetchSourceText(url, kind, lang);
-      return JSON.stringify({
+      const fetched = await fetchSourceText(url, kind, lang, process.env.EDITORIAL_MCP_RECEIPTS_ENABLED === "1");
+      const snapshot = {
         url, kind, lang: lang ?? null,
         text: fetched.text,
         truncated: fetched.truncated,
@@ -2947,7 +2950,9 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         note: fetched.truncated
           ? `Truncated to ${fetched.text.length} of ${fetched.total_length} characters — this is NOT the full text.`
           : "Full text. This tool does not verify your citations against it — the Curator does, at submit_draft review.",
-      }, null, 2);
+      };
+      const consultation = await recordMCPConsultation("fetch_source_text", { url, kind, lang: lang ?? null }, snapshot);
+      return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
     }
     default:
       throw new Error(`unknown tool: ${name}`);

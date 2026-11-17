@@ -93,7 +93,8 @@ for this editorial flow must use TerraVeler MCP. Bibliography entries, search
 hits and link-only metadata are candidates, not consulted evidence.
 
 Implementation status: get_wikipedia_outline supplies a revision-bound read.
-It does NOT yet persist consultation receipts or enforce a plan at database
+With the receipt migration and recording enabled, consultations and proposed
+plan versions are persisted. It does NOT yet enforce a validated plan at database
 enqueue/claim boundaries. The current editorial_sources.py direct SQL port
 is a known migration gap, not compliance with this rule. Do not claim that the
 mandatory runtime gate is active until the receipt/plan/bootstrap integration

@@ -223,7 +223,11 @@ corpus access or a local seed bundle as proof of consultation. If no suitable
 article can be inspected, report the actual gap rather than invent an outline
 or silently bypass this preparation.
 
-Current implementation limit: the orientation tool is a read-only primitive.
-Persistent consultation receipts, a versioned plan service and the database
-execution gate are not active yet. A tool result must not be described as plan
-approval, historical verification or publication authorization.
+Current implementation limit: server-owned consultation receipts accompany MCP
+source reads only when recording is enabled after its database migration. A
+null/disabled receipt cannot satisfy a receipt-backed plan. Raw-text retention
+requires domain-trusted PD/CC policy; per-item and link-only sources need separate
+handling. Proposed plans can be stored by the trusted editorial service, but
+automatic preparation, independent plan review and the execution gate are not
+active yet. Neither a receipt nor a proposed plan grants historical verification,
+plan approval or publication authority.

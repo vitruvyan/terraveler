@@ -60,7 +60,10 @@ pipeline {
         stage('Test and build') {
             parallel {
                 stage('Tests') {
-                    steps { sh 'npm test' }
+                    steps {
+                        sh 'npm test'
+                        sh 'npm run test:editorial-mcp-plans'
+                    }
                 }
                 stage('Production build') {
                     steps { sh 'npm run build' }
