@@ -1,6 +1,7 @@
 /** Bounded preparation only: no enqueue, claim or publication capability. */
 import { dataApi, dataRpc } from "@/lib/deskAuth";
 import { localAIConfig } from "@/lib/editorLocalAI";
+import { editorialModelKey } from "@/lib/editorialLimenRoutes";
 import { parseEditorialPlanRequest, type EditorialPlan } from "@/lib/editorialPlans";
 type Read = typeof dataApi;
 type Rpc = typeof dataRpc;
@@ -91,7 +92,9 @@ function mcpClient(env:Env, fetcher:typeof fetch):Mcp {
 }
 function generator(env:Env,fetcher:typeof fetch):Generate {
   return async(agent,stage,material)=>{
-    const config=localAIConfig({...env,EDITOR_LOCAL_AI_PROVIDER:"limen",EDITOR_LIMEN_MODEL:agent.model});
+    const key=editorialModelKey(agent.model,env);
+    if(!key)throw new PreparationError("limen-not-configured");
+    const config=localAIConfig({...env,EDITOR_LOCAL_AI_PROVIDER:"limen",EDITOR_LIMEN_MODEL:agent.model,EDITOR_LIMEN_API_KEY:key});
     if(!config||config.provider!=="limen")throw new PreparationError("limen-not-configured");
     const base=config.baseURL.endsWith("/v1")?config.baseURL:config.baseURL+"/v1";
     const contract=stage==="plan"?

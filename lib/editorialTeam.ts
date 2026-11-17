@@ -1,4 +1,5 @@
 import { dataRpc } from "@/lib/deskAuth";
+import { editorialModelKeys } from "@/lib/editorialLimenRoutes";
 
 export const TEAM_ROLES = ["coordinator", "research", "writer", "reviewer"] as const;
 export type TeamRole = typeof TEAM_ROLES[number];
@@ -34,9 +35,9 @@ export type TeamGateway = { status: "ready" | "not-configured" | "unavailable"; 
 export async function teamModelCatalogue(env: Record<string, string | undefined> = process.env,
   fetcher: typeof fetch = fetch): Promise<TeamGateway> {
   const base = env.EDITOR_LIMEN_BASE_URL?.trim();
-  const key = env.EDITOR_LIMEN_API_KEY?.trim();
+  const routes = editorialModelKeys(env);
   const dataClass = env.EDITOR_LIMEN_DATA_CLASS?.trim();
-  if (!base || !key || key.length > 4096 || /[\r\n]/.test(key) ||
+  if (!base || !routes ||
       !dataClass || !/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/.test(dataClass)) return { status: "not-configured", models: [] };
   let url: URL;
   try {
@@ -45,21 +46,28 @@ export async function teamModelCatalogue(env: Record<string, string | undefined>
     if (["api.openai.com", "api.anthropic.com", "openrouter.ai"].includes(url.hostname.toLowerCase())) throw new Error();
   } catch { return { status: "not-configured", models: [] }; }
   const endpoint = url.toString().replace(/\/$/, "");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
-  try {
-    const response = await fetcher(`${endpoint.endsWith("/v1") ? endpoint : endpoint + "/v1"}/models`, {
-      redirect: "error", cache: "no-store", signal: controller.signal,
-      headers: { Authorization: `Bearer ${key}`, "X-Limen-Data-Class": dataClass, "X-Limen-Mode": "documents" },
-    });
-    if (!response.ok) throw new Error();
-    const raw = await response.text();
-    if (raw.length > 262144) throw new Error();
-    const body = JSON.parse(raw);
-    if (!Array.isArray(body?.data) || body.data.length > 1000) throw new Error();
-    const ids = body.data.map((item: any) => item?.id);
-    if (ids.some((id: unknown) => typeof id !== "string" || !id.trim() || id.length > 200 || /[\r\n]/.test(id))) throw new Error();
-    return { status: "ready", models: [...new Set<string>(ids)].sort().map(id => ({ id })) };
-  } catch { return { status: "unavailable", models: [] }; }
-  finally { clearTimeout(timer); }
+  // Query each scoped key independently. Only its configured alias may be
+  // selected even if a misconfigured key returns additional visible models.
+  const results = await Promise.all([...routes].map(async ([id, key]) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await fetcher(`${endpoint.endsWith("/v1") ? endpoint : endpoint + "/v1"}/models`, {
+        redirect: "error", cache: "no-store", signal: controller.signal,
+        headers: { Authorization: `Bearer ${key}`, "X-Limen-Data-Class": dataClass, "X-Limen-Mode": "documents" },
+      });
+      if (!response.ok) return null;
+      const raw = await response.text();
+      if (raw.length > 262144) return null;
+      const body = JSON.parse(raw);
+      if (!Array.isArray(body?.data) || body.data.length > 1000) return null;
+      const ids = body.data.map((item: any) => item?.id);
+      if (ids.some((value: unknown) => typeof value !== "string" || !value.trim() || value.length > 200 || /[\r\n]/.test(value))) return null;
+      return { id, visible: ids.includes(id) };
+    } catch { return null; }
+    finally { clearTimeout(timer); }
+  }));
+  if (results.every(result => result === null)) return { status: "unavailable", models: [] };
+  const ids = results.flatMap(result => result?.visible ? [result.id] : []);
+  return { status: "ready", models: ids.sort().map(id => ({ id })) };
 }
