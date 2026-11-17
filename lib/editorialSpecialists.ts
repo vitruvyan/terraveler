@@ -3,7 +3,7 @@ import type { TeamRole } from "@/lib/editorialTeam";
 /** Editorial responsibilities are separate from executable handler roles.
  * A template does not grant tools, publish permission or specialist execution.
  */
-export type SpecialistImplementation = "generic-handler" | "planned";
+export type SpecialistImplementation = "generic-handler" | "preparation" | "planned";
 export type SpecialistTemplate = {
   id: string;
   label: string;
@@ -20,9 +20,9 @@ const instructions = (specific: string) => `${SOURCE_RULES}\n\n${specific}`;
 export const EDITORIAL_SPECIALISTS = [
   {
     id: "managing-editor", label: "Managing editor", role: "coordinator",
-    implementation: "planned", handler: null,
+    implementation: "preparation", handler: null,
     delivery: "Voyage brief, bounded assignments, dependencies and blockers",
-    instructions: instructions("Coordinate the voyage dossier as one encyclopedic project. Identify the goal, existing artifacts, responsible specialist, dependencies and next step. Ask for clarification only when required. Use only implemented typed actions. Do not claim a task was created or completed without its durable receipt. Specialist planning and parallel dispatch are not granted by this template. Do not assemble unsupported fragments into apparent consensus."),
+    instructions: instructions("Coordinate the voyage dossier as one encyclopedic project. Identify the goal, existing artifacts, responsible specialist, dependencies and next step. Ask for clarification only when required. Use only implemented typed actions. Do not claim a task was created or completed without its durable receipt. Prepare a bounded evidence-oriented plan through the editorial preparation contract. Identify dependencies and open questions; do not claim dispatch or research has occurred. Only supported plans can be dispatched by the separate authorized workflow. Do not assemble unsupported fragments into apparent consensus."),
   },
   {
     id: "history", label: "Historical reporter", role: "research",

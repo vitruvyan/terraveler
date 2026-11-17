@@ -11,3 +11,10 @@ test("specialties persist with versioned configs and planned handlers cannot ena
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "ethnohistory" })?.specialty, "ethnohistory");
  await saveSpecialistConfiguration(config, async (name,args) => { assert.equal(name,"desk_save_editorial_specialist_agent"); assert.equal(args.p_specialty,"history"); assert.equal(args.p_expected_version,0); return {}; });
 });
+
+test("Managing editor is configurable for preparation; role and planned specialties remain guarded", () => {
+ const coordinator = {...base, role: "coordinator", specialty: "managing-editor", enabled: true};
+ assert.equal(parseSpecialistConfiguration(coordinator)?.specialty, "managing-editor");
+ assert.equal(parseSpecialistConfiguration({...coordinator, role:"research"}), null);
+ assert.equal(parseSpecialistConfiguration({...base, specialty:"itinerary", enabled:true}), null);
+});

@@ -17,6 +17,8 @@ test("specialty mapping preserves executable roles and excludes publication auth
 test("templates expose only three existing generic handlers, never pretend specialist tools are ready", () => {
   const wired = EDITORIAL_SPECIALISTS.filter(s => s.implementation === "generic-handler");
   assert.deepEqual(wired.map(s => [s.id, s.handler]), [["history", "research"], ["diary", "writer"], ["factcheck", "reviewer"]]);
+  assert.equal(editorialSpecialist("managing-editor")?.implementation, "preparation");
+  assert.equal(editorialSpecialist("managing-editor")?.handler, null);
   for (const specialist of EDITORIAL_SPECIALISTS) {
     assert.ok(specialist.instructions.length < 12000);
     assert.ok(specialist.delivery.length > 0);
