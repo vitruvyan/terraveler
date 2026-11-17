@@ -194,6 +194,8 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
                 raise ValueError()
             body = json.loads(raw, parse_constant=_reject_constant)
         choice = body["choices"][0]
+        if not isinstance(choice, dict):
+            raise ValueError()
         if choice.get("finish_reason") == "length":
             raise GatewayError("gateway-output-truncated")
         candidate = json.loads(choice["message"]["content"], parse_constant=_reject_constant)

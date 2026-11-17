@@ -85,7 +85,7 @@ class GatewayTests(unittest.TestCase):
             self.assertNotIn("secret", str(caught.exception))
 
     def test_invalid_and_oversized_outputs_never_become_successful_candidates(self):
-        for payload in [b"not json", b"x" * 262145, b'{"choices":[]}',
+        for payload in [b"not json", b"x" * 262145, b'{"choices":[]}' , b'{"choices":[null]}',
                         b'{"choices":[{"message":{"content":"[]"}}]}',
                         b'{"choices":[{"message":{"content":"{\\"value\\":NaN}"}}]}']:
             with self.assertRaisesRegex(GatewayError, "gateway-invalid-response"):
