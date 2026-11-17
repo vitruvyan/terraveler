@@ -23,6 +23,7 @@ const fixture: AdminDashboardData = {
 export default function NewsroomSpecimen() {
   return <>
     <div className="dk-page"><Chapters current="/specimen/newsroom" /><h1 className="dk-title">The newsroom</h1>
+    {(process.env.VERCEL_ENV === "preview" || process.env.NODE_ENV === "development") && <p><a href="/specimen/living-newsroom">Explore the Living Newsroom UX laboratory →</a></p>}
     <p>Illustrative records, not live platform data. The institutional voice labels the controls; the machine prints figures and timestamps. Brass marks the current page and the editor's priorities. The same sidebar, metrics and dashboard view render in production. The sidebar folds on narrow screens; Navigation links point to real desk destinations; record-specific fixture links are disabled.</p></div>
     <AdminShell active="dashboard"><section className="dk-page"><DeskHeading eyebrow="Terraveler · specimen · fixture" title="Editorial desk" /><AdminDashboardView fixture idPrefix="specimen-live" data={fixture} /></section></AdminShell>
     <div className="dk-page"><h2>Empty and partial records</h2><p>Zero means nothing recorded. An unavailable record is not a healthy queue.</p>
