@@ -48,3 +48,18 @@ test("disabled preparation performs no source or model call",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
  await assert.rejects(prepareEditorialPlan(request,{...f.ports,env:{}}),/preparation-disabled/);assert.equal(f.calls.length,0);
 });
+
+test("preparation rejects token-truncated generation even when JSON is parseable",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=fixture();
+ const {generate:_generate,...ports}=f.ports;
+ const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",
+  EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+ let calls=0;
+ const fetcher:typeof fetch=async(_url,init)=>{
+  calls++;const body=JSON.parse(String(init?.body));
+  assert.equal(body.max_tokens,5000);
+  return new Response(JSON.stringify({choices:[{finish_reason:"length",message:{content:JSON.stringify(work)}}]}));
+ };
+ await assert.rejects(prepareEditorialPlan(request,{...ports,env,fetcher}),/limen-output-truncated/);
+ assert.equal(calls,1);assert.equal(f.writes,0);
+});

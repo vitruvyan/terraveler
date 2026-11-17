@@ -36,6 +36,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(request.get_header("X-limen-data-class"), "editorial")
         self.assertEqual(request.get_header("X-limen-mode"), "documents")
         self.assertEqual(timeout, 30)
+        self.assertEqual(body["max_tokens"], 4096)
         self.assertEqual(result["verification"], "not-verified")
         self.assertEqual(result["agent_version"], 2)
         self.assertNotIn("fixture-private-key", json.dumps(result))
@@ -118,6 +119,27 @@ class GatewayTests(unittest.TestCase):
         for raw in ['not-json', '{"other":"fixture-default"}', '{"local-default":"other"}']:
             with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
                 GatewayConfig.from_environment({**env, "EDITOR_LIMEN_MODEL_KEYS": raw})
+
+    def test_production_budget_is_bounded_and_truncation_is_rejected(self):
+        env = {"EDITOR_LIMEN_BASE_URL": "https://gateway.example/v1",
+               "EDITOR_LIMEN_API_KEY": "fixture", "EDITOR_LIMEN_DATA_CLASS": "editorial"}
+        config = GatewayConfig.from_environment(env)
+        self.assertEqual(config.timeout_seconds, 120)
+        self.assertEqual(config.max_tokens, 4096)
+        config = GatewayConfig.from_environment({**env, "EDITOR_LIMEN_TIMEOUT_SECONDS": "90",
+                                                 "EDITOR_LIMEN_MAX_TOKENS": "6144"})
+        def transport(request, timeout):
+            self.assertEqual(timeout, 90)
+            self.assertEqual(json.loads(request.data)["max_tokens"], 6144)
+            return BytesIO(b'{"choices":[{"finish_reason":"length","message":{"content":"{}"}}]}')
+        with self.assertRaisesRegex(GatewayError, "gateway-output-truncated"):
+            generate_candidate(task(), config, open_request=transport)
+        for overrides in [{"EDITOR_LIMEN_TIMEOUT_SECONDS": "nan"},
+                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "121"},
+                          {"EDITOR_LIMEN_MAX_TOKENS": "8193"},
+                          {"EDITOR_LIMEN_MAX_TOKENS": "0"}]:
+            with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
+                GatewayConfig.from_environment({**env, **overrides})
 
     def test_environment_requires_a_gateway_and_never_uses_provider_credentials(self):
         for env in [{}, {"ANTHROPIC_API_KEY": "fixture"}, {"EDITOR_LIMEN_BASE_URL": "https://api.anthropic.com",

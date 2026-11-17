@@ -34,3 +34,17 @@ TerraVeler Limen instance; do not alter Orbis. Test all exact routes, negative
 cross-route requests and policy evidence. Configure both clients, redeploy
 and rebuild the worker. Do not activate editorial dispatch/worker gates
 until the MCP path and permissions have been checked. No database migration.
+
+## Bounded inference budgets
+
+Worker production configuration defaults to a 120-second gateway socket
+timeout and 4096 output tokens (including reasoning tokens); optional
+`EDITOR_LIMEN_TIMEOUT_SECONDS` (positive, at most 120) and
+`EDITOR_LIMEN_MAX_TOKENS` (512–8192) remain bounded. The existing 300-second
+worker execution deadline and lease heartbeats are unchanged. Preparation
+has two serial 100-second inference budgets, 5000 output tokens per call,
+and a 300-second Vercel function duration limit. Explicit length truncation
+is rejected rather than accepted as completed JSON. Proxy/provider deadlines
+or platform limits can still be shorter; verify the actual ingress and
+measure realistic editorial tasks before allowing dispatch. No retries or
+additional concurrent agents are introduced.
