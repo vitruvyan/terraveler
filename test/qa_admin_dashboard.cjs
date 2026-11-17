@@ -37,6 +37,8 @@ async function main() {
     assert.equal(await nav.getByRole('link',{name:'Source registry',exact:true}).getAttribute('href'),'/desk?tab=sources&sub=dossier');
     await nav.getByRole('button',{name:'Collapse sidebar'}).click();
     assert.equal(await page.locator('.admin-shell').getAttribute('data-compact'),'true');
+    await page.reload();
+    await nav.getByRole('button',{name:'Expand sidebar'}).waitFor();
     await nav.getByRole('button',{name:'Expand sidebar'}).click();
     assert.equal(await page.locator('.admin-shell').getAttribute('data-compact'),'false');
     partial=true;await page.getByRole('button',{name:'Refresh overview',exact:true}).click();

@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import Icon, { type IconName } from "@/components/Icon";
 import "./AdminNavigation.css";
 
@@ -38,20 +38,23 @@ const GROUPS: { title: string; links: NavLink[] }[] = [
 export function AdminShell({ active, currentHref, children }: { active: AdminArea; currentHref?: string; children: ReactNode }) {
   const [compact, setCompact] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => { try { setCompact(sessionStorage.getItem("terraveler.admin.compact") === "true"); } catch { /* storage may be disabled */ } }, []);
+  const toggleCompact = () => { const next = !compact; setCompact(next); try { sessionStorage.setItem("terraveler.admin.compact", String(next)); } catch { /* keep in-memory preference */ } };
   return <div className="admin-shell" data-compact={compact}>
-    <AdminNavigation active={active} currentHref={currentHref} compact={compact} onCompact={() => setCompact(c => !c)} mobileOpen={mobileOpen} onMobile={() => setMobileOpen(c => !c)} />
+    <AdminNavigation active={active} currentHref={currentHref} compact={compact} onCompact={toggleCompact} mobileOpen={mobileOpen} onMobile={() => setMobileOpen(c => !c)} />
     <div className="admin-body">{children}</div>
   </div>;
 }
 
 export default function AdminNavigation({ active, currentHref, compact = false, onCompact, mobileOpen = false, onMobile }: { active: AdminArea; currentHref?: string; compact?: boolean; onCompact?: () => void; mobileOpen?: boolean; onMobile?: () => void }) {
+  const menuId = useId();
   const destination = (link: NavLink, selected: boolean) => <a key={link.href} href={link.href} aria-label={link.label} aria-current={selected ? "page" : undefined} title={compact ? link.label : undefined}><Icon name={link.icon} /><span className="admin-nav-label">{link.label}</span></a>;
   return <nav className="admin-navigation" aria-label="Administration" data-mobile-open={mobileOpen}>
     <div className="admin-nav-head"><span className="admin-nav-label">Editorial studio</span>
       {onCompact && <button className="admin-collapse desk-btn" type="button" aria-label={compact ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!compact} onClick={onCompact}><Icon name={compact ? "stage-next" : "stage-prev"} /></button>}
-      {onMobile && <button className="admin-mobile-toggle desk-btn" type="button" aria-expanded={mobileOpen} onClick={onMobile}><Icon name="menu" /> {mobileOpen ? "Close menu" : "Open menu"}</button>}
+      {onMobile && <button className="admin-mobile-toggle desk-btn" type="button" aria-expanded={mobileOpen} aria-controls={menuId} onClick={onMobile}><Icon name="menu" /> {mobileOpen ? "Close menu" : "Open menu"}</button>}
     </div>
-    <div className="admin-nav-scroll">
+    <div className="admin-nav-scroll" id={menuId}>
       <div className="admin-nav-group"><p className="admin-nav-caption">Newsroom</p><div className="admin-primary">{ADMIN_PRIMARY.map(item => destination(item, active === item.id))}</div></div>
       {GROUPS.map(group => <div key={group.title} className="admin-nav-group"><p className="admin-nav-caption">{group.title}</p>{group.links.map(link => destination(link, currentHref === link.href))}</div>)}
       <div className="admin-nav-group admin-nav-exit">{destination({href:"/",label:"Return to the atlas",icon:"globe"},false)}</div>

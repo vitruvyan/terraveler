@@ -21,3 +21,10 @@
 .admin-platform summary { cursor: pointer; min-height: var(--tap-min); font: 600 var(--step-0)/1.4 var(--font-ui); }
 [data-layout="phone"] .admin-dashboard-status { grid-template-columns: minmax(0, 1fr); }
 [data-layout="phone"] .admin-dashboard-summary { grid-template-columns: repeat(2, minmax(0,1fr)); }
+
+/* The state word is a machine record; colour corroborates the word. */
+.admin-record-state { display: inline-block; border-left: var(--radius-2) solid currentColor; padding-inline: var(--space-2); color: var(--ink-soft); font: var(--step--2)/1.5 var(--font-mono); }
+.admin-record-state[data-state="enabled"] { color: var(--state-ok); }
+.admin-record-state[data-state="reviewing"] { color: var(--state-review); }
+.admin-record-state[data-state="awaiting-editor"] { color: var(--state-desk); }
+.admin-record-state[data-state="attention"] { color: var(--state-no); }
