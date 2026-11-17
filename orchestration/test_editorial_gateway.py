@@ -96,6 +96,29 @@ class GatewayTests(unittest.TestCase):
         with self.assertRaisesRegex(GatewayError, "gateway-input-invalid"):
             generate_candidate(value, self.config, open_request=lambda *_args, **_kw: self.fail("unexpected call"))
 
+    def test_environment_routes_only_exact_pinned_model_with_separate_key(self):
+        env = {"EDITOR_LIMEN_BASE_URL": "https://gateway.example/v1",
+               "EDITOR_LIMEN_API_KEY": "fixture-default", "EDITOR_LIMEN_DATA_CLASS": "editorial",
+               "EDITOR_LIMEN_MODEL_KEYS": '{"pinned-model":"fixture-pinned"}'}
+        config = GatewayConfig.from_environment(env)
+        calls = []
+        def transport(request, timeout):
+            calls.append(request)
+            return BytesIO(b'{"model":"reported-model","choices":[{"message":{"content":"{}"}}]}')
+        result = generate_candidate(task(), config, open_request=transport)
+        self.assertEqual(calls[0].get_header("Authorization"), "Bearer fixture-pinned")
+        self.assertEqual(result["requested_model"], "pinned-model")
+        self.assertEqual(result["reported_model"], "reported-model")
+        self.assertNotIn("fixture-pinned", repr(config))
+        value = task()
+        value["agent_config"]["model"] = "unconfigured-model"
+        with self.assertRaisesRegex(GatewayError, "gateway-model-not-authorized"):
+            generate_candidate(value, config, open_request=transport)
+        self.assertEqual(len(calls), 1)
+        for raw in ['not-json', '{"other":"fixture-default"}', '{"local-default":"other"}']:
+            with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
+                GatewayConfig.from_environment({**env, "EDITOR_LIMEN_MODEL_KEYS": raw})
+
     def test_environment_requires_a_gateway_and_never_uses_provider_credentials(self):
         for env in [{}, {"ANTHROPIC_API_KEY": "fixture"}, {"EDITOR_LIMEN_BASE_URL": "https://api.anthropic.com",
                      "EDITOR_LIMEN_API_KEY": "fixture", "EDITOR_LIMEN_DATA_CLASS": "editorial"}]:

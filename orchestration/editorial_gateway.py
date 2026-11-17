@@ -59,6 +59,7 @@ class GatewayConfig:
     key: str = field(repr=False)
     data_class: str
     timeout_seconds: float = 30
+    model_keys: dict[str, str] | None = field(default=None, repr=False)
 
     def __post_init__(self):
         parsed = urlsplit(self.base_url)
@@ -74,10 +75,44 @@ class GatewayConfig:
     def from_environment(cls, env=None):
         values = os.environ if env is None else env
         try:
-            return cls(values["EDITOR_LIMEN_BASE_URL"].strip(), values["EDITOR_LIMEN_API_KEY"].strip(),
-                       values["EDITOR_LIMEN_DATA_CLASS"].strip())
+            key = values["EDITOR_LIMEN_API_KEY"].strip()
+            routes = _model_keys(values, key)
+            return cls(values["EDITOR_LIMEN_BASE_URL"].strip(), key,
+                       values["EDITOR_LIMEN_DATA_CLASS"].strip(), model_keys=routes)
         except (KeyError, ValueError, TypeError, AttributeError):
             raise GatewayError("gateway-not-configured") from None
+
+    def key_for(self, model: str) -> str:
+        # Explicit constructor remains useful for dependency-injected test ports.
+        # All deployed configurations use from_environment and a bounded map.
+        if self.model_keys is None:
+            return self.key
+        if model not in self.model_keys:
+            raise GatewayError("gateway-model-not-authorized")
+        return self.model_keys[model]
+
+
+def _model_keys(env, key):
+    def valid_model(value):
+        return isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:/-]{0,199}", value)
+    def valid_key(value):
+        return isinstance(value, str) and 0 < len(value) <= 4096 and not any(c.isspace() for c in value)
+    default = env.get("EDITOR_LIMEN_MODEL", "local-default")
+    if not valid_model(default) or not valid_key(key):
+        raise ValueError()
+    routes = {default: key}
+    raw = env.get("EDITOR_LIMEN_MODEL_KEYS", "")
+    if raw:
+        if len(raw) > 140000:
+            raise ValueError()
+        configured = json.loads(raw)
+        if not isinstance(configured, dict) or len(configured) > 31:
+            raise ValueError()
+        for model, secret in configured.items():
+            if not valid_model(model) or not valid_key(secret) or model in routes or secret in routes.values():
+                raise ValueError()
+            routes[model] = secret
+    return routes
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -123,6 +158,7 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     agent = validated_agent_config(task)
     if agent is None:
         raise GatewayError("agent-binding-invalid")
+    key = config.key_for(agent["model"])
     material = _prompt_material(task)
     try:
         record = json.dumps(material, allow_nan=False)
@@ -142,7 +178,7 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     base = config.base_url.rstrip("/")
     endpoint = (base if base.endswith("/v1") else base + "/v1") + "/chat/completions"
     request = Request(endpoint, data=json.dumps(payload, allow_nan=False).encode(), method="POST", headers={
-        "Authorization": "Bearer " + config.key, "Content-Type": "application/json",
+        "Authorization": "Bearer " + key, "Content-Type": "application/json",
         "X-Limen-Data-Class": config.data_class, "X-Limen-Mode": "documents",
     })
     opener = open_request or build_opener(_NoRedirect()).open
@@ -161,5 +197,7 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
         raise GatewayError("gateway-unavailable") from None
     except (ValueError, TypeError, KeyError, IndexError, UnicodeError):
         raise GatewayError("gateway-invalid-response") from None
+    reported = body.get("model")
     return {"candidate": candidate, "verification": "not-verified", "agent_key": agent["agent_key"],
-            "agent_version": agent["version"], "requested_model": agent["model"]}
+            "agent_version": agent["version"], "requested_model": agent["model"],
+            "reported_model": reported if isinstance(reported, str) and 0 < len(reported) <= 200 else None}

@@ -86,3 +86,21 @@ test("team API protects configs and permits pausing during a gateway outage", as
   assert.equal(body.gateway.status, "not-configured");
   assert.deepEqual(body.agents, []);
 });
+
+test("catalogue and route credentials are scoped to the exact configured model", async () => {
+  const { teamModelCatalogue } = await team;
+  const { editorialModelKey } = await import("../lib/editorialLimenRoutes");
+  const env = { EDITOR_LIMEN_BASE_URL: "https://gateway.example/v1", EDITOR_LIMEN_API_KEY: "fixture-default",
+    EDITOR_LIMEN_DATA_CLASS: "editorial", EDITOR_LIMEN_MODEL_KEYS: JSON.stringify({"editorial-writer":"fixture-writer","editorial-reviewer":"fixture-reviewer"}) };
+  const result = await teamModelCatalogue(env, async (_url, init) => {
+    const key = new Headers(init?.headers).get("Authorization");
+    if (key === "Bearer fixture-reviewer") return new Response(null,{status:403});
+    return Response.json({data:[{id:key === "Bearer fixture-writer" ? "editorial-writer" : "local-default"},{id:"unauthorized"}]});
+  });
+  assert.deepEqual(result,{status:"ready",models:[{id:"editorial-writer"},{id:"local-default"}]});
+  assert.equal(editorialModelKey("editorial-writer",env),"fixture-writer");
+  assert.equal(editorialModelKey("unknown",env),undefined);
+  assert.equal(editorialModelKey("local-default",{...env,EDITOR_LIMEN_MODEL_KEYS:'{"other":"fixture-default"}'}),undefined);
+  assert.equal(editorialModelKey("local-default",{...env,EDITOR_LIMEN_MODEL_KEYS:"bad"}),undefined);
+  assert.equal(editorialModelKey("local-default",{...env,EDITOR_LIMEN_MODEL_KEYS:'{"local-default":"other"}'}),undefined);
+});
