@@ -14,7 +14,7 @@ export async function POST(req:Request){
   const input=parsePreparationRequest(body);if(!input)return reply({error:"invalid-preparation-request"},400);
   try{return reply(await prepareEditorialPlan(input));}
   catch(e){
-    if(e instanceof PreparationError)return reply({error:e.code,...(e.candidates.length?{candidates:e.candidates}:{})},
+    if(e instanceof PreparationError)return reply({error:e.code,...(e.detail?{detail:e.detail}:{}),...(e.candidates.length?{candidates:e.candidates}:{})},
       e.code==="topic-not-found"?404:e.code.includes("selection")||e.code.includes("conflict")||e.code.includes("insufficient")||e.code==="orientation-not-found"?409:503);
     return reply({error:"preparation-unavailable"},503);
   }
