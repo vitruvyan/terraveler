@@ -16,6 +16,7 @@ import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
 import { recordMCPConsultation } from "@/lib/mcpConsultations";
+import { getSubmissionProject, type PublicProject } from "@/lib/editorialProjectBridge";
 import { editorialMcpCorpus } from "@/lib/editorialMcpCorpus";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 import { POSTGREST_URL as SB_URL, POSTGREST_SERVICE_KEY as SB_KEY } from "@/lib/backendConfig";
@@ -2558,8 +2559,21 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
         appealAvailable ? "appeal" :
         null;
 
+      // A canonical dossier association is continuity, not authority to claim
+      // or publish. Preserve the existing eligibility projection unchanged.
+      let project: PublicProject | null = null;
+      let project_lookup_state: "linked" | "unlinked" | "unavailable" | "not-applicable" = "not-applicable";
+      if (s[0].type === "idea" && st === "approved") {
+        try {
+          project = await getSubmissionProject(submissionId);
+          project_lookup_state = project ? "linked" : "unlinked";
+        } catch { project_lookup_state = "unavailable"; }
+      }
+
       return JSON.stringify({
         submission: s[0],
+        project,
+        project_lookup_state,
         audit,
         what_this_means: guidance[st] ?? "In progress.",
         workflow: { state: st, allowed_actions, blocked_actions, next_required_action },

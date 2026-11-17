@@ -64,3 +64,42 @@ test("malformed planner schema cannot reach reviewer or database",async()=>{
  await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],work_items:[{...work.work_items[0],depends_on:["missing"]}]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
  assert.equal(f.writes,0);
 });
+
+test("preparation preserves safe truncation diagnostics even when truncated JSON parses",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=fixture();
+ const {generate:_generate,...ports}=f.ports;
+ const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",
+  EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+ let calls=0;
+ const fetcher:typeof fetch=async(_url,init)=>{
+  calls++;const body=JSON.parse(String(init?.body));assert.equal(body.max_tokens,5000);
+  return Response.json({choices:[{finish_reason:"length",message:{content:JSON.stringify(work)}}]});
+ };
+ await assert.rejects(prepareEditorialPlan(request,{...ports,env,fetcher}),
+  (e:any)=>e.code==="plan-generation-invalid"&&e.detail==="output-truncated");
+ assert.equal(calls,1);assert.equal(f.writes,0);
+});
+
+test("preparation reserves two bounded generation calls within its function duration",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=fixture();
+ const {generate:_generate,...ports}=f.ports;
+ const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",
+  EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+ const oldSetTimeout=globalThis.setTimeout,delays:number[]=[];
+ globalThis.setTimeout=((callback:any,delay:number,...args:any[])=>{
+  delays.push(delay);return oldSetTimeout(callback,delay,...args);
+ }) as typeof setTimeout;
+ let calls=0;
+ const fetcher:typeof fetch=async(_url,init)=>{
+  const body=JSON.parse(String(init?.body));assert.equal(body.max_tokens,5000);
+  assert.ok(init?.signal);assert.equal(init?.redirect,"error");
+  return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(calls++===0?work:review)}}]});
+ };
+ try{
+  assert.equal((await prepareEditorialPlan(request,{...ports,env,fetcher})).plan_id,1);
+  assert.deepEqual(delays,[100000,100000]);assert.equal(calls,2);assert.equal(f.writes,1);
+ }finally{globalThis.setTimeout=oldSetTimeout;}
+ const {maxDuration}=await import("../app/api/desk/projects/prepare/route");
+ assert.equal(maxDuration,300);
+ assert.ok(delays.reduce((sum,delay)=>sum+delay,0)+40000<maxDuration*1000);
+});

@@ -3,7 +3,8 @@ import { requireEditor } from "@/lib/deskAuth";
 import { parsePreparationRequest, prepareEditorialPlan, PreparationError } from "@/lib/editorialPreparation";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
-export const maxDuration=120;
+// Two serial 100s inference calls, up to two 20s MCP calls, plus data-plane overhead.
+export const maxDuration=300;
 const reply=(body:unknown,status=200)=>NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});
 export async function POST(req:Request){
   const auth=await requireEditor(req);if(!auth.ok)return reply({error:auth.error},401);

@@ -66,6 +66,8 @@ pipeline {
                                 'typescript': 'npm test',
                                 'editorial-mcp-plans': 'npm run test:editorial-mcp-plans',
                                 'editorial-plan-dispatch': 'node --test --test-concurrency=1 test/editorial-plan-dispatch-sql.test.mjs',
+                                'editorial-project-bridge': 'node --test --test-concurrency=1 test/editorial-project-bridge-sql.test.mjs',
+                                'editorial-worker-budgets': 'python3 -m unittest orchestration.test_editorial_gateway orchestration.test_editorial_handlers',
                                 'editorial-mcp-python': 'python3 -m unittest orchestration.test_editorial_mcp_corpus'
                             ]
                             def failed = []
