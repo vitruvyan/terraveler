@@ -171,6 +171,8 @@ def reviewer(task, config, *, generator=generate_candidate):
 
 
 def production_research(task):
+    if task.get("input", {}).get("graph_run_id") is not None and os.environ.get("EDITORIAL_MCP_CORPUS_ENABLED") != "1":
+        raise EvidenceError("editorial-mcp-corpus-required")
     if os.environ.get("EDITORIAL_MCP_CORPUS_ENABLED") == "1":
         from orchestration.editorial_mcp_corpus import retrieve_mcp_sources
         return research(task, GatewayConfig.from_environment(), retrieve=retrieve_mcp_sources)

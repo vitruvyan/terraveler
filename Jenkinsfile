@@ -63,6 +63,8 @@ pipeline {
                     steps {
                         sh 'npm test'
                         sh 'npm run test:editorial-mcp-plans'
+                        sh 'node --test --test-concurrency=1 test/editorial-plan-dispatch-sql.test.mjs'
+                        sh 'python3 -m unittest orchestration.test_editorial_mcp_corpus'
                     }
                 }
                 stage('Production build') {

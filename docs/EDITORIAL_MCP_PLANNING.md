@@ -172,3 +172,25 @@ suite exercises hashes, permissions, immutable history, version conflicts,
 idempotent replay, missing/truncated receipts, cycles and malformed inputs.
 No test requires live source fetches or model generation. Final validation is
 recorded in the PR; no production migration or activation is implicit.
+
+## Plan-pinned pilot dispatch (not activated)
+
+Apply editorial_plan_dispatch.sql after all existing editorial, preparation and
+corpus migrations. The private /api/desk/projects/dispatch accepts an exact
+topic_id, plan_id and request_id. Set EDITORIAL_PLAN_DISPATCH_ENABLED and
+EDITORIAL_MCP_CORPUS_ENABLED only after integration, with the worker configured
+for MCP. The database schedules one to four historical research work items,
+one diary writer and one fact checker on explicit enabled specialist configs.
+It records every dependency, pins exact plan and agent version, isolates results
+from other graphs, and uses the existing worker leases and private preview.
+Unsupported specialisms or shapes fail closed; they are not silently dropped.
+A rejected review stops readiness, with a new plan required for another graph.
+The graph status endpoint is private and is not yet integrated in Projects UI.
+
+During an approved maintenance window, stop workers, resolve active legacy
+work and apply the migrations. The owner-only editorial_enable_plan_gate()
+then refuses any new legacy internal task insertion. The flag is off by default.
+This gate covers the internal durable task path, not the external contributor
+MCP submit/publication flows, which remain separate. Do not enable until the
+complete pilot and UI integration are verified. Existing completed history is
+retained. No external publication authority is created.
