@@ -11,7 +11,11 @@ RUN pip install --no-cache-dir psycopg2-binary==2.9.10 /tmp/wheels/vitruvyan_mot
  && rm -rf /tmp/wheels
 COPY orchestration/ /app/orchestration/
 COPY ingest/source_governance_shadow.py ingest/whitelist.py /app/ingest/
-RUN useradd --system --no-create-home editorial
+# COPY preserves checkout modes (including umask 077); code stays root-owned.
+RUN chmod -R a+rX /app/orchestration /app/ingest \
+ && useradd --system --no-create-home editorial
 USER editorial
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+# Fail the image build if the non-root entrypoint cannot import its package.
+RUN python -m orchestration.editorial --once
 CMD ["python", "-m", "orchestration.editorial", "--serve"]
