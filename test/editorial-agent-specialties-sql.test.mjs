@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {PGlite} from '@electric-sql/pglite';
-const migrations=await Promise.all(['editorial_workflow','editorial_team','editorial_agent_binding','editorial_specialists','editorial_agent_specialties'].map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
+const migrations=await Promise.all(['editorial_workflow','editorial_team','editorial_agent_binding','editorial_specialists','editorial_agent_specialties','editorial_managing_editor_preparation'].map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 async function scalar(db,q,args=[]){return Object.values((await db.query(q,args)).rows[0])[0];}
 async function setup(){const db=new PGlite();await db.exec(`create role terraveler_service;create role visitor;create table submissions(id bigint primary key,status text,payload jsonb);insert into submissions values(111,'approved','{}');`);for(const sql of migrations)await db.exec(sql);return db;}
 async function save(db,{key='specialist-a',specialty='history',version=0,enabled=true,role='research',request=`specialist-save-${version}-0001`}={}){return scalar(db,'select desk_save_editorial_specialist_agent($1,$1,$2,$3,$4,$5,$6,$7,$8)',[key,role,'local-model','Evidence only',enabled,version,request,specialty]);}
@@ -15,7 +15,7 @@ test('specialty is immutable per exact version, optimistic and request-idempoten
  const rows=(await db.query('select a.version,s.specialty from editorial_agent_versions a join editorial_agent_specialties s on s.agent_version_id=a.id order by a.version')).rows;
  assert.deepEqual(rows,[{version:1,specialty:'history'},{version:2,specialty:'ethnohistory'}]);
  await assert.rejects(db.exec("update editorial_agent_specialties set specialty='history'"),/append-only/);
- await db.exec(migrations[4]);assert.equal(await scalar(db,'select count(*)::int from editorial_agent_specialties'),2);
+ await db.exec(migrations[4]);await db.exec(migrations[5]);assert.equal(await scalar(db,'select count(*)::int from editorial_agent_specialties'),2);
  }finally{await db.close();}});
 
 test('planned specialties cannot enable or bypass via null edits; old configs remain supported',async()=>{const db=await setup();try{
@@ -53,4 +53,14 @@ test('service reads specialty view and uses save RPC; visitors and direct mutati
  await assert.rejects(db.exec("insert into editorial_agent_specialties values(999,null,'history')"),/permission denied/);
  await db.exec('reset role;set role visitor');await assert.rejects(db.exec('select * from editorial_specialist_agents_current'),/permission denied/);
  await assert.rejects(save(db),/permission denied/);
+ }finally{await db.close();}});
+
+test('Managing editor can enable and save a new version, but is not a worker role',async()=>{const db=await setup();try{
+ const first=await save(db,{key:'managing-editor-a',specialty:'managing-editor',role:'coordinator',enabled:false});assert.equal(first.version,1);
+ const enabled=await save(db,{key:'managing-editor-a',specialty:'managing-editor',role:'coordinator',version:1});assert.equal(enabled.version,2);
+ assert.equal(await scalar(db,"select enabled from editorial_specialist_agents_current where agent_key='managing-editor-a'"),true);
+ assert.equal((await save(db,{key:'wrong-role-a',specialty:'managing-editor',request:'bad-coordinator-request'})).error,'specialty-role-mismatch');
+ await assert.rejects(scalar(db,"select editorial_claim('worker',array['coordinator'],120)"),/invalid claim/);
+ const topic=await scalar(db,"select editorial_start(111,'cabeza','Cabeza','Source research')");
+ await assert.rejects(scalar(db,"select editorial_assign_specialist($1,'managing-editor-a','managing-editor','assign-coordinator-0001')",[topic.task_id]),/specialist handler not implemented/);
  }finally{await db.close();}});

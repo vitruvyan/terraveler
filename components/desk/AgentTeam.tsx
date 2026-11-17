@@ -179,7 +179,7 @@ export default function AgentTeam({ initialData }: { initialData?: AgentTeamData
               </select>
             </label>
             <p id="team-agent-specialty-help">The specialty is saved with this configuration version. Selecting one fills the name, role and instructions below. Choosing another replaces those fields and pauses the configuration. The model remains your choice. Templates do not register tools or grant capabilities.</p>
-            {specialty && <p className="ec-notice" role="status">{plannedSpecialty ? "Specialist tool integration is planned. Save this as a paused configuration draft; its specialized work is not executable yet." : "This template uses an existing editorial handler. Execution still requires an assigned task, the worker and an authorized model route."}</p>}
+            {specialty && <p className="ec-notice" role="status">{plannedSpecialty ? "Specialist tool integration is planned. Save this as a paused configuration draft; its specialized work is not executable yet." : specialty.implementation === "preparation" ? "This coordinator prepares editorial plans in Proposals & projects. Enabling its configuration does not start a worker or dispatch tasks." : "This template uses an existing editorial handler. Execution still requires an assigned task, the worker and an authorized model route."}</p>}
           </div>}
           <div className="agent-team-fields">
             <label htmlFor="team-agent-name">Name
