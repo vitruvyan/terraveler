@@ -48,3 +48,19 @@ test("disabled preparation performs no source or model call",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
  await assert.rejects(prepareEditorialPlan(request,{...f.ports,env:{}}),/preparation-disabled/);assert.equal(f.calls.length,0);
 });
+
+test("model transport accepts only standalone JSON or a single fenced JSON value",async()=>{
+ const {parsePreparationModelResponse}=await mod;
+ const envelope=(content:unknown,finish_reason="stop")=>({choices:[{message:{content},finish_reason}]});
+ assert.deepEqual(parsePreparationModelResponse(envelope(JSON.stringify(work)),"plan"),work);
+ assert.deepEqual(parsePreparationModelResponse(envelope("\x60\x60\x60json\n"+JSON.stringify(work)+"\n\x60\x60\x60"),"plan"),work);
+ for(const [v,detail] of [[envelope(""),"empty-content"],[envelope("preface "+JSON.stringify(work)),"invalid-json"],[envelope("{","length"),"output-truncated"],[{},"missing-choice"]] as const){
+  assert.throws(()=>parsePreparationModelResponse(v,"plan"),(e:any)=>e.code==="plan-generation-invalid"&&e.detail===detail);
+ }
+ assert.deepEqual(parsePreparationModelResponse(envelope(JSON.stringify(review)),"review"),review);
+});
+test("malformed planner schema cannot reach reviewer or database",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=fixture();
+ await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],work_items:[{...work.work_items[0],depends_on:["missing"]}]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
+ assert.equal(f.writes,0);
+});
