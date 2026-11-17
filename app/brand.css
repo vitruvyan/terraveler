@@ -1,0 +1,97 @@
+/* Sol Navigator — approved atlas identity. The original pigments live in the
+   SVG assets, not in component styles. The wordmark remains the existing type. */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.brand-lockup::before {
+  content: "";
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: url("/brand/terraveler-header.svg") center / contain no-repeat;
+}
+.sh-wordmark.brand-lockup::before { width: 32px; height: 32px; }
+.space .brand-lockup::before {
+  background-color: rgb(242 230 207);
+  border-radius: 50%;
+}
+@media (max-width: 680px) {
+  .sh-wordmark.brand-lockup::before { width: 24px; height: 24px; background-image: url("/brand/terraveler-favicon.svg"); }
+  .sh-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .12em; }
+}
+[data-layout="phone"] .map-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .08em; }
+[data-layout="phone"] .map-wordmark.brand-lockup::before {
+  width: 22px;
+  height: 22px;
+  background-image: url("/brand/terraveler-favicon.svg");
+}
+@media (max-width: 375px) {
+  [data-layout="phone"] .map-wordmark.brand-lockup { font-size: clamp(.86rem, 4.5vw, 1rem); letter-spacing: .04em; }
+  [data-layout="phone"] .map-wordmark.brand-lockup::before { width: 18px; height: 18px; }
+}
+
+/* The engraved background already contains an old compass at the top.
+   A parchment seal mounts the approved vector over that roundel, while the
+   welcome line stays in normal flow underneath. No flattening of live copy. */
+.welcome-cart { container-type: inline-size; }
+.welcome-copy {
+  justify-content: flex-start;
+  padding: 1.4% 12% 4%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.welcome-copy > * { flex-shrink: 0; }
+.welcome-brand-seal {
+  width: 11.5cqw;
+  aspect-ratio: 1;
+  flex: none;
+  margin: 0 auto var(--space-1);
+  border-radius: 50%;
+  background: url("/brand/terraveler-sol-navigator.svg") center / 100% no-repeat,
+    radial-gradient(circle closest-side, var(--parchment-raised) 87%, transparent 99%);
+}
+.welcome-kicker { margin-top: var(--space-1); color: var(--ink); }
+.welcome-ornament { margin: 3px 0 3px; }
+.welcome-title { font-size: clamp(2rem, 7cqw, 4.95rem); }
+.welcome-subtitle { font-size: clamp(.92rem, 2.15cqw, 1.46rem); margin-top: clamp(4px, 1cqw, 10px); }
+.welcome-rule { margin-block: clamp(5px, 1cqw, 12px); }
+.welcome-body { font-size: clamp(.85rem, 1.63cqw, 1.1rem); }
+.welcome-actions { margin-top: clamp(8px, 1.6cqw, 18px); gap: clamp(8px, 1.5cqw, 16px); }
+.welcome-choice { min-height: clamp(48px, 7.2cqw, 78px); padding-block: clamp(6px, 1.1cqw, 12px); }
+.welcome-choice strong { font-size: clamp(1rem, 2.16cqw, 1.46rem); }
+.welcome-foot { margin-top: clamp(5px, 1.2cqw, 13px); }
+.welcome-x {
+  display: grid;
+  place-items: center;
+  top: 2%;
+  right: 1.8%;
+  width: max(var(--tap-min), 7.6cqw);
+  height: max(var(--tap-min), 7.6cqw);
+  padding: 0;
+  border: 2px solid var(--brass-text);
+  border-radius: 50%;
+  background: var(--parchment-raised);
+  color: var(--accent-deep);
+  box-shadow: inset 0 0 0 3px var(--parchment-raised), inset 0 0 0 4px var(--brass);
+}
+.welcome-x svg { width: 55%; height: 55%; stroke-width: 2.6; }
+.welcome-x:hover { background: var(--accent-deep); color: var(--parchment-raised); }
+.welcome-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+[data-layout="phone"] .welcome-copy { padding: 12px 26px 24px; justify-content: flex-start; }
+[data-layout="phone"] .welcome-brand-seal { width: 72px; }
+[data-layout="phone"] .welcome-x { top: 12px; right: 12px; width: var(--tap-min); height: var(--tap-min); }
+[data-layout="phone"] .welcome-title { font-size: clamp(2.1rem, 9.6vw, 3rem); }
+[data-layout="phone"] .welcome-subtitle { font-size: 1rem; }
+[data-layout="phone"] .welcome-choice { min-height: 60px; }
+[data-layout="phone"] .welcome-choice strong { font-size: 1.3rem; }
+
+.spec-brand-plate { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-block: var(--space-5); }
+.spec-brand-plate > div { flex: 1 1 240px; }
+.spec-brand-emblem { display: block; width: min(200px, 100%); aspect-ratio: 1; background: url("/brand/terraveler-sol-navigator.svg") center / contain no-repeat; }
+.spec-brand-sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4); margin-block: var(--space-4); }
+.spec-brand-size { display: grid; justify-items: center; align-content: end; gap: var(--space-2); }
+.spec-brand-compact { display: block; background: url("/brand/terraveler-header.svg") center / contain no-repeat; }
+.spec-brand-micro { display: block; background: url("/brand/terraveler-favicon.svg") center / contain no-repeat; }

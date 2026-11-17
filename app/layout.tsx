@@ -8,6 +8,7 @@ import "./live-crew-layout.css";
 import "./live-crew-wide-fix.css";
 import "./welcome-invitation.css";
 import "./map-vintage-controls.css";
+import "./brand.css";
 
 /* The three voices of the atlas. All OFL, self-hosted, subset to latin — the
    same law the Magna Carta puts on sources applies to the type. Six cuts come
