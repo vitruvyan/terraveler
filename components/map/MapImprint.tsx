@@ -44,7 +44,7 @@ export default function MapImprint({
 
   return (
     <div className="map-imprint">
-      <a className="wordmark map-wordmark" href="/" aria-label="Terraveler home">
+      <a className="wordmark map-wordmark brand-lockup" href="/" aria-label="Terraveler home">
         Terraveler
       </a>
       {/* What you are looking at. A caption, not part of the door — it was

@@ -31,12 +31,16 @@ async function main() {
     const nav=page.getByRole('navigation',{name:'Administration',exact:true});
     assert.deepEqual(await nav.locator('.admin-primary a').allTextContents(),['Editorial desk','Projects','Agent team','Review & publish']);
     assert.equal(await nav.getByRole('link',{name:'Editorial desk',exact:true}).getAttribute('aria-current'),'page');
-    assert.equal(await nav.getByRole('link',{name:'System prompts',exact:true}).isVisible(),false);
+    assert.equal(await nav.getByRole('link',{name:'System prompts',exact:true}).isVisible(),true);
     assert.equal(await page.getByRole('link',{name:'Read private preview',exact:true}).getAttribute('href'),'/desk/projects/1/preview?result=44');
     await page.screenshot({path:'/tmp/admin-dashboard-overview.png'});
-    await nav.locator('summary').click();
     assert.equal(await nav.getByRole('link',{name:'Source registry',exact:true}).getAttribute('href'),'/desk?tab=sources&sub=dossier');
-    await nav.locator('summary').click();
+    await nav.getByRole('button',{name:'Collapse sidebar'}).click();
+    assert.equal(await page.locator('.admin-shell').getAttribute('data-compact'),'true');
+    await page.reload();
+    await nav.getByRole('button',{name:'Expand sidebar'}).waitFor();
+    await nav.getByRole('button',{name:'Expand sidebar'}).click();
+    assert.equal(await page.locator('.admin-shell').getAttribute('data-compact'),'false');
     partial=true;await page.getByRole('button',{name:'Refresh overview',exact:true}).click();
     await page.getByText('Could not read: Agent registry.',{exact:false}).waitFor();
     await page.getByRole('heading',{name:'Agent team',exact:true}).scrollIntoViewIfNeeded();
@@ -55,6 +59,15 @@ async function main() {
     await page.getByRole('heading',{name:'Agent team',exact:true}).waitFor();
     assert.equal(await page.getByRole('navigation',{name:'Administration',exact:true}).getByRole('link',{name:'Agent team',exact:true}).getAttribute('aria-current'),'page');
     await page.screenshot({path:'/tmp/admin-team-navigation.png'});
+    await page.setViewportSize({width:390,height:844});
+    await page.reload();
+    const mobileNav=page.getByRole('navigation',{name:'Administration',exact:true});
+    await mobileNav.getByRole('button',{name:'Open menu'}).waitFor();
+    assert.equal(await mobileNav.getByRole('link',{name:'Projects',exact:true}).isVisible(),false);
+    await mobileNav.getByRole('button',{name:'Open menu'}).click();
+    assert.equal(await mobileNav.getByRole('link',{name:'Projects',exact:true}).isVisible(),true);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true,'no horizontal overflow on phone');
+    await page.screenshot({path:'/tmp/admin-mobile-navigation.png'});
     console.log('Admin browser QA passed: default dashboard, no legacy fanout, private draft link, shared primary order/currentpage, secondary tools, editor shortcuts, partial failure and cross-page navigation.');
   } finally {if(browser)await browser.close();next.kill('SIGTERM');await new Promise(r=>next.exitCode!==null?r():next.once('exit',r));await new Promise(r=>auth.close(r));}
 }

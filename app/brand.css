@@ -1,0 +1,116 @@
+/* Classic Sun Compass — approved atlas identity. The original pigments live in the
+   SVG assets, not in component styles. The wordmark remains the existing type. */
+.brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.brand-lockup::before {
+  content: "";
+  flex: none;
+  width: 40px;
+  height: 40px;
+  background: url("/brand/classic-sun-header.svg") center / contain no-repeat;
+}
+.sh-wordmark.brand-lockup::before { width: 32px; height: 32px; }
+.space .brand-lockup::before {
+  background-image: url("/brand/classic-sun-dark.svg");
+  background-color: transparent;
+}
+@media (max-width: 680px) {
+  .sh-wordmark.brand-lockup::before { width: 24px; height: 24px; background-image: url("/brand/classic-sun-micro.svg"); }
+  .sh-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .12em; }
+}
+[data-layout="phone"] .map-wordmark.brand-lockup { gap: var(--space-1); letter-spacing: .08em; }
+[data-layout="phone"] .map-wordmark.brand-lockup::before {
+  width: 22px;
+  height: 22px;
+  background-image: url("/brand/classic-sun-micro.svg");
+}
+[data-layout="phone"] .space .map-wordmark.brand-lockup::before { background-image: url("/brand/classic-sun-micro.svg"); background-color: transparent; }
+@media (max-width: 375px) {
+  [data-layout="phone"] .map-wordmark.brand-lockup { font-size: clamp(.86rem, 4.5vw, 1rem); letter-spacing: .04em; }
+  [data-layout="phone"] .map-wordmark.brand-lockup::before { width: 18px; height: 18px; }
+}
+
+/* Keep the original copperplate crest as artwork. Reserve its space rather
+   than overlaying a second emblem or introducing an inner scroll container. */
+.welcome-cart { container-type: inline-size; }
+.welcome-copy {
+  box-sizing: border-box;
+  justify-content: flex-start;
+  padding: 10.7% 12% 6%;
+  overflow: visible;
+}
+.welcome-copy > * { flex-shrink: 0; }
+.welcome-kicker { margin-top: 0; color: var(--ink); }
+.welcome-ornament { margin: 3px 0 3px; }
+.welcome-title { font-size: clamp(1.75rem, 6.6cqw, 4.65rem); }
+.welcome-subtitle { font-size: clamp(.85rem, 2.05cqw, 1.4rem); margin-top: clamp(4px, .9cqw, 10px); }
+.welcome-rule { margin-block: clamp(4px, .85cqw, 10px); }
+.welcome-body { font-size: clamp(.8rem, 1.6cqw, 1.1rem); }
+.welcome-actions { margin-top: clamp(7px, 1.4cqw, 16px); gap: clamp(8px, 1.5cqw, 16px); }
+.welcome-choice { min-height: clamp(var(--tap-min), 6.8cqw, 73px); padding-block: clamp(5px, .9cqw, 10px); }
+.welcome-choice strong { font-size: clamp(1rem, 2.13cqw, 1.44rem); }
+.welcome-foot { margin-top: clamp(5px, 1cqw, 11px); }
+.welcome-return, .welcome-note {
+  background: color-mix(in srgb, var(--parchment-raised) 86%, transparent);
+  padding: 2px 5px;
+  color: var(--ink);
+}
+@container (max-width: 750px) {
+  .welcome-copy { padding-top: 11%; padding-bottom: 4%; }
+  .welcome-kicker { font-size: clamp(.55rem, 1.2cqw, .72rem); }
+  .welcome-title { font-size: clamp(1.5rem, 6.15cqw, 3rem); }
+  .welcome-choice { padding-inline: 8px; }
+  .welcome-choice span, .welcome-note, .welcome-return { font-size: clamp(.65rem, 1.45cqw, .8rem); }
+  .welcome-foot { gap: 3px 8px; }
+}
+.welcome-x {
+  display: grid;
+  place-items: center;
+  top: 2%;
+  right: 1.8%;
+  width: max(var(--tap-min), 7.6cqw);
+  height: max(var(--tap-min), 7.6cqw);
+  padding: 0;
+  border: 2px solid var(--brass-text);
+  border-radius: 50%;
+  background: var(--parchment-raised);
+  color: var(--accent-deep);
+  box-shadow: inset 0 0 0 3px var(--parchment-raised), inset 0 0 0 4px var(--brass);
+}
+.welcome-x svg { width: 55%; height: 55%; stroke-width: 2.6; }
+.welcome-x:hover { background: var(--accent-deep); color: var(--parchment-raised); }
+.welcome-x:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+[data-layout="phone"] .welcome-cart {
+  height: fit-content;
+  min-height: 0;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto; /* Accessibility fallback only if the whole invitation cannot fit. */
+}
+[data-layout="phone"] .welcome-copy { height: auto; padding: 62px 24px 26px; justify-content: flex-start; }
+[data-layout="phone"] .welcome-foot { margin-top: 10px; }
+[data-layout="phone"] .welcome-x { top: 12px; right: 12px; width: var(--tap-min); height: var(--tap-min); }
+[data-layout="phone"] .welcome-title { font-size: clamp(1.9rem, 8.5vw, 2.65rem); }
+[data-layout="phone"] .welcome-subtitle { font-size: 1rem; }
+[data-layout="phone"] .welcome-choice { min-height: 54px; }
+[data-layout="phone"] .welcome-choice strong { font-size: 1.15rem; }
+@media (max-height: 520px) and (min-width: 681px) {
+  .welcome-cart { width: min(920px, calc(100vw - 34px)); max-height: calc(100dvh - 24px); aspect-ratio: auto; height: fit-content; overflow-y: auto; }
+  .welcome-copy { height: auto; padding: 64px 12% 24px; }
+  .welcome-title { font-size: clamp(1.8rem, 5cqw, 3.2rem); }
+}
+
+.spec-brand-plate { display: flex; align-items: center; gap: var(--space-6); flex-wrap: wrap; margin-block: var(--space-5); }
+.spec-brand-plate > div { flex: 1 1 240px; }
+.spec-brand-emblem { display: block; width: min(200px, 100%); aspect-ratio: 1; background: url("/brand/classic-sun-full.svg") center / contain no-repeat; }
+.spec-brand-sizes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-4); margin-block: var(--space-4); }
+.spec-brand-size { display: grid; justify-items: center; align-content: end; gap: var(--space-2); }
+.spec-brand-compact { display: block; background: url("/brand/classic-sun-header.svg") center / contain no-repeat; }
+.spec-brand-micro { display: block; background: url("/brand/classic-sun-micro.svg") center / contain no-repeat; }
+
+/* Dark register proof: no opaque parchment roundel, same face and compass silhouette. */
+.spec-brand-dark { background: var(--parchment); color: var(--ink); padding: var(--space-4); margin-block: var(--space-4); }
+.spec-brand-dark .spec-brand-compact { background-image: url("/brand/classic-sun-dark.svg"); }

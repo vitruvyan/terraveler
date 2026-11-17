@@ -114,7 +114,40 @@ export default function MarkPage() {
         <Ornament name="break" className="ornament-break" />
 
         <section>
-          <span className="spec-eyebrow">i &middot; le candidate</span>
+          <span className="spec-eyebrow">0 &middot; Classic Sun Compass — approved visual identity</span>
+          <p className="spec-lede">A sun at the heart of a compass rose: a single identity in three original vector cuts and a dark-register adaptation. The emblem is a brand asset, not a map control or an icon in the navigation set.</p>
+          <div className="spec-brand-plate">
+            <span className="spec-brand-emblem" role="img" aria-label="Classic Sun Compass, detailed sun compass" />
+            <div>
+              <div className="wordmark brand-lockup sh-wordmark">Terraveler</div>
+              <p className="spec-voice-role">The compact header mark beside the existing Cormorant wordmark. The full cut is reserved for editorial applications; the welcome cartouche retains its original engraved crest without a separate overlay; the micro cut is reserved for the favicon and constrained phone layouts. The space register uses a brighter, transparent cut.</p>
+              <div className="spec-brand-sizes">
+                {[48, 40, 32, 24, 16].map((size) => (
+                  <div key={size} className="spec-brand-size">
+                    <span className={size >= 32 ? "spec-brand-compact" : "spec-brand-micro"} style={{ width: size, height: size }} aria-hidden="true" />
+                    <span className="spec-machine">{size}px</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space spec-brand-dark">
+            <div className="wordmark brand-lockup sh-wordmark" style={{ color: "var(--ink)" }}>Terraveler</div>
+            <div className="spec-brand-sizes">
+              {[48, 40, 32, 24, 16].map((size) => (
+                <div key={size} className="spec-brand-size">
+                  <span className={size >= 32 ? "spec-brand-compact" : "spec-brand-micro"} style={{ width: size, height: size }} aria-hidden="true" />
+                  <span className="spec-machine">{size}px</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="spec-voice-role">Canonical SVG files: /brand/classic-sun-full.svg, /brand/classic-sun-header.svg, /brand/classic-sun-dark.svg, /brand/classic-sun-micro.svg and app/icon.svg. Both header registers have a transparent surround; the space cut uses brighter antique brass and ivory. Do not stretch or substitute the emblem with the cartographer’s compass control.</p>
+        </section>
+        <Ornament name="break" className="ornament-break" />
+
+        <section>
+          <span className="spec-eyebrow">i &middot; le candidate tipografiche</span>
 
           <Candidate
             n="a"

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { COOKIE, verifyToken } from "@/lib/deskAuth";
-import AdminNavigation from "@/components/desk/AdminNavigation";
+import { AdminShell } from "@/components/desk/AdminNavigation";
 import SiteHeader from "@/components/SiteHeader";
 import { DeskHeading } from "@/components/desk/Quarterdeck";
 import AgentTeam from "@/components/desk/AgentTeam";
@@ -21,9 +21,9 @@ export default async function AgentTeamPage() {
 
   return <>
     <SiteHeader />
-    <main className="dk-page"><AdminNavigation active="team" />
+    <AdminShell active="team"><main className="dk-page">
       <DeskHeading eyebrow="Terraveler · editorial administration" title="Agent team" />
       <AgentTeam />
-    </main>
+    </main></AdminShell>
   </>;
 }
