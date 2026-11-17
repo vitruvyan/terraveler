@@ -72,7 +72,6 @@ export default function WelcomeCartouche() {
       </button>
 
       <div className="welcome-copy">
-        <div className="welcome-brand-seal" aria-hidden="true" />
         <div className="welcome-kicker">Welcome to Terraveler</div>
         <div className="welcome-ornament" aria-hidden="true">✦</div>
 

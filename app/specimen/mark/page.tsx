@@ -120,7 +120,7 @@ export default function MarkPage() {
             <span className="spec-brand-emblem" role="img" aria-label="Classic Sun Compass, detailed sun compass" />
             <div>
               <div className="wordmark brand-lockup sh-wordmark">Terraveler</div>
-              <p className="spec-voice-role">The compact header mark beside the existing Cormorant wordmark. The full cut preserves the engraving in the welcome cartouche; the micro cut is reserved for the favicon and constrained phone layouts. The space register uses a brighter, transparent cut.</p>
+              <p className="spec-voice-role">The compact header mark beside the existing Cormorant wordmark. The full cut is reserved for editorial applications; the welcome cartouche retains its original engraved crest without a separate overlay; the micro cut is reserved for the favicon and constrained phone layouts. The space register uses a brighter, transparent cut.</p>
               <div className="spec-brand-sizes">
                 {[48, 40, 32, 24, 16].map((size) => (
                   <div key={size} className="spec-brand-size">
