@@ -36,6 +36,7 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(request.get_header("X-limen-data-class"), "editorial")
         self.assertEqual(request.get_header("X-limen-mode"), "documents")
         self.assertEqual(timeout, 30)
+        self.assertEqual(body["max_tokens"], 4096)
         self.assertEqual(result["verification"], "not-verified")
         self.assertEqual(result["agent_version"], 2)
         self.assertNotIn("fixture-private-key", json.dumps(result))
@@ -84,7 +85,7 @@ class GatewayTests(unittest.TestCase):
             self.assertNotIn("secret", str(caught.exception))
 
     def test_invalid_and_oversized_outputs_never_become_successful_candidates(self):
-        for payload in [b"not json", b"x" * 262145, b'{"choices":[]}',
+        for payload in [b"not json", b"x" * 262145, b'{"choices":[]}', b'{"choices":[null]}',
                         b'{"choices":[{"message":{"content":"[]"}}]}',
                         b'{"choices":[{"message":{"content":"{\\"value\\":NaN}"}}]}']:
             with self.assertRaisesRegex(GatewayError, "gateway-invalid-response"):
@@ -118,6 +119,40 @@ class GatewayTests(unittest.TestCase):
         for raw in ['not-json', '{"other":"fixture-default"}', '{"local-default":"other"}']:
             with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
                 GatewayConfig.from_environment({**env, "EDITOR_LIMEN_MODEL_KEYS": raw})
+
+    def test_production_budget_is_bounded_and_routes_keep_model_scoped_credentials(self):
+        env = {"EDITOR_LIMEN_BASE_URL": "https://gateway.example/v1",
+               "EDITOR_LIMEN_API_KEY": "fixture-default", "EDITOR_LIMEN_DATA_CLASS": "editorial",
+               "EDITOR_LIMEN_MODEL_KEYS": '{"pinned-model":"fixture-pinned"}'}
+        config = GatewayConfig.from_environment(env)
+        self.assertEqual(config.timeout_seconds, 120)
+        self.assertEqual(config.max_tokens, 4096)
+        config = GatewayConfig.from_environment({**env, "EDITOR_LIMEN_TIMEOUT_SECONDS": "90",
+                                                 "EDITOR_LIMEN_MAX_TOKENS": "6144"})
+        def transport(request, timeout):
+            self.assertEqual(timeout, 90)
+            self.assertEqual(request.get_header("Authorization"), "Bearer fixture-pinned")
+            self.assertEqual(json.loads(request.data)["max_tokens"], 6144)
+            return BytesIO(b'{"choices":[{"finish_reason":"stop","message":{"content":"{}"}}]}')
+        self.assertEqual(generate_candidate(task(), config, open_request=transport)["candidate"], {})
+        for overrides in [{"EDITOR_LIMEN_TIMEOUT_SECONDS": "nan"},
+                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "inf"},
+                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "121"},
+                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "0"},
+                          {"EDITOR_LIMEN_MAX_TOKENS": "8193"},
+                          {"EDITOR_LIMEN_MAX_TOKENS": "511"},
+                          {"EDITOR_LIMEN_MAX_TOKENS": "4096.5"}]:
+            with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
+                GatewayConfig.from_environment({**env, **overrides})
+        with self.assertRaisesRegex(GatewayError, "gateway-not-configured"):
+            GatewayConfig("https://gateway.example/v1", "fixture", "editorial", max_tokens=True)
+
+    def test_explicit_truncation_cannot_accept_even_valid_json_or_leak_content(self):
+        for content in ('{}', '{', '{"private":"secret content"}'):
+            body = json.dumps({"choices": [{"finish_reason": "length", "message": {"content": content}}]}).encode()
+            with self.assertRaisesRegex(GatewayError, "gateway-output-truncated") as caught:
+                generate_candidate(task(), self.config, open_request=lambda *_args, **_kw: BytesIO(body))
+            self.assertNotIn("secret", str(caught.exception))
 
     def test_environment_requires_a_gateway_and_never_uses_provider_credentials(self):
         for env in [{}, {"ANTHROPIC_API_KEY": "fixture"}, {"EDITOR_LIMEN_BASE_URL": "https://api.anthropic.com",

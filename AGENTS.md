@@ -94,8 +94,11 @@ hits and link-only metadata are candidates, not consulted evidence.
 
 Implementation status: get_wikipedia_outline supplies a revision-bound read.
 With the receipt migration and recording enabled, consultations and proposed
-plan versions are persisted. It does NOT yet enforce a validated plan at database
-enqueue/claim boundaries. The current editorial_sources.py direct SQL port
-is a known migration gap, not compliance with this rule. Do not claim that the
-mandatory runtime gate is active until the receipt/plan/bootstrap integration
-and bypass tests described in docs/EDITORIAL_MCP_PLANNING.md pass.
+plan versions are persisted. The bounded preparation, internal MCP corpus and
+plan-pinned pilot dispatch now have separate opt-in contracts. Their internal
+task gate is not universal enforcement of external contribution/publication
+flows, and code presence is not proof of production activation. The legacy
+editorial_sources.py direct SQL port remains available outside the enabled MCP
+path and is not compliance with this rule. Follow the migration, activation and
+bypass boundaries in docs/EDITORIAL_MCP_PLANNING.md and the consolidation map
+in docs/consolidation/ISSUE125_BACKEND.md before claiming runtime compliance.
