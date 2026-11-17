@@ -159,11 +159,11 @@ returns boolean language sql stable security definer set search_path=pg_catalog,
   where g.task_id=p_task_id and t.topic_id=r.topic_id and t.input->>'plan_id'=r.plan_id::text and p.review->>'verdict'='adequate-for-next-stage'
   and not exists(select 1 from public.editorial_graph_edges e join public.editorial_tasks d on d.id=e.depends_on where e.task_id=g.task_id and d.state<>'completed'))
  else not (select mandatory from public.editorial_graph_policy where singleton) end
-$;
+$$;
 create or replace function public.editorial_graph_claimable(p_task_id bigint)
-returns boolean language sql stable security definer set search_path=pg_catalog,public,pg_temp as $
+returns boolean language sql stable security definer set search_path=pg_catalog,public,pg_temp as $$
  select public.editorial_graph_authorized(p_task_id) and not exists(select 1 from public.editorial_graph_tasks g join public.editorial_graph_tasks sibling on sibling.run_id=g.run_id join public.editorial_tasks t on t.id=sibling.task_id where g.task_id=p_task_id and t.state='attention')
-$;
+$$;
 
 -- Validate exact stored snapshot reference, not merely the presence of a UUID.
 -- Recheck the latest live rights decision at each downstream use.
@@ -179,160 +179,7 @@ returns boolean language sql stable security definer set search_path=pg_catalog,
  and s.value=(v||jsonb_build_object('governance',(v->'governance')-'mcp_consultation_id'-'mcp_snapshot_sha256'))
  and e.id=(select e2.id from public.source_endpoints e2 where
   (e2.match_type='exact' and e2.host_pattern=lower(substring(s.value->>'url' from '^https?://([A-Za-z0-9.-]+)')))
-  or (e2.match_type='suffix' and e2.host_pattern ~ '^[.][a-z0-9]+([a-z0-9-]*[a-z0-9])?([.][a-z0-9]+([a-z0-9-]*[a-z0-9])?)+
- and d.decision_outcome='approve' and d.trust_mode='domain_trusted' and d.rights_class in ('public_domain','creative_commons'))
-$$;
-
-create or replace function public.editorial_graph_context(p_task_id bigint)
-returns jsonb language plpgsql stable security definer set search_path=pg_catalog,public,pg_temp as $$
-declare g public.editorial_graph_tasks; t public.editorial_tasks; result jsonb; refs jsonb:='[]'; findings jsonb:='[]'; uncertainties jsonb:='[]'; v jsonb; prior jsonb; research jsonb; draft jsonb; dep_results jsonb;
-begin
- select * into g from public.editorial_graph_tasks where task_id=p_task_id;
- if not found then return '{}'::jsonb; end if;
- select * into t from public.editorial_tasks where id=p_task_id;
- if t.role='research' then
-  select coalesce(jsonb_agg(jsonb_build_object('work_item_id',p.work_item_id,'result',r.result- 'candidate') order by p.work_item_id),'[]') into dep_results
-  from public.editorial_graph_edges e join public.editorial_graph_tasks p on p.task_id=e.depends_on join public.editorial_results r on r.task_id=p.task_id where e.task_id=t.id;
-  for result in select value->'result' from jsonb_array_elements(dep_results) loop
-   for v in select value from jsonb_array_elements(result->'references') loop
-    if not public.editorial_graph_check_reference(v,g.run_id) then raise exception 'source policy changed or receipt invalid'; end if;
-   end loop;
-  end loop;
-  return jsonb_build_object('dependency_research',dep_results);
- end if;
- for result in select r.result from public.editorial_graph_tasks h join public.editorial_tasks x on x.id=h.task_id join public.editorial_results r on r.task_id=x.id where h.run_id=g.run_id and x.role='research' order by h.work_item_id loop
-  if result->>'kind' is distinct from 'research' then raise exception 'research result required'; end if;
-  for v in select value from jsonb_array_elements(result->'references') loop
-   if not public.editorial_graph_check_reference(v,g.run_id) then raise exception 'source policy changed or receipt invalid'; end if;
-   select value into prior from jsonb_array_elements(refs) where value->>'id'=v->>'id';
-   if not found then refs:=refs||jsonb_build_array(v);
-   elsif (prior-'governance') is distinct from (v-'governance') then raise exception 'conflicting source snapshots'; end if;
-  end loop;
-  findings:=findings||coalesce(result->'findings','[]');
-  uncertainties:=uncertainties||coalesce(result->'uncertainties','[]');
- end loop;
- if jsonb_array_length(refs) not between 1 and 40 or jsonb_array_length(findings) not between 1 and 100 or octet_length((refs||findings)::text)>40000 then raise exception 'research synthesis exceeds bounded context'; end if;
- research:=jsonb_build_object('kind','research','references',refs,'findings',findings,'uncertainties',uncertainties);
- if t.role='reviewer' then
-  select r.result into draft from public.editorial_results r where r.task_id=t.dependency_id;
-  if draft->>'kind' is distinct from 'draft' then raise exception 'draft result required'; end if;
-  return jsonb_build_object('research_result',research,'draft_result',draft);
- end if;
- return jsonb_build_object('research_result',research);
-end $$;
-
-create or replace function public.editorial_graph_result_guard()
-returns trigger language plpgsql security definer set search_path=pg_catalog,public,pg_temp as $$
-declare t public.editorial_tasks; g public.editorial_graph_tasks; v jsonb; ctx jsonb; refs jsonb;
-begin
- select * into t from public.editorial_tasks where id=new.task_id;
- select * into g from public.editorial_graph_tasks where task_id=new.task_id;
- if not found then
-  if (select mandatory from public.editorial_graph_policy where singleton) then raise exception 'reviewed editorial plan required'; end if;
-  return new;
- end if;
- if not public.editorial_graph_authorized(t.id) then raise exception 'plan task not authorized'; end if;
- if new.result->>'kind' is distinct from (case t.role when 'research' then 'research' when 'writer' then 'draft' else 'review' end) then raise exception 'wrong plan result kind'; end if;
- if t.role='research' then
-  refs:=new.result->'references';
-  if jsonb_typeof(refs) is distinct from 'array' then raise exception 'MCP receipts required'; end if;
-  if jsonb_array_length(refs) not between 1 and 40 then raise exception 'MCP receipts required'; end if;
-  for v in select value from jsonb_array_elements(refs) loop
-   if not public.editorial_graph_check_reference(v,g.run_id,t.id,t.attempt) then raise exception 'invalid or revoked MCP receipt'; end if;
-  end loop;
- elsif t.role in ('writer','reviewer') then
-  ctx:=public.editorial_graph_context(t.id);
-  if t.role='writer' and new.result->'references' is distinct from ctx->'research_result'->'references' then raise exception 'draft provenance mismatch'; end if;
-  if t.role='reviewer' and coalesce(new.result->>'verdict','') not in ('ready-for-editor','changes-requested','blocked') then raise exception 'invalid review verdict'; end if;
- end if;
- return new;
-end $$;
-drop trigger if exists editorial_graph_result_gate on public.editorial_results;
-create trigger editorial_graph_result_gate before insert on public.editorial_results for each row execute function public.editorial_graph_result_guard();
-
-create or replace function public.editorial_claim(p_worker text,p_roles text[],p_lease_seconds integer default 120)
-returns jsonb language plpgsql security definer set search_path=pg_catalog,public,pg_temp as $$
-declare t public.editorial_tasks; candidate record; chosen public.editorial_agent_versions; bound_key text; cfg jsonb; context jsonb; begin
- if p_worker is null or length(trim(p_worker)) not between 1 and 160 or p_roles is null or cardinality(p_roles)=0 or array_position(p_roles,null) is not null
- or not p_roles <@ array['research','writer','reviewer']::text[] or p_lease_seconds is null or p_lease_seconds not between 10 and 600 then raise exception 'invalid claim'; end if;
- for t in select x.* from public.editorial_tasks x where x.state='queued' and x.role=any(p_roles) and x.attempt<x.max_attempts
-   and (x.dependency_id is null or exists(select 1 from public.editorial_tasks dep where dep.id=x.dependency_id and dep.state='completed'))
-   and public.editorial_graph_claimable(x.id)
-   and (
-     exists(select 1 from public.editorial_task_agents b join public.editorial_agent_versions v on v.id=b.agent_version_id
-       join public.editorial_agents_current c on c.agent_key=v.agent_key where b.task_id=x.id and v.role=x.role and c.enabled and c.role=x.role
-       and not exists(select 1 from public.editorial_specialist_assignments sa where sa.task_id=x.id and sa.agent_key<>v.agent_key))
-     or (not exists(select 1 from public.editorial_task_agents b where b.task_id=x.id)
-       and exists(select 1 from public.editorial_agents_current c where c.enabled and c.role=x.role
-         and not exists(select 1 from public.editorial_specialist_assignments sa where sa.task_id=x.id and sa.agent_key<>c.agent_key)))
-   )
-   order by x.id for update of x skip locked limit 100 loop
-  cfg:=null;
-  select v.agent_key into bound_key from public.editorial_task_agents b join public.editorial_agent_versions v on v.id=b.agent_version_id where b.task_id=t.id;
-  if found then
-   -- Nonblocking while scanning: a skipped candidate must not create a lock
-   -- cycle with another claim that scans a different task/agent combination.
-   if not pg_try_advisory_xact_lock(hashtextextended('editorial-agent:'||bound_key,0)) then continue; end if;
-   cfg:=public.editorial_bound_agent(t.id,t.role);
-  else
-   for candidate in select agent_key from public.editorial_agents_current where enabled and role=t.role
-     and not exists(select 1 from public.editorial_specialist_assignments sa where sa.task_id=t.id and sa.agent_key<>editorial_agents_current.agent_key)
-     order by agent_key loop
-    if not pg_try_advisory_xact_lock(hashtextextended('editorial-agent:'||candidate.agent_key,0)) then continue; end if;
-    -- Resolve again after the lock; a pause/edit may have committed while the
-    -- candidate view was read. Pin the authoritative version at this instant.
-    select * into chosen from public.editorial_agent_versions where agent_key=candidate.agent_key order by version desc limit 1;
-    if not found or not chosen.enabled or chosen.role<>t.role then continue; end if;
-    if exists(select 1 from public.editorial_specialist_assignments a join public.editorial_agent_specialties s on s.agent_version_id=chosen.id where a.task_id=t.id and s.specialty<>a.specialty) then continue; end if;
-    insert into public.editorial_task_agents(task_id,agent_version_id) values(t.id,chosen.id);
-    insert into public.editorial_task_events(task_id,event,attempt,worker,detail)
-     values(t.id,'agent-bound',t.attempt,p_worker,jsonb_build_object('agent_key',chosen.agent_key,'version',chosen.version));
-    cfg:=public.editorial_bound_agent(t.id,t.role);
-    exit;
-   end loop;
-  end if;
-  if cfg is null then continue; end if;
-  update public.editorial_tasks set state='running',attempt=attempt+1,worker=p_worker,lease_token=gen_random_uuid(),lease_expires_at=clock_timestamp()+make_interval(secs=>p_lease_seconds) where id=t.id returning * into t;
-  insert into public.editorial_task_events(task_id,event,attempt,worker,detail) values(t.id,'claimed',t.attempt,p_worker,jsonb_build_object('lease_token',t.lease_token,'agent_key',cfg->>'agent_key','agent_version',cfg->'version'));
-  select jsonb_build_object('topic',to_jsonb(d),'sources',coalesce((select jsonb_agg(snapshot order by submission_id) from public.editorial_topic_submissions where topic_id=t.topic_id),'[]'::jsonb),
-    'dependency_result',(select result from public.editorial_results where task_id=t.dependency_id)) into context from public.editorial_topics d where d.id=t.topic_id;
-  return to_jsonb(t)||context||jsonb_build_object('input',t.input||public.editorial_graph_context(t.id),'agent_config',cfg,'specialist_assignment',(select jsonb_build_object('agent_key',sa.agent_key,'specialty',sa.specialty) from public.editorial_specialist_assignments sa where sa.task_id=t.id));
- end loop;
- return null;
-end $$;
-
--- Grant only the dispatch port. Internal checks are called by the fenced
--- worker functions or triggers, not by contributors.
-revoke all on function public.editorial_dispatch_plan(bigint,bigint,text) from public,terraveler_service;
-grant execute on function public.editorial_dispatch_plan(bigint,bigint,text) to terraveler_service;
-create or replace view public.editorial_graph_status with(security_invoker=true) as
- select g.id,g.topic_id,g.plan_id,g.request_id,g.created_at,
- case when bool_or(t.state='attention') then 'attention'
-  when bool_and(t.state='completed') then
-   case when bool_or(t.role='reviewer' and r.result->>'verdict'='ready-for-editor') then 'awaiting-editor' else 'attention' end
-  when bool_or(t.state='running') then 'running' else 'queued' end as state,
- count(*)::integer as task_count,count(*) filter(where t.state='completed')::integer as completed_count
- from public.editorial_graph_runs g join public.editorial_graph_tasks m on m.run_id=g.id
- join public.editorial_tasks t on t.id=m.task_id left join public.editorial_results r on r.task_id=t.id group by g.id;
-revoke all on public.editorial_graph_status from public,terraveler_service;
-grant select on public.editorial_graph_status to terraveler_service;
-do $$ declare r text; n text; p record; begin
- for p in select oid::regprocedure signature from pg_proc where pronamespace='public'::regnamespace and proname in ('editorial_graph_enqueue_guard','editorial_graph_authorized','editorial_graph_claimable','editorial_graph_check_reference','editorial_graph_context','editorial_graph_result_guard') loop
- execute format('revoke all on function %s from public,terraveler_service',p.signature);
- end loop;
- foreach r in array array['anon','authenticated','terraveler_editorial_worker'] loop
- if exists(select 1 from pg_roles where rolname=r) then
-  foreach n in array array['editorial_graph_policy','editorial_graph_runs','editorial_graph_tasks','editorial_graph_edges','editorial_graph_status'] loop execute format('revoke all on public.%I from %I',n,r); end loop;
-  execute format('revoke all on sequence public.editorial_graph_runs_id_seq from %I',r);
-  for p in select oid::regprocedure signature from pg_proc where pronamespace='public'::regnamespace and proname in ('editorial_enable_plan_gate','editorial_graph_enqueue_guard','editorial_graph_authorized','editorial_graph_claimable','editorial_graph_check_reference','editorial_graph_context','editorial_graph_result_guard','editorial_dispatch_plan') loop
-   execute format('revoke all on function %s from %I',p.signature,r);
-  end loop;
- end if;
- end loop;
-end $$;
-notify pgrst,'reload schema';
-commit;
- and right(lower(substring(s.value->>'url' from '^https?://([A-Za-z0-9.-]+)')),length(e2.host_pattern))=e2.host_pattern)
+  or (e2.match_type='suffix' and e2.host_pattern ~ '^[.][a-z0-9]+([a-z0-9-]*[a-z0-9])?([.][a-z0-9]+([a-z0-9-]*[a-z0-9])?)+$' and right(lower(substring(s.value->>'url' from '^https?://([A-Za-z0-9.-]+)')),length(e2.host_pattern))=e2.host_pattern)
   order by (e2.match_type='exact') desc,length(e2.host_pattern) desc,e2.id limit 1)
  and e.status='active' and e.trust_mode='domain_trusted' and d.id::text=s.value->'governance'->>'policy_decision_id'
  and d.decision_outcome='approve' and d.trust_mode='domain_trusted' and d.rights_class in ('public_domain','creative_commons'))

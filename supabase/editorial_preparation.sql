@@ -43,7 +43,7 @@ begin
   return (to_jsonb(prior)-'request_id'-'created_at')||jsonb_build_object('replayed',true);
  end if;
  if p_review is null or jsonb_typeof(p_review)<>'object' or octet_length(p_review::text)>65536
-  or exists(select 1 from jsonb_object_keys(p_review) k where k not in ('verdict','issues'))
+  or exists(select 1 from jsonb_object_keys(p_review) as review_keys(field) where review_keys.field not in ('verdict','issues'))
   or jsonb_typeof(p_review->'verdict') is distinct from 'string'
   or p_review->>'verdict' not in ('adequate-for-next-stage','changes-requested','blocked')
   or jsonb_typeof(p_review->'issues') is distinct from 'array'

@@ -38,6 +38,14 @@ json.dump(result,sys.stdout)
 function executeHandler(task,receipt=null){const child=spawnSync('python3',['-c',python],{cwd:root,env:{...process.env,PYTHONPATH:root},input:JSON.stringify({task,receipt}),encoding:'utf8',timeout:10000,maxBuffer:1024*1024});assert.equal(child.status,0,child.stderr||child.error?.message);return JSON.parse(child.stdout);}
 const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch'];
 const migration=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
+test('dispatch migration contains one definition per function and balanced SQL dollar quotes',()=>{
+ const sql=migration.at(-1);
+ const definitions=[...sql.matchAll(/create or replace function public\.(\w+)\(/g)].map(m=>m[1]);
+ assert.equal(new Set(definitions).size,definitions.length);
+ assert.equal((sql.match(/\$\$/g)||[]).length%2,0);
+ assert.doesNotMatch(sql,/(?:as |\n)\$(?!\$)[;\n]/);
+ assert.match(sql,/\ncommit;\s*$/);
+});
 async function scalar(db,sql,args=[]){return Object.values((await db.query(sql,args)).rows[0])[0];}
 test('reviewed plan schedules all dependencies, blocks legacy bypass, requires real MCP receipt, and ends at private draft review',async()=>{
  const db=new PGlite();

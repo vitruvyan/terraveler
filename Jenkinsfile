@@ -61,10 +61,26 @@ pipeline {
             parallel {
                 stage('Tests') {
                     steps {
-                        sh 'npm test'
-                        sh 'npm run test:editorial-mcp-plans'
-                        sh 'node --test --test-concurrency=1 test/editorial-plan-dispatch-sql.test.mjs'
-                        sh 'python3 -m unittest orchestration.test_editorial_mcp_corpus'
+                        script {
+                            def suites = [
+                                'typescript': 'npm test',
+                                'editorial-mcp-plans': 'npm run test:editorial-mcp-plans',
+                                'editorial-plan-dispatch': 'node --test --test-concurrency=1 test/editorial-plan-dispatch-sql.test.mjs',
+                                'editorial-mcp-python': 'python3 -m unittest orchestration.test_editorial_mcp_corpus'
+                            ]
+                            def failed = []
+                            suites.each { name, command ->
+                                def status = sh(label: name, returnStatus: true, script: """
+                                    set +e
+                                    ${command} > reports/${name}.log 2>&1
+                                    rc=\$?
+                                    cat reports/${name}.log
+                                    exit \$rc
+                                """)
+                                if (status != 0) failed.add("${name} (exit ${status})")
+                            }
+                            if (failed) error("Test suites failed: " + failed.join(', '))
+                        }
                     }
                 }
                 stage('Production build') {
