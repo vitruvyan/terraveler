@@ -13,7 +13,7 @@ const object = (v: unknown): v is Record<string, any> => !!v && typeof v==="obje
 export type PreparationRequest = { topic_id: number; expected_version: number; request_id: string; wikipedia_url: string | null };
 type Agent = { id: number; agent_key: string; version: number; role: "coordinator" | "reviewer"; model: string; instructions: string };
 export type PlanReview = { verdict: "adequate-for-next-stage" | "changes-requested" | "blocked"; issues: string[] };
-export type PreparationStage = "preflight" | "history" | "topic" | "version" | "agents" | "orientation-discovery" | "orientation-read" | "receipt" | "planner" | "plan-validation" | "reviewer" | "review-validation" | "persist";
+export type PreparationStage = "preflight" | "history" | "topic" | "version" | "previous-review" | "agents" | "orientation-discovery" | "orientation-read" | "receipt" | "planner" | "plan-validation" | "reviewer" | "review-validation" | "persist";
 export type PreparationEvent = {
   event: "editorial-preparation"; correlation_id: string; request_id: string; topic_id: number;
   stage: PreparationStage; status: "started" | "completed" | "failed" | "model-response";
@@ -130,9 +130,11 @@ function generator(env:Env,fetcher:typeof fetch,onResponse:(agent:Agent,envelope
     const config=localAIConfig({...env,EDITOR_LOCAL_AI_PROVIDER:"limen",EDITOR_LIMEN_MODEL:agent.model,EDITOR_LIMEN_API_KEY:key});
     if(!config||config.provider!=="limen")throw new PreparationError("limen-not-configured");
     const base=config.baseURL.endsWith("/v1")?config.baseURL:config.baseURL+"/v1";
+    const guided=object(material)&&object(material.previous_review);
     const contract=stage==="plan"?
-      'Return JSON only {"gaps":["unanswered question"],"work_items":[{"id":"stable-id","question":"specific question","deliverable":"artifact","specialty":"history","depends_on":[],"source_receipt_ids":[]}]}. Choose exactly one specialty per item from history, ethnohistory, itinerary, iconography, diary, caption, editorial, copyedit, factcheck. Make a dependency DAG. Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation only. No source receipt IDs may be supplied; research is still to be done.':
-      'Return JSON only {"verdict":"adequate-for-next-stage","issues":[]}. Choose exactly one verdict: adequate-for-next-stage, changes-requested or blocked. Independently inspect the exact proposed plan against the dossier and orientation; assess relevance, coverage, independent verification, dependencies, missing evidence and uncertainty. Adequate requires zero issues and is not authority to execute or publish.';
+      'Return JSON only {"gaps":["unanswered question"],"work_items":[{"id":"stable-id","question":"specific question","deliverable":"artifact","specialty":"history","depends_on":[],"source_receipt_ids":[]}]}. Choose exactly one specialty per item from history, ethnohistory, itinerary, iconography, diary, caption, editorial, copyedit, factcheck. Make a dependency DAG. Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation only. No source receipt IDs may be supplied; research is still to be done.'+(guided?' A previous plan version and its independent review are provided as previous_plan and previous_review. Address every issue from previous_review explicitly: revise questions, coverage, dependencies and structure accordingly, and do not repeat a rejected structure unchanged. If an issue cannot be resolved with the available orientation, keep it visible in gaps.':'')
+      :
+      'Return JSON only {"verdict":"adequate-for-next-stage","issues":[]}. Choose exactly one verdict: adequate-for-next-stage, changes-requested or blocked. Independently inspect the exact proposed plan against the dossier and orientation; assess relevance, coverage, independent verification, dependencies, missing evidence and uncertainty. Adequate requires zero issues and is not authority to execute or publish.'+(guided?' A previous plan version and its review are provided: verify explicitly whether each prior issue is resolved; any prior issue left unresolved must appear in issues.':'');
     const materialText=JSON.stringify(material);
     if(Buffer.byteLength(materialText)>160000)throw new PreparationError("preparation-context-too-large");
     let responseRequestId:string|undefined,httpStatus:number|undefined;
@@ -177,6 +179,18 @@ export async function prepareEditorialPlan(input:PreparationRequest,ports:Ports=
     const topic=topics[0]; if(typeof topic.title!=="string"||typeof topic.objective!=="string")throw new PreparationError("preparation-unavailable");
     const versions=await step("version",()=>read("GET",`editorial_plans?topic_id=eq.${input.topic_id}&select=version&order=version.desc&limit=1`));
     if(!Array.isArray(versions)||(versions[0]?.version??0)!==input.expected_version)throw new PreparationError("preparation-conflict");
+    const previous=await step("previous-review",async()=>{
+      if(input.expected_version===0)return null;
+      const plans=await read("GET",`editorial_plans?topic_id=eq.${input.topic_id}&select=id,version,plan&order=version.desc&limit=1`);
+      const plan=Array.isArray(plans)?plans[0]:null;
+      if(!object(plan)||!positive(plan.id)||plan.version!==input.expected_version||!object(plan.plan))throw new PreparationError("preparation-unavailable");
+      const reviews=await read("GET",`editorial_plan_preparations?plan_id=eq.${plan.id}&select=review&limit=1`);
+      const row=Array.isArray(reviews)?reviews[0]:null;
+      if(!object(row))throw new PreparationError("preparation-unavailable");
+      let review:PlanReview;
+      try{review=parsePlanReview(row.review);}catch{throw new PreparationError("preparation-unavailable");}
+      return {version:plan.version,plan:plan.plan,review};
+    });
     const {planner,reviewer}=await step("agents",async()=>{
       const agents=await read("GET","editorial_agents_current?role=in.(coordinator,reviewer)&enabled=eq.true&select=id,agent_key,version,role,model,instructions,enabled&order=agent_key&limit=101");
       const planner=chooseAgent(agents,"coordinator",env.EDITORIAL_PLANNER_AGENT_KEY), reviewer=chooseAgent(agents,"reviewer",env.EDITORIAL_PLAN_REVIEWER_AGENT_KEY);
@@ -208,7 +222,8 @@ export async function prepareEditorialPlan(input:PreparationRequest,ports:Ports=
       return orientation;
     });
     const id=response.consultation.id;
-    const context={topic:{id:input.topic_id,title:topic.title,objective:topic.objective},orientation};
+    const context={topic:{id:input.topic_id,title:topic.title,objective:topic.objective},orientation,
+      ...(previous?{previous_plan_version:previous.version,previous_plan:previous.plan,previous_review:previous.review}:{})};
     const output=await step("planner",()=>generate(planner,"plan",context));
     const parsed=await step("plan-validation",async()=>{
       if(!object(output)||Object.keys(output).some(k=>!["gaps","work_items"].includes(k)))throw new PreparationError("plan-generation-invalid",[],"unexpected-plan-fields");
