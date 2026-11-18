@@ -196,3 +196,31 @@ execution evidence, not merely a successful /models response.
 - No VPS SQL changes, live inference, key revocation, production UX replacement
   or publication were performed. Exact live failure attribution and completion
   of the Cabeza de Vaca pilot remain blocked on trusted runtime access/evidence.
+
+## Operator evidence update: reviewer response format
+
+The sanitized VPS report collected 18 November 2026 at 10:25 UTC confirms zero
+plans/preparation reviews/tasks and six orientation receipts. Historical local
+planner calls succeeded; three editorial-reviewer effects failed after roughly
+151–354 seconds, with no returned usage. Their exact error type was not exported,
+so timeouts, cancellation or resource contention are hypotheses, not established
+causes. The registered Managing Editor still uses local-default (Gemma), while
+an additional editorial-planner alias (Qwen) is configured but not selected.
+Configured aliases alone do not prove the physical model serving every call.
+
+The operator subsequently changed the editorial-reviewer mapping from DeepSeek
+to Granite and restarted Limen. The next authenticated preparation returned
+503 / plan-review-invalid / invalid-json. This localizes that attempt before
+persistence: planner validation was passed and a reviewer content string reached
+the strict JSON parser. Its actual bytes and the served model remain unobserved;
+do not assume a particular Markdown/reasoning envelope or silent truncation.
+
+Preparation now requests response_format: {type: json_object} through the same
+Limen endpoint for both stages, in addition to the existing prompt instructions.
+LiteLLM Ollama documentation describes structured response formats:
+https://docs.litellm.ai/docs/providers/ollama
+https://docs.ollama.com/capabilities/structured-outputs
+Runtime adapter support must still be verified. Unsupported-format HTTP errors
+fail closed, without retrying in free-text mode. The strict parser, schema,
+independent configured agents and exact model-key routing are unchanged. This
+is a prospective request-format correction, not proof of a successful live plan.

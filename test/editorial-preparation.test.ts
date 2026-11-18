@@ -175,3 +175,25 @@ test("private preparation API returns server-generated correlation and stage wit
   assert.equal(JSON.parse(logs.at(-1)!).correlation_id,body.correlation_id);
  }finally{globalThis.fetch=oldFetch;console.info=oldLog;if(oldFlag===undefined)delete process.env.EDITORIAL_PREPARATION_ENABLED;else process.env.EDITORIAL_PREPARATION_ENABLED=oldFlag;}
 });
+
+test("preparation requests JSON mode through Limen for both agents without format fallback",async()=>{
+ const {prepareEditorialPlan}=await mod;
+ for(const failReview of [false,true]){
+  const f=fixture(),{generate:_generate,...ports}=f.ports;
+  const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+  let calls=0;
+  const fetcher:typeof fetch=async(endpoint,init)=>{
+   assert.equal(String(endpoint),"https://gateway.example/v1/chat/completions");
+   const body=JSON.parse(String(init?.body));
+   assert.deepEqual(body.response_format,{type:"json_object"});assert.equal(body.model,"local");
+   assert.equal((init?.headers as Record<string,string>)["Authorization"],"Bearer fixture-key");
+   const stage=calls++;
+   if(stage===1&&failReview)return Response.json({error:"PRIVATE PROVIDER BODY"},{status:400});
+   return Response.json({choices:[{finish_reason:"stop",message:{content:JSON.stringify(stage===0?work:review)}}]});
+  };
+  if(failReview)await assert.rejects(prepareEditorialPlan(request,{...ports,env,fetcher}),
+   (e:any)=>e.code==="limen-unavailable"&&e.stage==="reviewer"&&e.detail==="http-400"&&!String(e).includes("PRIVATE"));
+  else assert.equal((await prepareEditorialPlan(request,{...ports,env,fetcher})).plan_id,1);
+  assert.equal(calls,2);assert.equal(f.writes,failReview?0:1);
+ }
+});
