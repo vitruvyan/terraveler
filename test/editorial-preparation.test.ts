@@ -197,3 +197,54 @@ test("preparation requests JSON mode through Limen for both agents without forma
   assert.equal(calls,2);assert.equal(f.writes,failReview?0:1);
  }
 });
+
+const storedPlan={gaps:["Indigenous perspectives"],orientation_receipt_id:id,work_items:[{id:"history-1",question:"What happened?",deliverable:"Cited chronology",specialty:"history",depends_on:[],source_receipt_ids:[]}]};
+const prevReview={verdict:"changes-requested",issues:["Cover Estebanico explicitly"]};
+function guidedFixture(missingReview=false){
+ const calls:string[]=[];let writes=0;const materials:Record<string,any>={};
+ const read=async(_method:string,path:string)=>{
+  if(path.startsWith("editorial_plan_preparations?request_id="))return [];
+  if(path.startsWith("editorial_plan_preparations?plan_id="))return missingReview?[]:[{review:prevReview}];
+  if(path.startsWith("editorial_plans?")&&path.includes("select=id,version,plan"))return [{id:1,version:1,plan:storedPlan}];
+  if(path.startsWith("editorial_plans?")&&path.includes("select=version"))return [{version:1}];
+  if(path.startsWith("editorial_topics?"))return [{id:1,title:"Example",objective:"Research"}];
+  if(path.startsWith("editorial_agents_current?"))return [
+   {id:1,agent_key:"planner",version:1,role:"coordinator",model:"local",instructions:"Plan",enabled:true},
+   {id:2,agent_key:"reviewer",version:1,role:"reviewer",model:"local",instructions:"Review",enabled:true}];
+  if(path.startsWith("editorial_mcp_consultations?"))return [{id,tool:"get_wikipedia_outline",arguments:{url},response:orientation,response_sha256:"a".repeat(64)}];
+  throw Error("unexpected read");
+ };
+ return {calls,materials,get writes(){return writes;},ports:{env:{EDITORIAL_PREPARATION_ENABLED:"1"},read,rpc:async(name:string,args:Record<string,unknown>)=>{
+  writes++;assert.equal(name,"editorial_record_preparation");assert.equal(args.p_expected_version,1);return {plan_id:2,review,replayed:false};
+ },mcp:async(name:string)=>{calls.push(name);return name==="search_sources"?{candidates:[{kind:"wikipedia",title:"Example",url}]}:{consultation_status:"recorded",consultation:{id,response_sha256:"a".repeat(64)}};},
+ generate:async(agent:{id:number},stage:string,material:unknown)=>{materials[stage]=material;if(stage==="review")return review;return work;}}};
+}
+const guidedRequest={...request,expected_version:1,request_id:"preparation-request-0002"};
+
+test("guided iteration supplies the previous plan and review to planner and reviewer",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=guidedFixture();const events:any[]=[];
+ assert.equal((await prepareEditorialPlan(guidedRequest,{...f.ports,observe:e=>events.push(e)})).plan_id,2);
+ assert.equal(f.writes,1);
+ assert.deepEqual(f.materials.plan.previous_review,prevReview);
+ assert.deepEqual(f.materials.plan.previous_plan,storedPlan);
+ assert.equal(f.materials.plan.previous_plan_version,1);
+ assert.deepEqual(f.materials.review.previous_review,prevReview);
+ assert.deepEqual(f.materials.review.plan.orientation_receipt_id,id);
+ assert.ok(events.some(e=>e.stage==="previous-review"&&e.status==="completed"));
+ assert.doesNotMatch(JSON.stringify(events),/Estebanico|What happened|Cited chronology/);
+});
+
+test("guided iteration fails closed when the previous plan or its review is missing",async()=>{
+ const {prepareEditorialPlan}=await mod;
+ const a=guidedFixture(true);
+ await assert.rejects(prepareEditorialPlan(guidedRequest,a.ports),(e:any)=>e.stage==="previous-review"&&e.code==="preparation-unavailable");
+ assert.equal(a.writes,0);assert.equal(a.materials.plan,undefined);
+});
+
+test("first-version preparation never fabricates previous-review context",async()=>{
+ const {prepareEditorialPlan}=await mod;const f=fixture();const materials:Record<string,any>={};
+ const generate=async(_agent:{id:number},stage:string,material:unknown)=>{materials[stage]=material;return stage==="review"?review:work;};
+ assert.equal((await prepareEditorialPlan(request,{...f.ports,generate})).plan_id,1);
+ assert.ok(!("previous_review" in materials.plan)&&!("previous_plan" in materials.plan));
+ assert.ok(!("previous_review" in materials.review));
+});
