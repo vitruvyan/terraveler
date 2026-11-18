@@ -1,0 +1,45 @@
+.va-album .va-sheet {max-width:94rem}
+.va-mast {border-bottom:1px solid var(--rule-mid);padding:var(--space-6) 0;margin-bottom:var(--space-5);}
+.va-mast h1 {font:500 var(--step-6)/1.05 var(--font-display);margin:var(--space-2) 0;}
+.va-mast p {max-width:66ch;margin:var(--space-3) 0;}
+.va-toolbar {display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-4);justify-content:space-between;}
+.va-filters {display:flex;flex-wrap:wrap;gap:var(--space-2);}
+.va-album button,.va-album input {font:var(--step-0)/1.35 var(--font-ui);border:1px solid var(--rule-mid);background:var(--parchment-raised);color:var(--ink);border-radius:var(--radius-2);min-height:var(--tap-min);}
+.va-album button {cursor:pointer;padding:var(--space-2) var(--space-3);}
+.va-filters button[aria-pressed=true] {background:var(--ink);color:var(--parchment-raised);border-color:var(--ink);}
+.va-filters button span {font:var(--step--2)/1 var(--font-mono);margin-left:var(--space-2);}
+.va-search {display:flex;align-items:center;gap:var(--space-2);flex:1;max-width:24rem;}
+.va-search input {width:100%;min-width:0;padding:var(--space-2) var(--space-3);}
+.va-album svg {width:1.25rem;height:1.25rem;flex:none;}
+.va-meta {font:var(--step--2)/1.5 var(--font-mono);color:var(--ink-soft);overflow-wrap:anywhere;}
+.va-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr));gap:var(--space-5);}
+.va-card {margin:0;min-width:0;border:1px solid var(--rule-mid);background:var(--parchment-raised);display:flex;flex-direction:column;}
+.va-album .va-image {position:relative;aspect-ratio:3/2;width:100%;padding:var(--space-2);border:0;border-bottom:1px solid var(--rule-hair);border-radius:0;background:var(--parchment-deep);display:grid;place-items:center;overflow:hidden;}
+.va-image img {display:block;width:100%;height:100%;min-height:0;object-fit:contain;}
+.va-inspect {position:absolute;right:var(--space-2);bottom:var(--space-2);display:flex;gap:var(--space-1);align-items:center;padding:var(--space-1) var(--space-2);background:var(--parchment-raised);color:var(--ink);border:1px solid var(--rule-mid);font:var(--step--2)/1.4 var(--font-mono);}
+.va-placeholder {display:grid;gap:var(--space-2);justify-items:center;font-family:var(--font-mono);font-size:var(--step--2);color:var(--ink-soft);}
+.va-placeholder svg {width:3rem;height:3rem;}
+.va-copy {display:flex;flex-direction:column;gap:var(--space-2);padding:var(--space-3);flex:1;}
+.va-copy h2 {font:600 var(--step-2)/1.15 var(--font-display);margin:0;}
+.va-copy p {margin:0;font-size:var(--step-0);}
+.va-copy p.va-meta {font-size:var(--step--2);}
+.va-state {align-self:flex-start;margin-top:auto;font:var(--step--2)/1.4 var(--font-mono);border-top:1px solid var(--rule-hair);padding-top:var(--space-2);color:var(--state-ok);}
+.va-state[data-state=pending],.va-state[data-state=reference-only] {color:var(--state-wait);}
+.va-dialog {max-width:min(90rem,94%);max-height:92dvh;width:100%;border:1px solid var(--rule-mid);background:var(--parchment-raised);color:var(--ink);padding:0;overflow:auto;}
+.va-dialog::backdrop {background:color-mix(in srgb,var(--ink) 85%,transparent);}
+.va-detail {padding:var(--space-5);display:grid;gap:var(--space-4);}
+.va-detail header {display:flex;justify-content:space-between;align-items:start;gap:var(--space-3);}
+.va-detail header h2 {margin:0;font:500 var(--step-4)/1.1 var(--font-display);}
+.va-detail header button {display:flex;align-items:center;gap:var(--space-2);}
+.va-full {display:block;max-width:100%;max-height:65dvh;object-fit:contain;margin:auto;}
+.va-detail dl {display:grid;gap:var(--space-2);margin:0;}
+.va-detail dl div {display:grid;grid-template-columns:minmax(7rem,1fr) 3fr;gap:var(--space-3);border-top:1px solid var(--rule-hair);padding:var(--space-2) 0;}
+.va-detail dt {font:var(--step--2)/1.6 var(--font-mono);color:var(--ink-soft);}
+.va-detail dd {margin:0;font-size:var(--step-0);overflow-wrap:anywhere;}
+.va-foot {margin-top:var(--space-6);padding-top:var(--space-4);border-top:1px solid var(--rule-mid);font:var(--step--2)/1.5 var(--font-mono);color:var(--ink-soft);}
+.va-sr {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+.va-album :is(a,button,input):focus-visible {outline:2px solid var(--accent);outline-offset:2px;}
+@media (hover: hover) {.va-album button:not([aria-pressed=true]):hover {border-color:var(--accent);color:var(--accent);}}
+[data-layout="phone"] .va-grid {grid-template-columns:1fr;}
+[data-layout="phone"] .va-search {max-width:none;flex-basis:100%;}
+[data-layout="phone"] .va-detail {padding:var(--space-3);}

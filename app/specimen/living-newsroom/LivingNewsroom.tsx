@@ -112,7 +112,7 @@ export default function LivingNewsroom() {
   }
 
   return <div className="ln-lab">
-    <div className="ln-banner"><span><Icon name="compass"/> Living Newsroom · Preview laboratory</span><span>Simulated records · No backend writes · Not live</span><a href="/living-newsroom/live">Connected editorial desk</a><a href="/living-newsroom/chartroom">Connected public Chartroom</a><a href="/specimen/newsroom">Back to specimen</a></div>
+    <div className="ln-banner"><span><Icon name="compass"/> Living Newsroom · Preview laboratory</span><span>Simulated records · No backend writes · Not live</span><a href="/living-newsroom/live">Connected editorial desk</a><a href="/living-newsroom/chartroom">Connected public Chartroom</a><a href="/specimen/album">Visual album</a><a href="/specimen/newsroom">Back to specimen</a></div>
     <div className="ln-shell">
       <nav className="ln-nav" aria-label="Preview navigation">
         <div className="ln-nav-brand"><img src="/brand/terraveler-favicon.svg" alt="" width="48" height="48"/><div><strong>Terraveler</strong><span>Editorial studio</span></div></div>

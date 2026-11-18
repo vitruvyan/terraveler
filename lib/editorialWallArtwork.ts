@@ -22,17 +22,17 @@ const ortelius:WallCover = {
   label:"Contextual cartography · not the work of Piri Reis",credit:"Abraham Ortelius · Typus Orbis Terrarum, 1570 · public domain",
   kind:"context-map",tone:"rose",source:"https://commons.wikimedia.org/wiki/File:OrteliusWorldMap1570.jpg"
 };
-const subjects = [
-  { key:"zheng-he",match:/\bzheng\s+he\b/i,alt:"Illustrated Ming-era sailing ships approaching an Indian Ocean port",tone:"blue",fallback:fraMauro },
-  { key:"aksum",match:/\b(?:aksum|axum|aksumite)\b/i,alt:"Interpretive landscape of the Aksumite highlands and stone stelae",tone:"sage",fallback:{...context,tone:"sage"} },
-  { key:"ibn-battuta",match:/\bibn[\s-]+batt(?:u|ū|ou)ta\b/i,alt:"Interpretive scene of a medieval caravan crossing North Africa",tone:"gold",fallback:{...fraMauro,tone:"gold"} },
-  { key:"piri-reis",match:/\bpiri[\s-]+reis\b/i,alt:"Interpretive scene of an Ottoman cartographer examining a sea chart",tone:"rose",fallback:ortelius },
+export const editorialCoverSubjects = [
+  { key:"zheng-he",title:"The voyages of Zheng He",match:/\bzheng\s+he\b/i,alt:"Illustrated Ming-era sailing ships approaching an Indian Ocean port",tone:"blue",fallback:fraMauro },
+  { key:"aksum",title:"The kingdom of Aksum",match:/\b(?:aksum|axum|aksumite)\b/i,alt:"Interpretive landscape of the Aksumite highlands and stone stelae",tone:"sage",fallback:{...context,tone:"sage"} },
+  { key:"ibn-battuta",title:"In the footsteps of Ibn Battuta",match:/\bibn[\s-]+batt(?:u|ū|ou)ta\b/i,alt:"Interpretive scene of a medieval caravan crossing North Africa",tone:"gold",fallback:{...fraMauro,tone:"gold"} },
+  { key:"piri-reis",title:"The maps of Piri Reis",match:/\bpiri[\s-]+reis\b/i,alt:"Interpretive scene of an Ottoman cartographer examining a sea chart",tone:"rose",fallback:ortelius },
 ] as const;
 /** Editorial-only decoration, never a claim about the historical record. No
  * external image URLs are chosen from submissions, and unmatched topics retain
  * a deliberately generic Terraveler motif. */
 export function wallCoverFor(title: string): WallCover {
-  const matches=subjects.filter(s=>s.match.test(title.normalize("NFKC")));
+  const matches=editorialCoverSubjects.filter(s=>s.match.test(title.normalize("NFKC")));
   if(matches.length!==1)return context;
   const subject=matches[0];
   if(!availableWallArtwork.includes(subject.key))return subject.fallback;
