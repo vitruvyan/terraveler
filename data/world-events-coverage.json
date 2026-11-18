@@ -1,8 +1,8 @@
 {
- "generated_at": "2026-10-01T10:58:19Z",
+ "generated_at": "2026-11-01T11:16:44Z",
  "source": "Wikipedia year articles via MediaWiki API; structured with Wikidata (wbgetentities).",
  "attribution": "Contains information from Wikipedia and Wikidata, available under CC BY-SA 4.0 and CC0 respectively.",
- "catalogue_events": 4766,
+ "catalogue_events": 4767,
  "voyages": {
   "apollo-11": {
    "count": 15,
@@ -208,8 +208,8 @@
    "count": 15,
    "classes": {
     "world": 2,
-    "route": 12,
-    "connected": 1
+    "route": 11,
+    "connected": 2
    },
    "years": "1914–1917",
    "uncovered": false
