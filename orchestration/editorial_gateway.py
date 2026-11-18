@@ -25,23 +25,25 @@ SYSTEM_RULES = (
 
 ROLE_SCHEMAS = {
     "research": (
-        'Return {"kind":"research","findings":[{"text":"...","source_ids":["rag:ID"],'
-        '"quotes":[{"source_id":"rag:ID","text":"exact source substring"}]}],'
+        'Return {"kind":"research","findings":[{"text":"...","source_ids":["SOURCE_ID"],'
+        '"quotes":[{"source_id":"SOURCE_ID","text":"exact source substring"}]}],'
         '"uncertainties":["..."]}. Use only input.retrieved_sources as evidence; do not invent '
-        'source IDs. References are attached by trusted code. Each finding must name supporting sources. '
+        'source IDs. Copy source IDs exactly from input.retrieved_sources; do not change their prefix '
+        'or assume they refer to existing voyages. References are attached by trusted code. Each finding must name supporting sources. '
         'If there is no evidence, state that limitation; never manufacture a finding.'
     ),
     "writer": (
         'Return {"kind":"draft","title":"...","body":"paragraphs separated by blank lines",'
-        '"citations":[{"source_id":"rag:ID","claim":"entire body paragraph",'
+        '"citations":[{"source_id":"SOURCE_ID","claim":"entire body paragraph",'
         '"quote":"optional exact source substring occurring in that paragraph"}]}. '
         'Use only input.research_result.references. Every body paragraph must exactly match at least '
         'one citations.claim, including punctuation. Omit quote when paraphrasing. Preserve uncertainty '
         'and address input.review_result issues when revising. Do not reproduce the research snapshots.'
     ),
     "reviewer": (
-        'Return {"kind":"review","verdict":"ready-for-editor|changes-requested|blocked",'
-        '"issues":["specific actionable issue"]}. Inspect input.draft_result against '
+        'Return a JSON object, for example {"kind":"review","verdict":"ready-for-editor","issues":[]}. '
+        'Allowed verdicts: ready-for-editor, changes-requested, blocked. The latter two require '
+        'specific actionable issues. Inspect input.draft_result against '
         'input.research_result.references and the editorial brief. Check factual support, quote '
         'accuracy, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
         'Readiness is a candidate review and never authorizes publication.'
@@ -60,6 +62,7 @@ class GatewayConfig:
     data_class: str
     timeout_seconds: float = 30
     model_keys: dict[str, str] | None = field(default=None, repr=False)
+    max_tokens: int = 4096
 
     def __post_init__(self):
         parsed = urlsplit(self.base_url)
@@ -68,7 +71,8 @@ class GatewayConfig:
                 or parsed.hostname.lower() in ("api.openai.com", "api.anthropic.com", "openrouter.ai")
                 or not self.key.strip() or len(self.key) > 4096 or re.search(r"[\r\n]", self.key)
                 or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}", self.data_class)
-                or not math.isfinite(self.timeout_seconds) or not 0 < self.timeout_seconds <= 120):
+                or not math.isfinite(self.timeout_seconds) or not 0 < self.timeout_seconds <= 120
+                or type(self.max_tokens) is not int or not 512 <= self.max_tokens <= 8192):
             raise GatewayError("gateway-not-configured")
 
     @classmethod
@@ -78,7 +82,10 @@ class GatewayConfig:
             key = values["EDITOR_LIMEN_API_KEY"].strip()
             routes = _model_keys(values, key)
             return cls(values["EDITOR_LIMEN_BASE_URL"].strip(), key,
-                       values["EDITOR_LIMEN_DATA_CLASS"].strip(), model_keys=routes)
+                       values["EDITOR_LIMEN_DATA_CLASS"].strip(),
+                       timeout_seconds=float(values.get("EDITOR_LIMEN_TIMEOUT_SECONDS", "120")),
+                       model_keys=routes,
+                       max_tokens=int(values.get("EDITOR_LIMEN_MAX_TOKENS", "4096")))
         except (KeyError, ValueError, TypeError, AttributeError):
             raise GatewayError("gateway-not-configured") from None
 
@@ -167,7 +174,7 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     except (ValueError, TypeError):
         raise GatewayError("gateway-input-invalid") from None
     payload = {
-        "model": agent["model"], "stream": False, "max_tokens": 2000,
+        "model": agent["model"], "stream": False, "max_tokens": config.max_tokens,
         "messages": [
             {"role": "system", "content": SYSTEM_RULES},
             {"role": "system", "content": "ROLE-SPECIFIC INSTRUCTIONS:\n" + agent["instructions"]},
@@ -188,7 +195,12 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
             if len(raw) > 262144:
                 raise ValueError()
             body = json.loads(raw, parse_constant=_reject_constant)
-        candidate = json.loads(body["choices"][0]["message"]["content"], parse_constant=_reject_constant)
+        choice = body["choices"][0]
+        if not isinstance(choice, dict):
+            raise ValueError()
+        if choice.get("finish_reason") == "length":
+            raise GatewayError("gateway-output-truncated")
+        candidate = json.loads(choice["message"]["content"], parse_constant=_reject_constant)
         if not isinstance(candidate, dict):
             raise ValueError()
     except HTTPError:
