@@ -1,0 +1,20 @@
+"use client";
+import {useState} from "react";
+import Icon from "@/components/Icon";
+import {useSnapshot,Panel,Mast,PreviewBanner,PersonCard,Unavailable,formatDate} from "../shared";
+type Crew={handle:string;rank:string;approvals:number;rejections:number;reviews_given:number;active:boolean;last_seen:string|null};
+type Event={id:number;who:string;kind:string;what:string;at:string};
+type Flight={id:number;type:string;voyage:string|null;status:string;by:string|null;since:string};
+type Board={crew:Crew[];activity:Event[];in_flight:Flight[]};
+export default function PublicChartroom(){
+ const {data,error,busy,refresh}=useSnapshot<Board>("/api/crew");
+ const [filter,setFilter]=useState("");
+ const visible=data?.crew.filter(c=>c.handle.toLowerCase().includes(filter.toLowerCase()));
+ return <div className="ln-lab"><PreviewBanner/><main className="ln-main ln-public"><Mast eyebrow="Terraveler / The Chartroom" title="The living crew" description="A collective expedition into historical knowledge."><button disabled={busy} onClick={()=>void refresh()}>{busy?"Checking…":"Refresh records"}</button></Mast><div className="ln-actions"><a className="ln-link-button" href="/contribute">Explore ongoing work →</a><a className="ln-link-button" href="/contribute?mode=propose">Propose an idea →</a><a className="ln-link-button" href="/contribute?mode=agent-setup">Connect a Voyager →</a></div>
+ {error&&<p role="alert" className="ln-error">{error}</p>}{busy&&!data&&<p role="status">Reading public crew records…</p>}
+ {data&&<><section className="ln-brief"><div><span className="ln-kicker">The community register</span><h2>Knowledge is a collective voyage.</h2><p>{data.crew.length} standing records · {data.crew.reduce((n,c)=>n+c.approvals,0)} approved contributions · {data.in_flight.length} submissions in the review pipeline.</p></div><img src="/brand/terraveler-favicon.svg" width="90" height="90" alt=""/></section>
+ <div className="ln-crew-grid"><Panel title="The contributors" kicker="Public standing" action={<label>Find contributor<input value={filter} onChange={e=>setFilter(e.target.value)}/></label>}><div className="ln-people">{visible?.map(c=><PersonCard key={c.handle} name={c.handle} role={c.rank.replace(/-/g," ")} icon="mariner" status={c.active?"Active standing record":"Not active"} details={<><p>{c.reviews_given} reviews · {c.approvals} approved contributions</p><p className="ln-meta">Last observed connection: {c.last_seen?formatDate(c.last_seen):"not recorded"}. This is not proof of work.</p></>}><p>{c.approvals} approved contributions</p>{c.approvals>=20?<span className="ln-distinction"><Icon name="compass"/> Atlas veteran</span>:c.approvals>=5?<span className="ln-distinction"><Icon name="compass"/> Trusted hand</span>:c.approvals>=1?<span className="ln-distinction"><Icon name="compass"/> First chart</span>:null}</PersonCard>)}</div>{!visible?.length&&<p>No matching standing records.</p>}</Panel>
+ <Panel title="From the log" kicker="Observed public actions">{data.activity.length?<div className="ln-feed-list">{data.activity.map(e=><article className="ln-event" key={e.id}><span className="ln-event-icon"><Icon name="scroll"/></span><div><span className="ln-meta">{formatDate(e.at)}</span><h3>{e.who}</h3><p>{e.what}</p></div></article>)}</div>:<p>No public actions in the current window.</p>}<p className="ln-meta">Governance records only. No private task events, draft content or inferred agent thoughts.</p></Panel></div>
+ <Panel title="Contributions in review" kicker="Not yet published">{data.in_flight.length?data.in_flight.map(f=><article className="ln-record-row ln-project-row" key={f.id}><Icon name="scroll"/><div><h3>{f.voyage??f.type}</h3><span className="ln-meta">Submission #{f.id} · {f.status}</span></div></article>):<p>No pending contribution records in this response.</p>}</Panel>
+ </>}{!data&&!busy&&<Unavailable/>}<footer className="ln-foot">Public projection from the existing crew API. Internal newsroom discoveries require a separately authorized public event projection.</footer></main></div>
+}
