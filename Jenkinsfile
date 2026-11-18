@@ -69,6 +69,7 @@ pipeline {
                                 'editorial-project-bridge': 'node --test --test-concurrency=1 test/editorial-project-bridge-sql.test.mjs',
                                 'editorial-dossier-sources': 'node --test --test-concurrency=1 test/editorial-dossier-sources-sql.test.mjs',
                                 'editorial-live-metadata': 'python3 -m unittest discover -s scripts -p test_editorial_live_diagnostics.py',
+                                'editorial-model-benchmark': 'python3 -m unittest discover -s scripts -p test_editorial_model_benchmark.py',
                                 'editorial-worker-budgets': 'python3 -m unittest orchestration.test_editorial_gateway orchestration.test_editorial_handlers',
                                 'editorial-mcp-python': 'python3 -m unittest orchestration.test_editorial_mcp_corpus'
                             ]
