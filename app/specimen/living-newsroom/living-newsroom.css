@@ -94,3 +94,29 @@
 [data-layout="phone"] .ln-person {padding:.6rem;}
 [data-layout="phone"] .ln-people {grid-template-columns:minmax(0,1fr);}
 [data-layout="phone"] .ln-lab button.ln-marginal {opacity:1;}
+
+/* Illustrated proposal gallery. The plate speaks first; the action rail is a separate register. */
+.ln-lab .ln-wall-compose {width:100%;justify-content:flex-start;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--parchment-raised);border:1px solid var(--rule-mid);color:var(--ink);text-align:left;font-family:var(--font-ui);}
+.ln-wall-compose span {color:var(--brass-text);font-size:var(--step-2);line-height:1;}
+.ln-wall-compose-link {display:flex;align-items:center;min-height:var(--tap-min);text-decoration:none;}
+.ln-wall-controls {display:grid;gap:var(--space-2);}
+.ln-lab .ln-wall {gap:var(--space-4);align-items:stretch;}
+.ln-lab .ln-illustrated-idea {display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-3);background:var(--parchment-raised);border-top:1px solid var(--rule-mid);}
+.ln-illustrated-idea:has([data-art-tone="gold"]) {background:color-mix(in srgb,var(--parchment-raised) 93%,var(--brass) 7%);}
+.ln-illustrated-idea:has([data-art-tone="sage"]) {background:color-mix(in srgb,var(--parchment-raised) 92%,var(--state-ok) 8%);}
+.ln-illustrated-idea:has([data-art-tone="rose"]) {background:color-mix(in srgb,var(--parchment-raised) 93%,var(--accent) 7%);}
+.ln-illustrated-idea:has([data-art-tone="blue"]) {background:color-mix(in srgb,var(--parchment-raised) 92%,var(--state-review) 8%);}
+.ln-wall-art {margin:0;min-width:0;display:grid;gap:var(--space-2);}
+.ln-wall-art img {display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;object-position:center;border:1px solid var(--rule-mid);border-radius:var(--radius-2);}
+.ln-wall-art figcaption {display:flex;flex-direction:column;gap:var(--space-1);font:var(--step--2)/1.4 var(--font-mono);color:var(--ink-soft);overflow-wrap:anywhere;}
+.ln-wall-art figcaption a {color:var(--ink-soft);}
+.ln-idea-copy {display:grid;gap:var(--space-2);align-content:start;}
+.ln-idea-copy h2 {font-size:var(--step-3);line-height:1.12;}
+.ln-idea-copy p {font-size:var(--step-0);line-height:1.45;}
+.ln-idea-copy p.ln-meta {font-size:var(--step--2);}
+.ln-wall-actions {margin-top:auto;border-top:1px solid var(--rule-hair);padding-top:var(--space-2);align-items:center;}
+.ln-wall-actions a {display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--tap-min);font-family:var(--font-ui);}
+.ln-lab .ln-wall-actions button:not(.ln-primary) {background:transparent;border-color:transparent;padding:var(--space-2);}
+@media (hover: hover) {.ln-lab .ln-wall-actions button:not(.ln-primary):hover {border-color:var(--rule-mid);background:var(--parchment-raised);}}
+[data-layout="phone"] .ln-lab .ln-wall {grid-template-columns:minmax(0,1fr);}
+[data-layout="phone"] .ln-lab .ln-illustrated-idea {padding:var(--space-3);}

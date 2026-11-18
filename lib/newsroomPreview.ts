@@ -8,7 +8,7 @@ type Read = (method: string, path: string) => Promise<any>;
 export type NewsAgent = { key: string; name: string; role: string; specialty: string | null; version: number; model: string; enabled: boolean };
 export type NewsTask = { id: number; topic_id: number; role: string; state: string; attempt: number; agent_key: string | null; bound_version: number | null };
 export type NewsEvent = { id: number; task_id: number; topic_id: number | null; type: string; at: string; attempt: number; agent_key: string | null; bound_version: number | null };
-export type NewsIdea = { id: number; title: string; type: string; status: string; at: string };
+export type NewsIdea = { id: number; title: string; type: string; status: string; at: string; author: string | null; description: string | null };
 export type NewsGraph = { id: number; topic_id: number; plan_id: number; state: string; task_count: number; completed_count: number };
 export type NewsroomSnapshot = {
   checked_at: string; dashboard: AdminDashboardData | null; agents: NewsAgent[] | null;
@@ -20,6 +20,7 @@ const integer = (v: unknown): v is number => Number.isSafeInteger(v) && Number(v
 const string = (v: unknown, max = 300): string => typeof v === "string" ? v.slice(0,max) : "";
 const key = (v: unknown): string | null => typeof v === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(v) ? v : null;
 const one = (v: any) => Array.isArray(v) ? v[0] : v;
+const pitch=(v:unknown)=>typeof v==="string"&&v.trim()?v.trim().length>650?v.trim().slice(0,649)+"…":v.trim():null;
 const eventTypes = new Set(["queued","claimed","completed","failed","lease-expired","agent-bound","specialist-assigned"]);
 const fields = "id,topic_id,role,state,attempt,editorial_specialist_assignments(agent_key),editorial_task_agents(editorial_agent_versions(agent_key,version))";
 async function rows(read: Read, path: string): Promise<any[]> {
@@ -57,7 +58,7 @@ export async function readNewsroomPreview(read:Read=dataApi, dashboard:()=>Promi
     rows(read,"editorial_specialist_agents_current?select=agent_key,name,role,specialty,version,model,enabled&order=agent_key.asc&limit=100").then(rs=>rs.flatMap(a=>key(a.agent_key)&&positive(a.version)?[{key:a.agent_key,name:string(a.name),role:string(a.role),specialty:string(a.specialty)||null,version:a.version,model:string(a.model),enabled:a.enabled===true}]:[])),
     rows(read,"editorial_tasks?select="+fields+"&state=in.(queued,running,attention)&order=id.desc&limit=100").then(rs=>rs.flatMap(t=>{const v=projectTask(t);return v?[v]:[];})),
     recentEvents(read),
-    rows(read,"submissions?select=id,type,status,created_at,target_voyage,title:payload->>title,meta_title:payload->meta->>title&type=in.(idea,content-suggestion,feature-suggestion)&order=id.desc&limit=60").then(rs=>rs.flatMap(s=>positive(s.id)?[{id:s.id,title:string(s.title)||string(s.meta_title)||string(s.target_voyage)||"Proposal #"+s.id,type:string(s.type),status:string(s.status),at:string(s.created_at)}]:[])),
+    rows(read,"submissions?select=id,type,status,created_at,target_voyage,title:payload->>title,meta_title:payload->meta->>title,description:payload->>description,idea:payload->>idea,contributors(handle)&type=in.(idea,content-suggestion,feature-suggestion)&order=id.desc&limit=60").then(rs=>rs.flatMap(s=>positive(s.id)?[{id:s.id,title:string(s.title)||string(s.meta_title)||string(s.target_voyage)||"Proposal #"+s.id,type:string(s.type),status:string(s.status),at:string(s.created_at),author:string(one(s.contributors)?.handle,100)||null,description:pitch(s.description)??pitch(s.idea)}]:[])),
     rows(read,"editorial_graph_status?select=id,topic_id,plan_id,state,task_count,completed_count&order=id.desc&limit=100").then(rs=>rs.flatMap(g=>positive(g.id)&&positive(g.topic_id)&&positive(g.plan_id)&&integer(g.task_count)&&integer(g.completed_count)?[{id:g.id,topic_id:g.topic_id,plan_id:g.plan_id,state:string(g.state,40),task_count:g.task_count,completed_count:g.completed_count}]:[])),
   ] as const);
   const value=<T,>(result:PromiseSettledResult<T>):T|null=>result.status==="fulfilled"?result.value:null;

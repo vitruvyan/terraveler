@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Icon, { type IconName } from "@/components/Icon";
+import WallArtwork from "@/components/desk/WallArtwork";
 
 type Screen = "desk" | "wall" | "projects" | "crew" | "inbox" | "reader";
 type Idea = { id: number; title: string; author: string; text: string; state: "new" | "saved" | "accepted" | "dismissed"; comments: string[] };
@@ -11,7 +12,9 @@ type Note = { id:number; quote:string; body:string; state:"open"|"resolved" };
 const initialIdeas: Idea[] = [
   {id:1,title:"The seven voyages of Zheng He",author:"Mercator · Cartographer",text:"Trace the Ming expeditions through the Indian Ocean, with particular attention to the ports and local accounts.",state:"new",comments:[]},
   {id:2,title:"The lost kingdom of Aksum",author:"Herodotus · Historian",text:"Reconstruct the routes and exchanges of a kingdom at the crossroads of Africa and Arabia.",state:"new",comments:[]},
-  {id:3,title:"Reading the maps of Piri Reis",author:"Mnemosyne · Archivist",text:"Explore the surviving cartographic record and the history of its interpretation.",state:"saved",comments:[]},
+  {id:3,title:"Reading the maps of Piri Reis",author:"Mnemosyne · Archivist",text:"Explore the surviving cartographic record and the history of its interpretation.",state:"new",comments:[]},
+  {id:4,title:"In the footsteps of Ibn Battuta",author:"Herodotus · Historian",text:"Follow the Moroccan traveler across the medieval Islamic world through the geography of his Rihla.",state:"new",comments:[]},
+  {id:5,title:"The lost library of Alexandria",author:"Editor",text:"Explore the geography of ancient scholarship and the histories of lost knowledge.",state:"saved",comments:[]},
 ];
 const initialProjects: Project[] = [
   {id:10,title:"The Endurance expedition",stage:"Research",next:"Inspect the proposed photographic evidence.",owner:"Mnemosyne"},
@@ -51,6 +54,7 @@ export default function LivingNewsroom() {
   const [ideas,setIdeas] = useState(initialIdeas);
   const [projects,setProjects] = useState(initialProjects);
   const [notes,setNotes] = useState<Note[]>([{id:1,quote:passages[1],body:"Could we add a reference to the original expedition diary here?",state:"open"}]);
+  const [composerOpen,setComposerOpen] = useState(false);
   const [title,setTitle] = useState("");
   const [description,setDescription] = useState("");
   const [ideaFilter,setIdeaFilter] = useState<Idea["state"]>("new");
@@ -78,7 +82,7 @@ export default function LivingNewsroom() {
   function addIdea(e:FormEvent<HTMLFormElement>) {
     e.preventDefault(); if(!title.trim() || !description.trim()) return;
     setIdeas(old=>[{id:Date.now(),title:title.trim(),text:description.trim(),author:"You · Editor",state:"new",comments:[]},...old]);
-    setTitle("");setDescription("");setIdeaFilter("new");go("wall");setNotice("Idea pinned to the wall (sandbox only).");
+    setTitle("");setDescription("");setComposerOpen(false);setIdeaFilter("new");go("wall");setNotice("Idea pinned to the wall (sandbox only).");
   }
   function decide(idea:Idea,state:Idea["state"]) {
     setIdeas(old=>old.map(x=>x.id===idea.id?{...x,state}:x));
@@ -128,9 +132,10 @@ export default function LivingNewsroom() {
           </div>{feed(true)}</div>
         </>}
         {screen==="wall"&&<>
-          <form className="ln-panel ln-composer" onSubmit={addIdea}><h2>Pin a new idea</h2><label>Title<input value={title} maxLength={120} onChange={e=>setTitle(e.target.value)} required placeholder="A journey, a discovery, a forgotten story…"/></label><label>Editorial suggestion<textarea value={description} maxLength={1200} onChange={e=>setDescription(e.target.value)} required placeholder="What should the crew explore, and why?"/></label><button className="ln-primary" type="submit" disabled={!title.trim()||!description.trim()}>Pin to the wall</button></form>
+          <button type="button" className="ln-wall-compose" aria-expanded={composerOpen} onClick={()=>setComposerOpen(v=>!v)}><span aria-hidden="true">{composerOpen?"−":"+"}</span> {composerOpen?"Close idea composer":"Pin a new idea…"}</button>
+          {composerOpen&&<form className="ln-panel ln-composer" onSubmit={addIdea}><h2>Pin a new idea</h2><label>Title<input value={title} maxLength={120} onChange={e=>setTitle(e.target.value)} required placeholder="A journey, a discovery, a forgotten story…"/></label><label>Editorial suggestion<textarea value={description} maxLength={1200} onChange={e=>setDescription(e.target.value)} required placeholder="What should the crew explore, and why?"/></label><button className="ln-primary" type="submit" disabled={!title.trim()||!description.trim()}>Pin to the wall</button></form>}
           <div className="ln-actions ln-filter">{(["new","saved","accepted","dismissed"] as const).map(s=><button key={s} aria-pressed={ideaFilter===s} onClick={()=>{setIdeaFilter(s);setDiscussion(null);}}>{s==="new"?"New ideas":s[0].toUpperCase()+s.slice(1)} · {ideas.filter(i=>i.state===s).length}</button>)}</div>
-          <div className="ln-wall">{ideas.filter(i=>i.state===ideaFilter).map(i=><article key={i.id} className="ln-idea"><div className="ln-idea-mark"><Icon name="pin"/></div><span className="ln-kicker">{i.author}</span><h2>{i.title}</h2><p>{i.text}</p><div className="ln-actions">{i.state!=="accepted"&&<button className="ln-primary" onClick={()=>decide(i,"accepted")}><Icon name="check"/> Accept</button>}<button onClick={()=>{setDiscussion(discussion===i.id?null:i.id);setComment("");}}><Icon name="dialogue"/> Discuss</button>{i.state==="new"&&<button onClick={()=>decide(i,"saved")}>Save</button>}{i.state==="new"||i.state==="saved"?<button onClick={()=>decide(i,"dismissed")}>Dismiss</button>:i.state==="dismissed"?<button onClick={()=>decide(i,"new")}>Restore</button>:<button onClick={()=>{go("projects");setProjectId(i.id);}}>View project</button>}</div>
+          <div className="ln-wall">{ideas.filter(i=>i.state===ideaFilter).map(i=><article key={i.id} className="ln-idea ln-illustrated-idea"><WallArtwork title={i.title}/><div className="ln-idea-copy"><span className="ln-kicker">Proposed by {i.author}</span><h2>{i.title}</h2><p>{i.text}</p></div><div className="ln-actions ln-wall-actions">{i.state!=="accepted"&&<button className="ln-primary" onClick={()=>decide(i,"accepted")}><Icon name="check"/> Accept</button>}<button onClick={()=>{setDiscussion(discussion===i.id?null:i.id);setComment("");}}><Icon name="dialogue"/> Discuss</button>{i.state==="new"&&<button onClick={()=>decide(i,"saved")}><Icon name="record"/> Save</button>}{i.state==="new"||i.state==="saved"?<button onClick={()=>decide(i,"dismissed")}><Icon name="close"/> Dismiss</button>:i.state==="dismissed"?<button onClick={()=>decide(i,"new")}>Restore</button>:<button onClick={()=>{go("projects");setProjectId(i.id);}}>View project</button>}</div>
           {discussion===i.id&&<form className="ln-discussion" onSubmit={e=>{e.preventDefault();if(!comment.trim())return;setIdeas(old=>old.map(x=>x.id===i.id?{...x,comments:[...x.comments,comment.trim()]}:x));setComment("");}}><h3>Editorial discussion</h3>{i.comments.map((c,n)=><p key={n}><strong>Editor:</strong> {c}</p>)}<label>Your comment<textarea value={comment} onChange={e=>setComment(e.target.value)} required maxLength={1200}/></label><button type="submit" disabled={!comment.trim()}>Add comment</button><span className="ln-meta">Local comments only; no agent response is generated.</span></form>}
           </article>)}{!ideas.some(i=>i.state===ideaFilter)&&<p>Nothing pinned here yet.</p>}</div>
         </>}
