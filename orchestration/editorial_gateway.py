@@ -25,23 +25,25 @@ SYSTEM_RULES = (
 
 ROLE_SCHEMAS = {
     "research": (
-        'Return {"kind":"research","findings":[{"text":"...","source_ids":["rag:ID"],'
-        '"quotes":[{"source_id":"rag:ID","text":"exact source substring"}]}],'
+        'Return {"kind":"research","findings":[{"text":"...","source_ids":["SOURCE_ID"],'
+        '"quotes":[{"source_id":"SOURCE_ID","text":"exact source substring"}]}],'
         '"uncertainties":["..."]}. Use only input.retrieved_sources as evidence; do not invent '
-        'source IDs. References are attached by trusted code. Each finding must name supporting sources. '
+        'source IDs. Copy source IDs exactly from input.retrieved_sources; do not change their prefix '
+        'or assume they refer to existing voyages. References are attached by trusted code. Each finding must name supporting sources. '
         'If there is no evidence, state that limitation; never manufacture a finding.'
     ),
     "writer": (
         'Return {"kind":"draft","title":"...","body":"paragraphs separated by blank lines",'
-        '"citations":[{"source_id":"rag:ID","claim":"entire body paragraph",'
+        '"citations":[{"source_id":"SOURCE_ID","claim":"entire body paragraph",'
         '"quote":"optional exact source substring occurring in that paragraph"}]}. '
         'Use only input.research_result.references. Every body paragraph must exactly match at least '
         'one citations.claim, including punctuation. Omit quote when paraphrasing. Preserve uncertainty '
         'and address input.review_result issues when revising. Do not reproduce the research snapshots.'
     ),
     "reviewer": (
-        'Return {"kind":"review","verdict":"ready-for-editor|changes-requested|blocked",'
-        '"issues":["specific actionable issue"]}. Inspect input.draft_result against '
+        'Return a JSON object, for example {"kind":"review","verdict":"ready-for-editor","issues":[]}. '
+        'Allowed verdicts: ready-for-editor, changes-requested, blocked. The latter two require '
+        'specific actionable issues. Inspect input.draft_result against '
         'input.research_result.references and the editorial brief. Check factual support, quote '
         'accuracy, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
         'Readiness is a candidate review and never authorizes publication.'
