@@ -4,6 +4,7 @@ import { newsroomPreviewEnabled } from "@/lib/newsroomPreview";
 import PublicChartroom from "./PublicChartroom";
 import "../../specimen/living-newsroom/living-newsroom.css";
 import "../connected.css";
+import "./chartroom.css";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Chartroom — connected preview",robots:{index:false,follow:false}};
 export default function Page(){
