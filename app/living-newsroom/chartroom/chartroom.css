@@ -67,3 +67,28 @@
 [data-layout="phone"] .cr-metrics {grid-template-columns:repeat(2,minmax(0,1fr));}
 [data-layout="phone"] .cr-nav {gap:var(--space-1);}
 [data-layout="phone"] .cr-root .cr-nav button {padding:var(--space-2);}
+
+/* The open laboratory: editorial identities, not generic account tiles. */
+.cr-editorial-crew {display:grid;gap:var(--space-3);}
+.cr-editorial-grid {display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr));gap:var(--space-4);}
+.cr-agent {display:flex;flex-direction:column;gap:var(--space-3);min-width:0;padding:var(--space-4);background:var(--parchment-raised);border:1px solid var(--rule-mid);border-top:2px solid var(--brass);}
+.cr-agent header {display:flex;align-items:center;gap:var(--space-3);}
+.cr-agent header h3 {font:600 var(--step-3)/1.1 var(--font-display);}
+.cr-agent header p {color:var(--ink-soft);}
+.cr-agent-emblem {width:4rem;height:4rem;flex:none;border:1px solid var(--rule-mid);outline:1px solid var(--brass);outline-offset:-5px;border-radius:50%;display:grid;place-items:center;background:var(--parchment-deep);color:var(--brass-text);}
+.cr-agent-emblem svg {width:2rem;height:2rem;}
+.cr-agent-emblem[data-persona=writer] {color:var(--accent);}
+.cr-agent-emblem[data-persona=reviewer] {color:var(--state-ok);}
+.cr-agent-bio {font-style:italic;line-height:1.5;}
+.cr-agent-status {display:flex;align-items:center;gap:var(--space-2);font:var(--step--2)/1.4 var(--font-mono);color:var(--ink-soft);border-top:1px solid var(--rule-hair);padding-top:var(--space-3);}
+.cr-agent-status span {width:.5rem;height:.5rem;flex:none;border:1px solid currentColor;border-radius:50%;}
+.cr-agent-status[data-status=assignment-recorded] {color:var(--state-ok);}
+.cr-agent-status[data-status=assignment-recorded] span {background:currentColor;}
+.cr-agent-current {display:grid;gap:var(--space-2);}
+.cr-agent-current .ln-wall-art img {aspect-ratio:3/2;}
+.cr-agent details {border-top:1px solid var(--rule-hair);}
+.cr-root .cr-follow {margin-top:auto;display:flex;align-items:center;justify-content:center;gap:var(--space-2);}
+.cr-follow[aria-pressed=true] {color:var(--state-ok);}
+.cr-follow-tools {display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);}
+.cr-journal {max-height:24rem;overflow:auto;overscroll-behavior:contain;}
+[data-layout="phone"] .cr-editorial-grid {grid-template-columns:1fr;}
