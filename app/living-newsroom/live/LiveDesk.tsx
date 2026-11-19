@@ -2,6 +2,8 @@
 import {useState} from "react";
 import Icon,{type IconName} from "@/components/Icon";
 import WallArtwork from "@/components/desk/WallArtwork";
+import CrewPortrait from "@/components/desk/CrewPortrait";
+import {editorialPersona} from "@/lib/editorialPersonas";
 import type {NewsroomSnapshot,NewsEvent,NewsAgent,NewsTask} from "@/lib/newsroomPreview";
 import type {DashboardProject} from "@/lib/adminDashboard";
 import {useSnapshot,Panel,Mast,PreviewBanner,Metric,PersonCard,Unavailable,formatDate} from "../shared";
@@ -20,7 +22,8 @@ function AgentCard({agent,tasks,events,projects}:{agent:NewsAgent;tasks:NewsTask
  const mine=events?.filter(e=>e.agent_key===agent.key)??null;
  const running=related?.filter(t=>t.state==="running").length;
  const status=running?"Running task record":!agent.enabled?"Paused configuration":tasks===null?"Task state unavailable":"Enabled configuration";
- return <PersonCard name={agent.name} role={(agent.specialty??agent.role)+" · Terraveler"} icon={iconFor(agent.role)} status={status} details={<>
+ const persona=editorialPersona(agent.key,agent.role,agent.specialty);
+ return <PersonCard avatar={persona?<CrewPortrait personaKey={persona.key} icon={persona.icon}/>:undefined} name={agent.name} role={(agent.specialty??agent.role)+" · Terraveler"} icon={iconFor(agent.role)} status={status} details={<>
    <p className="ln-meta">{agent.model} · configuration v{agent.version}</p>
    <div className="ln-actions"><button aria-pressed={tab==="terminal"} onClick={()=>setTab("terminal")}>Terminal</button><button aria-pressed={tab==="journal"} onClick={()=>setTab("journal")}>Research journal</button></div>
    {tab==="terminal"?<Terminal events={mine}/>:<div><p>No evidence-linked agent journal is available from the current event contract. Inspect the recorded dossier, not an invented reasoning stream.</p>{related?.map(t=><p key={t.id}><a href={projectHref(t.topic_id)}>Open dossier #{t.topic_id}</a></p>)}</div>}

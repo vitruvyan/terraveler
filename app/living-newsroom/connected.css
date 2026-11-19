@@ -21,3 +21,7 @@
 /* The canonical route has the site's sticky header. Keep its editorial rail
  * in normal document flow rather than covering links beneath that header. */
 .ln-lab[data-release=true] .ln-nav {position:static;}
+
+/* Portraits share the original engraved plate with the Visual Album. */
+.ln-crew-portrait {display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.ln-avatar:has(.ln-crew-portrait) {overflow:hidden;padding:0;width:4rem;height:4rem;}

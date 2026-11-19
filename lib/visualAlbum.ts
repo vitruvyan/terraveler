@@ -2,6 +2,7 @@ import { PLATES } from "./plates";
 import { illuminationBackgrounds } from "./voyageIllustrations";
 import { editorialCoverSubjects, wallCoverFor } from "./editorialWallArtwork";
 import { availableWallArtwork } from "./editorialWallArtworkGenerated";
+import {CREW_PORTRAITS,crewPortraitFor} from "./editorialCrewPortraits";
 
 export type AlbumKind = "artwork" | "cartography" | "photography";
 export type AlbumEntry = {
@@ -16,6 +17,7 @@ const engravingFamilies = [
  ["mariners","Mariners, captains & roles","Engraved figures representing shipboard roles."],
 ] as const;
 export const VISUAL_ALBUM: readonly AlbumEntry[] = [
+ ...CREW_PORTRAITS.map((p):AlbumEntry=>({id:"crew-"+p.key,title:p.title,kind:"artwork",collection:"Living Crew · engraved portraits",src:crewPortraitFor(p.key)?.src??null,alt:p.alt,credit:"Terraveler original · AI-generated",date:"2026",license:"Internal editorial artwork",use:"Editorial persona identification and reference",caution:"Imaginary editorial persona, not an authentic historical likeness or evidence.",state:crewPortraitFor(p.key)?"available":"pending"})),
  ...editorialCoverSubjects.map((s):AlbumEntry=>{
    const ready=availableWallArtwork.includes(s.key);
    return {id:"wall-"+s.key,title:s.title,kind:"artwork",collection:"Editorial Wall · colour series",

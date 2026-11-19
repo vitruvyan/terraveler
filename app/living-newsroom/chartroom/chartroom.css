@@ -92,3 +92,5 @@
 .cr-follow-tools {display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);}
 .cr-journal {max-height:24rem;overflow:auto;overscroll-behavior:contain;}
 [data-layout="phone"] .cr-editorial-grid {grid-template-columns:1fr;}
+
+.cr-agent-emblem:has(.ln-crew-portrait) {width:5rem;height:5rem;overflow:hidden;padding:0;outline:0;}

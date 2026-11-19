@@ -294,7 +294,7 @@ test("SourceDossier — every source row carries a description", async (t) => {
 
 test("the Desk re-reads the source lists on its own while the sources section is open", async () => {
   const { readFile } = await import("node:fs/promises");
-  const src = await readFile(new URL("../app/desk/page.tsx", import.meta.url), "utf8");
+  const src = await readFile(new URL("../app/desk/LegacyDesk.tsx", import.meta.url), "utf8");
   assert.match(src, /async function refreshGovernance\(\)/, "the governance read must be its own re-callable function");
   assert.match(src, /section !== "sources"\) return;/, "the refresh must only run while the sources section is open");
   assert.match(src, /setInterval\(tick, 30_000\)/);

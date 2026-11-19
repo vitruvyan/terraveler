@@ -44,8 +44,8 @@ export function Panel({title,kicker,children,action}:{title:string;kicker?:strin
 export function Metric({value,label,onClick}:{value:number|null;label:string;onClick:()=>void}){
  return <button onClick={onClick}><strong>{value===null?"—":value}</strong><span>{label}{value===null?" · unavailable":""} →</span></button>;
 }
-export function PersonCard({name,role,icon,status,children,details}:{name:string;role:string;icon:IconName;status:string;children?:ReactNode;details:ReactNode}){
- return <article className="ln-person ln-connected-person"><details><summary><span className="ln-avatar"><Icon name={icon}/></span><span><strong>{name}</strong><span className="ln-meta">{role}</span></span></summary><div className="ln-person-detail">{details}</div></details><span className="ln-meta ln-observed-state">{status}</span>{children}</article>;
+export function PersonCard({name,role,icon,status,children,details,avatar}:{name:string;role:string;icon:IconName;status:string;children?:ReactNode;details:ReactNode;avatar?:ReactNode}){
+ return <article className="ln-person ln-connected-person"><details><summary><span className="ln-avatar">{avatar??<Icon name={icon}/>}</span><span><strong>{name}</strong><span className="ln-meta">{role}</span></span></summary><div className="ln-person-detail">{details}</div></details><span className="ln-meta ln-observed-state">{status}</span>{children}</article>;
 }
 export function Unavailable(){return <p className="ln-meta">Records unavailable. This is not an empty queue.</p>;}
 export function formatDate(value:string){const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString("en-GB",{dateStyle:"short",timeStyle:"medium",timeZone:"UTC"})+" UTC":"Date unavailable";}
