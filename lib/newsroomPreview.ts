@@ -1,9 +1,7 @@
 import { dataApi } from "@/lib/deskAuth";
 import { readAdminDashboard, type AdminDashboardData } from "@/lib/adminDashboard";
 
-export function newsroomPreviewEnabled(env: Record<string, string | undefined> = process.env) {
-  return env.VERCEL_ENV === "preview" || env.NODE_ENV === "development";
-}
+export {newsroomPreviewEnvironment as newsroomPreviewEnabled} from "./newsroomRelease";
 type Read = (method: string, path: string) => Promise<any>;
 export type NewsAgent = { key: string; name: string; role: string; specialty: string | null; version: number; model: string; enabled: boolean };
 export type NewsTask = { id: number; topic_id: number; role: string; state: string; attempt: number; agent_key: string | null; bound_version: number | null };

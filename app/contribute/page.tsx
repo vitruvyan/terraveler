@@ -9,6 +9,11 @@ import ChartroomSidebar, { chartroomHref, type ChartroomMode } from "@/component
 import AgentQuickstart from "@/components/AgentQuickstart";
 import ConnectPanel from "@/components/ConnectPanel";
 import CrewBoard from "@/components/CrewBoard";
+import PublicChartroom from "../living-newsroom/chartroom/PublicChartroom";
+import {useNewsroomLanding} from "@/lib/newsroomRelease";
+import "../specimen/living-newsroom/living-newsroom.css";
+import "../living-newsroom/connected.css";
+import "../living-newsroom/chartroom/chartroom.css";
 import { POSTGREST_SERVICE_KEY, POSTGREST_URL } from "@/lib/backendConfig";
 import { adaptEditorialGap, type ChartroomWaypoint, type LegacyEditorialGap, type WaypointType } from "@/lib/chartroom";
 
@@ -198,6 +203,7 @@ export default async function Chartroom({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const resolvedParams = await searchParams;
+  if(useNewsroomLanding("chartroom",resolvedParams))return <><SiteHeader/><PublicChartroom release/><SiteFooter/></>;
   const filter = parseFilter(resolvedParams);
   const contextual = Boolean(filter.voyage && filter.waypoint);
   const loaded = await getWaypoints(filter);

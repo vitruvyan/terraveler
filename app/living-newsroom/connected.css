@@ -17,3 +17,7 @@
 .ln-agent-grid {grid-template-columns:minmax(0,1fr);}
 .ln-public {max-width:85rem;margin:auto;}
 [data-layout="phone"] .ln-public {padding:var(--space-4);}
+
+/* The canonical route has the site's sticky header. Keep its editorial rail
+ * in normal document flow rather than covering links beneath that header. */
+.ln-lab[data-release=true] .ln-nav {position:static;}

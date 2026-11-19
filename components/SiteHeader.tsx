@@ -27,7 +27,7 @@ import AccountPanel from "@/components/AccountPanel";
 import { ATLAS, CHARTROOM, PRIMARY, PROJECT, ALL } from "@/lib/nav";
 
 const CHARTROOM_MOBILE = [
-  { href: CHARTROOM.href, label: "Ongoing Projects" },
+  { href: "/contribute?mode=ongoing#chartroom", label: "Ongoing Projects" },
   { href: "/contribute?mode=propose#chartroom", label: "Propose" },
   { href: "/contribute?mode=sources#chartroom", label: "Sources" },
   { href: "/contribute?mode=agent-quick#chartroom", label: "Quick connect" },
