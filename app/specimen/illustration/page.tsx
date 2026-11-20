@@ -215,6 +215,7 @@ export default function IllustrationSpecimenPage() {
           </div>
         </section>
 
+        <p><a href="/specimen/album">Browse the internal visual album ↗</a></p>
         <BackToTop />
       </main>
     </div>

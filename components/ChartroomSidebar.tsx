@@ -35,7 +35,7 @@ export function chartroomHref(mode: ChartroomMode, category: string, tab: string
     return `/contribute?mode=${mode}#chartroom`;
   }
   const params = new URLSearchParams();
-  if (mode !== "ongoing") params.set("mode", mode);
+  params.set("mode", mode);
   if (mode !== "sources" && category !== "all") params.set("category", category);
   if (mode === "ongoing" && tab !== "open") params.set("tab", tab);
   const query = params.toString();

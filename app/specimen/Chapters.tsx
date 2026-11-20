@@ -10,6 +10,7 @@ const CHAPTERS = [
   { href: "/specimen/illustration", n: "vi", label: "illustration" },
   { href: "/specimen/newsroom", n: "vii", label: "newsroom" },
   { href: "/specimen/editorial", n: "viii", label: "review" },
+  { href: "/specimen/album", n: "ix", label: "visual album" },
 ];
 
 export default function Chapters({ current }: { current: string }) {

@@ -1,0 +1,27 @@
+/* The connected screens extend the approved specimen, using the same paper and voices. */
+.ln-lab .ln-link-button {display:inline-flex;align-items:center;padding:var(--space-2) var(--space-3);border:1px solid var(--rule-mid);background:var(--parchment-raised);min-height:var(--tap-min);text-decoration:none;}
+.ln-lab .ln-record-row {display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:var(--space-3);padding:var(--space-3) 0;border-bottom:1px solid var(--rule-hair);}
+.ln-error {color:var(--state-no);font-family:var(--font-mono);font-size:var(--step--1);}
+.ln-lab .ln-connected-person {overflow-wrap:anywhere;}
+.ln-connected-person details summary {cursor:pointer;display:flex;align-items:center;gap:var(--space-2);min-height:var(--tap-min);}
+.ln-connected-person summary strong {display:block;font-family:var(--font-ui);font-size:var(--step-1);}
+.ln-connected-person summary .ln-meta {display:block;}
+.ln-connected-person summary::after {content:"+";margin-left:auto;color:var(--brass-text);}
+.ln-connected-person details[open] summary::after {content:"−";}
+.ln-observed-state {border-top:1px solid var(--rule-hair);padding-top:var(--space-2);}
+.ln-terminal {background:var(--ink);color:var(--parchment-raised);font:var(--step--2)/1.65 var(--font-mono);padding:var(--space-3);max-height:18rem;overflow:auto;overscroll-behavior:contain;border-radius:var(--radius-1);}
+.ln-terminal-caption {display:block;color:var(--brass-on-dark);margin-bottom:var(--space-2);}
+.ln-terminal-line {padding:var(--space-1) 0;border-top:1px solid var(--ink-soft);}
+.ln-terminal-line time {display:block;color:var(--parchment-raised);}
+.ln-terminal-line[data-event="failed"] span,.ln-terminal-line[data-event="lease-expired"] span {color:var(--brass-on-dark);}
+.ln-agent-grid {grid-template-columns:minmax(0,1fr);}
+.ln-public {max-width:85rem;margin:auto;}
+[data-layout="phone"] .ln-public {padding:var(--space-4);}
+
+/* The canonical route has the site's sticky header. Keep its editorial rail
+ * in normal document flow rather than covering links beneath that header. */
+.ln-lab[data-release=true] .ln-nav {position:static;}
+
+/* Portraits share the original engraved plate with the Visual Album. */
+.ln-crew-portrait {display:block;width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.ln-avatar:has(.ln-crew-portrait) {overflow:hidden;padding:0;width:4rem;height:4rem;}
