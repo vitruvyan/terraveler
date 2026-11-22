@@ -16,6 +16,21 @@ Each skill names the subagent tier that should carry it (see SUBAGENTS.md).
 4. **Verify** *(scout)*: `/chat` with a subject question; check the Motus trace in `ingestion_runs`.
 5. **Publish** via the **Desk** — the human authorizes (option-1: corpus auto-publishes with async retract).
 
+## research-waypoint — prepare a sourced editorial card
+Follow `docs/WAYPOINT_RESEARCH_CONTRACT.md` and its versioned JSON Schema.
+1. *(scout)* inspect the existing route/source audit, rights, editions, candidate
+   photographs and study citations; prepare the waypoint source packet and gaps.
+2. *(implementer)* validate the packet, then run the bounded native Motus research
+   phase with read-only source tools and the existing authorized lifetime ledger.
+3. *(reviewer)* check every proposed fact against its selected evidence; review
+   scope, asset relevance, bibliography and gaps. Save a review bound to the actual
+   packet, fact result and approved content. Agent review is not human approval.
+4. *(implementer)* compose from approved IDs only. The program copies approved
+   statement text and renders pinned metadata; it preserves all required gaps.
+5. *(reviewer)* inspect the final card and trace. Report completeness and unknowns
+   separately from passing mechanical checks. **Publish via the Desk only after
+   the human's editorial authorization.**
+
 ## deploy-frontend
 *(implementer)* Edit in `terraveler-cronodiario`, commit, `git push` → Vercel builds.
 Then **verify the live result** — poll the deployment / `curl` the live URL. Never
