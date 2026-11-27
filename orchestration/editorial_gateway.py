@@ -154,7 +154,9 @@ ICONOGRAPHY_SELECTION_SCHEMA = {
 ICONOGRAPHY_CONTRACTS = {
     "queries": (
         'Return {"queries":["..."]}: two to four Wikimedia Commons search queries for images that document the '
-        'work item: period maps, engravings, manuscripts, printed pages, portraits and places. Commons search '
+        'work item: period maps, engravings, manuscripts, printed pages, portraits and places. Derive them from '
+        'the people, peoples and places named in input.research_summary, which the textual researchers found in '
+        'governed sources; do not introduce events or expeditions it does not mention. Commons search '
         'matches file titles and descriptions, so each query must be one to three words: a personal name, an '
         'expedition or event name, a historical place or people, or an engraver or mapmaker with a region. Cover '
         'different people and places of the topic rather than variants of one phrase. Do not add generic words '
@@ -176,6 +178,38 @@ ICONOGRAPHY_CONTRACTS = {
         'uncertainties.'
     ),
 }
+
+CAPTION_OUTPUT_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["kind", "format", "captions"],
+    "properties": {
+        "kind": {"const": "draft"}, "format": {"const": "captions"},
+        "captions": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False, "required": ["receipt_id", "caption", "alt_text"],
+            "properties": {"receipt_id": {"type": "string", "minLength": 1},
+                           "caption": {"type": "string", "minLength": 1, "pattern": NO_QUOTES},
+                           "alt_text": {"type": "string", "minLength": 1, "pattern": NO_QUOTES}}}},
+    },
+}
+CAPTION_CONTRACT = (
+    'Return {"kind":"draft","format":"captions","captions":[{"receipt_id":"RECEIPT_ID","caption":"...","alt_text":"..."}]}. '
+    'Write exactly one entry for every image in input.image_selection.images, citing its exact receipt_id. Use only '
+    'that image\'s Commons metadata (title, description, artist, credit, date_original, object_name, licence) and the '
+    'Photo editor\'s depiction, relevance and caution. You cannot see the images. caption: one or two sentences, at most '
+    '600 characters, naming what the metadata says the image is, its maker and date when stated, and its depiction '
+    'class (a later engraving or a modern photograph must be called that, never a contemporary depiction). When the '
+    'Commons date conflicts with the artist or description, say the date is uncertain. alt_text: at most 300 '
+    'characters, a plain description of what the metadata states the image shows; never invent colours, figures or '
+    'visual details the metadata does not state. Paraphrase only, no quotation marks. Address input.review_result '
+    'issues when revising.'
+)
+CAPTION_REVIEW_CONTRACT = (
+    ' This draft is a set of image captions. Check each caption and alt_text against its own image in '
+    'input.image_selection: every statement must be supported by that image\'s Commons metadata or the Photo '
+    'editor judgment; flag invented visual details, a later work or modern photograph presented as contemporary, '
+    'a date stated with more certainty than the metadata allows, and a missing maker when the metadata names one. '
+    'Name the receipt_id in each issue. Do not ask for quotations or for images to be added or removed: the '
+    'selection is fixed upstream; an unsuitable image is blocked.'
+)
 
 ITINERARY_OUTPUT_SCHEMA = {
     **ROLE_OUTPUT_SCHEMAS["research"],
@@ -293,7 +327,7 @@ def _prompt_material(task: dict) -> dict:
                if k not in ("research_result", "draft_result", "review_result")}
     fields = {
         "research_result": ("kind", "references", "findings", "uncertainties", "waypoints"),
-        "draft_result": ("kind", "title", "body", "citations", "waypoints"),
+        "draft_result": ("kind", "format", "title", "body", "citations", "waypoints", "captions"),
         "review_result": ("kind", "verdict", "issues"),
     }
     for name, allowed in fields.items():
@@ -368,6 +402,20 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
             raise GatewayError("gateway-input-invalid")
         contract = ICONOGRAPHY_CONTRACTS[stage]
         schema_name = "iconography_" + stage
+    elif agent["role"] == "writer" and specialty == "caption":
+        selection = material["input"].get("image_selection")
+        images = selection.get("images") if isinstance(selection, dict) else None
+        ids = [i.get("receipt_id") for i in images] if isinstance(images, list) else []
+        if not ids or any(not isinstance(i, str) or not i for i in ids):
+            raise GatewayError("gateway-input-invalid")
+        schema = copy.deepcopy(CAPTION_OUTPUT_SCHEMA)
+        schema["properties"]["captions"]["items"]["properties"]["receipt_id"] = {"enum": ids}
+        schema["properties"]["captions"]["minItems"] = len(ids)
+        schema["properties"]["captions"]["maxItems"] = len(ids)
+        contract = CAPTION_CONTRACT
+        schema_name = "captions"
+    elif agent["role"] == "reviewer" and isinstance(material["input"].get("image_selection"), dict):
+        contract = contract + CAPTION_REVIEW_CONTRACT
     known_ids = _known_source_ids(agent["role"], material["input"])
     if known_ids:
         schema = _bind_source_ids(schema, known_ids)

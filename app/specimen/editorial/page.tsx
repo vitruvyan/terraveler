@@ -50,6 +50,23 @@ const preview: Preview = {
   ],
   waypoints_omitted: 0,
   review: { verdict: "changes-requested", issues: ["Illustrative review issue: verify the candidate location before any publication decision."] },
+  // Real Commons files (public domain); captions are illustrative specimen copy, not agent output.
+  images: { result_id: 50, task_id: 31, omitted: 0,
+    review: { verdict: "changes-requested", issues: ["Illustrative caption review: state that the 1591 engraving was made decades after the expedition."] },
+    plates: [
+      { receipt_id: "specimen-plate-1", src: "https://upload.wikimedia.org/wikipedia/commons/2/2a/DeBry_Engraving_of_Timucua%2C_1591.jpg",
+        page_url: "https://commons.wikimedia.org/wiki/File:DeBry_Engraving_of_Timucua,_1591.jpg",
+        caption: "Engraving of Timucua people by Theodor de Bry, published in 1591 — a later European depiction, not a record made during the Narváez expedition.",
+        alt_text: "Engraving of Timucua people, published by Theodor de Bry in 1591.",
+        artist: "De Bry", credit: null, licence: "Public domain", licence_url: null, date_original: "1591",
+        depiction: "later-artwork", width: 640, height: 458 },
+      { receipt_id: "specimen-plate-2", src: "https://upload.wikimedia.org/wikipedia/commons/1/10/Signature_of_%C3%81lvar_N%C3%BA%C3%B1ez_Cabeza_de_Vaca_%28c._1490_%E2%80%93_c._1560%29.png",
+        page_url: "https://commons.wikimedia.org/wiki/File:Signature_of_%C3%81lvar_N%C3%BA%C3%B1ez_Cabeza_de_Vaca_(c._1490_%E2%80%93_c._1560).png",
+        caption: "Signature of Álvar Núñez Cabeza de Vaca as reproduced in an 1886 publication; Commons records the reproduction's date, not the signature's.",
+        alt_text: "Handwritten signature of Álvar Núñez Cabeza de Vaca.",
+        artist: "Álvar Núñez Cabeza de Vaca", credit: null, licence: "Public domain", licence_url: null, date_original: "1886-01-01",
+        depiction: "modern-reproduction", width: 640, height: 310 },
+    ] },
 };
 export default function EditorialSpecimen() {
   return (

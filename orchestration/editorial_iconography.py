@@ -83,6 +83,25 @@ def _candidate_summary(snapshot: dict, receipt_id: str) -> dict:
             "mime": text(snapshot.get("mime"), 40), "width": snapshot.get("width"), "height": snapshot.get("height")}
 
 
+def research_summary(task) -> dict:
+    """People and places the textual researchers found, bounded, for image queries."""
+    findings, places = [], []
+    for dependency in task.get("input", {}).get("dependency_research") or []:
+        result = dependency.get("result") if isinstance(dependency, dict) else None
+        if not isinstance(result, dict):
+            continue
+        for finding in result.get("findings") or []:
+            if isinstance(finding, dict) and isinstance(finding.get("text"), str):
+                findings.append(finding["text"][:400])
+        for waypoint in result.get("waypoints") or []:
+            if isinstance(waypoint, dict):
+                for key in ("place_historical", "place_modern"):
+                    value = waypoint.get(key)
+                    if isinstance(value, str) and value not in places:
+                        places.append(value[:200])
+    return {"findings": findings[:40], "places": places[:40]}
+
+
 def _judgment_text(value, *, optional=False):
     if value is None and optional:
         return None
@@ -97,8 +116,11 @@ def iconography(task, config, *, call_tool: Callable[[str, dict], dict] | None =
     base.setdefault("input", {})
 
     # 1. The model proposes search queries for the work item.
+    summary = research_summary(base)
+    base["input"].pop("dependency_research", None)  # bounded prompt: the summary replaces full snapshots
     query_task = copy.deepcopy(base)
     query_task["input"]["iconography_stage"] = "queries"
+    query_task["input"]["research_summary"] = summary
     generated = generator(query_task, config)
     queries = (generated or {}).get("candidate", {}).get("queries")
     if (not isinstance(queries, list) or not 2 <= len(queries) <= 4
@@ -178,3 +200,72 @@ def iconography(task, config, *, call_tool: Callable[[str, dict], dict] | None =
     return {"kind": "iconography", "images": images, "queries": queries_used,
             "uncertainties": [u.strip() for u in uncertainties],
             "candidate": {"queries": generated, "selection": chosen}, "verification": "candidate-only"}
+
+
+def image_display(image: dict) -> dict:
+    """Exactly what SQL editorial_image_display derives from a selected image: receipt data, never model text."""
+    snapshot = image.get("snapshot") or {}
+    licence = snapshot.get("licence") or {}
+    return {"title": snapshot.get("title"), "page_url": snapshot.get("page_url"), "image_url": snapshot.get("image_url"),
+            "thumb_url": snapshot.get("thumb_url"), "width": snapshot.get("width"), "height": snapshot.get("height"),
+            "artist": snapshot.get("artist"), "credit": snapshot.get("credit"), "date_original": snapshot.get("date_original"),
+            "licence": {"class": licence.get("class"), "short_name": licence.get("short_name"), "url": licence.get("url"),
+                        "attribution_required": licence.get("attribution_required")},
+            "depiction": image.get("depiction")}
+
+
+def _caption_text(value, limit):
+    if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit or QUOTES.search(value):
+        raise EvidenceError("editorial-invalid-caption")
+    return value.strip()
+
+
+def _selection(task) -> list:
+    selection = task.get("input", {}).get("image_selection")
+    images = selection.get("images") if isinstance(selection, dict) else None
+    if not isinstance(images, list) or len(images) > 12 or any(
+            not isinstance(i, dict) or not isinstance(i.get("receipt_id"), str) for i in images):
+        raise EvidenceError("editorial-image-selection-required")
+    return images
+
+
+def validate_captions(draft, images) -> None:
+    """A caption draft covers every selected image once, in order, with exact display data."""
+    captions = draft.get("captions") if isinstance(draft, dict) else None
+    if (not isinstance(draft, dict) or draft.get("kind") != "draft" or draft.get("format") != "captions"
+            or not isinstance(captions, list) or len(captions) != len(images)):
+        raise EvidenceError("editorial-invalid-captions")
+    for entry, image in zip(captions, images):
+        if (not isinstance(entry, dict) or set(entry) != {"receipt_id", "caption", "alt_text", "image"}
+                or entry["receipt_id"] != image["receipt_id"] or entry["image"] != image_display(image)):
+            raise EvidenceError("editorial-invalid-captions")
+        _caption_text(entry["caption"], 600)
+        _caption_text(entry["alt_text"], 300)
+
+
+def captions(task, config, *, generator=generate_candidate):
+    """Image text editor: one caption and alt text per selected image, from metadata only."""
+    images = _selection(task)
+    if not images:
+        result = {"kind": "draft", "format": "captions", "captions": []}
+        return {**result, "candidate": None, "verification": "candidate-only"}
+    generated = generator(copy.deepcopy(task), config)
+    candidate = (generated or {}).get("candidate")
+    entries = candidate.get("captions") if isinstance(candidate, dict) else None
+    if (not isinstance(candidate, dict) or candidate.get("kind") != "draft" or candidate.get("format") != "captions"
+            or not isinstance(entries, list)):
+        raise EvidenceError("editorial-invalid-captions")
+    by_id = {}
+    for entry in entries:
+        if not isinstance(entry, dict) or set(entry) != {"receipt_id", "caption", "alt_text"} or entry["receipt_id"] in by_id:
+            raise EvidenceError("editorial-invalid-captions")
+        by_id[entry["receipt_id"]] = entry
+    if set(by_id) != {i["receipt_id"] for i in images}:
+        raise EvidenceError("editorial-invalid-captions")
+    # Trusted composition in selection order; display data comes from the receipts.
+    result = {"kind": "draft", "format": "captions", "captions": [
+        {"receipt_id": image["receipt_id"], "caption": _caption_text(by_id[image["receipt_id"]]["caption"], 600),
+         "alt_text": _caption_text(by_id[image["receipt_id"]]["alt_text"], 300), "image": image_display(image)}
+        for image in images]}
+    validate_captions(result, images)
+    return {**result, "candidate": generated, "verification": "candidate-only"}

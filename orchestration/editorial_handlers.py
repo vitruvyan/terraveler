@@ -248,11 +248,18 @@ def writer(task, config, *, generator=generate_candidate):
 
 
 def reviewer(task, config, *, generator=generate_candidate):
-    research_result = _context(task, "research")
-    draft_result = _context(task, "draft")
-    _draft(draft_result, research_result)
-    candidate, raw = _generate(task, config, generator,
-                               research_result=research_result, draft_result=draft_result)
+    if isinstance(task.get("input", {}).get("image_selection"), dict):
+        # Caption review: SQL supplies the verified image selection instead of research.
+        from orchestration.editorial_iconography import _selection, validate_captions
+        draft_result = _context(task, "draft")
+        validate_captions(draft_result, _selection(task))
+        candidate, raw = _generate(task, config, generator)
+    else:
+        research_result = _context(task, "research")
+        draft_result = _context(task, "draft")
+        _draft(draft_result, research_result)
+        candidate, raw = _generate(task, config, generator,
+                                   research_result=research_result, draft_result=draft_result)
     verdict, issues = candidate.get("verdict"), candidate.get("issues")
     if (verdict not in {"ready-for-editor", "changes-requested", "blocked"}
             or not isinstance(issues, list) or any(not isinstance(i, str) or not i.strip() for i in issues)
@@ -283,6 +290,10 @@ def production_research(task):
 
 
 def production_writer(task):
+    work_item = task.get("input", {}).get("work_item")
+    if isinstance(work_item, dict) and work_item.get("specialty") == "caption":
+        from orchestration.editorial_iconography import captions
+        return captions(task, GatewayConfig.from_environment())
     return writer(task, GatewayConfig.from_environment())
 
 

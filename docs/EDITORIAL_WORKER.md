@@ -113,11 +113,13 @@ provides this entry point, disabled by default and without automatic restart.
 
 ## Photo editor (iconography)
 
-Every composed plan carries one fixed, independent `iconography-images` research
-item. Its handler (orchestration/editorial_iconography.py) does not read the
-textual corpus:
+Every composed plan carries one fixed `iconography-images` research item that
+depends on all textual research. Its handler (orchestration/editorial_iconography.py)
+does not read the textual corpus:
 
-1. the configured model proposes two to four Commons search queries;
+1. the configured model proposes two to four short Commons search queries from
+   a bounded summary of the researched findings and waypoint places (full
+   research snapshots are not sent);
 2. `search_commons_images` returns candidates with per-file licence decisions
    (public domain, CC0, CC BY, CC BY-SA only);
 3. up to twelve usable candidates are read with `fetch_commons_image`, each
@@ -131,9 +133,27 @@ textual corpus:
 SQL (`supabase/editorial_iconography.sql`) accepts the result only if every
 selection equals a `fetch_commons_image` receipt recorded after the attempt's
 claim, with an exact snapshot and digest, a closed depiction class and no
-quotation marks. An empty selection must state why. No writer or research item
-may depend on the iconography item and writers never receive image selections as
-research; the Image text editor (caption) remains closed.
+quotation marks. An empty selection must state why. Only the caption writer may
+depend on the iconography item; textual writers never receive image selections
+as research.
+
+## Image text editor (caption)
+
+The fixed `captions` writer depends only on `iconography-images`. SQL gives it,
+and its copyedit and factcheck reviewers, the receipt-re-verified image
+selection instead of research. Its draft is a `draft` with `format: "captions"`,
+so bounded revisions and the review composition work unchanged: one caption
+(≤600 characters) and alt text (≤300) per selected image, in selection order,
+paraphrase only, written from Commons metadata and the Photo editor judgment.
+Each entry carries an `image` block (URLs, size, artist, credit, Commons date,
+licence, depiction) that trusted code copies from the selection and SQL
+recomputes with `editorial_image_display`; a model can never write it. An empty
+selection yields an empty caption draft without a model call. Caption reviewers
+must name the receipt ID in each issue and may not ask for images to be added.
+
+The Desk preview shows these as plates from the same plan run as the draft being
+read (thumbnails only from upload/thumb.wikimedia.org), labelling the date as
+Commons' and the depiction as the Photo editor's judgment.
 
 Commons' recorded date is a claim, often a scan or upload date. A sample of
 eight real Commons images showed nomic-vision zero-shot labels reliable for

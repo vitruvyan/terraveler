@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import React from "react";
 import { createRequire } from "node:module";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readEditorialPreview, safeSourceHref } from "../lib/editorialPreview";
+import { readEditorialPreview, safeImageSrc, safeSourceHref } from "../lib/editorialPreview";
 import { coordinatorContext } from "../lib/editorialCoordinator";
 
 const paragraph = 'A source-grounded account <script>alert("unsafe")</script>.';
@@ -37,6 +37,7 @@ function fixture(review: unknown = { kind: "review", verdict: "changes-requested
     assert.equal(method, "GET"); paths.push(path);
     if (path.startsWith("editorial_topics?")) return [{ id: 7, title: "Voyage dossier" }];
     if (path.includes("role=eq.writer")) return [{ id: 41, task_id: 19, created_at: "2026-11-16T18:00:00Z", result: route === undefined ? draft : { ...draft, waypoints: route } }];
+    if (path.startsWith("editorial_graph_tasks?")) return [];
     if (path.includes("role=eq.reviewer")) return Array.isArray(review) ? review : review ? [{ task_id: 30, result: review }] : [];
     throw new Error(`Unexpected query: ${path}`);
   } };
@@ -149,7 +150,8 @@ test("reading edition escapes generated markup, maps paragraph citations and dis
     assert.match(html, /No paragraph source mapping recorded/);
     assert.match(html, /Private editorial preview/);
     assert.match(html, /Saved version #41/);
-    assert.match(html, /Images and population sections/);
+    assert.match(html, /Population sections are not yet produced/);
+  assert.match(html, /No captioned image selection is stored for this plan run/);
     assert.match(html, /not publication authorization/);
     assert.match(html, /Clarify the date/);
 
@@ -175,4 +177,44 @@ test("coordinator receives the inspected version instead of silently substitutin
   assert.equal(context.project.latest_draft, null, "newer work does not distract from the inspected version");
   assert.equal(coordinatorContext({ latest_draft: { title: "Newer", body: "A different draft" } }, []).project.latest_draft?.title, "Newer");
   assert.doesNotMatch(JSON.stringify(context), /PRIVATE_RAW|candidate/);
+});
+
+test("preview shows caption plates from the same plan run, with Wikimedia-only images and their own combined review", async () => {
+  const image = (patch: Record<string, unknown> = {}) => ({ title: "File:De Bry Timucua.jpg", page_url: "https://commons.wikimedia.org/wiki/File:De_Bry_Timucua.jpg",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/a/ab/X.jpg", thumb_url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/X.jpg/1280px-X.jpg",
+    width: 800, height: 600, artist: "Theodor de Bry", credit: null, date_original: "1591",
+    licence: { class: "public_domain", short_name: "Public domain", url: null, attribution_required: false }, depiction: "period-artwork", ...patch });
+  const entry = (id: string, patch: Record<string, unknown> = {}) => ({ receipt_id: id, caption: "Engraving by Theodor de Bry, 1591.", alt_text: "Engraving of villagers.", image: image(), ...patch });
+  const paths: string[] = [];
+  const read = async (_m: string, path: string) => {
+    paths.push(path);
+    if (path.startsWith("editorial_topics?")) return [{ id: 7, title: "Voyage dossier" }];
+    if (path === "editorial_graph_tasks?task_id=eq.19&select=run_id&limit=1") return [{ run_id: 4 }];
+    if (path === "editorial_graph_tasks?run_id=eq.4&select=task_id&limit=200") return [{ task_id: 19 }, { task_id: 31 }];
+    if (path.includes("result->>format=eq.captions")) return [{ id: 50, task_id: 31, result: { kind: "draft", format: "captions", captions: [
+      entry("r1"), entry("r2", { image: image({ thumb_url: "https://example.org/x.jpg", image_url: "https://example.org/x.jpg" }) }),
+      entry("r3", { caption: "" }), entry("r4", { image: image({ depiction: "eyewitness" }) })] } }];
+    if (path.includes("role=eq.writer")) return [{ id: 41, task_id: 19, created_at: "2026-11-16T18:00:00Z", result: draft }];
+    if (path.includes("dependency_id=eq.31")) return [{ task_id: 32, result: { kind: "review", verdict: "ready-for-editor", issues: [] } },
+      { task_id: 33, result: { kind: "review", verdict: "changes-requested", issues: ["r1: the date is the engraving's."] } }];
+    if (path.includes("role=eq.reviewer")) return [];
+    throw new Error(`Unexpected query: ${path}`);
+  };
+  const value = await readEditorialPreview(7, 41, read);
+  assert.ok(value?.images);
+  assert.equal(value.images.result_id, 50);
+  assert.deepEqual(value.images.plates.map(p => p.receipt_id), ["r1"]);
+  assert.equal(value.images.omitted, 3);
+  const plate = value.images.plates[0];
+  assert.equal(plate.src, "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/X.jpg/1280px-X.jpg");
+  assert.equal(plate.licence, "Public domain"); assert.equal(plate.date_original, "1591"); assert.equal(plate.depiction, "period-artwork");
+  assert.deepEqual(value.images.review, { verdict: "changes-requested", issues: ["r1: the date is the engraving's."] });
+  assert.match(paths.find(p => p.includes("role=eq.writer") && !p.includes("captions"))!, /result->>format=is\.null/);
+  assert.match(paths.find(p => p.includes("format=eq.captions"))!, /task_id=in\.\(19,31\)/);
+});
+
+test("preview image sources are limited to Wikimedia media hosts over https", () => {
+  for (const value of [null, "http://upload.wikimedia.org/x.jpg", "https://example.org/x.jpg", "https://upload.wikimedia.org.evil.example/x.jpg", "https://user:pw@upload.wikimedia.org/x.jpg", "javascript:alert(1)"])
+    assert.equal(safeImageSrc(value), null);
+  assert.equal(safeImageSrc("https://thumb.wikimedia.org/a/b.jpg"), "https://thumb.wikimedia.org/a/b.jpg");
 });
