@@ -55,6 +55,10 @@ ROLE_SCHEMAS = {
     ),
 }
 
+# Month 01-12 and day 01-31 are grammar-enforced; calendar validity is checked by the handler.
+DATE_PATTERN = "^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
+NO_QUOTES = '^[^"“”«»]*$'
+
 WAYPOINT_OUTPUT_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "required": ["id", "sequence", "place_historical", "place_modern", "latitude", "longitude",
@@ -63,12 +67,12 @@ WAYPOINT_OUTPUT_SCHEMA = {
     "properties": {
         "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,79}$"},
         "sequence": {"type": "integer", "minimum": 1, "maximum": 200},
-        "place_historical": {"type": "string", "minLength": 1, "maxLength": 500},
-        "place_modern": {"type": ["string", "null"], "maxLength": 500},
+        "place_historical": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": NO_QUOTES},
+        "place_modern": {"type": ["string", "null"], "maxLength": 500, "pattern": NO_QUOTES},
         "latitude": {"type": "number", "minimum": -90, "maximum": 90},
         "longitude": {"type": "number", "minimum": -180, "maximum": 180},
-        "arrival_date": {"type": ["string", "null"], "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"},
-        "departure_date": {"type": ["string", "null"], "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"},
+        "arrival_date": {"type": ["string", "null"], "pattern": DATE_PATTERN},
+        "departure_date": {"type": ["string", "null"], "pattern": DATE_PATTERN},
         "date_note": {"type": ["string", "null"], "maxLength": 500},
         "event": {"type": "string", "minLength": 1, "maxLength": 5000, "pattern": '^[^"“”«»]*$'},
         "coordinate_note": {"type": "string", "minLength": 1, "maxLength": 500},
@@ -96,7 +100,6 @@ ROLE_OUTPUT_SCHEMAS = {
                 },
             }},
             "uncertainties": {"type": "array", "items": {"type": "string", "minLength": 1}},
-            "waypoints": {"type": "array", "minItems": 1, "maxItems": 40, "items": WAYPOINT_OUTPUT_SCHEMA},
         },
     },
     "writer": {
@@ -104,7 +107,7 @@ ROLE_OUTPUT_SCHEMAS = {
         "required": ["kind", "title", "paragraphs"],
         "properties": {
             "kind": {"const": "draft"},
-            "title": {"type": "string", "minLength": 1},
+            "title": {"type": "string", "minLength": 1, "pattern": NO_QUOTES},
             "paragraphs": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
                 "type": "object", "additionalProperties": False,
                 "required": ["text", "source_id"],
@@ -127,6 +130,8 @@ ROLE_OUTPUT_SCHEMAS = {
 ITINERARY_OUTPUT_SCHEMA = {
     **ROLE_OUTPUT_SCHEMAS["research"],
     "required": ["kind", "findings", "uncertainties", "waypoints"],
+    "properties": {**ROLE_OUTPUT_SCHEMAS["research"]["properties"],
+                   "waypoints": {"type": "array", "minItems": 1, "maxItems": 40, "items": WAYPOINT_OUTPUT_SCHEMA}},
 }
 ITINERARY_CONTRACT = (
     ' For this itinerary task, also return "waypoints": an ordered candidate route with 1-40 entries. '

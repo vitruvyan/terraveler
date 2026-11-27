@@ -37,7 +37,7 @@ function fixture(review: unknown = { kind: "review", verdict: "changes-requested
     assert.equal(method, "GET"); paths.push(path);
     if (path.startsWith("editorial_topics?")) return [{ id: 7, title: "Voyage dossier" }];
     if (path.includes("role=eq.writer")) return [{ id: 41, task_id: 19, created_at: "2026-11-16T18:00:00Z", result: route === undefined ? draft : { ...draft, waypoints: route } }];
-    if (path.includes("role=eq.reviewer")) return review ? [{ result: review }] : [];
+    if (path.includes("role=eq.reviewer")) return Array.isArray(review) ? review : review ? [{ task_id: 30, result: review }] : [];
     throw new Error(`Unexpected query: ${path}`);
   } };
 }
@@ -92,6 +92,20 @@ test("preview refuses malformed review readiness instead of showing a false clea
   }
   const { read } = fixture({ kind: "review", verdict: "ready-for-editor", issues: [] });
   assert.equal((await readEditorialPreview(7, 41, read))?.review?.verdict, "ready-for-editor");
+});
+
+test("preview combines every reviewer of the draft and a later clean review never hides a blocking one", async () => {
+  const blocked = { kind: "review", verdict: "blocked", issues: ["Waypoint landfall is unsupported."] };
+  const ready = { kind: "review", verdict: "ready-for-editor", issues: [] };
+  const older = { kind: "review", verdict: "changes-requested", issues: ["Superseded."] };
+  // Rows arrive newest first: copyedit (task 31) is ready after factcheck (task 32) blocked.
+  const { read } = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: blocked }, { task_id: 31, result: older }]);
+  const value = await readEditorialPreview(7, 41, read);
+  assert.deepEqual(value?.review, { verdict: "blocked", issues: ["Waypoint landfall is unsupported."] });
+  const allReady = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: ready }]);
+  assert.deepEqual((await readEditorialPreview(7, 41, allReady.read))?.review, { verdict: "ready-for-editor", issues: [] });
+  const malformed = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: { kind: "review", verdict: "blocked", issues: [] } }]);
+  assert.equal((await readEditorialPreview(7, 41, malformed.read))?.review, null);
 });
 
 test("preview source links permit web citations only, without credentials or executable protocols", () => {

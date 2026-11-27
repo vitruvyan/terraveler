@@ -283,3 +283,12 @@ test("first-version preparation never fabricates previous-review context",async(
  assert.ok(!("previous_review" in materials.plan)&&!("previous_plan" in materials.plan));
  assert.ok(!("previous_review" in materials.review));
 });
+
+test("plan composition accepts at most one itinerary research item", async()=>{
+  const {composeEditorialPlan}=await mod;
+  const item=(id:string,specialty:string)=>({id,question:"Where?",deliverable:"Route",specialty});
+  assert.equal(composeEditorialPlan({gaps:[],research_items:[item("route-a","itinerary"),item("route-b","itinerary")]}),null);
+  const plan=composeEditorialPlan({gaps:[],research_items:[item("route-a","itinerary"),item("hist-a","history")]});
+  assert.ok(plan);
+  assert.equal(plan.work_items.filter((w:any)=>w.specialty==="itinerary").length,1);
+});

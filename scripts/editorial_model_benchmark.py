@@ -48,7 +48,7 @@ from orchestration.editorial_gateway import (  # noqa: E402
 PLAN_CONTRACT = (
     'Return JSON only {"gaps":["unanswered question"],"research_items":[{"id":"stable-id",'
     '"question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use one to four research '
-    'items with specialty history, ethnohistory or itinerary. Return exactly the root fields gaps and research_items, '
+    'items with specialty history, ethnohistory or itinerary; at most one item may be itinerary. Return exactly the root fields gaps and research_items, '
     'and exactly the four specified fields for each research item. Do not emit work_items, diary, editorial, copyedit, '
     'factcheck, dependencies or source receipt IDs: the program composes the fixed downstream graph separately. '
     'Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation '
@@ -266,6 +266,8 @@ def compose_plan(proposal):
         if (not isinstance(item, dict) or set(item) != required
                 or item.get("specialty") not in RESEARCH_SPECIALTIES):
             return None
+    if sum(item["specialty"] == "itinerary" for item in proposal["research_items"]) > 1:
+        return None
     ids = [item["id"] for item in proposal["research_items"]]
     research = [{**item, "depends_on": [], "source_receipt_ids": []} for item in proposal["research_items"]]
     writers = [{"id": specialty,

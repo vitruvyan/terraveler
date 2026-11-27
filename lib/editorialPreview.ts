@@ -88,13 +88,22 @@ export async function readEditorialPreview(topicId: number, resultId: number | n
     text: p.trim(), source_ids: [...new Set<string>(citations.filter((c: any) => c?.claim === p.trim() && seen.has(c.source_id)).map((c: any) => c.source_id))],
   }));
   // A later review of another draft must never certify this result.
-  const reviews = await read("GET", `editorial_results?select=result,editorial_tasks!inner(topic_id,role,dependency_id)&editorial_tasks.topic_id=eq.${topicId}&editorial_tasks.role=eq.reviewer&editorial_tasks.dependency_id=eq.${row.task_id}&order=id.desc&limit=1`);
+  // A draft can have several reviewers (copyedit, factcheck): take the latest
+  // result of each and let the most severe verdict win, so a later clean
+  // review can never hide a blocking one.
+  const reviews = await read("GET", `editorial_results?select=task_id,result,editorial_tasks!inner(topic_id,role,dependency_id)&editorial_tasks.topic_id=eq.${topicId}&editorial_tasks.role=eq.reviewer&editorial_tasks.dependency_id=eq.${row.task_id}&order=id.desc&limit=50`);
   if (!Array.isArray(reviews)) throw new Error("Invalid preview response");
-  const r = reviews[0]?.result;
-  const validReview = r?.kind === "review" && ["ready-for-editor", "changes-requested", "blocked"].includes(r.verdict) && Array.isArray(r.issues) && r.issues.length <= 100 && r.issues.every((i: unknown) => text(i, 12000)) && (r.verdict === "ready-for-editor" ? r.issues.length === 0 : r.issues.length > 0);
+  const latest = new Map<number, any>();
+  for (const review of reviews) if (Number.isSafeInteger(review?.task_id) && !latest.has(review.task_id)) latest.set(review.task_id, review.result);
+  const validOne = (v: any) => v?.kind === "review" && ["ready-for-editor", "changes-requested", "blocked"].includes(v.verdict) && Array.isArray(v.issues) && v.issues.length <= 100 && v.issues.every((i: unknown) => text(i, 12000)) && (v.verdict === "ready-for-editor" ? v.issues.length === 0 : v.issues.length > 0);
+  const values = [...latest.values()];
+  const validReview = values.length > 0 && values.every(validOne) && reviews.every((v: any) => Number.isSafeInteger(v?.task_id));
+  const severity = ["ready-for-editor", "changes-requested", "blocked"];
+  const r = validReview ? { verdict: values.map(v => v.verdict).sort((a, b) => severity.indexOf(b) - severity.indexOf(a))[0],
+    issues: values.flatMap(v => v.issues).slice(0, 100) } : null;
   const route = previewWaypoints(draft.waypoints, seen);
   return { topic: { id: topicId, title: topics[0].title }, result_id: row.id, task_id: row.task_id,
     created_at: typeof row.created_at === "string" ? row.created_at : "", title: draft.title, paragraphs, sources,
     waypoints: route.values, waypoints_omitted: route.omitted,
-    review: validReview ? { verdict: r.verdict, issues: r.issues } : null };
+    review: r };
 }
