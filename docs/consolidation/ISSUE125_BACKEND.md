@@ -18,9 +18,9 @@ migrations or change publication authority.
 
 ## Recovered inference behavior
 
-Preparation permits two serial 100-second model calls and declares a 300-second
-function duration. Worker production defaults are 120 seconds and 4096 tokens,
-with bounded configuration. Explicit length termination is rejected even for
+Preparation permits serial 90-second planner and 160-second reviewer model calls
+and declares a 300-second function duration. Worker production defaults are 120 seconds and 4096 tokens,
+with gateway calls bounded to 900 seconds inside a 1000-second task deadline. Explicit length termination is rejected even for
 parseable JSON. No automatic retries or additional inference are introduced.
 A proxy, hosting plan or model server may impose a lower limit; tests do not
 prove production throughput. See EDITORIAL_MODEL_ROUTING.md.

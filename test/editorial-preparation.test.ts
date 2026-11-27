@@ -10,7 +10,7 @@ const url="https://en.wikipedia.org/wiki/Example", id="00000000-0000-4000-8000-0
 const request={topic_id:1,expected_version:0,request_id:"preparation-request-0001",wikipedia_url:null};
 const orientation={kind:"wikipedia-orientation",purpose:"planning-only",revision_id:12,text:"Test text",sections:[{title:"Itinerary"}],text_truncated:false,sections_truncated:false,external_links_truncated:false};
 const review={verdict:"adequate-for-next-stage",issues:[]};
-const work={gaps:["Indigenous perspectives"],work_items:[{id:"history",question:"What happened?",deliverable:"Cited chronology",specialty:"history",depends_on:[],source_receipt_ids:[]}]};
+const work={gaps:["Indigenous perspectives"],research_items:[{id:"history",question:"What happened?",deliverable:"Cited chronology",specialty:"history"}]};
 function fixture(){
  const calls:string[]=[];let writes=0;
  const read=async(_method:string,path:string)=>{
@@ -25,7 +25,12 @@ function fixture(){
  return {calls, get writes(){return writes;}, ports:{env:{EDITORIAL_PREPARATION_ENABLED:"1"},read,rpc:async(name:string,args:Record<string,unknown>)=>{
   writes++;calls.push(name);assert.equal(name,"editorial_record_preparation");assert.equal(args.p_planner_version_id,1);assert.equal(args.p_reviewer_version_id,2);assert.deepEqual(args.p_review,review);return {plan_id:1,review,replayed:false};
  },mcp:async(name:string)=>{calls.push(name);return name==="search_sources"?{candidates:[{kind:"wikipedia",title:"Example",url}]}:{consultation_status:"recorded",consultation:{id,response_sha256:"a".repeat(64)}};},
- generate:async(agent:{id:number},stage:string,material:unknown)=>{calls.push(stage);if(stage==="review"){assert.equal(agent.id,2);assert.deepEqual((material as any).plan.orientation_receipt_id,id);return review;}assert.equal(agent.id,1);return work;}}};
+ generate:async(agent:{id:number},stage:string,material:unknown)=>{calls.push(stage);if(stage==="review"){
+  const plan=(material as any).plan;assert.equal(agent.id,2);assert.equal(plan.orientation_receipt_id,id);
+  assert.deepEqual(plan.work_items.map((item:any)=>item.specialty),["history","diary","editorial","copyedit","factcheck","copyedit","factcheck"]);
+  assert.deepEqual(plan.work_items[1].depends_on,["history"]);assert.deepEqual(plan.work_items[2].depends_on,["history"]);
+  assert.deepEqual(plan.work_items[3].depends_on,["diary"]);assert.deepEqual(plan.work_items[5].depends_on,["editorial"]);return review;
+ }assert.equal(agent.id,1);return work;}}};
 }
 test("preparation runs MCP before the two distinct agents and persists no authority to execute",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
@@ -35,7 +40,7 @@ test("preparation runs MCP before the two distinct agents and persists no author
 test("missing receipt and fabricated source IDs cannot reach persistence",async()=>{
  const {prepareEditorialPlan}=await mod;
  const a=fixture();await assert.rejects(prepareEditorialPlan({...request,wikipedia_url:url},{...a.ports,mcp:async()=>({consultation_status:"disabled"})}),/orientation-receipt-required/);assert.equal(a.writes,0);
- const b=fixture();await assert.rejects(prepareEditorialPlan(request,{...b.ports,generate:async()=>({...work,work_items:[{...work.work_items[0],source_receipt_ids:[id]}]})}),/plan-generation-invalid/);assert.equal(b.writes,0);
+ const b=fixture();await assert.rejects(prepareEditorialPlan(request,{...b.ports,generate:async()=>({...work,research_items:[{...work.research_items[0],source_receipt_ids:[id]}]})}),/plan-generation-invalid/);assert.equal(b.writes,0);
 });
 test("ambiguous orientation and malformed review fail closed",async()=>{
  const {selectOrientation,parsePlanReview,parsePreparationRequest}=await mod;
@@ -47,6 +52,27 @@ test("ambiguous orientation and malformed review fail closed",async()=>{
 test("disabled preparation performs no source or model call",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
  await assert.rejects(prepareEditorialPlan(request,{...f.ports,env:{}}),/preparation-disabled/);assert.equal(f.calls.length,0);
+});
+
+test("MCP envelope failures expose only bounded diagnostic categories",async()=>{
+ const {prepareEditorialPlan}=await mod;
+ const cases=[
+  [{jsonrpc:"1.0",id:1,error:{message:"PRIVATE"}},"mcp-protocol-invalid"],
+  [{jsonrpc:"2.0",id:2,error:{message:"PRIVATE"}},"mcp-protocol-invalid"],
+  [{jsonrpc:"2.0",id:1,error:{message:"PRIVATE"}},"mcp-rpc-error"],
+  [{jsonrpc:"2.0",id:1,result:{isError:true,content:[{type:"text",text:"PRIVATE"}]}},"mcp-tool-error"],
+  [{jsonrpc:"2.0",id:1,result:{isError:false,content:[{type:"text",text:"PRIVATE"}]}},"mcp-structured-content-required"],
+ ] as const;
+ for(const [envelope,detail] of cases){
+  const f=fixture(),events:any[]=[],{mcp:_mcp,...ports}=f.ports;
+  await assert.rejects(prepareEditorialPlan({...request,wikipedia_url:url},{...ports,
+   env:{...ports.env,EDITORIAL_MCP_URL:"https://www.terraveler.com/api/mcp"},
+   fetcher:async()=>Response.json(envelope),observe:e=>events.push(e)}),
+   (e:any)=>e.code==="mcp-unavailable"&&e.stage==="orientation-read"&&e.detail===detail&&!String(e).includes("PRIVATE"));
+  assert.equal(f.writes,0);assert.equal(f.calls.length,0);
+  assert.ok(!events.some(e=>e.stage==="planner"||e.stage==="persist"));
+  assert.doesNotMatch(JSON.stringify(events),/PRIVATE/);
+ }
 });
 
 test("model transport accepts only standalone JSON or a single fenced JSON value",async()=>{
@@ -61,7 +87,7 @@ test("model transport accepts only standalone JSON or a single fenced JSON value
 });
 test("malformed planner schema cannot reach reviewer or database",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
- await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],work_items:[{...work.work_items[0],depends_on:["missing"]}]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
+ await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],research_items:[{...work.research_items[0],id:"INVALID ID"}]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
  assert.equal(f.writes,0);
 });
 
@@ -97,7 +123,7 @@ test("preparation reserves two bounded generation calls within its function dura
  };
  try{
   assert.equal((await prepareEditorialPlan(request,{...ports,env,fetcher})).plan_id,1);
-  assert.deepEqual(delays,[100000,100000]);assert.equal(calls,2);assert.equal(f.writes,1);
+  assert.deepEqual(delays,[90000,160000]);assert.equal(calls,2);assert.equal(f.writes,1);
  }finally{globalThis.setTimeout=oldSetTimeout;}
  const {maxDuration}=await import("../app/api/desk/projects/prepare/route");
  assert.equal(maxDuration,300);
@@ -106,7 +132,7 @@ test("preparation reserves two bounded generation calls within its function dura
 
 test("preparation emits correlated stages and isolates validation failure before review/persistence",async()=>{
  const {prepareEditorialPlan}=await mod,f=fixture(),events:any[]=[],attemptId="00000000-0000-4000-8000-000000000099";
- await assert.rejects(prepareEditorialPlan(request,{...f.ports,attemptId,observe:e=>events.push(e),generate:async()=>({gaps:[],work_items:[]})}),
+ await assert.rejects(prepareEditorialPlan(request,{...f.ports,attemptId,observe:e=>events.push(e),generate:async()=>({gaps:[],research_items:[]})}),
   (e:any)=>e.stage==="plan-validation"&&e.correlation_id===attemptId&&e.code==="plan-generation-invalid");
  assert.equal(f.writes,0);assert.equal(events.at(-1).stage,"plan-validation");assert.equal(events.at(-1).status,"failed");
  assert.ok(events.every(e=>e.correlation_id===attemptId&&e.request_id===request.request_id&&e.topic_id===1));
@@ -185,7 +211,16 @@ test("preparation requests JSON mode through Limen for both agents without forma
   const fetcher:typeof fetch=async(endpoint,init)=>{
    assert.equal(String(endpoint),"https://gateway.example/v1/chat/completions");
    const body=JSON.parse(String(init?.body));
-   assert.deepEqual(body.response_format,{type:"json_object"});assert.equal(body.model,"local");
+   assert.equal(body.response_format.type,"json_schema");assert.equal(body.response_format.json_schema.strict,true);
+   assert.equal(body.response_format.json_schema.schema.additionalProperties,false);assert.equal(body.model,"local");
+   assert.equal(JSON.stringify(body.response_format.json_schema.schema).includes("maxLength"),false);
+   if(calls===0){
+    const schema=body.response_format.json_schema.schema;
+    assert.equal(body.response_format.json_schema.name,"terraveler_editorial_research_plan");
+    assert.deepEqual(schema.properties.research_items.items.properties.specialty.enum,["history","ethnohistory","itinerary"]);
+    assert.equal(schema.properties.research_items.items.additionalProperties,false);
+    assert.equal(schema.properties.research_items.minItems,1);assert.equal(schema.properties.research_items.maxItems,4);
+   }else assert.equal(body.response_format.json_schema.name,"terraveler_editorial_plan_review");
    assert.equal((init?.headers as Record<string,string>)["Authorization"],"Bearer fixture-key");
    const stage=calls++;
    if(stage===1&&failReview)return Response.json({error:"PRIVATE PROVIDER BODY"},{status:400});

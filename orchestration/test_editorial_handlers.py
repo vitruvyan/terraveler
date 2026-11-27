@@ -11,9 +11,17 @@ SOURCE = {"id": "archive:1", "text": "They departed in 1527. The location is unc
 RESEARCH = {"kind": "research", "references": [SOURCE], "findings": [
     {"text": "Departure in 1527", "source_ids": ["archive:1"], "quotes": [
         {"source_id": "archive:1", "text": "They departed in 1527."}]}], "uncertainties": ["Location"]}
+DRAFT_CANDIDATE = {"kind": "draft", "title": "A journey",
+                   "paragraphs": [{"text": "They departed in 1527.", "source_id": "archive:1"}]}
 DRAFT = {"kind": "draft", "title": "A journey", "body": "They departed in 1527.",
-         "citations": [{"source_id": "archive:1", "claim": "They departed in 1527.",
-                        "quote": "They departed in 1527."}]}
+         "citations": [{"source_id": "archive:1", "claim": "They departed in 1527."}]}
+WAYPOINT = {"id": "sanlucar", "sequence": 1, "place_historical": "Sanlúcar de Barrameda",
+            "place_modern": "Sanlúcar de Barrameda, Spain", "latitude": 36.78, "longitude": -6.35,
+            "arrival_date": "1527-06-17", "departure_date": "1527-06-17", "date_note": None,
+            "event": "Departure", "coordinate_note": "Modern harbour centre; historical landing point is not exact.",
+            "source_ids": ["archive:1"], "confidence": "approximate",
+            "uncertainty": "The modern coordinate does not identify the exact sixteenth-century anchorage."}
+ITINERARY_RESEARCH = {**RESEARCH, "waypoints": [WAYPOINT]}
 
 
 class HandlersTest(unittest.TestCase):
@@ -50,6 +58,45 @@ class HandlersTest(unittest.TestCase):
             with self.assertRaises(EvidenceError):
                 research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=self.generator(value))
 
+    def test_itinerary_waypoints_flow_unchanged_through_draft_and_review(self):
+        self.task["input"] = {"work_item": {"specialty": "itinerary"}}
+        result = research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=self.generator(ITINERARY_RESEARCH))
+        self.assertEqual(result["waypoints"], [WAYPOINT])
+        self.task.update(role="writer", input={"research_result": result})
+        draft = writer(self.task, self.config, generator=self.generator(DRAFT_CANDIDATE))
+        self.assertEqual(draft["waypoints"], [WAYPOINT])
+        self.assertIsNot(draft["waypoints"], result["waypoints"])
+        self.task.update(role="reviewer", input={"research_result": result, "draft_result": draft})
+        review = reviewer(self.task, self.config, generator=self.generator({"verdict": "ready-for-editor", "issues": []}))
+        self.assertEqual(review["verdict"], "ready-for-editor")
+
+    def test_invalid_waypoints_and_unexpected_route_data_fail_closed(self):
+        self.task["input"] = {"work_item": {"specialty": "itinerary"}}
+        mutations = (
+            lambda value: value["waypoints"][0].update(latitude=91),
+            lambda value: value["waypoints"][0].update(longitude=True),
+            lambda value: value["waypoints"][0].update(arrival_date="1527-02-30"),
+            lambda value: value["waypoints"][0].update(source_ids=["invented"]),
+            lambda value: value["waypoints"][0].update(uncertainty=None),
+            lambda value: value["waypoints"][0].update(coordinate_note="x" * 501),
+            lambda value: value["waypoints"].append({**value["waypoints"][0], "id": "duplicate-sequence"}),
+            lambda value: value.pop("waypoints"),
+        )
+        for mutate in mutations:
+            value = copy.deepcopy(ITINERARY_RESEARCH)
+            mutate(value)
+            with self.subTest(mutate=mutate), self.assertRaises(EvidenceError):
+                research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=self.generator(value))
+        self.task["input"] = {}
+        with self.assertRaisesRegex(EvidenceError, "editorial-unexpected-waypoints"):
+            research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=self.generator(ITINERARY_RESEARCH))
+
+    def test_review_rejects_changed_waypoint_provenance_before_generation(self):
+        draft = {**DRAFT, "waypoints": [{**WAYPOINT, "latitude": 0}]}
+        self.task.update(role="reviewer", input={"research_result": ITINERARY_RESEARCH, "draft_result": draft})
+        with self.assertRaisesRegex(EvidenceError, "editorial-waypoint-provenance"):
+            reviewer(self.task, self.config, generator=lambda *args: self.fail("changed route sent to model"))
+
     def test_missing_corpus_fails_before_generation(self):
         def forbidden(*args):
             self.fail("generation called without corpus")
@@ -58,15 +105,17 @@ class HandlersTest(unittest.TestCase):
 
     def test_writer_uses_research_snapshot_without_retrieval(self):
         self.task.update(role="writer", input={"research_result": RESEARCH})
-        result = writer(self.task, self.config, generator=self.generator(DRAFT))
+        result = writer(self.task, self.config, generator=self.generator(DRAFT_CANDIDATE))
         self.assertEqual(result["kind"], "draft")
+        self.assertEqual(result["body"], "They departed in 1527.")
+        self.assertEqual(result["citations"], [{"source_id": "archive:1", "claim": "They departed in 1527."}])
         self.assertEqual(result["references"], [SOURCE])
         self.assertEqual(result["verification"], "candidate-only")
 
     def test_writer_rejects_unknown_citation(self):
         self.task.update(role="writer", input={"research_result": RESEARCH})
-        bad = copy.deepcopy(DRAFT)
-        bad["citations"][0]["source_id"] = "invented"
+        bad = copy.deepcopy(DRAFT_CANDIDATE)
+        bad["paragraphs"][0]["source_id"] = "invented"
         with self.assertRaises(EvidenceError):
             writer(self.task, self.config, generator=self.generator(bad))
 
@@ -79,11 +128,12 @@ class HandlersTest(unittest.TestCase):
         with self.assertRaises(EvidenceError):
             reviewer(self.task, self.config, generator=lambda *a: self.fail("invalid draft sent to model"))
 
-    def test_writer_rejects_unmapped_prose_and_unattributed_quotation(self):
+    def test_writer_rejects_duplicate_fields_and_unattributed_quotation(self):
         self.task.update(role="writer", input={"research_result": RESEARCH})
-        for extra in ("\n\nAn invented additional fact.", ' "A fabricated historical quotation"'):
-            bad = copy.deepcopy(DRAFT)
-            bad["body"] += extra
+        for mutate in (lambda d: d["paragraphs"][0].update(claim="duplicate"),
+                       lambda d: d["paragraphs"][0].update(text=' "A fabricated historical quotation"')):
+            bad = copy.deepcopy(DRAFT_CANDIDATE)
+            mutate(bad)
             with self.assertRaises(EvidenceError):
                 writer(self.task, self.config, generator=self.generator(bad))
 
@@ -95,7 +145,7 @@ class HandlersTest(unittest.TestCase):
             self.assertEqual(task["input"]["draft_result"], DRAFT)
             self.assertEqual(task["input"]["review_result"]["issues"], ["Clarify uncertainty"])
             self.assertEqual(task["input"]["research_result"]["references"], [SOURCE])
-            return {"candidate": DRAFT}
+            return {"candidate": DRAFT_CANDIDATE}
         self.assertEqual(writer(self.task, self.config, generator=generate)["kind"], "draft")
 
     def test_ready_review_cannot_carry_unresolved_issues(self):
@@ -109,7 +159,7 @@ class HandlersTest(unittest.TestCase):
         result = research(self.task, self.config, retrieve=lambda _: [source], generator=self.generator(RESEARCH))
         self.assertEqual(result["references"][0]["governance"], policy)
         self.task.update(role="writer", input={"research_result": result})
-        draft = writer(self.task, self.config, generator=self.generator(DRAFT))
+        draft = writer(self.task, self.config, generator=self.generator(DRAFT_CANDIDATE))
         self.assertEqual(draft["references"][0]["governance"], policy)
 
     def test_review_has_no_publish_verdict(self):

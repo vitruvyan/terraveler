@@ -24,6 +24,20 @@ with a recorded effect: the trace proves what was supplied and returned, not
 that claims are historically correct or verified by pure replay. A generated
 result must never be relabelled verified just because the run succeeded.
 
+For plan-dispatched writer tasks, a completed changes-requested review set can
+schedule a revision automatically. The worker treats it as a new immutable task,
+not an in-place result update: input includes the previous draft, composed review
+issues and source review IDs, while the normal graph context supplies research.
+Fresh review tasks follow the revised draft. Scheduling stops on blocked or after
+two revisions; there is no unbounded worker loop and no automatic publication.
+
+Itinerary research uses a closed waypoint schema: unique IDs and sequences, finite
+bounded coordinates, valid partial dates, known source IDs and explicit uncertainty
+for approximate or reconstructed locations. Only the itinerary researcher proposes
+this route. SQL passes it unchanged to dependent writers, and reviewers reject a
+draft whose route differs. The preview renders these as private candidates, not
+verified geography; connecting lines are sequence guides, not navigation tracks.
+
 The handler receives explicit task/topic/source/dependency context, excluding
 the worker's lease token. Its output and full successful Motus trace are saved
 by the parent through one fenced completion RPC. A late process cannot accept
@@ -64,6 +78,11 @@ is explicit and does not run any model:
 ```sh
 EDITORIAL_WORKER_ENABLED=1 python -m orchestration.editorial --recover
 ```
+
+This recovers only expired leases. A task that exhausted its attempt budget needs
+the separate editor-only `/api/desk/projects/retry` authorization after the cause
+has been resolved. That operation grants one additional attempt and records an
+immutable audit event; neither path is an automatic model retry.
 
 With only the worker gate enabled, `--once` returns `no-handlers`. Set
 `EDITORIAL_HANDLERS_ENABLED=1` as well to register the reviewed top-level role

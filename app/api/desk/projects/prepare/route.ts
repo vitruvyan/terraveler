@@ -4,7 +4,7 @@ import { requireEditor } from "@/lib/deskAuth";
 import { parsePreparationRequest, prepareEditorialPlan, PreparationError } from "@/lib/editorialPreparation";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
-// Two serial 100s inference calls, up to two 20s MCP calls, plus data-plane overhead.
+// Overall route budget; inference and MCP calls also retain their own shorter bounds.
 export const maxDuration=300;
 const reply=(body:unknown,status=200)=>NextResponse.json(body,{status,headers:{"Cache-Control":"private, no-store"}});
 export async function POST(req:Request){

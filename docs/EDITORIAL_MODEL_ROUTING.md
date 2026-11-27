@@ -39,13 +39,16 @@ until the MCP path and permissions have been checked. No database migration.
 
 Worker production configuration defaults to a 120-second gateway socket timeout
 and 4096 output tokens (including reasoning tokens). Optional
-`EDITOR_LIMEN_TIMEOUT_SECONDS` (positive, at most 120) and
+`EDITOR_LIMEN_TIMEOUT_SECONDS` (positive, at most 900) and
 `EDITOR_LIMEN_MAX_TOKENS` (integer 512–8192) remain bounded. Explicit test-port
-construction retains its previous 30-second socket default. The existing
-300-second worker execution deadline and lease heartbeats are unchanged.
+construction retains its previous 30-second socket default. The 1000-second
+worker execution deadline leaves margin around the maximum gateway call, and
+lease heartbeats are unchanged.
 
-Preparation has two serial 100-second inference budgets, 5000 output tokens per
-call, and a 300-second Vercel function duration declaration. Its #124 standalone
+Preparation has serial 90-second planner and 160-second reviewer inference budgets,
+5000 output tokens per call, and a 300-second Vercel function duration declaration.
+The per-call bounds plus the two 20-second MCP bounds remain below that overall
+budget. Its #124 standalone
 or fenced JSON parser and safe diagnostic categories remain unchanged. Both
 clients reject explicit `finish_reason: length`, even if the partial output
 happens to parse as JSON. No retry or additional concurrent inference is added.

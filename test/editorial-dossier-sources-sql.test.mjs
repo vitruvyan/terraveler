@@ -5,7 +5,7 @@ import {PGlite} from '@electric-sql/pglite';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url));
-const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources'];
+const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom'];
 const migrations=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 const scalar=async(db,sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
 const url='https://example.org/journal';
@@ -51,7 +51,7 @@ def generate(task,cfg):
         return {'candidate':{'findings':[{'text':'They departed.','source_ids':[sid],'quotes':[]}],'uncertainties':[]}}
     if task['role']=='writer':
         sid=task['input']['research_result']['references'][0]['id']
-        return {'candidate':{'title':'A private journey','body':'They departed.','citations':[{'source_id':sid,'claim':'They departed.'}]}}
+        return {'candidate':{'title':'A private journey','paragraphs':[{'source_id':sid,'text':'They departed.'}]}}
     return {'candidate':{'verdict':'ready-for-editor','issues':[]}}
 def retrieve(task):
     def transport(req,timeout):
@@ -91,7 +91,7 @@ test('new dossier without target_voyage uses MCP receipts through all existing p
  assert.equal(await scalar(db,'select state from editorial_graph_status where id=$1',[run.run_id]),'awaiting-editor');
  await db.exec('reset role');assert.equal(await scalar(db,'select count(*)::int from submissions'),1);
  assert.equal(await scalar(db,'select count(*)::int from rag_docs'),0);
- await db.exec(migrations.at(-1));assert.equal(await scalar(db,'select count(*)::int from editorial_topic_sources'),1);
+ await db.exec(migrations.at(-2));assert.equal(await scalar(db,'select count(*)::int from editorial_topic_sources'),1);
  }finally{await db.close();}});
 
 test('complete source receipts, current rights and exact endpoints are required before association',async()=>{const db=await setup();try{

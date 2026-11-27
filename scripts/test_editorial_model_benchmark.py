@@ -55,9 +55,11 @@ class ParseTests(unittest.TestCase):
 
 class ValidatorTests(unittest.TestCase):
     def test_valid_fixtures_pass(self):
+        self.assertEqual(bench.compose_plan(bench.FIXTURE_RESEARCH_PLAN), bench.FIXTURE_PLAN)
+        self.assertEqual(bench.validate_plan_output(bench.FIXTURE_RESEARCH_PLAN), [])
         self.assertEqual(bench.validate_plan(bench.FIXTURE_PLAN), [])
         self.assertEqual(bench.validate_research(bench.FIXTURE_RESEARCH), [])
-        self.assertEqual(bench.validate_draft(bench.FIXTURE_DRAFT), [])
+        self.assertEqual(bench.validate_draft(bench.FIXTURE_DRAFT_CANDIDATE), [])
         self.assertEqual(bench.validate_review({"kind": "review", "verdict": "ready-for-editor", "issues": []}), [])
         self.assertEqual(bench.validate_plan_review({"verdict": "adequate-for-next-stage", "issues": []}), [])
 
@@ -75,22 +77,40 @@ class ValidatorTests(unittest.TestCase):
         bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
         bad["work_items"][0]["source_receipt_ids"] = ["mcp:fixture-src-1"]
         self.assertIn("receipt-ids-must-be-empty", bench.validate_plan(bad))
+        bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
+        bad["work_items"][2]["depends_on"] = ["wreck"]
+        self.assertIn("writer-research-coverage", bench.validate_plan(bad))
+        bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
+        bad["work_items"][4]["depends_on"] = ["editorial"]
+        self.assertIn("writer-review-coverage", bench.validate_plan(bad))
+        bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH_PLAN))
+        bad["research_items"][0]["depends_on"] = []
+        self.assertEqual(bench.validate_plan_output(bad), ["invalid-research-plan"])
+        bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH_PLAN))
+        bad["research_items"][0]["id"] = "diary"
+        self.assertIn("bad-or-duplicate-id", bench.validate_plan_output(bad))
 
-    def test_research_quote_must_be_exact_substring(self):
+    def test_research_is_paraphrase_with_known_sources(self):
         bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH))
-        bad["findings"][0]["quotes"][0]["text"] = "paraphrased words not in the source"
-        self.assertIn("quote-not-in-source", bench.validate_research(bad))
+        bad["findings"][0]["quotes"] = [{"source_id": "mcp:fixture-src-1", "text": "exact source words"}]
+        self.assertIn("quotes-must-be-empty", bench.validate_research(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH))
         bad["findings"][0]["source_ids"] = ["mcp:invented"]
         self.assertIn("unknown-source-id", bench.validate_research(bad))
+        bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH))
+        bad["findings"][0]["text"] = 'An unnecessary "quotation"'
+        self.assertIn("bad-finding-text", bench.validate_research(bad))
 
-    def test_draft_claim_must_match_body_paragraph(self):
-        bad = json.loads(json.dumps(bench.FIXTURE_DRAFT))
-        bad["citations"][0]["claim"] = "This sentence is not in the body."
-        self.assertIn("claim-not-a-body-paragraph", bench.validate_draft(bad))
+    def test_draft_uses_structured_paragraphs(self):
+        bad = json.loads(json.dumps(bench.FIXTURE_DRAFT_CANDIDATE))
+        bad["paragraphs"][0]["source_id"] = "mcp:invented"
+        self.assertIn("unknown-source-id", bench.validate_draft(bad))
+        bad = json.loads(json.dumps(bench.FIXTURE_DRAFT_CANDIDATE))
+        bad["paragraphs"][0]["claim"] = "duplicate trusted field"
+        self.assertIn("bad-paragraph", bench.validate_draft(bad))
 
     def test_verdict_issue_consistency(self):
-        self.assertIn("adequate-with-issues",
+        self.assertIn("verdict-issues-mismatch",
                       bench.validate_plan_review({"verdict": "adequate-for-next-stage", "issues": ["x"]}))
         self.assertIn("ready-with-issues",
                       bench.validate_review({"kind": "review", "verdict": "ready-for-editor", "issues": ["x"]}))
@@ -106,6 +126,12 @@ class RunCellTests(unittest.TestCase):
         self.assertEqual(cell["http_status"], 200)
         self.assertEqual(cell["completion_tokens"], 5)
         self.assertNotIn("ready-for-editor", json.dumps(cell).replace('"verdict"', ''))  # no raw content
+        plan = bench.run_cell("plan", "local-default", config(), 30, True,
+                              transport=transport_with(envelope(bench.FIXTURE_RESEARCH_PLAN)))
+        self.assertEqual(plan["outcome"], "ok")
+        self.assertEqual(plan["specialty_counts"]["copyedit"], 2)
+        self.assertEqual(plan["specialty_counts"]["factcheck"], 2)
+        self.assertNotIn("Narvaez", json.dumps(plan))
 
     def test_invalid_json_and_transport_categories(self):
         cell = bench.run_cell("plan", "local-default", config(), 30, True,
@@ -117,6 +143,18 @@ class RunCellTests(unittest.TestCase):
         cell = bench.run_cell("plan", "unauthorized-alias", config(), 30, True,
                               transport=transport_with(envelope({"a": 1})))
         self.assertEqual(cell["outcome"], "model-not-authorized")
+
+    def test_json_mode_uses_the_exact_production_schemas(self):
+        seen = []
+        def transport(url, payload, key, data_class, timeout):
+            seen.append(payload)
+            return 200, envelope(bench.FIXTURE_DRAFT_CANDIDATE), "operator-local"
+        cell = bench.run_cell("draft", "local-default", config(), 30, True, transport=transport)
+        self.assertEqual(cell["outcome"], "ok")
+        guided = seen[0]["response_format"]
+        self.assertEqual(guided["type"], "json_schema")
+        self.assertTrue(guided["json_schema"]["strict"])
+        self.assertIs(guided["json_schema"]["schema"], bench.ROLE_OUTPUT_SCHEMAS["writer"])
 
     def test_schema_invalid_keeps_only_error_kinds(self):
         cell = bench.run_cell("plan-review", "local-default", config(), 30, True,

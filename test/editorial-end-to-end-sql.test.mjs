@@ -32,7 +32,7 @@ def generate(task,cfg):
         if task['input']['revision']:
             assert task['input']['review_result']['verdict']=='changes-requested'
             assert task['input']['draft_result']['title']=='Initial article'
-        candidate={'kind':'draft','title':'Revised article' if task['input']['revision'] else 'Initial article','body':'They departed in 1766.','citations':[{'source_id':'rag:7','claim':'They departed in 1766.','quote':'They departed in 1766.'}]}
+        candidate={'kind':'draft','title':'Revised article' if task['input']['revision'] else 'Initial article','paragraphs':[{'source_id':'rag:7','text':'They departed in 1766.'}]}
     else:
         assert task['input']['draft_result']['citations'][0]['source_id']=='rag:7'
         candidate={'kind':'review','verdict':'ready-for-editor' if task['input']['revision'] else 'changes-requested','issues':[] if task['input']['revision'] else ['Clarify the article title.']}

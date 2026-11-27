@@ -32,15 +32,15 @@ export const EDITORIAL_SPECIALISTS = [
   },
   {
     id: "ethnohistory", label: "Ethnohistorian", role: "research",
-    implementation: "planned", handler: null,
+    implementation: "generic-handler", handler: "research",
     delivery: "Time-scoped population context and evidence-linked encounter claims",
-    instructions: instructions("Study peoples and communities associated with the voyage. Keep reusable population context separate from claims of a particular encounter. Record time scope, waypoint association, names used by each source, proposed identifications and competing interpretations. Never infer an encountered population from modern geography alone. Distinguish colonial testimony from indigenous voices and attribute each account to its author, date and perspective. Later indigenous accounts are not automatically contemporary eyewitness testimony. Preserve respectful naming without silently rewriting historical source names."),
+    instructions: instructions("Study peoples and communities associated with the voyage. Keep reusable population context separate from claims of a particular encounter. Record time scope, waypoint association, names used by each source, proposed identifications and competing interpretations. Never infer an encountered population from modern geography alone. Distinguish colonial testimony from indigenous voices and attribute each account to its author, date and perspective. Later indigenous accounts are not automatically contemporary eyewitness testimony. Preserve respectful naming without silently rewriting historical source names. Follow the research handler's structured output contract."),
   },
   {
     id: "itinerary", label: "Itinerary researcher", role: "research",
-    implementation: "planned", handler: null,
+    implementation: "generic-handler", handler: "research",
     delivery: "Proposed waypoint sequence, chronology and geographic uncertainty",
-    instructions: instructions("Reconstruct the route through stable voyage and waypoint identifiers. Record the evidence for dates, sequence, historical place names and proposed modern equivalents. Distinguish arrival, departure, source date and inferred date. Coordinates are proposals until the geographic checks validate them; never manufacture precise coordinates from vague descriptions. Keep alternate routes and unresolved place equivalences visible. Do not write directly to the published atlas."),
+    instructions: instructions("Reconstruct the route through stable voyage and waypoint identifiers. Record the evidence for dates, sequence, historical place names and proposed modern equivalents. Distinguish arrival, departure, source date and inferred date. Coordinates are proposals until the geographic checks validate them; never manufacture precise coordinates from vague descriptions. Keep alternate routes and unresolved place equivalences visible. Do not write directly to the published atlas. Follow the research handler's structured output contract."),
   },
   {
     id: "iconography", label: "Photo editor", role: "research",
@@ -62,15 +62,15 @@ export const EDITORIAL_SPECIALISTS = [
   },
   {
     id: "editorial", label: "Editorial writer", role: "writer",
-    implementation: "planned", handler: null,
+    implementation: "generic-handler", handler: "writer",
     delivery: "Explicitly labelled interpretive essay linked to the research dossier",
-    instructions: instructions("Develop an explicitly labelled interpretive essay or comparative perspective from reviewed evidence. Separate the editorial argument from source-backed factual statements. Attribute disagreement and avoid presenting an author's worldview as that of all members of a population. Do not replace the voyage's factual diary with opinion, invent consensus or weaken an uncertainty established by the research and review."),
+    instructions: instructions("Develop an explicitly labelled interpretive essay or comparative perspective from reviewed evidence. Separate the editorial argument from source-backed factual statements. Attribute disagreement and avoid presenting an author's worldview as that of all members of a population. Do not replace the voyage's factual diary with opinion, invent consensus or weaken an uncertainty established by the research and review. Follow the writer handler's structured output contract."),
   },
   {
     id: "copyedit", label: "Copy editor", role: "reviewer",
-    implementation: "planned", handler: null,
+    implementation: "generic-handler", handler: "reviewer",
     delivery: "Version-specific language corrections and consistency findings",
-    instructions: instructions("Review clarity, grammar, terminology and consistency of a specific candidate revision. Propose changes while preserving source meaning, uncertainty, citations, quotation bytes and historical naming distinctions. Do not silently alter a factual claim or accept an unsupported rewrite merely because it reads better. Return factual issues to the researcher or fact checker. A language review does not establish factual or rights verification."),
+    instructions: instructions("Review clarity, grammar, terminology and consistency of a specific candidate revision. Propose changes while preserving source meaning, uncertainty, citations, quotation bytes and historical naming distinctions. Do not silently alter a factual claim or accept an unsupported rewrite merely because it reads better. Return factual issues to the researcher or fact checker. A language review does not establish factual or rights verification. Follow the reviewer handler's structured verdict contract."),
   },
   {
     id: "factcheck", label: "Fact checker", role: "reviewer",

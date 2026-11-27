@@ -6,6 +6,8 @@ functions so the worker's spawned process can import them without closures.
 from __future__ import annotations
 
 import copy
+from datetime import date
+import math
 import os
 import re
 from typing import Callable
@@ -56,6 +58,67 @@ def _quoted_spans(text, known):
             raise EvidenceError("editorial-quote-mismatch")
 
 
+WAYPOINT_FIELDS = {"id", "sequence", "place_historical", "place_modern", "latitude", "longitude",
+                   "arrival_date", "departure_date", "date_note", "event", "coordinate_note",
+                   "source_ids", "confidence", "uncertainty"}
+
+
+def _partial_date(value):
+    if value is None:
+        return
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}(?:-[0-9]{2}(?:-[0-9]{2})?)?", value):
+        raise EvidenceError("editorial-invalid-waypoint-date")
+    parts = [int(part) for part in value.split("-")]
+    try:
+        if len(parts) > 1 and not 1 <= parts[1] <= 12:
+            raise ValueError()
+        if len(parts) == 3:
+            date(*parts)
+    except ValueError:
+        raise EvidenceError("editorial-invalid-waypoint-date") from None
+
+
+def _waypoints(values, known):
+    if not isinstance(values, list) or not 1 <= len(values) <= 40:
+        raise EvidenceError("editorial-waypoints-required")
+    identities, sequences = set(), set()
+    for waypoint in values:
+        if not isinstance(waypoint, dict) or set(waypoint) != WAYPOINT_FIELDS:
+            raise EvidenceError("editorial-invalid-waypoint")
+        identity = waypoint["id"]
+        sequence = waypoint["sequence"]
+        if (not isinstance(identity, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,79}", identity)
+                or identity in identities or type(sequence) is not int or not 1 <= sequence <= 200
+                or sequence in sequences):
+            raise EvidenceError("editorial-invalid-waypoint-identity")
+        identities.add(identity)
+        sequences.add(sequence)
+        _text(waypoint["place_historical"], 500)
+        if waypoint["place_modern"] is not None:
+            _text(waypoint["place_modern"], 500)
+        for field, minimum, maximum in (("latitude", -90, 90), ("longitude", -180, 180)):
+            coordinate = waypoint[field]
+            if type(coordinate) not in (int, float) or not math.isfinite(coordinate) or not minimum <= coordinate <= maximum:
+                raise EvidenceError("editorial-invalid-waypoint-coordinate")
+        _partial_date(waypoint["arrival_date"])
+        _partial_date(waypoint["departure_date"])
+        for field, limit in (("date_note", 500), ("coordinate_note", 500), ("uncertainty", 500)):
+            if waypoint[field] is not None:
+                _quoted_spans(_text(waypoint[field], limit), known)
+        _quoted_spans(_text(waypoint["event"], 5000), known)
+        ids = waypoint["source_ids"]
+        if (not isinstance(ids, list) or not ids
+                or any(not isinstance(source, str) or source not in known for source in ids)
+                or len(ids) != len(set(ids))):
+            raise EvidenceError("editorial-unknown-source")
+        confidence = waypoint["confidence"]
+        if confidence not in ("certain", "approximate", "reconstructed"):
+            raise EvidenceError("editorial-invalid-waypoint-confidence")
+        if confidence != "certain" and not isinstance(waypoint["uncertainty"], str):
+            raise EvidenceError("editorial-waypoint-uncertainty-required")
+    return copy.deepcopy(values)
+
+
 def _research(value):
     if not isinstance(value, dict) or value.get("kind") != "research":
         raise EvidenceError("editorial-research-required")
@@ -81,6 +144,10 @@ def _research(value):
     uncertainty = value.get("uncertainties")
     if not isinstance(uncertainty, list) or any(not isinstance(i, str) or not i.strip() for i in uncertainty):
         raise EvidenceError("editorial-invalid-uncertainties")
+    if value.get("waypoints"):
+        _waypoints(value["waypoints"], known)
+    elif "waypoints" in value and not isinstance(value["waypoints"], list):
+        raise EvidenceError("editorial-invalid-waypoints")
     return references
 
 
@@ -90,6 +157,8 @@ def _draft(value, research):
     _text(value.get("title"), 500)
     body = _text(value.get("body"))
     known = {s["id"]: s["text"] for s in _research(research)}
+    if value.get("waypoints") != research.get("waypoints") and ("waypoints" in value or "waypoints" in research):
+        raise EvidenceError("editorial-waypoint-provenance")
     citations = value.get("citations")
     if not isinstance(citations, list) or not citations or len(citations) > 200:
         raise EvidenceError("editorial-citations-required")
@@ -140,6 +209,12 @@ def research(task, config, *, retrieve: Callable, generator=generate_candidate):
     candidate, raw = _generate(task, config, generator, retrieved_sources=references)
     result = {**candidate, "kind": "research", "references": references}
     _research(result)
+    work_item = task.get("input", {}).get("work_item", {})
+    itinerary = isinstance(work_item, dict) and work_item.get("specialty") == "itinerary"
+    if itinerary:
+        result["waypoints"] = _waypoints(candidate.get("waypoints"), {s["id"]: s["text"] for s in references})
+    elif "waypoints" in result:
+        raise EvidenceError("editorial-unexpected-waypoints")
     return {**result, "candidate": raw, "verification": "candidate-only"}
 
 
@@ -147,7 +222,20 @@ def writer(task, config, *, generator=generate_candidate):
     research_result = _context(task, "research")
     references = _research(research_result)
     candidate, raw = _generate(task, config, generator, research_result=research_result)
-    result = {**candidate, "kind": "draft", "references": references}
+    paragraphs = candidate.get("paragraphs")
+    if not isinstance(paragraphs, list) or not 1 <= len(paragraphs) <= 200:
+        raise EvidenceError("editorial-draft-required")
+    texts = []
+    for paragraph in paragraphs:
+        if not isinstance(paragraph, dict) or set(paragraph) != {"text", "source_id"}:
+            raise EvidenceError("editorial-draft-required")
+        texts.append(_text(paragraph["text"]))
+    result = {"kind": "draft", "title": candidate.get("title"), "body": "\n\n".join(texts),
+              "citations": [{"source_id": paragraph["source_id"], "claim": text}
+                            for paragraph, text in zip(paragraphs, texts)],
+              "references": references}
+    if "waypoints" in research_result:
+        result["waypoints"] = copy.deepcopy(research_result["waypoints"])
     _draft(result, research_result)
     return {**result, "candidate": raw, "verification": "candidate-only"}
 
