@@ -20,13 +20,24 @@ const draft = {
     { id: "source-b", title: "Unsafe source address", url: "javascript:alert(1)", rights: "CC BY-SA" },
   ], candidate: { token: "SECRET_MODEL_ENVELOPE" },
 };
-function fixture(review: unknown = { kind: "review", verdict: "changes-requested", issues: ["Clarify the date."] }) {
+const waypoints = [
+  { id: "galveston", sequence: 2, place_historical: "Malhado", place_modern: "Galveston Island, Texas",
+    latitude: 29.3, longitude: -94.8, arrival_date: "1528-11", departure_date: null,
+    date_note: "The month is approximate.", event: "The survivors reach an island off the coast.",
+    coordinate_note: "Candidate island location; the identification remains disputed.", source_ids: ["source-a"],
+    confidence: "approximate", uncertainty: "The historical place identification is not certain." },
+  { id: "florida", sequence: 1, place_historical: "Florida coast", place_modern: null,
+    latitude: 27.9, longitude: -82.5, arrival_date: "1528", departure_date: "1528",
+    date_note: null, event: "Landfall after the Atlantic crossing.", coordinate_note: "Regional landing candidate.",
+    source_ids: ["source-a"], confidence: "certain", uncertainty: null },
+];
+function fixture(review: unknown = { kind: "review", verdict: "changes-requested", issues: ["Clarify the date."] }, route?: unknown[]) {
   const paths: string[] = [];
   return { paths, read: async (method: string, path: string) => {
     assert.equal(method, "GET"); paths.push(path);
     if (path.startsWith("editorial_topics?")) return [{ id: 7, title: "Voyage dossier" }];
-    if (path.includes("role=eq.writer")) return [{ id: 41, task_id: 19, created_at: "2026-11-16T18:00:00Z", result: draft }];
-    if (path.includes("role=eq.reviewer")) return review ? [{ result: review }] : [];
+    if (path.includes("role=eq.writer")) return [{ id: 41, task_id: 19, created_at: "2026-11-16T18:00:00Z", result: route === undefined ? draft : { ...draft, waypoints: route } }];
+    if (path.includes("role=eq.reviewer")) return Array.isArray(review) ? review : review ? [{ task_id: 30, result: review }] : [];
     throw new Error(`Unexpected query: ${path}`);
   } };
 }
@@ -83,9 +94,42 @@ test("preview refuses malformed review readiness instead of showing a false clea
   assert.equal((await readEditorialPreview(7, 41, read))?.review?.verdict, "ready-for-editor");
 });
 
+test("preview combines every reviewer of the draft and a later clean review never hides a blocking one", async () => {
+  const blocked = { kind: "review", verdict: "blocked", issues: ["Waypoint landfall is unsupported."] };
+  const ready = { kind: "review", verdict: "ready-for-editor", issues: [] };
+  const older = { kind: "review", verdict: "changes-requested", issues: ["Superseded."] };
+  // Rows arrive newest first: copyedit (task 31) is ready after factcheck (task 32) blocked.
+  const { read } = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: blocked }, { task_id: 31, result: older }]);
+  const value = await readEditorialPreview(7, 41, read);
+  assert.deepEqual(value?.review, { verdict: "blocked", issues: ["Waypoint landfall is unsupported."] });
+  const allReady = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: ready }]);
+  assert.deepEqual((await readEditorialPreview(7, 41, allReady.read))?.review, { verdict: "ready-for-editor", issues: [] });
+  const malformed = fixture([{ task_id: 31, result: ready }, { task_id: 32, result: { kind: "review", verdict: "blocked", issues: [] } }]);
+  assert.equal((await readEditorialPreview(7, 41, malformed.read))?.review, null);
+});
+
 test("preview source links permit web citations only, without credentials or executable protocols", () => {
   for (const value of [null, 42, "relative/path", "//archive.example/source", "javascript:alert(1)", "data:text/html,unsafe", "file:///etc/passwd", "https://user:password@archive.example/source"]) assert.equal(safeSourceHref(value), null);
   assert.equal(safeSourceHref("https://archive.example/source?q=voyage"), "https://archive.example/source?q=voyage");
+});
+
+test("preview sorts candidate waypoints, omits malformed records and keeps private fields out", async () => {
+  const malformed = [
+    waypoints[1], waypoints[0],
+    { ...waypoints[0], id: "bad-coordinate", latitude: 91 },
+    { ...waypoints[0], id: "bad-source", source_ids: ["unknown"] },
+    { ...waypoints[0], id: "bad-date", arrival_date: "1528-02-30" },
+    { ...waypoints[0], id: "missing-uncertainty", uncertainty: null },
+    { ...waypoints[0], id: "long-note", coordinate_note: "x".repeat(501) },
+    { ...waypoints[1], id: "ancient", sequence: 3, arrival_date: "0028-02-29", candidate: "SECRET_MODEL_ENVELOPE" },
+  ];
+  const value = await readEditorialPreview(7, 41, fixture(undefined, malformed).read);
+  assert.deepEqual(value?.waypoints.map(waypoint => waypoint.id), ["florida", "galveston", "ancient"]);
+  assert.equal(value?.waypoints_omitted, 5);
+  assert.equal(value?.waypoints[2].arrival_date, "0028-02-29");
+  assert.doesNotMatch(JSON.stringify(value), /SECRET_SOURCE_PASSAGE|SECRET_MODEL_ENVELOPE|PRIVATE_POLICY|governance/);
+  assert.equal("candidate" in value!, false);
+  await assert.rejects(readEditorialPreview(7, 41, fixture(undefined, "not-an-array" as unknown as unknown[]).read), /Invalid waypoints/);
 });
 
 test("reading edition escapes generated markup, maps paragraph citations and distinguishes missing sections from publication", async () => {
@@ -105,9 +149,19 @@ test("reading edition escapes generated markup, maps paragraph citations and dis
     assert.match(html, /No paragraph source mapping recorded/);
     assert.match(html, /Private editorial preview/);
     assert.match(html, /Saved version #41/);
-    assert.match(html, /Those parts are missing/);
+    assert.match(html, /Images and population sections/);
     assert.match(html, /not publication authorization/);
     assert.match(html, /Clarify the date/);
+
+    const routed = await readEditorialPreview(7, 41, fixture(undefined, waypoints).read);
+    assert.ok(routed);
+    const routeHtml = renderToStaticMarkup(React.createElement(EditorialPreview, { preview: routed }));
+    assert.match(routeHtml, /Map of candidate waypoints in this saved draft/);
+    assert.match(routeHtml, /27\.90000, -82\.50000/);
+    assert.match(routeHtml, /The historical place identification is not certain/);
+    assert.match(routeHtml, /id="preview-waypoint-galveston"/);
+    assert.match(routeHtml, /not independently verified geography/);
+    assert.doesNotMatch(routeHtml, /SECRET_SOURCE_PASSAGE|SECRET_MODEL_ENVELOPE|PRIVATE_POLICY/);
   } finally {
     if (previous) extensions[".css"] = previous; else delete extensions[".css"];
   }

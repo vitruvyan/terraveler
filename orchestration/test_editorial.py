@@ -29,6 +29,10 @@ def broken_research(task):
     raise RuntimeError("secret-provider-key-should-not-be-persisted")
 
 
+def evidence_failure(task):
+    raise ValueError("editorial-unknown-source")
+
+
 def invalid_research(task):
     return ["not-a-result-object"]
 
@@ -175,6 +179,13 @@ class DurableWorkerTests(unittest.TestCase):
         self.assertNotIn("secret-provider", repr(store.calls))
         self.assertFalse(store.saved)
 
+    def test_bounded_evidence_category_is_persisted(self):
+        store = MemoryStore()
+        done = EditorialWorker(store, {"research": evidence_failure}, self.cfg()).run_once()
+        self.assertEqual(done["status"], "failed")
+        self.assertIn(("fail", "editorial-unknown-source"), store.calls)
+        self.assertFalse(store.saved)
+
     def test_non_object_result_is_rejected(self):
         store = MemoryStore()
         done = EditorialWorker(store, {"research": invalid_research}, self.cfg()).run_once()
@@ -197,8 +208,9 @@ class DurableWorkerTests(unittest.TestCase):
             self.cfg(heartbeat_seconds=50)
         with self.assertRaises(ValueError):
             self.cfg(timeout_seconds=0)
-        for kw in ({"lease_seconds": 601}, {"timeout_seconds": float("nan")},
-                   {"timeout_seconds": float("inf")}, {"heartbeat_seconds": float("nan")}):
+        for kw in ({"lease_seconds": 601}, {"timeout_seconds": 1201},
+                   {"timeout_seconds": float("nan")}, {"timeout_seconds": float("inf")},
+                   {"heartbeat_seconds": float("nan")}):
             with self.assertRaises(ValueError):
                 self.cfg(**kw)
 

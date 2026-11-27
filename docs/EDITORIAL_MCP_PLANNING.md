@@ -173,19 +173,43 @@ idempotent replay, missing/truncated receipts, cycles and malformed inputs.
 No test requires live source fetches or model generation. Final validation is
 recorded in the PR; no production migration or activation is implicit.
 
-## Plan-pinned pilot dispatch (not activated)
+## Plan-pinned textual dispatch (production activation separate)
 
-Apply editorial_plan_dispatch.sql after all existing editorial, preparation and
-corpus migrations. The private /api/desk/projects/dispatch accepts an exact
-topic_id, plan_id and request_id. Set EDITORIAL_PLAN_DISPATCH_ENABLED and
-EDITORIAL_MCP_CORPUS_ENABLED only after integration, with the worker configured
-for MCP. The database schedules one to four historical research work items,
-one diary writer and one fact checker on explicit enabled specialist configs.
-It records every dependency, pins exact plan and agent version, isolates results
-from other graphs, and uses the existing worker leases and private preview.
-Unsupported specialisms or shapes fail closed; they are not silently dropped.
-A rejected review stops readiness, with a new plan required for another graph.
-The graph status endpoint is private and is not yet integrated in Projects UI.
+Apply editorial_plan_dispatch.sql after the existing editorial, preparation and
+corpus migrations, then editorial_dossier_sources.sql,
+editorial_textual_newsroom.sql, editorial_task_retry.sql,
+editorial_graph_revisions.sql and editorial_waypoints.sql in that order. The private
+/api/desk/projects/dispatch accepts an exact topic_id, plan_id and request_id.
+The editor-only /api/desk/projects/retry can grant one additional attempt to an
+exhausted planned task in attention, with an expected-attempt check, idempotency
+and an immutable authorization event; it does not reset history or create a new run.
+Set EDITORIAL_PLAN_DISPATCH_ENABLED and EDITORIAL_MCP_CORPUS_ENABLED only after
+integration, with the worker configured for MCP. The database retains the legacy
+history/diary/factcheck pilot and supports one to four textual research items,
+one diary and one editorial, plus one copyedit and one factcheck for each writer.
+Every specialty used must have exactly one enabled specialist configuration.
+The planner proposes only research; deterministic code composes the fixed
+downstream graph before independent review.
+
+Dispatch records every dependency, pins exact plan and agent versions, isolates
+results from other graphs, and uses the existing worker leases and private
+preview. Unsupported specialisms or shapes fail closed; they are not silently
+dropped. A changes-requested review set creates a new writer revision only after
+all reviews targeting that draft are complete. The revised writer receives the
+immutable prior draft and composed issues with their source review IDs; fresh
+review tasks are created after the new draft completes. Research stays at
+revision zero. Two automatic revisions per writer are the hard limit: another
+changes-requested set then leaves the run in attention. Any blocked review set
+stops without revision. Only latest-revision reviews determine awaiting-editor;
+no verdict publishes. The graph status endpoint is private and is not yet
+integrated in Projects UI.
+
+The waypoint migration aggregates itinerary candidates in bounded graph context
+and requires dependent writer drafts to preserve exactly the researched route.
+Reviewers enforce that equality. Limen receives a closed itinerary schema; SQL
+caps context at 40 waypoints and 40,000 bytes. The preview maps only sanitized
+committed candidates with their sources and uncertainty, never raw model envelopes.
+Points and connecting lines are not verified geography or publication authority.
 
 During an approved maintenance window, stop workers, resolve active legacy
 work and apply the migrations. The owner-only editorial_enable_plan_gate()

@@ -25,30 +25,127 @@ SYSTEM_RULES = (
 
 ROLE_SCHEMAS = {
     "research": (
-        'Return {"kind":"research","findings":[{"text":"...","source_ids":["SOURCE_ID"],'
-        '"quotes":[{"source_id":"SOURCE_ID","text":"exact source substring"}]}],'
-        '"uncertainties":["..."]}. Use only input.retrieved_sources as evidence; do not invent '
+        'Return {"kind":"research","findings":[{"text":"...","source_ids":["SOURCE_ID"],"quotes":[]}],'
+        '"uncertainties":["..."]}. Use paraphrase only: finding text must not contain quotation delimiters '
+        'and every quotes array must be empty. Use only input.retrieved_sources as evidence; do not invent '
         'source IDs. Copy source IDs exactly from input.retrieved_sources; do not change their prefix '
         'or assume they refer to existing voyages. References are attached by trusted code. Each finding must name supporting sources. '
         'If there is no evidence, state that limitation; never manufacture a finding.'
     ),
     "writer": (
-        'Return {"kind":"draft","title":"...","body":"paragraphs separated by blank lines",'
-        '"citations":[{"source_id":"SOURCE_ID","claim":"entire body paragraph",'
-        '"quote":"optional exact source substring occurring in that paragraph"}]}. '
-        'Use only input.research_result.references. Every body paragraph must exactly match at least '
-        'one citations.claim, including punctuation. Omit quote when paraphrasing. Preserve uncertainty '
-        'and address input.review_result issues when revising. Do not reproduce the research snapshots.'
+        'Return {"kind":"draft","title":"...","paragraphs":[{"text":"one paragraph","source_id":"SOURCE_ID"}]}. '
+        'Use paraphrase only: paragraph text must not contain quotation delimiters. Supply exactly one supporting '
+        'source_id for every paragraph. Trusted code constructs the body and citation claims from these paragraphs. '
+        'Use only input.research_result.references. Preserve uncertainty and address input.review_result issues '
+        'when revising. Do not reproduce the research snapshots.'
     ),
     "reviewer": (
         'Return a JSON object, for example {"kind":"review","verdict":"ready-for-editor","issues":[]}. '
         'Allowed verdicts: ready-for-editor, changes-requested, blocked. The latter two require '
         'specific actionable issues. Inspect input.draft_result against '
-        'input.research_result.references and the editorial brief. Check factual support, quote '
-        'accuracy, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
+        'input.research_result.references and the editorial brief. Check factual support, source '
+        'attribution, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
+        'The writer can change only title and paragraph text and each paragraph source_id. Paraphrase is '
+        'mandatory: never request direct quotations or quotation marks. Waypoints are fixed by the itinerary '
+        'researcher and copied unchanged; a waypoint whose confidence and uncertainty disclose approximate or '
+        'illustrative coordinates is not by itself an issue. Use changes-requested only for issues the writer '
+        'can fix. If a waypoint is unsupported, contradicted or understates its uncertainty, use blocked and '
+        'name the waypoint ID: the editor must resolve it upstream. '
         'Readiness is a candidate review and never authorizes publication.'
     ),
 }
+
+# Month 01-12 and day 01-31 are grammar-enforced; calendar validity is checked by the handler.
+DATE_PATTERN = "^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
+NO_QUOTES = '^[^"“”«»]*$'
+
+WAYPOINT_OUTPUT_SCHEMA = {
+    "type": "object", "additionalProperties": False,
+    "required": ["id", "sequence", "place_historical", "place_modern", "latitude", "longitude",
+                 "arrival_date", "departure_date", "date_note", "event", "coordinate_note",
+                 "source_ids", "confidence", "uncertainty"],
+    "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,79}$"},
+        "sequence": {"type": "integer", "minimum": 1, "maximum": 200},
+        "place_historical": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": NO_QUOTES},
+        "place_modern": {"type": ["string", "null"], "maxLength": 500, "pattern": NO_QUOTES},
+        "latitude": {"type": "number", "minimum": -90, "maximum": 90},
+        "longitude": {"type": "number", "minimum": -180, "maximum": 180},
+        "arrival_date": {"type": ["string", "null"], "pattern": DATE_PATTERN},
+        "departure_date": {"type": ["string", "null"], "pattern": DATE_PATTERN},
+        "date_note": {"type": ["string", "null"], "maxLength": 500},
+        "event": {"type": "string", "minLength": 1, "maxLength": 5000, "pattern": '^[^"“”«»]*$'},
+        "coordinate_note": {"type": "string", "minLength": 1, "maxLength": 500},
+        "source_ids": {"type": "array", "minItems": 1, "uniqueItems": True,
+                       "items": {"type": "string", "minLength": 1}},
+        "confidence": {"enum": ["certain", "approximate", "reconstructed"]},
+        "uncertainty": {"type": ["string", "null"], "maxLength": 500},
+    },
+}
+
+ROLE_OUTPUT_SCHEMAS = {
+    "research": {
+        "type": "object", "additionalProperties": False,
+        "required": ["kind", "findings", "uncertainties"],
+        "properties": {
+            "kind": {"const": "research"},
+            "findings": {"type": "array", "minItems": 1, "maxItems": 100, "items": {
+                "type": "object", "additionalProperties": False,
+                "required": ["text", "source_ids", "quotes"],
+                "properties": {
+                    "text": {"type": "string", "minLength": 1, "pattern": '^[^"“”«»]*$'},
+                    "source_ids": {"type": "array", "minItems": 1, "uniqueItems": True,
+                                   "items": {"type": "string", "minLength": 1}},
+                    "quotes": {"type": "array", "maxItems": 0},
+                },
+            }},
+            "uncertainties": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        },
+    },
+    "writer": {
+        "type": "object", "additionalProperties": False,
+        "required": ["kind", "title", "paragraphs"],
+        "properties": {
+            "kind": {"const": "draft"},
+            "title": {"type": "string", "minLength": 1, "pattern": NO_QUOTES},
+            "paragraphs": {"type": "array", "minItems": 1, "maxItems": 200, "items": {
+                "type": "object", "additionalProperties": False,
+                "required": ["text", "source_id"],
+                "properties": {"text": {"type": "string", "minLength": 1, "pattern": '^[^"“”«»]*$'},
+                               "source_id": {"type": "string", "minLength": 1}},
+            }},
+        },
+    },
+    "reviewer": {
+        "type": "object", "additionalProperties": False,
+        "required": ["kind", "verdict", "issues"],
+        "properties": {
+            "kind": {"const": "review"},
+            "verdict": {"enum": ["ready-for-editor", "changes-requested", "blocked"]},
+            "issues": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        },
+    },
+}
+
+ITINERARY_OUTPUT_SCHEMA = {
+    **ROLE_OUTPUT_SCHEMAS["research"],
+    "required": ["kind", "findings", "uncertainties", "waypoints"],
+    "properties": {**ROLE_OUTPUT_SCHEMAS["research"]["properties"],
+                   "waypoints": {"type": "array", "minItems": 1, "maxItems": 40, "items": WAYPOINT_OUTPUT_SCHEMA}},
+}
+ITINERARY_CONTRACT = (
+    ' For this itinerary task, also return "waypoints": an ordered candidate route with 1-40 entries. '
+    'Every waypoint requires id, sequence, historical and modern place, finite latitude/longitude, '
+    'arrival_date and departure_date (ISO year, year-month or full date, or null; departure never before arrival), date_note, event, '
+    'coordinate_note, source_ids, confidence and uncertainty. Use sequence for chronology. Cite only '
+    'retrieved source IDs. Coordinates are decimal degrees: latitude is north (positive) or south (negative) '
+    'of the equator and must lie between -90 and 90; longitude is east (positive) or west (negative) of '
+    'Greenwich and must lie between -180 and 180. Never put a longitude value in latitude. Example: Seville is '
+    'latitude 37.39, longitude -5.98; the Americas north of the equator have positive latitude and negative '
+    'longitude. Explain the coordinate basis in coordinate_note. Use null uncertainty only '
+    'for certain waypoints; approximate and reconstructed waypoints must state their uncertainty. '
+    'These are candidates for editor review, not independently verified geography.'
+)
 
 
 class GatewayError(RuntimeError):
@@ -71,7 +168,7 @@ class GatewayConfig:
                 or parsed.hostname.lower() in ("api.openai.com", "api.anthropic.com", "openrouter.ai")
                 or not self.key.strip() or len(self.key) > 4096 or re.search(r"[\r\n]", self.key)
                 or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}", self.data_class)
-                or not math.isfinite(self.timeout_seconds) or not 0 < self.timeout_seconds <= 120
+                or not math.isfinite(self.timeout_seconds) or not 0 < self.timeout_seconds <= 900
                 or type(self.max_tokens) is not int or not 512 <= self.max_tokens <= 8192):
             raise GatewayError("gateway-not-configured")
 
@@ -145,8 +242,8 @@ def _prompt_material(task: dict) -> dict:
     context = {k: v for k, v in original.items()
                if k not in ("research_result", "draft_result", "review_result")}
     fields = {
-        "research_result": ("kind", "references", "findings", "uncertainties"),
-        "draft_result": ("kind", "title", "body", "citations"),
+        "research_result": ("kind", "references", "findings", "uncertainties", "waypoints"),
+        "draft_result": ("kind", "title", "body", "citations", "waypoints"),
         "review_result": ("kind", "verdict", "issues"),
     }
     for name, allowed in fields.items():
@@ -159,6 +256,39 @@ def _prompt_material(task: dict) -> dict:
     return material
 
 
+def _known_source_ids(role: str, context: dict) -> list[str]:
+    """Source IDs the candidate may cite: retrieved sources or accepted research references."""
+    if role == "research":
+        sources = context.get("retrieved_sources")
+    elif role == "writer":
+        sources = (context.get("research_result") or {}).get("references")
+    else:
+        return []
+    if not isinstance(sources, list):
+        return []
+    ids = [s.get("id") for s in sources if isinstance(s, dict)]
+    if not ids or len(ids) > 200 or any(not isinstance(i, str) or not i for i in ids):
+        return []
+    return list(dict.fromkeys(ids))
+
+
+def _bind_source_ids(node, ids: list[str]):
+    """Constrain every source_id/source_ids string to the known IDs (enum), so
+    constrained decoding cannot emit an invented or altered identifier."""
+    if isinstance(node, list):
+        return [_bind_source_ids(item, ids) for item in node]
+    if not isinstance(node, dict):
+        return node
+    bound = {k: _bind_source_ids(v, ids) for k, v in node.items()}
+    properties = bound.get("properties")
+    if isinstance(properties, dict):
+        if isinstance(properties.get("source_id"), dict):
+            properties["source_id"] = {"enum": list(ids)}
+        if isinstance(properties.get("source_ids"), dict):
+            properties["source_ids"] = {**properties["source_ids"], "items": {"enum": list(ids)}}
+    return bound
+
+
 def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Callable | None = None) -> dict:
     # Same binding validator used by the worker before it starts a handler.
     from orchestration.editorial import validated_agent_config
@@ -167,6 +297,13 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
         raise GatewayError("agent-binding-invalid")
     key = config.key_for(agent["model"])
     material = _prompt_material(task)
+    work_item = material["input"].get("work_item", {})
+    itinerary = agent["role"] == "research" and isinstance(work_item, dict) and work_item.get("specialty") == "itinerary"
+    schema = ITINERARY_OUTPUT_SCHEMA if itinerary else ROLE_OUTPUT_SCHEMAS[agent["role"]]
+    contract = ROLE_SCHEMAS[agent["role"]] + (ITINERARY_CONTRACT if itinerary else "")
+    known_ids = _known_source_ids(agent["role"], material["input"])
+    if known_ids:
+        schema = _bind_source_ids(schema, known_ids)
     try:
         record = json.dumps(material, allow_nan=False)
         if len(record.encode()) > 65536:
@@ -175,10 +312,14 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
         raise GatewayError("gateway-input-invalid") from None
     payload = {
         "model": agent["model"], "stream": False, "max_tokens": config.max_tokens,
+        "response_format": {"type": "json_schema", "json_schema": {
+            "name": "terraveler_editorial_" + ("itinerary" if itinerary else agent["role"]), "strict": True,
+            "schema": schema,
+        }},
         "messages": [
             {"role": "system", "content": SYSTEM_RULES},
             {"role": "system", "content": "ROLE-SPECIFIC INSTRUCTIONS:\n" + agent["instructions"]},
-            {"role": "system", "content": "MANDATORY ROLE OUTPUT CONTRACT:\n" + ROLE_SCHEMAS[agent["role"]]},
+            {"role": "system", "content": "MANDATORY ROLE OUTPUT CONTRACT:\n" + contract},
             {"role": "user", "content": "UNTRUSTED DOSSIER RECORD:\n" + record},
         ],
     }

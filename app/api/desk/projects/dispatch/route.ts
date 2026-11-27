@@ -20,7 +20,7 @@ export async function POST(req:Request){
  const input=parseDispatchRequest(value);if(!input)return reply({error:"invalid-dispatch"},400);
  try{return reply(await dispatchPlan(input));}catch(e){
   const message=e instanceof Error?e.message:"";
-  const reasons=["independently reviewed plan required","stale plan version","plan already dispatched","active work must be resolved","approved voyage corpus scope required","approved voyage corpus scope or governed dossier sources required","specialist handler not implemented","unique enabled specialist required","unsupported editorial dependency graph","research items required","one writer and one reviewer required","dispatch idempotency conflict"];
+  const reasons=["independently reviewed plan required","stale plan version","plan already dispatched","active work must be resolved","approved voyage corpus scope required","approved voyage corpus scope or governed dossier sources required","specialist handler not implemented","unique enabled specialist required","unsupported editorial dependency graph","research items required","one writer and one reviewer required","one factcheck per writer required","dispatch idempotency conflict"];
   const reason=reasons.find(r=>message.includes(r));
   return reply({error:reason??"dispatch-unavailable"},reason?409:503);
  }

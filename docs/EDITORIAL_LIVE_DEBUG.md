@@ -215,12 +215,18 @@ persistence: planner validation was passed and a reviewer content string reached
 the strict JSON parser. Its actual bytes and the served model remain unobserved;
 do not assume a particular Markdown/reasoning envelope or silent truncation.
 
-Preparation now requests response_format: {type: json_object} through the same
-Limen endpoint for both stages, in addition to the existing prompt instructions.
-LiteLLM Ollama documentation describes structured response formats:
-https://docs.litellm.ai/docs/providers/ollama
-https://docs.ollama.com/capabilities/structured-outputs
-Runtime adapter support must still be verified. Unsupported-format HTTP errors
-fail closed, without retrying in free-text mode. The strict parser, schema,
-independent configured agents and exact model-key routing are unchanged. This
-is a prospective request-format correction, not proof of a successful live plan.
+Preparation now requests response_format: {type: json_schema} through the same
+Limen endpoint for both stages. Unsupported-format HTTP errors fail closed,
+without retrying in free-text mode. On 23 November 2026 the GGUF runner returned
+HTTP 500 / failed-to-parse-grammar for schemas containing maxLength; that keyword
+is omitted from provider schemas while application parsers retain the text-length
+limits. Regex replacement and contains-based graph constraints were not accepted
+as enforcement.
+
+The planner contract now returns only gaps and one to four research_items. An
+explicit deterministic composer adds the two writers and four reviews before the
+independent reviewer sees the plan. This avoids accepting or repairing the
+research-only arrays that all tested aliases produced when asked to generate the
+whole graph. The 23 November fixture benchmark passed all 21 role/alias cells;
+see docs/EDITORIAL_MODEL_BENCHMARK.md for sanitized evidence and hashes. This is
+not proof of a successful live preparation or execution.

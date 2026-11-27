@@ -156,11 +156,20 @@ def _child(sender, handler, task):
     try:
         result, trace = run_handler_graph(handler, task)
         sender.send({"result": result, "trace": trace})
-    except Exception:
-        # Do not persist exception text (a provider/DB exception can contain a
-        # key or URL). Failed attempts remain in PostgreSQL; detailed partial
-        # Motus traces are not yet persisted for failed/terminated handlers.
-        sender.send({"error": "editorial-handler-failed"})
+    except Exception as error:
+        # Preserve only an exact bounded category; provider/DB exception text
+        # can contain a key, URL or model output and must remain unpersisted.
+        code = "editorial-handler-failed"
+        current = error
+        for _ in range(8):
+            if current is None:
+                break
+            candidate = str(current)
+            if re.fullmatch(r"(?:editorial|gateway)-[a-z0-9-]{1,80}", candidate):
+                code = candidate
+                break
+            current = current.__cause__ or current.__context__
+        sender.send({"error": code})
     finally:
         sender.close()
 
@@ -171,7 +180,7 @@ class WorkerConfig:
     worker_id: str = "editorial-worker"
     lease_seconds: int = 120
     heartbeat_seconds: float = 20
-    timeout_seconds: float = 300
+    timeout_seconds: float = 1000
 
     def __post_init__(self):
         if not self.worker_id or len(self.worker_id) > 120:
@@ -180,7 +189,7 @@ class WorkerConfig:
             raise ValueError("invalid lease duration")
         if not math.isfinite(self.heartbeat_seconds) or not 0 < self.heartbeat_seconds < self.lease_seconds / 3:
             raise ValueError("heartbeat must be less than one third of lease")
-        if not math.isfinite(self.timeout_seconds) or self.timeout_seconds <= 0:
+        if not math.isfinite(self.timeout_seconds) or not 0 < self.timeout_seconds <= 1200:
             raise ValueError("invalid task deadline")
 
 

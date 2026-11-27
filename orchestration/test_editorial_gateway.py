@@ -37,10 +37,102 @@ class GatewayTests(unittest.TestCase):
         self.assertEqual(request.get_header("X-limen-mode"), "documents")
         self.assertEqual(timeout, 30)
         self.assertEqual(body["max_tokens"], 4096)
+        self.assertEqual(body["response_format"]["type"], "json_schema")
+        self.assertTrue(body["response_format"]["json_schema"]["strict"])
+        self.assertFalse(body["response_format"]["json_schema"]["schema"]["additionalProperties"])
+        finding = body["response_format"]["json_schema"]["schema"]["properties"]["findings"]["items"]["properties"]
+        self.assertEqual(finding["quotes"]["maxItems"], 0)
+        self.assertEqual(finding["text"]["pattern"], '^[^"“”«»]*$')
         self.assertEqual(result["verification"], "not-verified")
         self.assertEqual(result["agent_version"], 2)
         self.assertNotIn("fixture-private-key", json.dumps(result))
         self.assertNotIn("fixture-private-key", repr(self.config))
+
+    def test_each_role_requests_its_own_closed_output_schema(self):
+        for role, kind in (("research", "research"), ("writer", "draft"), ("reviewer", "review")):
+            with self.subTest(role=role):
+                value = task()
+                value["role"] = value["agent_config"]["role"] = role
+                calls = []
+                def transport(request, timeout):
+                    calls.append(json.loads(request.data))
+                    return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+                generate_candidate(value, self.config, open_request=transport)
+                contract = calls[0]["response_format"]["json_schema"]
+                self.assertEqual(contract["name"], "terraveler_editorial_" + role)
+                self.assertEqual(contract["schema"]["properties"]["kind"]["const"], kind)
+                self.assertFalse(contract["schema"]["additionalProperties"])
+                if role == "writer":
+                    properties = contract["schema"]["properties"]
+                    paragraph = properties["paragraphs"]["items"]["properties"]
+                    self.assertEqual(paragraph["text"]["pattern"], '^[^"“”«»]*$')
+                    self.assertEqual(set(paragraph), {"text", "source_id"})
+                    self.assertNotIn("body", properties)
+                    self.assertNotIn("citations", properties)
+
+    def test_source_ids_are_constrained_to_known_sources(self):
+        from orchestration.editorial_gateway import ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA
+        before = json.dumps([ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA], sort_keys=True)
+        def schema_for(value):
+            calls = []
+            def transport(request, timeout):
+                calls.append(json.loads(request.data))
+                return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+            generate_candidate(value, self.config, open_request=transport)
+            return calls[0]["response_format"]["json_schema"]["schema"]
+        ids = ["mcp:a", "mcp:b"]
+        value = task()
+        value["input"] = {"work_item": {"id": "route", "specialty": "itinerary"},
+                          "retrieved_sources": [{"id": i, "text": "t"} for i in ids]}
+        schema = schema_for(value)
+        self.assertEqual(schema["properties"]["findings"]["items"]["properties"]["source_ids"]["items"], {"enum": ids})
+        self.assertEqual(schema["properties"]["waypoints"]["items"]["properties"]["source_ids"]["items"], {"enum": ids})
+        self.assertTrue(schema["properties"]["findings"]["items"]["properties"]["source_ids"]["uniqueItems"])
+        value = task()
+        value["role"] = value["agent_config"]["role"] = "writer"
+        value["input"] = {"research_result": {"kind": "research", "references": [{"id": "mcp:a"}]}}
+        schema = schema_for(value)
+        self.assertEqual(schema["properties"]["paragraphs"]["items"]["properties"]["source_id"], {"enum": ["mcp:a"]})
+        value = task()
+        self.assertEqual(schema_for(value)["properties"]["findings"]["items"]["properties"]["source_ids"]["items"],
+                         {"type": "string", "minLength": 1})
+        self.assertEqual(before, json.dumps([ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA], sort_keys=True))
+
+    def test_reviewer_contract_only_requests_writer_fixable_changes(self):
+        value = task()
+        value["role"] = value["agent_config"]["role"] = "reviewer"
+        calls = []
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+        generate_candidate(value, self.config, open_request=transport)
+        contract = calls[0]["messages"][2]["content"]
+        self.assertIn("never request direct quotations", contract)
+        self.assertNotIn("quote accuracy", contract)
+        self.assertIn("Waypoints are fixed by the itinerary researcher", contract)
+        self.assertIn("use blocked and name the waypoint ID", contract)
+        self.assertIn("changes-requested only for issues the writer can fix", contract)
+
+    def test_itinerary_requires_closed_structured_waypoints(self):
+        value = task()
+        value["input"] = {"work_item": {"id": "route", "specialty": "itinerary"}}
+        calls = []
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+        generate_candidate(value, self.config, open_request=transport)
+        contract = calls[0]["response_format"]["json_schema"]
+        self.assertEqual(contract["name"], "terraveler_editorial_itinerary")
+        self.assertIn("waypoints", contract["schema"]["required"])
+        waypoint = contract["schema"]["properties"]["waypoints"]["items"]
+        self.assertFalse(waypoint["additionalProperties"])
+        self.assertEqual(waypoint["properties"]["latitude"]["minimum"], -90)
+        self.assertEqual(waypoint["properties"]["longitude"]["maximum"], 180)
+        self.assertIn("coordinate_note", waypoint["required"])
+        self.assertIn("uncertainty", waypoint["required"])
+        for field in ("date_note", "coordinate_note", "uncertainty"):
+            self.assertEqual(waypoint["properties"][field]["maxLength"], 500)
+        self.assertIn("candidate", calls[0]["messages"][2]["content"])
 
     def test_repair_prompt_deduplicates_snapshots_without_losing_accepted_evidence(self):
         value = task()
@@ -135,9 +227,11 @@ class GatewayTests(unittest.TestCase):
             self.assertEqual(json.loads(request.data)["max_tokens"], 6144)
             return BytesIO(b'{"choices":[{"finish_reason":"stop","message":{"content":"{}"}}]}')
         self.assertEqual(generate_candidate(task(), config, open_request=transport)["candidate"], {})
+        config = GatewayConfig.from_environment({**env, "EDITOR_LIMEN_TIMEOUT_SECONDS": "900"})
+        self.assertEqual(config.timeout_seconds, 900)
         for overrides in [{"EDITOR_LIMEN_TIMEOUT_SECONDS": "nan"},
                           {"EDITOR_LIMEN_TIMEOUT_SECONDS": "inf"},
-                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "121"},
+                          {"EDITOR_LIMEN_TIMEOUT_SECONDS": "901"},
                           {"EDITOR_LIMEN_TIMEOUT_SECONDS": "0"},
                           {"EDITOR_LIMEN_MAX_TOKENS": "8193"},
                           {"EDITOR_LIMEN_MAX_TOKENS": "511"},
