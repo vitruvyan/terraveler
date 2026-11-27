@@ -17,6 +17,7 @@ test("preview revision request resolves the inspected version before storing or 
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     if (url.includes("/auth/v1/user")) return Response.json({ email: "editor@example.com" });
+    if (url.includes("editorial_graph_tasks?")) return Response.json([]);
     if (url.includes("editorial_topics?")) return Response.json([{ id: 1, topic_key: "voyage", title: "Voyage", objective: "Research" }]);
     if (url.includes("editorial_results?") && url.includes("role=eq.writer")) {
       assert.match(url, /id=eq.44/); assert.match(url, /topic_id=eq.1/);

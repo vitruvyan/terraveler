@@ -67,7 +67,11 @@ PREPARATION_SYSTEM = (
     "without Markdown, prose or extra keys. Follow the stage-specific schema exactly. "
 )
 
-PLAN_SPECIALTIES = ("history", "ethnohistory", "itinerary", "iconography", "diary", "editorial", "copyedit", "factcheck")
+PLAN_SPECIALTIES = ("history", "ethnohistory", "itinerary", "iconography", "diary", "caption", "editorial", "copyedit", "factcheck")
+CAPTION_ITEM = {"id": "captions", "specialty": "caption",
+    "question": ("Write a caption and alt text for every selected image from its Commons metadata and the Photo "
+                 "editor judgment, without inventing visual details."),
+    "deliverable": "Private caption and alt text for each selected image."}
 # Mirrors ICONOGRAPHY_ITEM in lib/editorialPreparation.ts: a fixed, independent Photo editor item.
 ICONOGRAPHY_ITEM = {"id": "iconography-images", "specialty": "iconography",
     "question": ("Find governed Wikimedia Commons images that document this subject: period maps, engravings, "
@@ -165,7 +169,7 @@ FIXTURE_PLAN = {
         {**FIXTURE_RESEARCH_PLAN["research_items"][0], "depends_on": [], "source_receipt_ids": []},
         {**FIXTURE_RESEARCH_PLAN["research_items"][1], "depends_on": [], "source_receipt_ids": []},
         {**FIXTURE_RESEARCH_PLAN["research_items"][2], "depends_on": [], "source_receipt_ids": []},
-        {**ICONOGRAPHY_ITEM, "depends_on": [], "source_receipt_ids": []},
+        {**ICONOGRAPHY_ITEM, "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
         {"id": "diary", "question": "Draft a chronological diary from all research results, preserving uncertainty.",
          "deliverable": "Private diary draft with one source ID per paragraph.", "specialty": "diary",
          "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
@@ -173,6 +177,7 @@ FIXTURE_PLAN = {
          "question": "Draft an interpretive editorial from all research results, including indigenous perspectives and uncertainty.",
          "deliverable": "Private editorial draft with one source ID per paragraph.", "specialty": "editorial",
          "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
+        {**CAPTION_ITEM, "depends_on": ["iconography-images"], "source_receipt_ids": []},
         {"id": "diary-copyedit", "question": "Copyedit the diary without changing evidence or quotation bytes.",
          "deliverable": "Private diary copyedit verdict.", "specialty": "copyedit", "depends_on": ["diary"],
          "source_receipt_ids": []},
@@ -184,6 +189,12 @@ FIXTURE_PLAN = {
          "source_receipt_ids": []},
         {"id": "editorial-factcheck", "question": "Check every editorial claim against the supplied research and source IDs.",
          "deliverable": "Private editorial factcheck verdict.", "specialty": "factcheck", "depends_on": ["editorial"],
+         "source_receipt_ids": []},
+        {"id": "captions-copyedit", "question": "Copyedit the image captions and alt text without changing what the metadata supports.",
+         "deliverable": "Private captions copyedit verdict.", "specialty": "copyedit", "depends_on": ["captions"],
+         "source_receipt_ids": []},
+        {"id": "captions-factcheck", "question": "Check every caption and alt text against its image's Commons metadata and the Photo editor judgment.",
+         "deliverable": "Private captions factcheck verdict.", "specialty": "factcheck", "depends_on": ["captions"],
          "source_receipt_ids": []},
     ],
 }
@@ -280,10 +291,10 @@ def compose_plan(proposal):
     if count("history") < 1 or count("ethnohistory") < 1 or count("itinerary") != 1:
         return None
     ids = [item["id"] for item in proposal["research_items"]]
-    if ICONOGRAPHY_ITEM["id"] in ids:
+    if ICONOGRAPHY_ITEM["id"] in ids or CAPTION_ITEM["id"] in ids:
         return None
     research = [{**item, "depends_on": [], "source_receipt_ids": []} for item in proposal["research_items"]]
-    research.append({**ICONOGRAPHY_ITEM, "depends_on": [], "source_receipt_ids": []})
+    research.append({**ICONOGRAPHY_ITEM, "depends_on": list(ids), "source_receipt_ids": []})
     writers = [{"id": specialty,
                 "question": ("Draft a chronological diary from all research results, preserving uncertainty."
                              if specialty == "diary" else
@@ -298,7 +309,14 @@ def compose_plan(proposal):
                 "deliverable": f"Private {writer['id']} {specialty} verdict.", "specialty": specialty,
                 "depends_on": [writer["id"]], "source_receipt_ids": []}
                for writer in writers for specialty in ("copyedit", "factcheck")]
-    return {"gaps": proposal["gaps"], "work_items": research + writers + reviews}
+    caption = {**CAPTION_ITEM, "depends_on": [ICONOGRAPHY_ITEM["id"]], "source_receipt_ids": []}
+    caption_reviews = [{"id": f"captions-{specialty}",
+                        "question": ("Copyedit the image captions and alt text without changing what the metadata supports."
+                                     if specialty == "copyedit" else
+                                     "Check every caption and alt text against its image's Commons metadata and the Photo editor judgment."),
+                        "deliverable": f"Private captions {specialty} verdict.", "specialty": specialty,
+                        "depends_on": ["captions"], "source_receipt_ids": []} for specialty in ("copyedit", "factcheck")]
+    return {"gaps": proposal["gaps"], "work_items": research + writers + [caption] + reviews + caption_reviews}
 
 
 def validate_plan_output(proposal) -> list[str]:
@@ -315,7 +333,7 @@ def validate_plan(plan) -> list[str]:
     if not _strings(plan.get("gaps")):
         errors.append("gaps-not-string-list")
     items = plan.get("work_items")
-    if not isinstance(items, list) or not 7 <= len(items) <= 11:
+    if not isinstance(items, list) or not 7 <= len(items) <= 14:
         return errors + ["work-items-count"]
     ids = set()
     required = {"id", "question", "deliverable", "specialty", "depends_on", "source_receipt_ids"}
@@ -371,15 +389,22 @@ def validate_plan(plan) -> list[str]:
     images = [i for i in valid_items if i.get("specialty") == "iconography"]
     research_ids = {i["id"] for i in research}
     image_ids = {i["id"] for i in images}
-    if len(images) > 1 or any(i.get("depends_on") for i in images):
+    captions = [i for i in valid_items if i.get("specialty") == "caption"]
+    if len(images) > 1 or any(set(i.get("depends_on") or []) != research_ids for i in images):
         errors.append("iconography-shape")
-    if any(set(i.get("depends_on") or []) & image_ids for i in valid_items):
+    if any(set(i.get("depends_on") or []) & image_ids for i in valid_items if i.get("specialty") != "caption"):
         errors.append("iconography-dependency")
+    if len(captions) > 1 or any(i.get("depends_on") != sorted(image_ids) for i in captions):
+        errors.append("caption-shape")
+    for caption in captions:
+        for specialty in ("copyedit", "factcheck"):
+            if len([r for r in valid_items if r.get("specialty") == specialty and r.get("depends_on") == [caption["id"]]]) != 1:
+                errors.append("caption-review-coverage")
     if not 1 <= len(research) <= 4:
         errors.append("research-count")
     if len(writers) != 2 or {i.get("specialty") for i in writers} != {"diary", "editorial"}:
         errors.append("writer-specialties")
-    if len(valid_items) != len(research) + len(images) + len(writers) + len(reviewers):
+    if len(valid_items) != len(research) + len(images) + len(captions) + len(writers) + len(reviewers):
         errors.append("unexpected-specialty-count")
     for item in research:
         if not set(item.get("depends_on") or []) <= research_ids:

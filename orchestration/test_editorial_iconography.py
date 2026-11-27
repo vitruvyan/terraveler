@@ -150,3 +150,114 @@ class IconographyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+from orchestration.editorial_iconography import captions, image_display, research_summary, validate_captions  # noqa: E402
+from orchestration.editorial_handlers import reviewer  # noqa: E402
+
+
+def selected(receipt_id, title, depiction="period-artwork"):
+    return {"receipt_id": receipt_id, "receipt_sha256": "b" * 64, "snapshot": snapshot(title), "depiction": depiction,
+            "relevance": "Documents the Timucua.", "caution": None}
+
+
+SELECTION_CONTEXT = {"kind": "iconography", "images": [selected(R1, "File:De Bry Timucua.jpg"), selected(R2, "File:Moyne map.jpg", "period-map")],
+                     "uncertainties": []}
+
+
+class CaptionTests(unittest.TestCase):
+    def setUp(self):
+        self.config = GatewayConfig("http://limen:8080", "virtual-key", "editorial")
+        self.task = {"id": 11, "role": "writer", "attempt": 1, "topic": {"title": "Cabeza de Vaca"},
+                     "input": {"graph_run_id": 4, "work_item": {"id": "captions", "specialty": "caption"},
+                               "image_selection": copy.deepcopy(SELECTION_CONTEXT)},
+                     "agent_config": {"agent_key": "image-text-editor", "version": 1, "name": "Image text editor", "role": "writer",
+                                      "model": "local-fixture", "instructions": "Caption from metadata."}}
+
+    def model(self, entries):
+        return lambda task, config: {"candidate": {"kind": "draft", "format": "captions", "captions": copy.deepcopy(entries)}}
+
+    def test_captions_follow_selection_order_with_receipt_display_data(self):
+        entries = [{"receipt_id": R2, "caption": "Map of Florida by Jacques Le Moyne, engraved in 1591.", "alt_text": "Engraved map of the Florida coast."},
+                   {"receipt_id": R1, "caption": "Engraving of Timucua villagers by Theodor de Bry, 1591.", "alt_text": "Engraving of villagers."}]
+        result = captions(self.task, self.config, generator=self.model(entries))
+        self.assertEqual([c["receipt_id"] for c in result["captions"]], [R1, R2])
+        self.assertEqual(result["captions"][0]["image"], image_display(SELECTION_CONTEXT["images"][0]))
+        self.assertEqual(result["captions"][1]["image"]["depiction"], "period-map")
+        self.assertEqual(result["captions"][0]["image"]["licence"]["class"], "public_domain")
+        validate_captions(result, SELECTION_CONTEXT["images"])
+
+    def test_invented_unknown_or_missing_captions_fail_closed(self):
+        good = [{"receipt_id": R1, "caption": "Engraving, 1591.", "alt_text": "Engraving."},
+                {"receipt_id": R2, "caption": "Map, 1591.", "alt_text": "Map."}]
+        mutations = (
+            lambda e: e.pop(),
+            lambda e: e[0].update(receipt_id="00000000-0000-4000-8000-000000000099"),
+            lambda e: e[0].update(caption='The "true" landing.'),
+            lambda e: e[0].update(alt_text="x" * 301),
+            lambda e: e[0].update(image={"title": "forged"}),
+            lambda e: e.append(copy.deepcopy(e[0])),
+        )
+        for mutate in mutations:
+            entries = copy.deepcopy(good)
+            mutate(entries)
+            with self.subTest(entries=entries), self.assertRaises(EvidenceError):
+                captions(self.task, self.config, generator=self.model(entries))
+
+    def test_empty_selection_needs_no_model_call(self):
+        self.task["input"]["image_selection"] = {"kind": "iconography", "images": [], "uncertainties": ["None found."]}
+        result = captions(self.task, self.config, generator=lambda *_: self.fail("no model call"))
+        self.assertEqual(result["captions"], [])
+
+    def test_caption_review_validates_the_draft_and_uses_selection_context(self):
+        entries = [{"receipt_id": R1, "caption": "Engraving, 1591.", "alt_text": "Engraving."},
+                   {"receipt_id": R2, "caption": "Map, 1591.", "alt_text": "Map."}]
+        draft = captions(self.task, self.config, generator=self.model(entries))
+        review_task = copy.deepcopy(self.task)
+        review_task.update(role="reviewer", agent_config={**self.task["agent_config"], "role": "reviewer"})
+        review_task["input"].update(work_item={"id": "captions-factcheck", "specialty": "factcheck"}, draft_result=draft)
+        seen = []
+
+        def generate(task, config):
+            seen.append(task["input"])
+            return {"candidate": {"verdict": "changes-requested", "issues": [f"{R1}: the artist is named in metadata."]}}
+        review = reviewer(review_task, self.config, generator=generate)
+        self.assertEqual(review["verdict"], "changes-requested")
+        self.assertIn("image_selection", seen[0])
+        tampered = copy.deepcopy(review_task)
+        tampered["input"]["draft_result"]["captions"][0]["image"]["artist"] = "Someone else"
+        with self.assertRaises(EvidenceError):
+            reviewer(tampered, self.config, generator=generate)
+
+    def test_gateway_caption_schema_binds_ids_and_exact_count(self):
+        calls = []
+
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            from io import BytesIO
+            return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+        generate_candidate(self.task, self.config, open_request=transport)
+        schema = calls[0]["response_format"]["json_schema"]
+        self.assertEqual(schema["name"], "terraveler_editorial_captions")
+        items = schema["schema"]["properties"]["captions"]
+        self.assertEqual((items["minItems"], items["maxItems"]), (2, 2))
+        self.assertEqual(items["items"]["properties"]["receipt_id"], {"enum": [R1, R2]})
+        self.assertIn("You cannot see the images", calls[0]["messages"][2]["content"])
+
+    def test_photo_editor_queries_come_from_research_summary_without_full_snapshots(self):
+        self.task.update(role="research", agent_config={**self.task["agent_config"], "role": "research"})
+        self.task["input"] = {"graph_run_id": 4, "work_item": {"id": "iconography-images", "specialty": "iconography"},
+                              "dependency_research": [{"work_item_id": "route", "result": {
+                                  "findings": [{"text": "The survivors reached the Timucua."}],
+                                  "references": [{"id": "mcp:1", "text": "x" * 5000}],
+                                  "waypoints": [{"place_historical": "Apalache", "place_modern": "Tallahassee, Florida"}]}}]}
+        summary = research_summary(self.task)
+        self.assertEqual(summary["places"], ["Apalache", "Tallahassee, Florida"])
+        seen = []
+
+        def generate(task, config):
+            seen.append(task["input"])
+            return {"candidate": {"queries": ["Apalache", "Timucua"]}}
+        iconography(self.task, self.config, call_tool=lambda n, a: {"candidates": []}, generator=generate)
+        self.assertEqual(seen[0]["research_summary"]["findings"], ["The survivors reached the Timucua."])
+        self.assertNotIn("dependency_research", seen[0])

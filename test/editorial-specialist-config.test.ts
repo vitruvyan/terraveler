@@ -7,7 +7,7 @@ test("specialties persist with versioned configs and planned handlers cannot ena
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "publisher" }), null);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "diary" }), null);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "iconography", enabled: true })?.specialty, "iconography");
- assert.equal(parseSpecialistConfiguration({ ...base, specialty: "caption", enabled: true }), null);
+ assert.equal(parseSpecialistConfiguration({ ...base, role: "writer", specialty: "caption", enabled: true })?.specialty, "caption");
  assert.equal(parseSpecialistConfiguration(base)?.specialty, null);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "ethnohistory", enabled: true })?.specialty, "ethnohistory");
  await saveSpecialistConfiguration(config, async (name,args) => { assert.equal(name,"desk_save_editorial_specialist_agent"); assert.equal(args.p_specialty,"history"); assert.equal(args.p_expected_version,0); return {}; });

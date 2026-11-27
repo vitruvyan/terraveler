@@ -81,7 +81,7 @@ class ValidatorTests(unittest.TestCase):
         bad["work_items"][4]["depends_on"] = ["wreck"]
         self.assertIn("writer-research-coverage", bench.validate_plan(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
-        bad["work_items"][6]["depends_on"] = ["editorial"]
+        bad["work_items"][7]["depends_on"] = ["editorial"]
         self.assertIn("writer-review-coverage", bench.validate_plan(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH_PLAN))
         bad["research_items"][0]["depends_on"] = []
@@ -129,8 +129,8 @@ class RunCellTests(unittest.TestCase):
         plan = bench.run_cell("plan", "local-default", config(), 30, True,
                               transport=transport_with(envelope(bench.FIXTURE_RESEARCH_PLAN)))
         self.assertEqual(plan["outcome"], "ok")
-        self.assertEqual(plan["specialty_counts"]["copyedit"], 2)
-        self.assertEqual(plan["specialty_counts"]["factcheck"], 2)
+        self.assertEqual(plan["specialty_counts"]["copyedit"], 3)
+        self.assertEqual(plan["specialty_counts"]["factcheck"], 3)
         self.assertNotIn("Narvaez", json.dumps(plan))
 
     def test_invalid_json_and_transport_categories(self):

@@ -4,6 +4,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "upload.wikimedia.org" },
       { protocol: "https", hostname: "commons.wikimedia.org" },
+      // Commons now serves scaled thumbnails from its own host.
+      { protocol: "https", hostname: "thumb.wikimedia.org" },
     ],
   },
   outputFileTracingIncludes: {
@@ -38,7 +40,7 @@ const nextConfig = {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://upload.wikimedia.org https://commons.wikimedia.org https://cartocdn-gusc.global.ssl.fastly.net",
+      "img-src 'self' data: blob: https://upload.wikimedia.org https://thumb.wikimedia.org https://commons.wikimedia.org https://cartocdn-gusc.global.ssl.fastly.net",
       "font-src 'self'",
       "connect-src 'self'",
       "worker-src 'self' blob:",

@@ -140,6 +140,9 @@ const PLAN_OUTPUT_SCHEMA={
 export const ICONOGRAPHY_ITEM={id:"iconography-images",specialty:"iconography",
  question:"Find governed Wikimedia Commons images that document this subject: period maps, engravings, manuscripts, printed pages and portraits, and later depictions of the people and places. Distinguish period works from later reproductions and modern photographs.",
  deliverable:"Receipt-bound image selection with depiction judgment, attribution and per-file licence."};
+export const CAPTION_ITEM={id:"captions",specialty:"caption",
+ question:"Write a caption and alt text for every selected image from its Commons metadata and the Photo editor judgment, without inventing visual details.",
+ deliverable:"Private caption and alt text for each selected image."};
 export function composeEditorialPlan(value:unknown){
  if(!object(value)||Object.keys(value).length!==2||!Object.keys(value).every(k=>["gaps","research_items"].includes(k))||
     !Array.isArray(value.gaps)||!Array.isArray(value.research_items)||value.research_items.length<3||value.research_items.length>4)return null;
@@ -161,10 +164,14 @@ export function composeEditorialPlan(value:unknown){
  const reviews=writers.flatMap(writer=>["copyedit","factcheck"].map(specialty=>({id:`${writer.id}-${specialty}`,
   question:specialty==="copyedit"?`Copyedit the ${writer.id} without changing evidence or quotation bytes.`:`Check every ${writer.id} claim against the supplied research and source IDs.`,
   deliverable:`Private ${writer.id} ${specialty} verdict.`,specialty,depends_on:[writer.id],source_receipt_ids:[]})));
- // The Photo editor always joins the crew as an independent research item: no
- // writer depends on it until the Image text editor can consume its selection.
- if(ids.includes(ICONOGRAPHY_ITEM.id))return null;
- return {gaps:value.gaps,work_items:[...research,{...ICONOGRAPHY_ITEM,depends_on:[],source_receipt_ids:[]},...writers,...reviews]};
+ // The Photo editor follows all textual research (its queries come from researched
+ // people and places); only the Image text editor depends on it.
+ if([ICONOGRAPHY_ITEM.id,CAPTION_ITEM.id].some(id=>ids.includes(id)))return null;
+ const captionReviews=["copyedit","factcheck"].map(specialty=>({id:`${CAPTION_ITEM.id}-${specialty}`,
+  question:specialty==="copyedit"?"Copyedit the image captions and alt text without changing what the metadata supports.":"Check every caption and alt text against its image's Commons metadata and the Photo editor judgment.",
+  deliverable:`Private captions ${specialty} verdict.`,specialty,depends_on:[CAPTION_ITEM.id],source_receipt_ids:[]}));
+ return {gaps:value.gaps,work_items:[...research,{...ICONOGRAPHY_ITEM,depends_on:ids,source_receipt_ids:[]},...writers,
+  {...CAPTION_ITEM,depends_on:[ICONOGRAPHY_ITEM.id],source_receipt_ids:[]},...reviews,...captionReviews]};
 }
 const REVIEW_OUTPUT_SCHEMA={
  type:"object",additionalProperties:false,required:["verdict","issues"],properties:{
