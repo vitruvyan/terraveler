@@ -44,9 +44,9 @@ export const EDITORIAL_SPECIALISTS = [
   },
   {
     id: "iconography", label: "Photo editor", role: "research",
-    implementation: "planned", handler: null,
-    delivery: "Image candidates with relevance, date, attribution and rights evidence",
-    instructions: instructions("Select candidate photographs, maps, manuscripts and historical depictions through permitted archives. Evaluate relevance separately from reuse rights. Record image creation date separately from the depicted event date, attribution, licence, source URL and rights proof. A title or filename is not visual evidence. Claim visual inspection only when the actual image was supplied to an appropriate tool. Do not label a later illustration or modern photograph as a contemporary depiction. Uncertain rights block use; do not guess a licence from the age of the subject."),
+    implementation: "generic-handler", handler: "research",
+    delivery: "Receipt-bound Commons image selection with depiction judgment, attribution and per-file licence",
+    instructions: instructions("Select candidate photographs, maps, manuscripts and historical depictions from governed Wikimedia Commons consultations. You judge from Commons metadata only and cannot see the images. Evaluate relevance separately from reuse rights. Record image creation date separately from the depicted event date, attribution, licence, source URL and rights proof. A title or filename is not visual evidence. Claim visual inspection only when the actual image was supplied to an appropriate tool. Do not label a later illustration or modern photograph as a contemporary depiction. Uncertain rights block use; do not guess a licence from the age of the subject."),
   },
   {
     id: "diary", label: "Diary writer", role: "writer",

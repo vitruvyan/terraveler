@@ -27,9 +27,10 @@ function fixture(){
  },mcp:async(name:string)=>{calls.push(name);return name==="search_sources"?{candidates:[{kind:"wikipedia",title:"Example",url}]}:{consultation_status:"recorded",consultation:{id,response_sha256:"a".repeat(64)}};},
  generate:async(agent:{id:number},stage:string,material:unknown)=>{calls.push(stage);if(stage==="review"){
   const plan=(material as any).plan;assert.equal(agent.id,2);assert.equal(plan.orientation_receipt_id,id);
-  assert.deepEqual(plan.work_items.map((item:any)=>item.specialty),["history","ethnohistory","itinerary","diary","editorial","copyedit","factcheck","copyedit","factcheck"]);
-  assert.deepEqual(plan.work_items[3].depends_on,["history","peoples","route"]);assert.deepEqual(plan.work_items[4].depends_on,["history","peoples","route"]);
-  assert.deepEqual(plan.work_items[5].depends_on,["diary"]);assert.deepEqual(plan.work_items[7].depends_on,["editorial"]);return review;
+  assert.deepEqual(plan.work_items.map((item:any)=>item.specialty),["history","ethnohistory","itinerary","iconography","diary","editorial","copyedit","factcheck","copyedit","factcheck"]);
+  assert.deepEqual(plan.work_items[3].depends_on,[]);
+  assert.deepEqual(plan.work_items[4].depends_on,["history","peoples","route"]);assert.deepEqual(plan.work_items[5].depends_on,["history","peoples","route"]);
+  assert.deepEqual(plan.work_items[6].depends_on,["diary"]);assert.deepEqual(plan.work_items[8].depends_on,["editorial"]);return review;
  }assert.equal(agent.id,1);return work;}}};
 }
 test("preparation runs MCP before the two distinct agents and persists no authority to execute",async()=>{
@@ -292,5 +293,7 @@ test("plan composition requires history, ethnohistory and exactly one itinerary 
     assert.equal(composeEditorialPlan({gaps:[],research_items:items}),null);
   const plan=composeEditorialPlan({gaps:[],research_items:[h,e,i,item("hist-b","history")]});
   assert.ok(plan);
-  assert.deepEqual(plan.work_items.filter((w:any)=>w.depends_on.length===0).map((w:any)=>w.specialty),["history","ethnohistory","itinerary","history"]);
+  assert.deepEqual(plan.work_items.filter((w:any)=>w.depends_on.length===0).map((w:any)=>w.specialty),["history","ethnohistory","itinerary","history","iconography"]);
+  assert.ok(plan.work_items.every((w:any)=>!w.depends_on.includes("iconography-images")),"nothing depends on the Photo editor yet");
+  assert.equal(composeEditorialPlan({gaps:[],research_items:[h,e,{...i,id:"iconography-images"}]}),null,"the fixed item ID cannot be claimed by the planner");
 });

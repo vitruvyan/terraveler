@@ -14,13 +14,13 @@ test("specialty mapping preserves executable roles and excludes publication auth
   assert.equal(PUBLICATION_AUTHORITY, "human-editor");
 });
 
-test("templates expose seven textual generic handlers and keep media specialists unavailable", () => {
+test("templates expose seven textual handlers plus the Photo editor and keep caption unavailable", () => {
   const wired = EDITORIAL_SPECIALISTS.filter(s => s.implementation === "generic-handler");
   assert.deepEqual(wired.map(s => [s.id, s.handler]), [
-    ["history", "research"], ["ethnohistory", "research"], ["itinerary", "research"],
+    ["history", "research"], ["ethnohistory", "research"], ["itinerary", "research"], ["iconography", "research"],
     ["diary", "writer"], ["editorial", "writer"], ["copyedit", "reviewer"], ["factcheck", "reviewer"],
   ]);
-  assert.deepEqual(EDITORIAL_SPECIALISTS.filter(s => s.implementation === "planned").map(s => s.id), ["iconography", "caption"]);
+  assert.deepEqual(EDITORIAL_SPECIALISTS.filter(s => s.implementation === "planned").map(s => s.id), ["caption"]);
   assert.equal(editorialSpecialist("managing-editor")?.implementation, "preparation");
   assert.equal(editorialSpecialist("managing-editor")?.handler, null);
   for (const specialist of EDITORIAL_SPECIALISTS) {

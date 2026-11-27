@@ -78,10 +78,10 @@ class ValidatorTests(unittest.TestCase):
         bad["work_items"][0]["source_receipt_ids"] = ["mcp:fixture-src-1"]
         self.assertIn("receipt-ids-must-be-empty", bench.validate_plan(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
-        bad["work_items"][3]["depends_on"] = ["wreck"]
+        bad["work_items"][4]["depends_on"] = ["wreck"]
         self.assertIn("writer-research-coverage", bench.validate_plan(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_PLAN))
-        bad["work_items"][5]["depends_on"] = ["editorial"]
+        bad["work_items"][6]["depends_on"] = ["editorial"]
         self.assertIn("writer-review-coverage", bench.validate_plan(bad))
         bad = json.loads(json.dumps(bench.FIXTURE_RESEARCH_PLAN))
         bad["research_items"][0]["depends_on"] = []

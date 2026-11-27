@@ -6,6 +6,7 @@ remain with Limen; this client holds a scoped virtual key and has no fallback.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import copy
 import json
 import math
 import os
@@ -125,6 +126,53 @@ ROLE_OUTPUT_SCHEMAS = {
             "issues": {"type": "array", "items": {"type": "string", "minLength": 1}},
         },
     },
+}
+
+DEPICTIONS = ["period-artwork", "period-map", "period-document", "later-artwork", "later-map",
+              "modern-photograph", "modern-reproduction", "unknown"]
+ICONOGRAPHY_QUERY_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["queries"],
+    "properties": {"queries": {"type": "array", "minItems": 2, "maxItems": 4, "uniqueItems": True,
+                               "items": {"type": "string", "minLength": 2, "pattern": NO_QUOTES}}},
+}
+ICONOGRAPHY_SELECTION_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["kind", "selections", "uncertainties"],
+    "properties": {
+        "kind": {"const": "iconography"},
+        "selections": {"type": "array", "maxItems": 8, "items": {
+            "type": "object", "additionalProperties": False,
+            "required": ["receipt_id", "depiction", "relevance", "caution"],
+            "properties": {
+                "receipt_id": {"type": "string", "minLength": 1},
+                "depiction": {"enum": DEPICTIONS},
+                "relevance": {"type": "string", "minLength": 1, "pattern": NO_QUOTES},
+                "caution": {"type": ["string", "null"], "pattern": NO_QUOTES},
+            }}},
+        "uncertainties": {"type": "array", "items": {"type": "string", "minLength": 1, "pattern": NO_QUOTES}},
+    },
+}
+ICONOGRAPHY_CONTRACTS = {
+    "queries": (
+        'Return {"queries":["..."]}: two to four short Wikimedia Commons search queries (a few words each) for '
+        'images that document the work item: period maps, engravings, manuscripts, printed pages, portraits and '
+        'places. Use names and terms a Commons file title or description would contain; include a period or '
+        'place term where useful. Do not use quotation marks.'
+    ),
+    "selection": (
+        'Return {"kind":"iconography","selections":[{"receipt_id":"RECEIPT_ID","depiction":"...","relevance":"...",'
+        '"caution":null}],"uncertainties":["..."]}. Choose zero to eight images from input.image_candidates that '
+        'genuinely document the work item, citing each by its exact receipt_id. Judge only from the supplied '
+        'Commons metadata (title, description, artist, date_original, object_name, licence): you cannot see the '
+        'images, so never describe visual details the metadata does not state. depiction classifies the image: '
+        'period-artwork, period-map or period-document only when the metadata attributes creation to the period '
+        'of the events; later-artwork or later-map for later historical works; modern-photograph; '
+        'modern-reproduction for scans or redrawings whose date is the reproduction date; unknown otherwise. '
+        'date_original is a claim recorded on Commons and is often a scan or upload date, so say so in caution '
+        'when it conflicts with the artist or description. relevance states in one or two sentences why the '
+        'image documents the work item. Paraphrase only. Reject modern monuments, unrelated namesakes and '
+        'decorative images. If no candidate is suitable, return an empty selections array and explain why in '
+        'uncertainties.'
+    ),
 }
 
 ITINERARY_OUTPUT_SCHEMA = {
@@ -298,9 +346,26 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     key = config.key_for(agent["model"])
     material = _prompt_material(task)
     work_item = material["input"].get("work_item", {})
-    itinerary = agent["role"] == "research" and isinstance(work_item, dict) and work_item.get("specialty") == "itinerary"
+    specialty = work_item.get("specialty") if isinstance(work_item, dict) else None
+    itinerary = agent["role"] == "research" and specialty == "itinerary"
     schema = ITINERARY_OUTPUT_SCHEMA if itinerary else ROLE_OUTPUT_SCHEMAS[agent["role"]]
     contract = ROLE_SCHEMAS[agent["role"]] + (ITINERARY_CONTRACT if itinerary else "")
+    schema_name = "itinerary" if itinerary else agent["role"]
+    if agent["role"] == "research" and specialty == "iconography":
+        stage = material["input"].get("iconography_stage")
+        if stage == "queries":
+            schema = ICONOGRAPHY_QUERY_SCHEMA
+        elif stage == "selection":
+            candidates = material["input"].get("image_candidates")
+            ids = [c.get("receipt_id") for c in candidates] if isinstance(candidates, list) else []
+            if not ids or len(ids) > 20 or any(not isinstance(i, str) or not i for i in ids):
+                raise GatewayError("gateway-input-invalid")
+            schema = copy.deepcopy(ICONOGRAPHY_SELECTION_SCHEMA)
+            schema["properties"]["selections"]["items"]["properties"]["receipt_id"] = {"enum": list(dict.fromkeys(ids))}
+        else:
+            raise GatewayError("gateway-input-invalid")
+        contract = ICONOGRAPHY_CONTRACTS[stage]
+        schema_name = "iconography_" + stage
     known_ids = _known_source_ids(agent["role"], material["input"])
     if known_ids:
         schema = _bind_source_ids(schema, known_ids)
@@ -313,7 +378,7 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     payload = {
         "model": agent["model"], "stream": False, "max_tokens": config.max_tokens,
         "response_format": {"type": "json_schema", "json_schema": {
-            "name": "terraveler_editorial_" + ("itinerary" if itinerary else agent["role"]), "strict": True,
+            "name": "terraveler_editorial_" + schema_name, "strict": True,
             "schema": schema,
         }},
         "messages": [
