@@ -47,8 +47,8 @@ from orchestration.editorial_gateway import (  # noqa: E402
 # Keep in sync with lib/editorialPreparation.ts (generator -> contract).
 PLAN_CONTRACT = (
     'Return JSON only {"gaps":["unanswered question"],"research_items":[{"id":"stable-id",'
-    '"question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use one to four research '
-    'items with specialty history, ethnohistory or itinerary; at most one item may be itinerary. Return exactly the root fields gaps and research_items, '
+    '"question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use three or four research '
+    'items with specialty history, ethnohistory or itinerary: at least one history, at least one ethnohistory covering indigenous perspectives, exactly one itinerary. Return exactly the root fields gaps and research_items, '
     'and exactly the four specified fields for each research item. Do not emit work_items, diary, editorial, copyedit, '
     'factcheck, dependencies or source receipt IDs: the program composes the fixed downstream graph separately. '
     'Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation '
@@ -73,7 +73,7 @@ PLAN_OUTPUT_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["gaps", "research_items"],
     "properties": {
         "gaps": {"type": "array", "maxItems": 50, "items": {"type": "string", "minLength": 1}},
-        "research_items": {"type": "array", "minItems": 1, "maxItems": 4, "items": {
+        "research_items": {"type": "array", "minItems": 3, "maxItems": 4, "items": {
             "type": "object", "additionalProperties": False,
             "required": ["id", "question", "deliverable", "specialty"],
             "properties": {
@@ -147,8 +147,10 @@ FIXTURE_RESEARCH_PLAN = {
     "research_items": [
         {"id": "wreck", "question": "What happened to the Narvaez expedition in 1528?",
          "deliverable": "sourced research note", "specialty": "history"},
-        {"id": "crossing", "question": "How did the survivors reach New Spain in 1536?",
-         "deliverable": "sourced research note", "specialty": "history"},
+        {"id": "hosts", "question": "Which indigenous nations hosted the survivors, and how did they see them?",
+         "deliverable": "sourced research note", "specialty": "ethnohistory"},
+        {"id": "crossing", "question": "Which route did the survivors take to New Spain in 1536?",
+         "deliverable": "sourced waypoint candidates", "specialty": "itinerary"},
     ],
 }
 FIXTURE_PLAN = {
@@ -156,13 +158,14 @@ FIXTURE_PLAN = {
     "work_items": [
         {**FIXTURE_RESEARCH_PLAN["research_items"][0], "depends_on": [], "source_receipt_ids": []},
         {**FIXTURE_RESEARCH_PLAN["research_items"][1], "depends_on": [], "source_receipt_ids": []},
+        {**FIXTURE_RESEARCH_PLAN["research_items"][2], "depends_on": [], "source_receipt_ids": []},
         {"id": "diary", "question": "Draft a chronological diary from all research results, preserving uncertainty.",
          "deliverable": "Private diary draft with one source ID per paragraph.", "specialty": "diary",
-         "depends_on": ["wreck", "crossing"], "source_receipt_ids": []},
+         "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
         {"id": "editorial",
          "question": "Draft an interpretive editorial from all research results, including indigenous perspectives and uncertainty.",
          "deliverable": "Private editorial draft with one source ID per paragraph.", "specialty": "editorial",
-         "depends_on": ["wreck", "crossing"], "source_receipt_ids": []},
+         "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
         {"id": "diary-copyedit", "question": "Copyedit the diary without changing evidence or quotation bytes.",
          "deliverable": "Private diary copyedit verdict.", "specialty": "copyedit", "depends_on": ["diary"],
          "source_receipt_ids": []},
@@ -259,14 +262,15 @@ def _strings(value) -> bool:
 def compose_plan(proposal):
     if (not isinstance(proposal, dict) or set(proposal) != {"gaps", "research_items"}
             or not isinstance(proposal["gaps"], list) or not isinstance(proposal["research_items"], list)
-            or not 1 <= len(proposal["research_items"]) <= 4):
+            or not 3 <= len(proposal["research_items"]) <= 4):
         return None
     required = {"id", "question", "deliverable", "specialty"}
     for item in proposal["research_items"]:
         if (not isinstance(item, dict) or set(item) != required
                 or item.get("specialty") not in RESEARCH_SPECIALTIES):
             return None
-    if sum(item["specialty"] == "itinerary" for item in proposal["research_items"]) > 1:
+    count = lambda specialty: sum(item["specialty"] == specialty for item in proposal["research_items"])
+    if count("history") < 1 or count("ethnohistory") < 1 or count("itinerary") != 1:
         return None
     ids = [item["id"] for item in proposal["research_items"]]
     research = [{**item, "depends_on": [], "source_receipt_ids": []} for item in proposal["research_items"]]

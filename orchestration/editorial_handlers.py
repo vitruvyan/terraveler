@@ -102,6 +102,13 @@ def _waypoints(values, known):
                 raise EvidenceError("editorial-invalid-waypoint-coordinate")
         _partial_date(waypoint["arrival_date"])
         _partial_date(waypoint["departure_date"])
+        if waypoint["arrival_date"] and waypoint["departure_date"]:
+            arrival = waypoint["arrival_date"].split("-")
+            departure = waypoint["departure_date"].split("-")
+            precision = min(len(arrival), len(departure))
+            # Compare at the shared precision: "1528" and "1528-05" are compatible.
+            if departure[:precision] < arrival[:precision]:
+                raise EvidenceError("editorial-waypoint-departure-before-arrival")
         for field, limit in (("date_note", 500), ("coordinate_note", 500), ("uncertainty", 500)):
             if waypoint[field] is not None:
                 _quoted_spans(_text(waypoint[field], limit), known)

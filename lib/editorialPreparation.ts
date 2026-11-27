@@ -129,7 +129,7 @@ export function parsePreparationModelResponse(envelope:unknown,stage:"plan"|"rev
 const PLAN_OUTPUT_SCHEMA={
  type:"object",additionalProperties:false,required:["gaps","research_items"],properties:{
   gaps:{type:"array",maxItems:50,items:{type:"string",minLength:1}},
-  research_items:{type:"array",minItems:1,maxItems:4,items:{
+  research_items:{type:"array",minItems:3,maxItems:4,items:{
    type:"object",additionalProperties:false,required:["id","question","deliverable","specialty"],properties:{
     id:{type:"string",pattern:"^[a-z][a-z0-9_-]{0,79}$"},
     question:{type:"string",minLength:1},deliverable:{type:"string",minLength:1},
@@ -139,13 +139,16 @@ const PLAN_OUTPUT_SCHEMA={
  };
 export function composeEditorialPlan(value:unknown){
  if(!object(value)||Object.keys(value).length!==2||!Object.keys(value).every(k=>["gaps","research_items"].includes(k))||
-    !Array.isArray(value.gaps)||!Array.isArray(value.research_items)||value.research_items.length<1||value.research_items.length>4)return null;
+    !Array.isArray(value.gaps)||!Array.isArray(value.research_items)||value.research_items.length<3||value.research_items.length>4)return null;
  for(const item of value.research_items){
   if(!object(item)||Object.keys(item).length!==4||!Object.keys(item).every(k=>["id","question","deliverable","specialty"].includes(k))||
      !["history","ethnohistory","itinerary"].includes(item.specialty))return null;
  }
- // Waypoint sequences are numbered per itinerary result; two itinerary items would collide downstream.
- if(value.research_items.filter((item:any)=>item.specialty==="itinerary").length>1)return null;
+ // Every plan exercises the whole research crew: at least one history and one
+ // ethnohistory item (indigenous perspectives are never optional) and exactly one
+ // itinerary item (waypoint sequences are numbered per itinerary result and would collide).
+ const count=(specialty:string)=>value.research_items.filter((item:any)=>item.specialty===specialty).length;
+ if(value.research_items.length<3||count("history")<1||count("ethnohistory")<1||count("itinerary")!==1)return null;
  const ids=value.research_items.map((item:any)=>item.id);
  const research=value.research_items.map((item:any)=>({id:item.id,question:item.question,deliverable:item.deliverable,
   specialty:item.specialty,depends_on:[],source_receipt_ids:[]}));
@@ -171,7 +174,7 @@ function generator(env:Env,fetcher:typeof fetch,onResponse:(agent:Agent,envelope
     const base=config.baseURL.endsWith("/v1")?config.baseURL:config.baseURL+"/v1";
     const guided=object(material)&&object(material.previous_review);
     const contract=stage==="plan"?
-      'Return JSON only {"gaps":["unanswered question"],"research_items":[{"id":"stable-id","question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use one to four research items with specialty history, ethnohistory or itinerary; at most one item may be itinerary. Return exactly the root fields gaps and research_items, and exactly the four specified fields for each research item. Do not emit work_items, diary, editorial, copyedit, factcheck, dependencies or source receipt IDs: the program composes the fixed downstream graph separately. Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation only; research is still to be done.'+(guided?' A previous full plan and its independent review are provided as previous_plan and previous_review. Address every issue from previous_review explicitly by revising research questions, coverage and gaps. Do not repeat rejected research unchanged; if an issue cannot be resolved with the available orientation, keep it visible in gaps.':'')
+      'Return JSON only {"gaps":["unanswered question"],"research_items":[{"id":"stable-id","question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use three or four research items with specialty history, ethnohistory or itinerary: include at least one history item, at least one ethnohistory item covering indigenous peoples and perspectives, and exactly one itinerary item. Return exactly the root fields gaps and research_items, and exactly the four specified fields for each research item. Do not emit work_items, diary, editorial, copyedit, factcheck, dependencies or source receipt IDs: the program composes the fixed downstream graph separately. Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation only; research is still to be done.'+(guided?' A previous full plan and its independent review are provided as previous_plan and previous_review. Address every issue from previous_review explicitly by revising research questions, coverage and gaps. Do not repeat rejected research unchanged; if an issue cannot be resolved with the available orientation, keep it visible in gaps.':'')
       :
       'Return JSON only {"verdict":"adequate-for-next-stage","issues":[]}. Choose exactly one verdict: adequate-for-next-stage, changes-requested or blocked. Independently inspect the exact proposed plan against the dossier and orientation; assess relevance, coverage, independent verification, dependencies, missing evidence and uncertainty. Adequate requires zero issues and is not authority to execute or publish.'+(guided?' A previous plan version and its review are provided: verify explicitly whether each prior issue is resolved; any prior issue left unresolved must appear in issues.':'');
     const materialText=JSON.stringify(material);

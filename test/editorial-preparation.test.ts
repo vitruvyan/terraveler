@@ -10,7 +10,7 @@ const url="https://en.wikipedia.org/wiki/Example", id="00000000-0000-4000-8000-0
 const request={topic_id:1,expected_version:0,request_id:"preparation-request-0001",wikipedia_url:null};
 const orientation={kind:"wikipedia-orientation",purpose:"planning-only",revision_id:12,text:"Test text",sections:[{title:"Itinerary"}],text_truncated:false,sections_truncated:false,external_links_truncated:false};
 const review={verdict:"adequate-for-next-stage",issues:[]};
-const work={gaps:["Indigenous perspectives"],research_items:[{id:"history",question:"What happened?",deliverable:"Cited chronology",specialty:"history"}]};
+const work={gaps:["Indigenous perspectives"],research_items:[{id:"history",question:"What happened?",deliverable:"Cited chronology",specialty:"history"},{id:"peoples",question:"Who hosted the survivors?",deliverable:"Cited perspectives",specialty:"ethnohistory"},{id:"route",question:"Which route?",deliverable:"Waypoint candidates",specialty:"itinerary"}]};
 function fixture(){
  const calls:string[]=[];let writes=0;
  const read=async(_method:string,path:string)=>{
@@ -27,9 +27,9 @@ function fixture(){
  },mcp:async(name:string)=>{calls.push(name);return name==="search_sources"?{candidates:[{kind:"wikipedia",title:"Example",url}]}:{consultation_status:"recorded",consultation:{id,response_sha256:"a".repeat(64)}};},
  generate:async(agent:{id:number},stage:string,material:unknown)=>{calls.push(stage);if(stage==="review"){
   const plan=(material as any).plan;assert.equal(agent.id,2);assert.equal(plan.orientation_receipt_id,id);
-  assert.deepEqual(plan.work_items.map((item:any)=>item.specialty),["history","diary","editorial","copyedit","factcheck","copyedit","factcheck"]);
-  assert.deepEqual(plan.work_items[1].depends_on,["history"]);assert.deepEqual(plan.work_items[2].depends_on,["history"]);
-  assert.deepEqual(plan.work_items[3].depends_on,["diary"]);assert.deepEqual(plan.work_items[5].depends_on,["editorial"]);return review;
+  assert.deepEqual(plan.work_items.map((item:any)=>item.specialty),["history","ethnohistory","itinerary","diary","editorial","copyedit","factcheck","copyedit","factcheck"]);
+  assert.deepEqual(plan.work_items[3].depends_on,["history","peoples","route"]);assert.deepEqual(plan.work_items[4].depends_on,["history","peoples","route"]);
+  assert.deepEqual(plan.work_items[5].depends_on,["diary"]);assert.deepEqual(plan.work_items[7].depends_on,["editorial"]);return review;
  }assert.equal(agent.id,1);return work;}}};
 }
 test("preparation runs MCP before the two distinct agents and persists no authority to execute",async()=>{
@@ -87,7 +87,7 @@ test("model transport accepts only standalone JSON or a single fenced JSON value
 });
 test("malformed planner schema cannot reach reviewer or database",async()=>{
  const {prepareEditorialPlan}=await mod;const f=fixture();
- await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],research_items:[{...work.research_items[0],id:"INVALID ID"}]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
+ await assert.rejects(prepareEditorialPlan(request,{...f.ports,generate:async()=>({gaps:[],research_items:[{...work.research_items[0],id:"INVALID ID"},work.research_items[1],work.research_items[2]]})}),(e:any)=>e.code==="plan-generation-invalid"&&e.detail==="invalid-plan-schema-or-dependencies");
  assert.equal(f.writes,0);
 });
 
@@ -219,7 +219,7 @@ test("preparation requests JSON mode through Limen for both agents without forma
     assert.equal(body.response_format.json_schema.name,"terraveler_editorial_research_plan");
     assert.deepEqual(schema.properties.research_items.items.properties.specialty.enum,["history","ethnohistory","itinerary"]);
     assert.equal(schema.properties.research_items.items.additionalProperties,false);
-    assert.equal(schema.properties.research_items.minItems,1);assert.equal(schema.properties.research_items.maxItems,4);
+    assert.equal(schema.properties.research_items.minItems,3);assert.equal(schema.properties.research_items.maxItems,4);
    }else assert.equal(body.response_format.json_schema.name,"terraveler_editorial_plan_review");
    assert.equal((init?.headers as Record<string,string>)["Authorization"],"Bearer fixture-key");
    const stage=calls++;
@@ -284,11 +284,13 @@ test("first-version preparation never fabricates previous-review context",async(
  assert.ok(!("previous_review" in materials.review));
 });
 
-test("plan composition accepts at most one itinerary research item", async()=>{
+test("plan composition requires history, ethnohistory and exactly one itinerary research item", async()=>{
   const {composeEditorialPlan}=await mod;
   const item=(id:string,specialty:string)=>({id,question:"Where?",deliverable:"Route",specialty});
-  assert.equal(composeEditorialPlan({gaps:[],research_items:[item("route-a","itinerary"),item("route-b","itinerary")]}),null);
-  const plan=composeEditorialPlan({gaps:[],research_items:[item("route-a","itinerary"),item("hist-a","history")]});
+  const h=item("hist-a","history"),e=item("peoples-a","ethnohistory"),i=item("route-a","itinerary");
+  for(const items of [[h,e],[h,i,item("hist-b","history")],[e,i,item("peoples-b","ethnohistory")],[h,e,i,item("route-b","itinerary")]])
+    assert.equal(composeEditorialPlan({gaps:[],research_items:items}),null);
+  const plan=composeEditorialPlan({gaps:[],research_items:[h,e,i,item("hist-b","history")]});
   assert.ok(plan);
-  assert.equal(plan.work_items.filter((w:any)=>w.specialty==="itinerary").length,1);
+  assert.deepEqual(plan.work_items.filter((w:any)=>w.depends_on.length===0).map((w:any)=>w.specialty),["history","ethnohistory","itinerary","history"]);
 });

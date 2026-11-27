@@ -136,7 +136,7 @@ ITINERARY_OUTPUT_SCHEMA = {
 ITINERARY_CONTRACT = (
     ' For this itinerary task, also return "waypoints": an ordered candidate route with 1-40 entries. '
     'Every waypoint requires id, sequence, historical and modern place, finite latitude/longitude, '
-    'arrival_date and departure_date (ISO year, year-month or full date, or null), date_note, event, '
+    'arrival_date and departure_date (ISO year, year-month or full date, or null; departure never before arrival), date_note, event, '
     'coordinate_note, source_ids, confidence and uncertainty. Use sequence for chronology. Cite only '
     'retrieved source IDs. Coordinates are decimal degrees: latitude is north (positive) or south (negative) '
     'of the equator and must lie between -90 and 90; longitude is east (positive) or west (negative) of '

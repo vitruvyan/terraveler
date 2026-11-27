@@ -70,12 +70,23 @@ class HandlersTest(unittest.TestCase):
         review = reviewer(self.task, self.config, generator=self.generator({"verdict": "ready-for-editor", "issues": []}))
         self.assertEqual(review["verdict"], "ready-for-editor")
 
+    def test_partial_dates_compare_at_shared_precision(self):
+        self.task["input"] = {"work_item": {"specialty": "itinerary"}}
+        for arrival, departure in (("1528", "1528-05"), ("1528-05", "1528"), ("1528-05-01", "1528-05-01"), (None, "1528")):
+            value = copy.deepcopy(ITINERARY_RESEARCH)
+            value["waypoints"][0].update(arrival_date=arrival, departure_date=departure)
+            with self.subTest(arrival=arrival, departure=departure):
+                research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=self.generator(value))
+        self.task["input"] = {}
+
     def test_invalid_waypoints_and_unexpected_route_data_fail_closed(self):
         self.task["input"] = {"work_item": {"specialty": "itinerary"}}
         mutations = (
             lambda value: value["waypoints"][0].update(latitude=91),
             lambda value: value["waypoints"][0].update(longitude=True),
             lambda value: value["waypoints"][0].update(arrival_date="1527-02-30"),
+            lambda value: value["waypoints"][0].update(arrival_date="1527-08-15", departure_date="1527-06-17"),
+            lambda value: value["waypoints"][0].update(arrival_date="1528", departure_date="1527-12"),
             lambda value: value["waypoints"][0].update(source_ids=["invented"]),
             lambda value: value["waypoints"][0].update(uncertainty=None),
             lambda value: value["waypoints"][0].update(coordinate_note="x" * 501),
