@@ -198,3 +198,29 @@ retained. No external publication authority is created.
 The graph integration test uses fresh Python processes for the actual three
 handlers and the MCP corpus client, with offline model/transport fixtures and
 PGlite SQL. It is not evidence of a live Cabeza de Vaca dossier or VPS readiness.
+
+## Governed Commons image consultation (`wikimedia_api`)
+
+`search_commons_images` and `fetch_commons_image` (lib/commonsImages.ts) give the
+editorial flow a governed path to Wikimedia Commons images. Commons stays
+registered with mixed licensing, so no domain decision makes a file usable:
+each file is verified from the Commons API's own licence metadata. Public
+domain, CC0, CC BY and CC BY-SA are accepted; non-commercial, no-derivatives,
+non-free, GFDL-only and unrecognized licences are refused with an explicit
+reason, never relabelled.
+
+- A search result is a candidate, not a consultation, and records nothing.
+- `fetch_commons_image` returns one revision-bound snapshot (page and revision
+  IDs, SHA-1, original on upload.wikimedia.org, thumbnail on upload or
+  thumb.wikimedia.org without tracking parameters, licence, artist, credit,
+  Commons' recorded date, description, restrictions). With receipt recording
+  enabled it is stored in `editorial_mcp_consultations` under its own tool;
+  migration `supabase/editorial_commons_images.sql` validates the per-file
+  licence, hosts and identity in SQL. A Commons receipt can never pass as a
+  text-source receipt.
+- Commons' `DateTimeOriginal` is a claim recorded on Commons. It is often the
+  upload or scan date of a reproduction (a 1591 engraving can carry 2015), so
+  it never proves that an image is contemporary with an event.
+- Nothing here inspects pixels or describes an image. Selection, ranking and
+  captions belong to the Photo editor and Image text editor specialists, which
+  are not yet executable.

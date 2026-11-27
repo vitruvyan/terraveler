@@ -16,6 +16,7 @@ import { CAPABILITY_INPUT_SCHEMA, capabilitySnapshotUrl, CLAIM_TTL_DAYS, LEGACY_
 import { ensureRegistry, fetchSourceText, isGovernedHost, searchSources } from "@/lib/sourceSearch";
 import { fetchWikipediaOutline } from "@/lib/wikipediaOutline";
 import { recordMCPConsultation } from "@/lib/mcpConsultations";
+import { fetchCommonsImage, searchCommonsImages } from "@/lib/commonsImages";
 import { getSubmissionProject, type PublicProject } from "@/lib/editorialProjectBridge";
 import { editorialMcpCorpus } from "@/lib/editorialMcpCorpus";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
@@ -1427,6 +1428,33 @@ const TOOL_DEFINITIONS = [
     description: "Editorial orientation: retrieve one governed Wikipedia article's section tree, readable text, exact revision ID and candidate external links in a single revision-bound snapshot. Start a new editorial plan here after search_sources. Links are candidates, never proof they were read. Separate truncation flags are explicit. When server receipt recording is enabled, a database-owned consultation receipt accompanies the snapshot. Otherwise consultation_status is disabled and this result cannot satisfy a receipt-backed plan. This read never validates a plan or authorizes work/publication.",
     inputSchema: { type: "object", required: ["url"], properties: {
       url: { type: "string", description: "Plain https://<language>.wikipedia.org/wiki/<article> URL returned by search_sources, without query or fragment." },
+    } } },
+  { name: "search_commons_images",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    securitySchemes: OPEN,
+    description:
+      "Search Wikimedia Commons for still images (maps, engravings, manuscripts, paintings, photographs) about a " +
+      "subject. Every candidate carries its own per-file licence decision from Commons metadata: only public " +
+      "domain, CC0, CC BY and CC BY-SA files are usable; non-commercial, no-derivatives, non-free and unknown " +
+      "licences are listed with their refusal reason, never silently dropped or relabelled. Candidates are not " +
+      "consultations and say nothing about what an image depicts beyond its own metadata. Next: call " +
+      "fetch_commons_image on a usable candidate's title.",
+    inputSchema: { type: "object", required: ["query"], properties: {
+      query: { type: "string", description: "2-300 characters, e.g. \"La Florida map 16th century\"." },
+      limit: { type: "integer", minimum: 1, maximum: 20, description: "Default 10." },
+    } } },
+  { name: "fetch_commons_image",
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    securitySchemes: OPEN,
+    description:
+      "Read ONE Commons file's current, revision-bound metadata: title, file page, image URL on " +
+      "upload.wikimedia.org, size, SHA-1, verified licence, artist, credit, original creation date as recorded on " +
+      "Commons, description and restrictions. Refuses files whose licence is not public domain, CC0, CC BY or CC " +
+      "BY-SA. The creation date is Commons' claim, not proof that an image is contemporary with an event. When " +
+      "server receipt recording is enabled, a database-owned consultation receipt accompanies the snapshot. This " +
+      "read never describes unseen image content, grants reuse beyond the stated licence or authorizes publication.",
+    inputSchema: { type: "object", required: ["title"], properties: {
+      title: { type: "string", description: "The candidate's title exactly as search_commons_images returned it (\"File:...\"), or its commons.wikimedia.org/wiki/File: URL." },
     } } },
   { name: "fetch_source_text",
     annotations: {
@@ -2948,6 +2976,21 @@ async function callTool(name: string, args: any, bearer?: Bearer | null): Promis
     case "get_wikipedia_outline": {
       const snapshot = await fetchWikipediaOutline(args?.url, process.env.EDITORIAL_MCP_RECEIPTS_ENABLED === "1");
       const consultation = await recordMCPConsultation("get_wikipedia_outline", { url: snapshot.requested_url }, snapshot);
+      return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
+    }
+    case "search_commons_images": {
+      const query = String(args?.query ?? "").trim();
+      const limit = args?.limit === undefined ? 10 : Number(args.limit);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 20) return "ERROR: limit must be an integer from 1 to 20.";
+      const candidates = await searchCommonsImages(query, limit);
+      return JSON.stringify({ query, candidates,
+        note: "Candidates only: not consultations. Call fetch_commons_image on a usable candidate before relying on it." }, null, 2);
+    }
+    case "fetch_commons_image": {
+      const title = String(args?.title ?? "").trim();
+      if (!title) return "ERROR: title is required.";
+      const snapshot = await fetchCommonsImage(title);
+      const consultation = await recordMCPConsultation("fetch_commons_image", { title: snapshot.title }, snapshot);
       return JSON.stringify({ ...snapshot, consultation, consultation_status: consultation ? "recorded" : "disabled" }, null, 2);
     }
     case "fetch_source_text": {
