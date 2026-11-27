@@ -96,6 +96,20 @@ class IconographyTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(EvidenceError):
                 iconography(self.task, self.config, call_tool=Tools(), generator=model(value))
 
+    def test_fetch_budget_interleaves_queries(self):
+        calls = []
+
+        def tools(name, args):
+            calls.append((name, args))
+            if name == "search_commons_images":
+                prefix = "A" if "1591" in args["query"] else "B"
+                return {"candidates": [{"title": f"File:{prefix}{i}.jpg", "usable": True} for i in range(10)]}
+            return {"refused": True}
+        iconography(self.task, self.config, call_tool=tools, generator=model(SELECTION))
+        fetched = [a["title"] for n, a in calls if n == "fetch_commons_image"]
+        self.assertEqual(fetched[:4], ["File:A0.jpg", "File:B0.jpg", "File:A1.jpg", "File:B1.jpg"])
+        self.assertEqual(len(fetched), 12)
+
     def test_receipts_are_mandatory_and_no_candidates_is_an_explicit_gap(self):
         with self.assertRaises(EvidenceError) as caught:
             iconography(self.task, self.config, call_tool=Tools(receipts=False), generator=model(SELECTION))

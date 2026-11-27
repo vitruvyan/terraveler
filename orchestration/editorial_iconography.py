@@ -106,13 +106,21 @@ def iconography(task, config, *, call_tool: Callable[[str, dict], dict] | None =
         raise EvidenceError("editorial-invalid-image-queries")
 
     # 2. Governed search: candidates only, licence decided per file by the MCP tool.
-    titles: list[str] = []
+    per_query: list[list[str]] = []
     for query in queries:
         found = call("search_commons_images", {"query": query.strip(), "limit": SEARCH_LIMIT})
+        usable = []
         for candidate in found.get("candidates", []) if isinstance(found, dict) else []:
             title = candidate.get("title") if isinstance(candidate, dict) else None
-            if candidate.get("usable") is True and isinstance(title, str) and title not in titles:
-                titles.append(title)
+            if candidate.get("usable") is True and isinstance(title, str):
+                usable.append(title)
+        per_query.append(usable)
+    # Interleave queries so the fetch budget covers every query, not just the first.
+    titles: list[str] = []
+    for rank in range(SEARCH_LIMIT):
+        for usable in per_query:
+            if rank < len(usable) and usable[rank] not in titles:
+                titles.append(usable[rank])
     # 3. Consultation: each fetched file gets its own receipt in this attempt.
     consulted: dict[str, dict] = {}
     for title in titles[:MAX_FETCHED]:

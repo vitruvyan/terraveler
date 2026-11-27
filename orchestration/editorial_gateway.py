@@ -153,10 +153,12 @@ ICONOGRAPHY_SELECTION_SCHEMA = {
 }
 ICONOGRAPHY_CONTRACTS = {
     "queries": (
-        'Return {"queries":["..."]}: two to four short Wikimedia Commons search queries (a few words each) for '
-        'images that document the work item: period maps, engravings, manuscripts, printed pages, portraits and '
-        'places. Use names and terms a Commons file title or description would contain; include a period or '
-        'place term where useful. Do not use quotation marks.'
+        'Return {"queries":["..."]}: two to four Wikimedia Commons search queries for images that document the '
+        'work item: period maps, engravings, manuscripts, printed pages, portraits and places. Commons search '
+        'matches file titles and descriptions, so each query must be one to three words: a personal name, an '
+        'expedition or event name, a historical place or people, or an engraver or mapmaker with a region. Cover '
+        'different people and places of the topic rather than variants of one phrase. Do not add generic words '
+        'such as map, page, manuscript or century unless they are part of a name, and do not use quotation marks.'
     ),
     "selection": (
         'Return {"kind":"iconography","selections":[{"receipt_id":"RECEIPT_ID","depiction":"...","relevance":"...",'
