@@ -70,6 +70,49 @@ class GatewayTests(unittest.TestCase):
                     self.assertNotIn("body", properties)
                     self.assertNotIn("citations", properties)
 
+    def test_source_ids_are_constrained_to_known_sources(self):
+        from orchestration.editorial_gateway import ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA
+        before = json.dumps([ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA], sort_keys=True)
+        def schema_for(value):
+            calls = []
+            def transport(request, timeout):
+                calls.append(json.loads(request.data))
+                return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+            generate_candidate(value, self.config, open_request=transport)
+            return calls[0]["response_format"]["json_schema"]["schema"]
+        ids = ["mcp:a", "mcp:b"]
+        value = task()
+        value["input"] = {"work_item": {"id": "route", "specialty": "itinerary"},
+                          "retrieved_sources": [{"id": i, "text": "t"} for i in ids]}
+        schema = schema_for(value)
+        self.assertEqual(schema["properties"]["findings"]["items"]["properties"]["source_ids"]["items"], {"enum": ids})
+        self.assertEqual(schema["properties"]["waypoints"]["items"]["properties"]["source_ids"]["items"], {"enum": ids})
+        self.assertTrue(schema["properties"]["findings"]["items"]["properties"]["source_ids"]["uniqueItems"])
+        value = task()
+        value["role"] = value["agent_config"]["role"] = "writer"
+        value["input"] = {"research_result": {"kind": "research", "references": [{"id": "mcp:a"}]}}
+        schema = schema_for(value)
+        self.assertEqual(schema["properties"]["paragraphs"]["items"]["properties"]["source_id"], {"enum": ["mcp:a"]})
+        value = task()
+        self.assertEqual(schema_for(value)["properties"]["findings"]["items"]["properties"]["source_ids"]["items"],
+                         {"type": "string", "minLength": 1})
+        self.assertEqual(before, json.dumps([ROLE_OUTPUT_SCHEMAS, ITINERARY_OUTPUT_SCHEMA], sort_keys=True))
+
+    def test_reviewer_contract_only_requests_writer_fixable_changes(self):
+        value = task()
+        value["role"] = value["agent_config"]["role"] = "reviewer"
+        calls = []
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            return BytesIO(b'{"choices":[{"message":{"content":"{}"}}]}')
+        generate_candidate(value, self.config, open_request=transport)
+        contract = calls[0]["messages"][2]["content"]
+        self.assertIn("never request direct quotations", contract)
+        self.assertNotIn("quote accuracy", contract)
+        self.assertIn("Waypoints are fixed by the itinerary researcher", contract)
+        self.assertIn("use blocked and name the waypoint ID", contract)
+        self.assertIn("changes-requested only for issues the writer can fix", contract)
+
     def test_itinerary_requires_closed_structured_waypoints(self):
         value = task()
         value["input"] = {"work_item": {"id": "route", "specialty": "itinerary"}}

@@ -43,8 +43,14 @@ ROLE_SCHEMAS = {
         'Return a JSON object, for example {"kind":"review","verdict":"ready-for-editor","issues":[]}. '
         'Allowed verdicts: ready-for-editor, changes-requested, blocked. The latter two require '
         'specific actionable issues. Inspect input.draft_result against '
-        'input.research_result.references and the editorial brief. Check factual support, quote '
-        'accuracy, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
+        'input.research_result.references and the editorial brief. Check factual support, source '
+        'attribution, rights and uncertainty. Select ready-for-editor only with no unresolved issues. '
+        'The writer can change only title and paragraph text and each paragraph source_id. Paraphrase is '
+        'mandatory: never request direct quotations or quotation marks. Waypoints are fixed by the itinerary '
+        'researcher and copied unchanged; a waypoint whose confidence and uncertainty disclose approximate or '
+        'illustrative coordinates is not by itself an issue. Use changes-requested only for issues the writer '
+        'can fix. If a waypoint is unsupported, contradicted or understates its uncertainty, use blocked and '
+        'name the waypoint ID: the editor must resolve it upstream. '
         'Readiness is a candidate review and never authorizes publication.'
     ),
 }
@@ -127,7 +133,11 @@ ITINERARY_CONTRACT = (
     'Every waypoint requires id, sequence, historical and modern place, finite latitude/longitude, '
     'arrival_date and departure_date (ISO year, year-month or full date, or null), date_note, event, '
     'coordinate_note, source_ids, confidence and uncertainty. Use sequence for chronology. Cite only '
-    'retrieved source IDs. Explain the coordinate basis in coordinate_note. Use null uncertainty only '
+    'retrieved source IDs. Coordinates are decimal degrees: latitude is north (positive) or south (negative) '
+    'of the equator and must lie between -90 and 90; longitude is east (positive) or west (negative) of '
+    'Greenwich and must lie between -180 and 180. Never put a longitude value in latitude. Example: Seville is '
+    'latitude 37.39, longitude -5.98; the Americas north of the equator have positive latitude and negative '
+    'longitude. Explain the coordinate basis in coordinate_note. Use null uncertainty only '
     'for certain waypoints; approximate and reconstructed waypoints must state their uncertainty. '
     'These are candidates for editor review, not independently verified geography.'
 )
@@ -241,6 +251,39 @@ def _prompt_material(task: dict) -> dict:
     return material
 
 
+def _known_source_ids(role: str, context: dict) -> list[str]:
+    """Source IDs the candidate may cite: retrieved sources or accepted research references."""
+    if role == "research":
+        sources = context.get("retrieved_sources")
+    elif role == "writer":
+        sources = (context.get("research_result") or {}).get("references")
+    else:
+        return []
+    if not isinstance(sources, list):
+        return []
+    ids = [s.get("id") for s in sources if isinstance(s, dict)]
+    if not ids or len(ids) > 200 or any(not isinstance(i, str) or not i for i in ids):
+        return []
+    return list(dict.fromkeys(ids))
+
+
+def _bind_source_ids(node, ids: list[str]):
+    """Constrain every source_id/source_ids string to the known IDs (enum), so
+    constrained decoding cannot emit an invented or altered identifier."""
+    if isinstance(node, list):
+        return [_bind_source_ids(item, ids) for item in node]
+    if not isinstance(node, dict):
+        return node
+    bound = {k: _bind_source_ids(v, ids) for k, v in node.items()}
+    properties = bound.get("properties")
+    if isinstance(properties, dict):
+        if isinstance(properties.get("source_id"), dict):
+            properties["source_id"] = {"enum": list(ids)}
+        if isinstance(properties.get("source_ids"), dict):
+            properties["source_ids"] = {**properties["source_ids"], "items": {"enum": list(ids)}}
+    return bound
+
+
 def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Callable | None = None) -> dict:
     # Same binding validator used by the worker before it starts a handler.
     from orchestration.editorial import validated_agent_config
@@ -253,6 +296,9 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
     itinerary = agent["role"] == "research" and isinstance(work_item, dict) and work_item.get("specialty") == "itinerary"
     schema = ITINERARY_OUTPUT_SCHEMA if itinerary else ROLE_OUTPUT_SCHEMAS[agent["role"]]
     contract = ROLE_SCHEMAS[agent["role"]] + (ITINERARY_CONTRACT if itinerary else "")
+    known_ids = _known_source_ids(agent["role"], material["input"])
+    if known_ids:
+        schema = _bind_source_ids(schema, known_ids)
     try:
         record = json.dumps(material, allow_nan=False)
         if len(record.encode()) > 65536:
