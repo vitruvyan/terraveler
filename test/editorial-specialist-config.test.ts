@@ -6,7 +6,7 @@ test("specialties persist with versioned configs and planned handlers cannot ena
  const config = parseSpecialistConfiguration({ ...base, specialty: "history" }); assert.ok(config);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "publisher" }), null);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "diary" }), null);
- assert.equal(parseSpecialistConfiguration({ ...base, specialty: "iconography", enabled: true }), null);
+ assert.equal(parseSpecialistConfiguration({ ...base, specialty: "iconography", enabled: true })?.specialty, "iconography");
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "caption", enabled: true }), null);
  assert.equal(parseSpecialistConfiguration(base)?.specialty, null);
  assert.equal(parseSpecialistConfiguration({ ...base, specialty: "ethnohistory", enabled: true })?.specialty, "ethnohistory");

@@ -42,7 +42,7 @@ else: result=reviewer(task,conf,generator=generate)
 json.dump(result,sys.stdout)
 `;
 function executeHandler(task,receipt=null,reviewVerdicts={}){const child=spawnSync('python3',['-c',python],{cwd:root,env:{...process.env,PYTHONPATH:root},input:JSON.stringify({task,receipt,review_verdicts:reviewVerdicts}),encoding:'utf8',timeout:10000,maxBuffer:1024*1024});assert.equal(child.status,0,child.stderr||child.error?.message);return JSON.parse(child.stdout);}
-const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints'];
+const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography'];
 const migration=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 test('dispatch migration contains one definition per function and balanced SQL dollar quotes',()=>{
  const sql=migration.at(-1);
@@ -377,4 +377,88 @@ test('revision helpers and arbitrary graph input cannot bypass the governed sche
   assert.equal(await scalar(db,'select count(*)::int from editorial_graph_tasks where run_id=$1',[run.run_id]),3);
   await assertNoPublication(db);
  }finally{await db.close();}
+});
+
+const commonsImage=(title,patch={})=>({kind:'commons-image',title,page_url:'https://commons.wikimedia.org/wiki/'+title.replace(/ /g,'_'),page_id:101,revision_id:9001,
+ image_url:'https://upload.wikimedia.org/wikipedia/commons/a/ab/X.jpg',thumb_url:null,mime:'image/jpeg',width:800,height:600,sha1:'a'.repeat(40),
+ licence:{usable:true,class:'public_domain',code:'pd',short_name:'Public domain',url:null,attribution_required:false},
+ artist:'Theodor de Bry',credit:null,date_original:'1591',date_year:1591,description:'Engraving.',object_name:null,restrictions:[],...patch});
+test('Photo editor: independent iconography item, receipt-bound selections from its own attempt, never writer evidence',async()=>{
+ const db2=await fixture();
+ try {
+ for(const [key,role,specialty] of [['planner','coordinator',null],['reviewer','reviewer','factcheck'],['historian','research','history'],['photo-editor','research','iconography'],['writer','writer','diary']])await saveAgent(db2,key,role,specialty);
+ const prep=await preparation(db2,[item('history-a','history',[]),item('images','iconography',[]),item('diary','diary',['history-a']),item('check','factcheck',['diary'])]);
+ await scalar(db2,'select editorial_enable_plan_gate()');
+ await db2.exec('set role terraveler_service');
+ const run=await scalar(db2,'select editorial_dispatch_plan($1,$2,$3)',[1,prep.plan_id,'dispatch-images-000001']);
+ let images=null;
+ for(let i=0;i<2;i++){
+  const task=await scalar(db2,"select editorial_claim('worker',array['research'],120)");
+  if(task.input.work_item.specialty==='history'){
+   const receipt=await scalar(db2,'select editorial_read_mcp_corpus($1,$2,$3)',[task.id,task.attempt,'worker']);
+   await scalar(db2,'select editorial_complete($1,$2,$3,$4)',[task.id,task.lease_token,executeHandler(task,receipt),{}]);
+   continue;
+  }
+  images=task;
+  assert.equal(task.agent_config.agent_key,'photo-editor');
+  const record=(title,patch)=>{const body=commonsImage(title,patch);return scalar(db2,'select editorial_record_mcp_consultation($1,$2,$3)',['fetch_commons_image',{title},JSON.stringify(body)]).then(r=>({r,body}));};
+  const good=await record('File:De Bry Timucua.jpg');
+  const selection=(rec,patch={})=>({receipt_id:rec.r.id,receipt_sha256:rec.r.response_sha256,snapshot:rec.body,depiction:'period-artwork',relevance:'Engraved in 1591 from a participant account.',caution:null,...patch});
+  const result=(imgs,extra={})=>({kind:'iconography',images:imgs,queries:['De Bry Florida'],uncertainties:[],candidate:{},verification:'candidate-only',...extra});
+  const complete=value=>scalar(db2,'select editorial_complete($1,$2,$3,$4)',[task.id,task.lease_token,value,{}]);
+  for(const bad of [
+   result([selection(good,{snapshot:{...good.body,licence:{...good.body.licence,class:'cc_by_nc'}}})]),
+   result([selection(good,{receipt_sha256:'0'.repeat(64)})]),
+   result([selection(good,{depiction:'eyewitness'})]),
+   result([selection(good,{relevance:'The "true" landing.'})]),
+   result([{...selection(good),image_url:'https://example.org/x.jpg'}]),
+   result([selection(good),selection(good)]),
+   result([]),
+   {...result([selection(good)]),kind:'research'},
+  ]) await assert.rejects(complete(bad),/invalid Commons image receipt|duplicate image selection|must state why|wrong plan result kind/);
+  await complete(result([selection(good)]));
+ }
+ assert.ok(images,'the iconography task was claimed');
+ // A receipt recorded before the attempt's claim cannot be reused by a later attempt.
+ const writer=await scalar(db2,"select editorial_claim('worker',array['writer'],120)");
+ assert.ok(writer,'the writer does not wait on the Photo editor');
+ assert.equal(JSON.stringify(writer.input).includes('De Bry Timucua'),false,'image selections never reach writers as research');
+ await scalar(db2,'select editorial_complete($1,$2,$3,$4)',[writer.id,writer.lease_token,executeHandler(writer),{}]);
+ const reviewer=await scalar(db2,"select editorial_claim('worker',array['reviewer'],120)");
+ await scalar(db2,'select editorial_complete($1,$2,$3,$4)',[reviewer.id,reviewer.lease_token,executeHandler(reviewer),{}]);
+ assert.equal(await scalar(db2,'select state from editorial_graph_status where id=$1',[run.run_id]),'awaiting-editor');
+ }finally{await db2.close();}
+});
+test('Photo editor receipts must come from the same attempt and plans allow at most one independent image item',async()=>{
+ const db=await fixture();
+ try {
+ for(const [key,role,specialty] of [['planner','coordinator',null],['reviewer','reviewer','factcheck'],['historian','research','history'],['photo-editor','research','iconography'],['writer','writer','diary']])await saveAgent(db,key,role,specialty);
+ const title='File:Early.jpg', body=commonsImage(title);
+ await db.exec('set role terraveler_service');
+ const early=await scalar(db,'select editorial_record_mcp_consultation($1,$2,$3)',['fetch_commons_image',{title},JSON.stringify(body)]);
+ await db.exec('reset role');
+ const prep=await preparation(db,[item('history-a','history',[]),item('images','iconography',[]),item('diary','diary',['history-a']),item('check','factcheck',['diary'])]);
+ await scalar(db,'select editorial_enable_plan_gate()');
+ await db.exec('set role terraveler_service');
+ await scalar(db,'select editorial_dispatch_plan($1,$2,$3)',[1,prep.plan_id,'dispatch-images-000002']);
+ for(let i=0;i<2;i++){
+  const task=await scalar(db,"select editorial_claim('worker',array['research'],120)");
+  if(task.input.work_item.specialty!=='iconography')continue;
+  await assert.rejects(scalar(db,'select editorial_complete($1,$2,$3,$4)',[task.id,task.lease_token,{kind:'iconography',images:[{receipt_id:early.id,receipt_sha256:early.response_sha256,snapshot:body,depiction:'period-artwork',relevance:'Older consultation.',caution:null}],queries:[],uncertainties:[],candidate:{},verification:'candidate-only'},{}]),/invalid Commons image receipt/);
+  await scalar(db,'select editorial_complete($1,$2,$3,$4)',[task.id,task.lease_token,{kind:'iconography',images:[],queries:['x'],uncertainties:['No suitable image.'],candidate:{},verification:'candidate-only'},{}]);
+ }
+ }finally{await db.close();}
+ for(const items of [
+  [item('history-a','history',[]),item('img-a','iconography',[]),item('img-b','iconography',[]),item('diary','diary',['history-a']),item('check','factcheck',['diary'])],
+  [item('history-a','history',[]),item('img-a','iconography',['history-a']),item('diary','diary',['history-a']),item('check','factcheck',['diary'])],
+  [item('history-a','history',['img-a']),item('img-a','iconography',[]),item('diary','diary',['history-a']),item('check','factcheck',['diary'])],
+  [item('history-a','history',[]),item('img-a','iconography',[]),item('diary','diary',['history-a','img-a']),item('check','factcheck',['diary'])],
+ ]){
+  const d=await fixture();
+  try {
+   for(const [key,role,specialty] of [['planner','coordinator',null],['reviewer','reviewer','factcheck'],['historian','research','history'],['photo-editor','research','iconography'],['writer','writer','diary']])await saveAgent(d,key,role,specialty);
+   const p=await preparation(d,items);
+   await assert.rejects(scalar(d,'select editorial_dispatch_plan($1,$2,$3)',[1,p.plan_id,'dispatch-images-bad-001']),/at most one iconography|unsupported editorial dependency graph/);
+  }finally{await d.close();}
+ }
 });

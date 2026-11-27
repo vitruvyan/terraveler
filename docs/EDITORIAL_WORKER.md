@@ -110,3 +110,32 @@ provides this entry point, disabled by default and without automatic restart.
 - PostgreSQL lease/transaction behavior is exercised separately by the SQL
   tests. Worker tests use actual spawned processes and native Motus with an
   in-memory fencing oracle; they never connect to a live database or model.
+
+## Photo editor (iconography)
+
+Every composed plan carries one fixed, independent `iconography-images` research
+item. Its handler (orchestration/editorial_iconography.py) does not read the
+textual corpus:
+
+1. the configured model proposes two to four Commons search queries;
+2. `search_commons_images` returns candidates with per-file licence decisions
+   (public domain, CC0, CC BY, CC BY-SA only);
+3. up to twelve usable candidates are read with `fetch_commons_image`, each
+   recording its own consultation receipt; recording must be enabled, otherwise
+   the task fails with `editorial-image-receipt-required`;
+4. the model selects zero to eight images, citing only those receipt IDs
+   (schema enum) and judging from metadata alone: depiction class, relevance and
+   caution. It cannot see the images;
+5. trusted code copies each receipt's exact snapshot into the result.
+
+SQL (`supabase/editorial_iconography.sql`) accepts the result only if every
+selection equals a `fetch_commons_image` receipt recorded after the attempt's
+claim, with an exact snapshot and digest, a closed depiction class and no
+quotation marks. An empty selection must state why. No writer or research item
+may depend on the iconography item and writers never receive image selections as
+research; the Image text editor (caption) remains closed.
+
+Commons' recorded date is a claim, often a scan or upload date. A sample of
+eight real Commons images showed nomic-vision zero-shot labels reliable for
+period works but wrong for every modern image, so no visual classification is
+used; depiction is a metadata judgment for editor and fact-check review.

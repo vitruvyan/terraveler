@@ -266,6 +266,13 @@ def reviewer(task, config, *, generator=generate_candidate):
 
 
 def production_research(task):
+    work_item = task.get("input", {}).get("work_item")
+    if isinstance(work_item, dict) and work_item.get("specialty") == "iconography":
+        # Images come from governed Commons consultations, not the textual corpus.
+        if task.get("input", {}).get("graph_run_id") is None:
+            raise EvidenceError("editorial-iconography-requires-plan")
+        from orchestration.editorial_iconography import iconography
+        return iconography(task, GatewayConfig.from_environment())
     if task.get("input", {}).get("graph_run_id") is not None and os.environ.get("EDITORIAL_MCP_CORPUS_ENABLED") != "1":
         raise EvidenceError("editorial-mcp-corpus-required")
     if os.environ.get("EDITORIAL_MCP_CORPUS_ENABLED") == "1":

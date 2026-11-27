@@ -67,7 +67,13 @@ PREPARATION_SYSTEM = (
     "without Markdown, prose or extra keys. Follow the stage-specific schema exactly. "
 )
 
-PLAN_SPECIALTIES = ("history", "ethnohistory", "itinerary", "diary", "editorial", "copyedit", "factcheck")
+PLAN_SPECIALTIES = ("history", "ethnohistory", "itinerary", "iconography", "diary", "editorial", "copyedit", "factcheck")
+# Mirrors ICONOGRAPHY_ITEM in lib/editorialPreparation.ts: a fixed, independent Photo editor item.
+ICONOGRAPHY_ITEM = {"id": "iconography-images", "specialty": "iconography",
+    "question": ("Find governed Wikimedia Commons images that document this subject: period maps, engravings, "
+                 "manuscripts, printed pages and portraits, and later depictions of the people and places. "
+                 "Distinguish period works from later reproductions and modern photographs."),
+    "deliverable": "Receipt-bound image selection with depiction judgment, attribution and per-file licence."}
 RESEARCH_SPECIALTIES = ("history", "ethnohistory", "itinerary")
 PLAN_OUTPUT_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["gaps", "research_items"],
@@ -159,6 +165,7 @@ FIXTURE_PLAN = {
         {**FIXTURE_RESEARCH_PLAN["research_items"][0], "depends_on": [], "source_receipt_ids": []},
         {**FIXTURE_RESEARCH_PLAN["research_items"][1], "depends_on": [], "source_receipt_ids": []},
         {**FIXTURE_RESEARCH_PLAN["research_items"][2], "depends_on": [], "source_receipt_ids": []},
+        {**ICONOGRAPHY_ITEM, "depends_on": [], "source_receipt_ids": []},
         {"id": "diary", "question": "Draft a chronological diary from all research results, preserving uncertainty.",
          "deliverable": "Private diary draft with one source ID per paragraph.", "specialty": "diary",
          "depends_on": ["wreck", "hosts", "crossing"], "source_receipt_ids": []},
@@ -273,7 +280,10 @@ def compose_plan(proposal):
     if count("history") < 1 or count("ethnohistory") < 1 or count("itinerary") != 1:
         return None
     ids = [item["id"] for item in proposal["research_items"]]
+    if ICONOGRAPHY_ITEM["id"] in ids:
+        return None
     research = [{**item, "depends_on": [], "source_receipt_ids": []} for item in proposal["research_items"]]
+    research.append({**ICONOGRAPHY_ITEM, "depends_on": [], "source_receipt_ids": []})
     writers = [{"id": specialty,
                 "question": ("Draft a chronological diary from all research results, preserving uncertainty."
                              if specialty == "diary" else
@@ -305,7 +315,7 @@ def validate_plan(plan) -> list[str]:
     if not _strings(plan.get("gaps")):
         errors.append("gaps-not-string-list")
     items = plan.get("work_items")
-    if not isinstance(items, list) or not 7 <= len(items) <= 10:
+    if not isinstance(items, list) or not 7 <= len(items) <= 11:
         return errors + ["work-items-count"]
     ids = set()
     required = {"id", "question", "deliverable", "specialty", "depends_on", "source_receipt_ids"}
@@ -358,12 +368,18 @@ def validate_plan(plan) -> list[str]:
     research = [i for i in valid_items if i.get("specialty") in {"history", "ethnohistory", "itinerary"}]
     writers = [i for i in valid_items if i.get("specialty") in {"diary", "editorial"}]
     reviewers = [i for i in valid_items if i.get("specialty") in {"copyedit", "factcheck"}]
+    images = [i for i in valid_items if i.get("specialty") == "iconography"]
     research_ids = {i["id"] for i in research}
+    image_ids = {i["id"] for i in images}
+    if len(images) > 1 or any(i.get("depends_on") for i in images):
+        errors.append("iconography-shape")
+    if any(set(i.get("depends_on") or []) & image_ids for i in valid_items):
+        errors.append("iconography-dependency")
     if not 1 <= len(research) <= 4:
         errors.append("research-count")
     if len(writers) != 2 or {i.get("specialty") for i in writers} != {"diary", "editorial"}:
         errors.append("writer-specialties")
-    if len(valid_items) != len(research) + len(writers) + len(reviewers):
+    if len(valid_items) != len(research) + len(images) + len(writers) + len(reviewers):
         errors.append("unexpected-specialty-count")
     for item in research:
         if not set(item.get("depends_on") or []) <= research_ids:

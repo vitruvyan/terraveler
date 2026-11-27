@@ -1,16 +1,27 @@
 import { dataRpc } from "@/lib/deskAuth";
 import { sourceTextRetentionAllowed } from "@/lib/sourceSearch";
+import { ACCEPTED_LICENCE_CLASSES } from "@/lib/commonsImages";
 export type MCPConsultationReceipt = { id: string; response_sha256: string; arguments_sha256: string; created_at: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Trusted MCP dispatcher only: source bytes and hashes are never accepted from a public receipt-write API. */
 export async function recordMCPConsultation(
-  tool: "get_wikipedia_outline" | "fetch_source_text", args: Record<string, unknown>, response: Record<string, unknown>,
+  tool: "get_wikipedia_outline" | "fetch_source_text" | "fetch_commons_image", args: Record<string, unknown>, response: Record<string, unknown>,
   env: Record<string, string | undefined> = process.env, rpc = dataRpc, mayRetain = sourceTextRetentionAllowed,
 ): Promise<MCPConsultationReceipt | null> {
   if (env.EDITORIAL_MCP_RECEIPTS_ENABLED !== "1") return null;
-  const url = tool === "get_wikipedia_outline" ? response.requested_url : response.url;
-  if (typeof url !== "string" || !await mayRetain(url))
-    throw Error("This source is not authorized for raw-text receipt storage. Per-item verification or link-only handling is required.");
+  if (tool === "fetch_commons_image") {
+    // Commons has mixed licensing: the authority is this file's own verified
+    // licence and upload host, never a domain-level retention decision.
+    const licence = response.licence as Record<string, unknown> | undefined;
+    const upload = (value: unknown) => { try { const u = new URL(String(value)); return u.protocol === "https:" && u.hostname === "upload.wikimedia.org"; } catch { return false; } };
+    if (response.kind !== "commons-image" || !licence || licence.usable !== true ||
+        !ACCEPTED_LICENCE_CLASSES.includes(licence.class as never) || !upload(response.image_url))
+      throw Error("This Commons file has no accepted per-file licence verification and cannot be recorded.");
+  } else {
+    const url = tool === "get_wikipedia_outline" ? response.requested_url : response.url;
+    if (typeof url !== "string" || !await mayRetain(url))
+      throw Error("This source is not authorized for raw-text receipt storage. Per-item verification or link-only handling is required.");
+  }
   const responseText = JSON.stringify(response);
   if (Buffer.byteLength(responseText, "utf8") > 1048576) throw Error("MCP consultation snapshot exceeds the storage limit.");
   try {
