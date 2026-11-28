@@ -301,3 +301,13 @@ test("plan composition requires history, ethnohistory and exactly one itinerary 
   assert.equal(composeEditorialPlan({gaps:[],research_items:[h,e,{...i,id:"captions"}]}),null,"the caption item ID cannot be claimed by the planner");
   assert.equal(composeEditorialPlan({gaps:[],research_items:[h,e,{...i,id:"iconography-images"}]}),null,"the fixed item ID cannot be claimed by the planner");
 });
+
+test("model deadlines default to the Desk's and are configurable within bounds for server-side callers",async()=>{
+ const {preparationTimeoutMs}=await import("../lib/editorialPreparation");
+ assert.equal(preparationTimeoutMs({},"plan"),90000);
+ assert.equal(preparationTimeoutMs({},"review"),160000);
+ assert.equal(preparationTimeoutMs({EDITORIAL_PREPARATION_PLAN_TIMEOUT_MS:"600000"},"plan"),600000);
+ assert.equal(preparationTimeoutMs({EDITORIAL_PREPARATION_REVIEW_TIMEOUT_MS:"600000"},"review"),600000);
+ for(const bad of ["0","9999","900001","-1","1e6","abc",""])
+  assert.equal(preparationTimeoutMs({EDITORIAL_PREPARATION_PLAN_TIMEOUT_MS:bad},"plan"),90000,bad);
+});
