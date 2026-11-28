@@ -205,7 +205,16 @@ function generator(env:Env,fetcher:typeof fetch,onResponse:(agent:Agent,envelope
     const contract=stage==="plan"?
       'Return JSON only {"gaps":["unanswered question"],"research_items":[{"id":"stable-id","question":"specific question","deliverable":"artifact","specialty":"history"}]}. Use three or four research items with specialty history, ethnohistory or itinerary: include at least one history item, at least one ethnohistory item covering indigenous peoples and perspectives, and exactly one itinerary item. Return exactly the root fields gaps and research_items, and exactly the four specified fields for each research item. Do not emit work_items, diary, editorial, copyedit, factcheck, dependencies or source receipt IDs: the program composes the fixed downstream graph separately. Identify missing itinerary and indigenous perspectives, not just the table of contents. Wikipedia is orientation only; research is still to be done.'+(guided?' A previous full plan and its independent review are provided as previous_plan and previous_review. Address every issue from previous_review explicitly by revising research questions, coverage and gaps. Do not repeat rejected research unchanged; if an issue cannot be resolved with the available orientation, keep it visible in gaps.':'')
       :
-      'Return JSON only {"verdict":"adequate-for-next-stage","issues":[]}. Choose exactly one verdict: adequate-for-next-stage, changes-requested or blocked. Independently inspect the exact proposed plan against the dossier and orientation; assess relevance, coverage, independent verification, dependencies, missing evidence and uncertainty. Adequate requires zero issues and is not authority to execute or publish.'+(guided?' A previous plan version and its review are provided: verify explicitly whether each prior issue is resolved; any prior issue left unresolved must appear in issues.':'');
+      'Return JSON only {"verdict":"adequate-for-next-stage","issues":[]}. Choose exactly one verdict: adequate-for-next-stage, changes-requested or blocked. Independently inspect the exact proposed plan against the dossier and orientation; assess relevance, coverage, independent verification, dependencies, missing evidence and uncertainty. Adequate requires zero issues and is not authority to execute or publish. '+
+      // A plan is reviewed before any research exists. The plan reviewer shares
+      // the draft fact-checker's guidance ("report missing evidence as a
+      // blocker"), and read literally that blocked Gama, Leo Africanus and
+      // Verrazzano for lacking source receipts no plan can have.
+      'This is a research PLAN, reviewed before any research is done: no sources have been consulted yet, source_receipt_ids are empty by design, and their absence is never an issue. '+
+      'The configured guidance about missing evidence and blockers applies to drafts, not to plans: at this stage missing evidence is what the research items are for. '+
+      'An issue is something the planner must change in the plan: an irrelevant, vague or unanswerable question, a missing history, ethnohistory or itinerary angle, or an unstated gap. '+
+      'Contested or uncertain history (for example whether the traveller reached a place) belongs in the plan as a research question or a gap; if it is already there, it is not an issue. '+
+      'Use blocked only when the dossier itself cannot proceed (off-topic, impossible or unsafe), never for evidence that research has yet to gather.'+(guided?' A previous plan version and its review are provided: verify explicitly whether each prior issue is resolved; any prior issue left unresolved must appear in issues, except a prior issue this contract says is not an issue (such as missing source receipts or evidence not yet gathered): that one is void, and must be dropped rather than repeated.':'');
     const materialText=JSON.stringify(material);
     if(Buffer.byteLength(materialText)>160000)throw new PreparationError("preparation-context-too-large");
     let responseRequestId:string|undefined,httpStatus:number|undefined;
@@ -306,7 +315,18 @@ export async function prepareEditorialPlan(input:PreparationRequest,ports:Ports=
       return parsed;
     });
     const reviewOutput=await step("reviewer",()=>generate(reviewer,"review",{...context,plan:parsed.plan}));
-    const review=await step("review-validation",async()=>parsePlanReview(reviewOutput));
+    // A verdict that contradicts its own issues ("blocked" with none, "adequate"
+    // with some) is sent back once, with the rule it broke, before the attempt
+    // fails: Leo Africanus's reviewer answered {"verdict":"blocked","issues":[]}.
+    let corrected:unknown=null;
+    try{parsePlanReview(reviewOutput);}catch(error){
+      if(!(error instanceof PreparationError)||error.code!=="plan-review-invalid")throw error;
+      corrected=await step("reviewer",()=>generate(reviewer,"review",{...context,plan:parsed.plan,validation_feedback:
+        "Your previous review was rejected: its verdict and issues disagreed. adequate-for-next-stage requires an empty issues list; "+
+        "changes-requested and blocked require at least one concrete issue naming what the planner must change. "+
+        "If you cannot name such an issue, the plan is adequate. Return the complete review again."}));
+    }
+    const review=await step("review-validation",async()=>parsePlanReview(corrected??reviewOutput));
     return await step("persist",async()=>{
       let saved;
       try{saved=await rpc("editorial_record_preparation",{p_topic_id:input.topic_id,p_expected_version:input.expected_version,p_request_id:input.request_id,
