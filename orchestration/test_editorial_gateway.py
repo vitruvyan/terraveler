@@ -268,3 +268,20 @@ class AssignmentContextTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SubmissionCompactionTests(unittest.TestCase):
+    def test_prompt_keeps_where_and_when_but_not_evidence_quotations(self):
+        from orchestration.editorial_gateway import _prompt_material
+        quote = "Fa-Hian, leaving Chang'an, was five years in arriving at Mid-India. " * 30
+        waypoint = {"seq": 1, "place_historical": "Chang'an", "latitude": 34.3, "longitude": 108.9,
+                    "arrival_date": "399", "confidence": "medium",
+                    "claims": [{"text": "He left Chang'an.", "evidence": {"quote": quote}}]}
+        snapshot = {"id": 13, "target_voyage": "faxian-399", "payload": {"voyage": {"title": "Faxian"}, "waypoints": [waypoint] * 38}}
+        material = _prompt_material({"id": 1, "sources": [snapshot], "input": {}})
+        compact = material["sources"][0]["payload"]["waypoints"][0]
+        self.assertEqual(compact["claims"], ["He left Chang'an."])
+        self.assertEqual((compact["latitude"], compact["arrival_date"]), (34.3, "399"))
+        self.assertNotIn(quote[:40], json.dumps(material))
+        self.assertLess(len(json.dumps(material)), len(json.dumps(snapshot)) / 10)
+        self.assertIn("evidence", snapshot["payload"]["waypoints"][0]["claims"][0], "the stored snapshot is untouched")

@@ -14,12 +14,17 @@
 --     the read is a mix: modern encyclopaedia prose sits closer to a modern
 --     question than a sixteenth-century translation does, and without the host
 --     cap an eyewitness account lost every slot to Wikipedia;
---   * gives editor-attached dossier receipts a share of the budget rather than
---     all of it, unless the dossier has no voyage corpus at all;
---   * records why: mode, the question, the cap and every pick with its work and
---     distance, beside the snapshot in editorial_corpus_consultations.
+--   * keeps every editor-attached dossier receipt that fit before (they are a
+--     human's choice; editorial_topic_receipt_sources still bounds them) and
+--     fills the rest of the budget from the voyage corpus;
+--   * records why: mode, the question, the vector's hash and model, the caps
+--     and every pick with its work and distance, in editorial_corpus_consultations.
 -- Governance is unchanged: the same live endpoint and policy checks decide what
 -- may be read; ranking only decides the order among what is already allowed.
+--
+-- editorial_mcp_corpus.sql and editorial_dossier_sources.sql still define the
+-- old three-argument function. If either is ever re-applied, re-apply this file
+-- after it: two overloads make every three-argument call ambiguous.
 begin;
 alter table public.editorial_corpus_consultations add column if not exists retrieval jsonb
  check (retrieval is null or (jsonb_typeof(retrieval)='object' and octet_length(retrieval::text)<=16000));
@@ -30,7 +35,7 @@ returns jsonb language plpgsql security definer set search_path=pg_catalog,publi
 declare task public.editorial_tasks; stored public.editorial_corpus_consultations;
  scopes text[]; item record; ep public.source_endpoints; policy public.source_policy_decisions;
  host text; ref jsonb; refs jsonb:='[]'::jsonb; picks jsonb:='[]'::jsonb; per_work jsonb:='{}'::jsonb; per_host jsonb:='{}'::jsonb;
- mode text; question text; dims integer; receipt_budget integer; candidates text;
+ mode text; question text; dims integer; candidates text;
  budget constant integer:=18000; work_cap constant integer:=3; host_cap constant integer:=10; max_refs constant integer:=24;
 begin
  if p_task_id is null or p_task_id<=0 or p_attempt is null or p_attempt<=0 or p_worker is null or length(p_worker) not between 1 and 120
@@ -55,10 +60,8 @@ begin
  select array_agg(distinct snapshot->>'target_voyage') into scopes from public.editorial_topic_submissions
  where topic_id=task.topic_id and snapshot->>'target_voyage' ~ '^[a-z0-9][a-z0-9-]{0,119}$';
  if coalesce(cardinality(scopes),0)>20 then raise exception 'governed dossier sources or voyage corpus scope required'; end if;
- -- Editor-attached receipts first, within their share.
- receipt_budget:=case when coalesce(cardinality(scopes),0)=0 then budget else 7000 end;
+ -- Editor-attached receipts first, all of them (bounded upstream at 10,500).
  for ref in select value from jsonb_array_elements(public.editorial_topic_receipt_sources(task.topic_id)) loop
-  if octet_length((refs||jsonb_build_array(ref))::text)>receipt_budget then continue; end if;
   refs:=refs||jsonb_build_array(ref);
   picks:=picks||jsonb_build_array(jsonb_build_object('id',ref->>'id','work','receipt:'||(ref->>'url')));
  end loop;
@@ -108,8 +111,10 @@ begin
  if task.lease_expires_at<=clock_timestamp() then raise exception 'active research task required'; end if;
  insert into public.editorial_corpus_consultations(task_id,attempt,snapshot,snapshot_sha256,retrieval)
  values(task.id,task.attempt,refs,encode(sha256(convert_to(refs::text,'UTF8')),'hex'),
-  jsonb_build_object('mode',mode,'question',question,'per_work_cap',work_cap,'per_host_cap',host_cap,'budget_octets',budget,
-   'works',(select count(distinct value->>'work') from jsonb_array_elements(picks)),'picks',picks)) returning * into stored;
+  jsonb_strip_nulls(jsonb_build_object('mode',mode,'question',question,
+   'query_embedding_sha256',case when p_query_embedding is not null then encode(sha256(convert_to(p_query_embedding,'UTF8')),'hex') end,
+   'embedding_model',case when p_query_embedding is not null then 'nomic-embed-text-v1.5' end,'per_work_cap',work_cap,'per_host_cap',host_cap,'budget_octets',budget,
+   'works',(select count(distinct value->>'work') from jsonb_array_elements(picks)),'picks',picks))) returning * into stored;
  return jsonb_build_object('task_id',task.id,'attempt',task.attempt,'sources',stored.snapshot,
   'retrieval',jsonb_build_object('mode',mode,'works',stored.retrieval->'works'),
   'consultation',jsonb_build_object('id',stored.id,'snapshot_sha256',stored.snapshot_sha256,'created_at',stored.created_at));

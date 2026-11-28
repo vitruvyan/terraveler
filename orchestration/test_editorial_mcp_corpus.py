@@ -76,3 +76,11 @@ class QueryEmbeddingTests(unittest.TestCase):
         with self.assertRaises(EvidenceError):
             retrieve_mcp_sources(self.task, env=self.env, embed_request=self.embedder(),
                                  open_request=lambda *a, **k: io.BytesIO(json.dumps(self.result).encode()))
+
+
+class EmbeddingConfigurationTests(unittest.TestCase):
+    def test_relevance_without_a_configured_service_fails_closed(self):
+        env = {"EDITORIAL_CORPUS_RELEVANCE": "1"}
+        task = {"id": 1, "attempt": 1, "input": {"work_item": {"question": "Where?"}}}
+        with self.assertRaisesRegex(EvidenceError, "editorial-embedding-not-configured"):
+            retrieve_mcp_sources(task, env=env, open_request=lambda *a, **k: self.fail("no read"))

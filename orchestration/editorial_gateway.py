@@ -312,6 +312,36 @@ def _reject_constant(_value):
     raise ValueError("non-finite JSON")
 
 
+def _compact_submission(snapshot):
+    """The approved submission behind a dossier, as orientation for the prompt.
+
+    Its waypoints carry every claim with its full evidence quotation: 50 KB for
+    one voyage, which left no room under the material cap for the research the
+    task is actually about (Columbus's diary never reached the model). The
+    prompt keeps where and when, and each claim's sentence; the verbatim
+    evidence stays in the stored snapshot, which is what any check reads.
+    """
+    if not isinstance(snapshot, dict) or not isinstance(snapshot.get("payload"), dict):
+        return snapshot
+    payload = snapshot["payload"]
+    waypoints = payload.get("waypoints")
+    if not isinstance(waypoints, list):
+        return snapshot
+    keep = ("seq", "place_historical", "place_modern", "latitude", "longitude",
+            "arrival_date", "departure_date", "confidence")
+    compact = []
+    for waypoint in waypoints[:120]:
+        if not isinstance(waypoint, dict):
+            continue
+        entry = {k: waypoint[k] for k in keep if k in waypoint}
+        claims = waypoint.get("claims")
+        if isinstance(claims, list):
+            entry["claims"] = [c["text"][:240] for c in claims[:4]
+                               if isinstance(c, dict) and isinstance(c.get("text"), str)]
+        compact.append(entry)
+    return {**snapshot, "payload": {**payload, "waypoints": compact}}
+
+
 def _prompt_material(task: dict) -> dict:
     """Send each immutable artifact once, without nested raw model envelopes.
 
@@ -320,6 +350,8 @@ def _prompt_material(task: dict) -> dict:
     dependency_result, draft.references and candidate.candidate at every repair.
     """
     material = {k: task[k] for k in ("id", "topic", "sources", "specialist_assignment") if k in task}
+    if isinstance(material.get("sources"), list):
+        material["sources"] = [_compact_submission(s) for s in material["sources"]]
     original = task.get("input", {})
     if not isinstance(original, dict):
         raise GatewayError("gateway-input-invalid")

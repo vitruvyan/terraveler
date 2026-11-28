@@ -16,7 +16,6 @@ class _NoRedirect(HTTPRedirectHandler):
 
 
 QUERY_EMBEDDING_DIMENSIONS = 768
-DEFAULT_EMBEDDING_URL = "http://127.0.0.1:6002/v1/embeddings/create"
 
 
 def query_embedding(task, *, env=None, open_request=None):
@@ -33,7 +32,11 @@ def query_embedding(task, *, env=None, open_request=None):
     question = work_item.get("question") if isinstance(work_item, dict) else None
     if not isinstance(question, str) or not question.strip() or len(question) > 2000:
         raise EvidenceError("editorial-research-question-required")
-    url = values.get("EDITORIAL_EMBEDDING_URL", DEFAULT_EMBEDDING_URL)
+    # No default: inside terraveler_net the service is terraveler_embedding:8010,
+    # on the host it is 127.0.0.1:6002. A wrong guess fails every attempt.
+    url = values.get("EDITORIAL_EMBEDDING_URL", "")
+    if not url:
+        raise EvidenceError("editorial-embedding-not-configured")
     try:
         parsed = urlsplit(url)
         if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:

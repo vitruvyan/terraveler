@@ -222,6 +222,14 @@ def research(task, config, *, retrieve: Callable, generator=generate_candidate):
         result["waypoints"] = _waypoints(candidate.get("waypoints"), {s["id"]: s["text"] for s in references})
     elif "waypoints" in result:
         raise EvidenceError("editorial-unexpected-waypoints")
+    # Carry forward only what the findings and waypoints cite. Each item reads a
+    # different, ranked slice of the corpus; the writer receives every item's
+    # references joined, and the uncited remainder of three or four reads would
+    # overrun its bounded context. The full read stays in the corpus receipt.
+    cited = {sid for finding in result["findings"] for sid in finding["source_ids"]}
+    cited |= {sid for waypoint in result.get("waypoints", []) for sid in waypoint["source_ids"]}
+    result["references"] = [source for source in references if source["id"] in cited]
+    _research(result)
     return {**result, "candidate": raw, "verification": "candidate-only"}
 
 
