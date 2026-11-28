@@ -112,6 +112,9 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--trace-dir", default=None)
+    ap.add_argument("--repo", default=None,
+                    help="git checkout to write and push from (or TERRAVELER_PUBLISH_REPO). "
+                         "Required for a real run; the live checkout is refused.")
     args = ap.parse_args()
 
     carta = carta_version()
@@ -119,7 +122,8 @@ def main() -> int:
     if not args.dry_run:
         ensure_trace_table(pg)
 
-    cfg = P.PublishConfig(pg=pg, carta=carta, dry_run=args.dry_run)
+    cfg = P.PublishConfig(pg=pg, carta=carta, dry_run=args.dry_run,
+                        repo_root=pathlib.Path(args.repo) if args.repo else None)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_id = f"publish-{args.submission_id}-{stamp}"
     sink = JsonlTraceSink(args.trace_dir) if args.trace_dir else None

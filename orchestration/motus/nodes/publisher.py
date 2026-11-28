@@ -39,6 +39,7 @@ deliberately, with the same care, not as a side effect of this rebuild.
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from dataclasses import dataclass
@@ -55,7 +56,16 @@ from vitruvyan_motus.effects import EffectClass
 
 RECORDED = EffectClass.RECORDED_EFFECT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+# The checkout the code itself sits in. Used ONLY as a read-only fallback for a
+# dry run; a real run never derives its repo root from __file__ (see
+# resolve_repo_root).
+CODE_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+# The live checkout is mounted by running containers; no git operation and no
+# file write may ever target it. Overridable only so tests can aim the guard
+# at a temp dir.
+LIVE_CHECKOUT = Path("/home/caravaggio/terraveler")
+REPO_ROOT_ENV = "TERRAVELER_PUBLISH_REPO"
+SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PUBLISHABLE_TYPES = ("new-voyage",)
 # The note printed beside a quotation whose licence could not be read as open
 # (the Curator's default profile, ingest/licence.py). Kept identical to
@@ -82,7 +92,9 @@ def _excerpt_of(span: dict, evidence: dict):
 # Approval alone is not enough per se; §4.2 requires the verdict live in
 # audit_log under the roles that may issue one, not merely a status column
 # an operator could hand-edit.
-APPROVING_ACTORS = ("curator-desk", "editor-in-chief")
+# The Curator's `curator-desk` approve is a mechanical pass, not an editorial
+# authorization: only the editor's own approve may publish (Phase 1).
+APPROVING_ACTORS = ("editor-in-chief",)
 
 SPEC = GraphSpec.from_dict({
     "schema_version": "1.0.0",
@@ -95,13 +107,13 @@ SPEC = GraphSpec.from_dict({
          "writes_declared": ["sub_type", "target_voyage", "payload", "queue"]},
         {"name": "guard_verdict", "effect_class": "recorded_effect",
          "reads_declared": ["submission_id"],
-         "writes_declared": ["verdict_ok"]},
+         "writes_declared": ["verdict_ok", "authorization"]},
         {"name": "assemble_bundle", "effect_class": "recorded_effect",
          "reads_declared": ["submission_id", "payload", "target_voyage"],
-         "writes_declared": ["bundle", "atlas_entry"]},
+         "writes_declared": ["bundle", "atlas_entry", "assembly"]},
         {"name": "write_bundle", "effect_class": "recorded_effect",
          "reads_declared": ["target_voyage", "bundle", "atlas_entry"],
-         "writes_declared": ["files_written"]},
+         "writes_declared": ["files_written", "write"]},
         {"name": "update_atlas", "effect_class": "recorded_effect",
          "reads_declared": ["target_voyage", "bundle"],
          "writes_declared": ["navigator_id", "voyage_id"]},
@@ -111,15 +123,31 @@ SPEC = GraphSpec.from_dict({
         {"name": "record_published", "effect_class": "recorded_effect",
          "reads_declared": ["submission_id", "target_voyage", "commit_sha"],
          "writes_declared": ["published", "outcome"]},
+        # A refused submission ends here. Pure and effect-free on purpose.
+        {"name": "refuse", "effect_class": "pure",
+         "reads_declared": ["submission_id", "rejections"], "writes_declared": ["refusal"]},
     ],
     "transitions": {
-        "load_approved": {"kind": "next", "to": "guard_verdict"},
-        "guard_verdict": {"kind": "next", "to": "assemble_bundle"},
-        "assemble_bundle": {"kind": "next", "to": "write_bundle"},
-        "write_bundle": {"kind": "next", "to": "update_atlas"},
+        # Every guard records a Decision and the graph ROUTES on it. A refusal
+        # (a Rejection alone does not stop a run: State.fact() returns None for
+        # a missing fact and a `next` would carry on) goes to `refuse`, which is
+        # terminal, so nothing after a guard ever runs on a refused submission.
+        "load_approved": {"kind": "route", "on": "queue",
+                          "map": {"loaded": "guard_verdict", "refused": "refuse"},
+                          "default": "refuse"},
+        "guard_verdict": {"kind": "route", "on": "authorization",
+                          "map": {"granted": "assemble_bundle", "refused": "refuse"},
+                          "default": "refuse"},
+        "assemble_bundle": {"kind": "route", "on": "assembly",
+                            "map": {"ok": "write_bundle", "refused": "refuse"},
+                            "default": "refuse"},
+        "write_bundle": {"kind": "route", "on": "write",
+                         "map": {"written": "update_atlas", "refused": "refuse"},
+                         "default": "refuse"},
         "update_atlas": {"kind": "next", "to": "commit_push"},
         "commit_push": {"kind": "next", "to": "record_published"},
         "record_published": {"kind": "terminal"},
+        "refuse": {"kind": "terminal"},
     },
 })
 
@@ -129,7 +157,41 @@ class PublishConfig:
     pg: dict[str, Any]
     carta: str
     dry_run: bool = False
-    repo_root: Path = REPO_ROOT
+    # Explicit configuration, never derived from __file__. None means "read
+    # TERRAVELER_PUBLISH_REPO"; a real run with neither is refused.
+    repo_root: Path | None = None
+
+
+def _is_live_checkout(path: Path) -> bool:
+    try:
+        return path.resolve() == LIVE_CHECKOUT.resolve() or (
+            path.exists() and LIVE_CHECKOUT.exists() and path.samefile(LIVE_CHECKOUT))
+    except OSError:
+        return True  # cannot tell -> treat as unsafe
+
+
+def resolve_repo_root(cfg: PublishConfig) -> tuple[Path | None, str | None]:
+    """(root, None) or (None, why-refused).
+
+    The repo root comes from configuration (cfg.repo_root or
+    TERRAVELER_PUBLISH_REPO). It must be a git checkout and must not be the live
+    checkout, which running containers mount. A dry run may fall back to the
+    code's own checkout, because it only reads."""
+    raw = cfg.repo_root or os.environ.get(REPO_ROOT_ENV)
+    if not raw:
+        if cfg.dry_run:
+            return CODE_ROOT, None
+        return None, (f"no repo root configured (set PublishConfig.repo_root or "
+                      f"{REPO_ROOT_ENV}); the Publisher never derives it from its own location")
+    root = Path(raw)
+    if _is_live_checkout(root):
+        if cfg.dry_run:
+            return root, None  # reads only: no write and no git call happens
+        return None, (f"{root} is the live checkout (mounted by running containers); "
+                      f"the Publisher never writes or runs git there")
+    if not (root / ".git").exists():
+        return None, f"{root} is not a git checkout"
+    return root, None
 
 
 def _slugify(text: str) -> str:
@@ -140,6 +202,10 @@ def _slugify(text: str) -> str:
 
 
 def _run_git(repo_root: Path, *args: str) -> str:
+    # Last line of defence: whatever the caller believed, no git call may
+    # target the live checkout.
+    if _is_live_checkout(Path(repo_root)):
+        raise RuntimeError(f"refusing git {' '.join(args)}: {repo_root} is the live checkout")
     result = subprocess.run(
         ["git", *args], cwd=repo_root, capture_output=True, text=True, check=False)
     if result.returncode != 0:
@@ -147,11 +213,23 @@ def _run_git(repo_root: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
+def _refused(state: State, now, decision: str, what: str, reason: str, evidence: dict) -> State:
+    """A refusal is a Rejection (why) AND a Decision (which the graph routes on).
+    Either alone is not enough: the Rejection does not stop a run, the Decision
+    does not say why."""
+    return (state.with_rejection(Rejection(what, reason, now, evidence=evidence))
+            .with_decision(Decision(decision, "refused", now, reason=reason)))
+
+
 def make_nodes(cfg: PublishConfig) -> dict:
 
     def load_approved(state: State, ctx) -> State:
         sid = state.fact("submission_id")
         now = ctx.now()
+        root, why = resolve_repo_root(cfg)
+        if root is None:
+            return _refused(state, now, "queue", "publish from an unsafe repo root", why,
+                            {"submission_id": sid})
         conn = psycopg2.connect(**cfg.pg)
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -167,21 +245,27 @@ def make_nodes(cfg: PublishConfig) -> dict:
             description=f"read submissions#{sid}: {'found' if row else 'not found'}"))
 
         if not row:
-            return state.with_rejection(Rejection(
-                "publish this submission", f"submission #{sid} not found", now,
-                evidence={"submission_id": sid}))
+            return _refused(state, now, "queue", "publish this submission",
+                            f"submission #{sid} not found", {"submission_id": sid})
         if row["status"] != "approved":
-            return state.with_rejection(Rejection(
-                "publish this submission",
+            return _refused(
+                state, now, "queue", "publish this submission",
                 f"submission #{sid} is '{row['status']}', not 'approved' — "
                 f"the Publisher acts only on an existing approval, never grants one",
-                now, evidence={"submission_id": sid, "status": row["status"]}))
+                {"submission_id": sid, "status": row["status"]})
         if row["type"] not in PUBLISHABLE_TYPES:
-            return state.with_rejection(Rejection(
-                "publish this submission",
+            return _refused(
+                state, now, "queue", "publish this submission",
                 f"submission #{sid} is type '{row['type']}' — the Publisher handles "
-                f"{PUBLISHABLE_TYPES} only in this version", now,
-                evidence={"submission_id": sid, "type": row["type"]}))
+                f"{PUBLISHABLE_TYPES} only in this version",
+                {"submission_id": sid, "type": row["type"]})
+        target = row["target_voyage"]
+        if not isinstance(target, str) or not SLUG_RE.match(target):
+            return _refused(
+                state, now, "queue", "publish without a clean target voyage",
+                f"submission #{sid} has target_voyage {target!r}: a new voyage needs a "
+                f"lowercase-hyphenated slug, and nothing is written without one",
+                {"submission_id": sid, "target_voyage": target})
 
         return (state
                 .with_fact(Fact("sub_type", row["type"], "load_approved", now))
@@ -196,11 +280,15 @@ def make_nodes(cfg: PublishConfig) -> dict:
         conn = psycopg2.connect(**cfg.pg)
         try:
             with conn.cursor() as cur:
+                # The approve must be the LATEST verdict on the submission: an
+                # approve followed by a reject or a request for changes is no
+                # longer an authorization.
                 cur.execute(
-                    "select 1 from audit_log where submission_id = %s "
-                    "and action = 'verdict' and verdict = 'approve' and actor = any(%s) limit 1",
-                    (sid, list(APPROVING_ACTORS)))
-                approved = cur.fetchone() is not None
+                    "select actor, verdict from audit_log where submission_id = %s "
+                    "and action = 'verdict' order by id desc limit 1", (sid,))
+                latest = cur.fetchone()
+                approved = bool(latest and latest[1] == "approve"
+                                and latest[0] in APPROVING_ACTORS)
         finally:
             conn.close()
 
@@ -210,12 +298,14 @@ def make_nodes(cfg: PublishConfig) -> dict:
                         f"{'present' if approved else 'ABSENT'}"))
 
         if not approved:
-            return state.with_rejection(Rejection(
-                "publish without a recorded approval",
-                f"no approve verdict from {APPROVING_ACTORS} in audit_log for #{sid} — "
-                f"a status column alone is not §4.2's authorization", now,
-                evidence={"submission_id": sid}))
-        return state.with_fact(Fact("verdict_ok", True, "guard_verdict", now))
+            return _refused(
+                state, now, "authorization", "publish without a recorded approval",
+                f"the latest verdict on #{sid} is not an approve from {APPROVING_ACTORS} "
+                f"in audit_log — a status column alone is not §4.2's authorization",
+                {"submission_id": sid})
+        return (state.with_fact(Fact("verdict_ok", True, "guard_verdict", now))
+                .with_decision(Decision("authorization", "granted", now,
+                                        reason=f"latest verdict on #{sid} is an approve")))
 
     def assemble_bundle(state: State, ctx) -> State:
         sid = state.fact("submission_id")
@@ -243,12 +333,12 @@ def make_nodes(cfg: PublishConfig) -> dict:
                      for c in (wp.get("claims") or [])[:1]
                      if ((c.get("evidence") or {}).get("quote") or (c.get("evidence") or {}).get("excerpt")))
         if row is None and quoted:
-            return state.with_rejection(Rejection(
-                "quotations with no verified spans",
+            return _refused(
+                state, now, "assembly", "quotations with no verified spans",
                 f"#{sid} quotes {quoted} claim(s) but has no verified_spans row: the Desk has not verified "
                 f"them, and the contributor's own text is never printed in their place (Carta 3.4). "
-                f"Run the Desk (scripts/desk_review.py {sid}) or resubmit.", now,
-                evidence={"submission_id": sid, "quoted_claims": quoted}))
+                f"Run the Desk (scripts/desk_review.py {sid}) or resubmit.",
+                {"submission_id": sid, "quoted_claims": quoted})
 
         waypoints = []
         for wp in payload.get("waypoints") or []:
@@ -312,6 +402,10 @@ def make_nodes(cfg: PublishConfig) -> dict:
         years_end = (waypoints[-1]["arrival_date"] or "")[:4] if waypoints else ""
         atlas_entry = {
             "slug": target_voyage,
+            # Required by AtlasEntry. "unillustrated" is the only profile that
+            # claims nothing: the editor assigns a real one when image
+            # eligibility is decided, never the machine.
+            "visualProfile": "unillustrated",
             "href": f"/voyage/{target_voyage}",
             "title": voyage_in.get("title") or target_voyage,
             "navigator": navigator_name,
@@ -326,7 +420,9 @@ def make_nodes(cfg: PublishConfig) -> dict:
 
         return (state
                 .with_fact(Fact("bundle", bundle, "assemble_bundle", now))
-                .with_fact(Fact("atlas_entry", atlas_entry, "assemble_bundle", now)))
+                .with_fact(Fact("atlas_entry", atlas_entry, "assemble_bundle", now))
+                .with_decision(Decision("assembly", "ok", now,
+                                        reason=f"{len(waypoints)} waypoint(s) assembled")))
 
     def write_bundle(state: State, ctx) -> State:
         target_voyage = state.fact("target_voyage")
@@ -334,30 +430,36 @@ def make_nodes(cfg: PublishConfig) -> dict:
         atlas_entry = state.fact("atlas_entry")
         now = ctx.now()
 
-        data_path = cfg.repo_root / "data" / f"{target_voyage}.json"
-        if data_path.exists():
-            return state.with_rejection(Rejection(
-                "write a new bundle file",
-                f"data/{target_voyage}.json already exists — the Publisher must escalate "
-                f"a slug collision (§4.2), never overwrite previously verified content", now,
-                evidence={"path": str(data_path)}))
+        root, why = resolve_repo_root(cfg)
+        if root is None:
+            return _refused(state, now, "write", "write a new bundle file", why,
+                            {"slug": target_voyage})
 
-        data_ts_path = cfg.repo_root / "lib" / "data.ts"
-        voyages_ts_path = cfg.repo_root / "lib" / "voyages.ts"
+        data_path = root / "data" / f"{target_voyage}.json"
+        if data_path.exists():
+            return _refused(
+                state, now, "write", "write a new bundle file",
+                f"data/{target_voyage}.json already exists — the Publisher must escalate "
+                f"a slug collision (§4.2), never overwrite previously verified content",
+                {"path": str(data_path)})
+
+        data_ts_path = root / "lib" / "data.ts"
+        voyages_ts_path = root / "lib" / "voyages.ts"
         data_ts = data_ts_path.read_text(encoding="utf-8")
         voyages_ts = voyages_ts_path.read_text(encoding="utf-8")
         if f'"{target_voyage}"' in data_ts or f'"{target_voyage}"' in voyages_ts:
-            return state.with_rejection(Rejection(
-                "write a new bundle file",
-                f"{target_voyage!r} already referenced in lib/data.ts or lib/voyages.ts", now,
-                evidence={"slug": target_voyage}))
+            return _refused(
+                state, now, "write", "write a new bundle file",
+                f"{target_voyage!r} already referenced in lib/data.ts or lib/voyages.ts",
+                {"slug": target_voyage})
 
         if cfg.dry_run:
             ctx.record_effect(EffectDescriptor(
                 effect_class=RECORDED,
                 description=f"DRY RUN: would write data/{target_voyage}.json, "
                             f"lib/data.ts, lib/voyages.ts"))
-            return state.with_fact(Fact("files_written", [], "write_bundle", now))
+            return (state.with_fact(Fact("files_written", [], "write_bundle", now))
+                    .with_decision(Decision("write", "written", now, reason="dry run")))
 
         data_path.write_text(json.dumps(bundle, indent=2, ensure_ascii=False) + "\n",
                              encoding="utf-8")
@@ -374,6 +476,7 @@ def make_nodes(cfg: PublishConfig) -> dict:
         entry_ts = (
             "  {\n"
             f'    slug: "{atlas_entry["slug"]}",\n'
+            f'    visualProfile: "{atlas_entry["visualProfile"]}",\n'
             f'    href: "{atlas_entry["href"]}",\n'
             f'    title: {json.dumps(atlas_entry["title"], ensure_ascii=False)},\n'
             f'    navigator: {json.dumps(atlas_entry["navigator"], ensure_ascii=False)},\n'
@@ -386,11 +489,13 @@ def make_nodes(cfg: PublishConfig) -> dict:
         voyages_ts = voyages_ts[:idx] + entry_ts + voyages_ts[idx:]
         voyages_ts_path.write_text(voyages_ts, encoding="utf-8")
 
-        files = [str(data_path.relative_to(cfg.repo_root)), "lib/data.ts", "lib/voyages.ts"]
+        files = [str(data_path.relative_to(root)), "lib/data.ts", "lib/voyages.ts"]
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
             description=f"wrote {len(files)} file(s) for {target_voyage}"))
-        return state.with_fact(Fact("files_written", files, "write_bundle", now))
+        return (state.with_fact(Fact("files_written", files, "write_bundle", now))
+                .with_decision(Decision("write", "written", now,
+                                        reason=f"{len(files)} file(s) written")))
 
     def update_atlas(state: State, ctx) -> State:
         target_voyage = state.fact("target_voyage")
@@ -465,15 +570,18 @@ def make_nodes(cfg: PublishConfig) -> dict:
                     .with_fact(Fact("commit_sha", None, "commit_push", now))
                     .with_fact(Fact("pushed", False, "commit_push", now)))
 
-        _run_git(cfg.repo_root, "add", *files)
+        root, why = resolve_repo_root(cfg)
+        if root is None:
+            raise RuntimeError(f"refusing to commit: {why}")
+        _run_git(root, "add", *files)
         message = f"feat(atlas): publish {target_voyage}\n\nvia the Publisher (orchestration/publish.py)"
-        _run_git(cfg.repo_root, "commit", "-m", message)
-        sha = _run_git(cfg.repo_root, "rev-parse", "HEAD")
+        _run_git(root, "commit", "-m", message)
+        sha = _run_git(root, "rev-parse", "HEAD")
         # The bug this line exists to not repeat: a bare `git push` sends the
         # CURRENT branch to its own upstream. Publishing from anywhere but
         # `main` landed on a Vercel Preview while still reporting success.
         # Target `main` explicitly, from whatever branch this happens to run on.
-        _run_git(cfg.repo_root, "push", "origin", "HEAD:main")
+        _run_git(root, "push", "origin", "HEAD:main")
 
         ctx.record_effect(EffectDescriptor(
             effect_class=RECORDED,
@@ -514,8 +622,16 @@ def make_nodes(cfg: PublishConfig) -> dict:
                 .with_decision(Decision("outcome", "published", now,
                                         reason=f"{target_voyage} live at {commit_sha}")))
 
+    def refuse(state: State, ctx) -> State:
+        """Terminal. Whatever refused has already said why, in the trace."""
+        sid = state.fact("submission_id")
+        now = ctx.now()
+        return state.with_fact(Fact(
+            "refusal", f"#{sid} refused: " + "; ".join(r.reason for r in state.rejections),
+            "refuse", now))
+
     return {
-        "load_approved": load_approved, "guard_verdict": guard_verdict,
+        "refuse": refuse, "load_approved": load_approved, "guard_verdict": guard_verdict,
         "assemble_bundle": assemble_bundle, "write_bundle": write_bundle,
         "update_atlas": update_atlas, "commit_push": commit_push,
         "record_published": record_published,

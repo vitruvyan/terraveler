@@ -144,8 +144,8 @@ class CommitPushTargetsMainExplicitly(unittest.TestCase):
 
     def test_push_is_origin_head_colon_main_not_a_bare_push(self):
         source = (ROOT / "orchestration" / "motus" / "nodes" / "publisher.py").read_text()
-        self.assertIn('_run_git(cfg.repo_root, "push", "origin", "HEAD:main")', source)
-        self.assertNotRegex(source, r'_run_git\(cfg\.repo_root,\s*"push"\)\s*$',
+        self.assertIn('_run_git(root, "push", "origin", "HEAD:main")', source)
+        self.assertNotRegex(source, r'_run_git\(root,\s*"push"\)\s*$',
                             "a bare `git push` with no explicit refspec must never reappear")
 
 class ExcerptOf(unittest.TestCase):
@@ -172,6 +172,248 @@ class ExcerptOf(unittest.TestCase):
     def test_the_note_is_the_same_words_as_the_other_publish_path(self):
         import publish_submission as PS
         self.assertEqual(P.RIGHTS_NOTE, PS.RIGHTS_NOTE)
+
+
+# --------------------------------------------------------------------------
+# PR 1 — node safety. No database, no network, no real git: a scripted
+# psycopg2 stand-in, a recording _run_git, and a throwaway checkout in a temp
+# dir. A refused submission must end the run: no file, no git call.
+# --------------------------------------------------------------------------
+import contextlib                                           # noqa: E402
+import re                                                   # noqa: E402
+import tempfile                                             # noqa: E402
+
+
+class _Cur:
+    def __init__(self, db):
+        self.db, self.row = db, None
+
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+
+    def execute(self, sql, params=None):
+        self.db.sql.append(sql)
+        if "from submissions" in sql:
+            self.row = self.db.submission
+        elif "from audit_log" in sql:
+            self.row = self.db.latest_verdict
+        elif "from verified_spans" in sql:
+            self.row = None
+        elif "returning id" in sql:
+            self.row = (1,)
+        else:
+            self.row = None
+
+    def fetchone(self): return self.row
+
+
+class _Conn:
+    def __init__(self, db): self.db = db
+    def cursor(self, cursor_factory=None): return _Cur(self.db)
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def close(self): pass
+
+
+class FakeDb:
+    """submission is a dict (RealDictCursor row) or None; latest_verdict is
+    (actor, verdict) or None."""
+    def __init__(self, submission, latest_verdict=("editor-in-chief", "approve")):
+        self.submission, self.latest_verdict, self.sql = submission, latest_verdict, []
+
+
+def _submission(**kw):
+    row = {"type": "new-voyage", "status": "approved", "target_voyage": "test-voyage-1500",
+           "payload": {"voyage": {"title": "T", "navigator": "Test Navigator", "summary": "S"},
+                       "waypoints": [{"seq": 1, "place_historical": "A", "latitude": 1.0,
+                                      "longitude": 2.0, "arrival_date": "1500-01-01",
+                                      "claims": [{"text": "He sailed."}]}]}}
+    row.update(kw)
+    return row
+
+
+def _scratch_repo(parent: Path) -> Path:
+    """A throwaway checkout holding the real lib/ files the writer edits."""
+    repo = parent / "repo"
+    (repo / "data").mkdir(parents=True)
+    (repo / "lib").mkdir()
+    (repo / ".git").mkdir()
+    for f in ("data.ts", "voyages.ts"):
+        (repo / "lib" / f).write_text((ROOT / "lib" / f).read_text(encoding="utf-8"), encoding="utf-8")
+    return repo
+
+
+def _tree(repo: Path) -> dict:
+    return {str(p.relative_to(repo)): p.read_bytes()
+            for p in sorted(repo.rglob("*")) if p.is_file() and ".git" not in p.parts}
+
+
+@contextlib.contextmanager
+def _sandbox(db: FakeDb):
+    """Patch the database and git; yield (git_calls, nodes_run)."""
+    git_calls, nodes_run = [], []
+    real_connect, real_git, real_make = P.psycopg2.connect, P._run_git, P.make_nodes
+
+    def make_nodes(cfg):
+        def traced(name, fn):
+            def node(state, ctx):
+                nodes_run.append(name)
+                return fn(state, ctx)
+            return node
+        return {name: traced(name, fn) for name, fn in real_make(cfg).items()}
+
+    P.psycopg2.connect = lambda **kw: _Conn(db)
+    P._run_git = lambda root, *a: git_calls.append((str(root), a)) or "deadbeef"
+    P.make_nodes = make_nodes
+    try:
+        yield git_calls, nodes_run
+    finally:
+        P.psycopg2.connect, P._run_git, P.make_nodes = real_connect, real_git, real_make
+
+
+class RefusalsEndTheRun(unittest.TestCase):
+    """F1: a refusal used to be a Rejection on a `next` edge, so every later
+    node still ran with target_voyage=None. Now the guard records a decision,
+    the graph routes on it to a terminal `refuse`, and nothing else runs."""
+
+    def _refused(self, db, expect_in_reason):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _scratch_repo(Path(tmp))
+            before = _tree(repo)
+            with _sandbox(db) as (git_calls, nodes_run):
+                cfg = P.PublishConfig(pg={}, carta="0.7", dry_run=False, repo_root=repo)
+                result = P.run_publish(cfg, 1, run_id="test-refusal")
+            self.assertEqual(_tree(repo), before, "a refused submission wrote a file")
+            self.assertEqual(git_calls, [], "a refused submission performed a git call")
+            self.assertEqual(nodes_run[-1], "refuse")
+            self.assertNotIn("write_bundle", nodes_run)
+            self.assertNotIn("update_atlas", nodes_run)
+            self.assertNotIn("commit_push", nodes_run)
+            self.assertNotIn("record_published", nodes_run)
+            self.assertFalse(result.state.fact("published"))
+            self.assertIn(expect_in_reason, " ".join(r.reason for r in result.state.rejections))
+            self.assertFalse([q for q in db.sql if q.lstrip().lower().startswith(("insert", "update"))],
+                             "a refused submission wrote to the database")
+
+    def test_not_approved(self):
+        self._refused(FakeDb(_submission(status="peer-review")), "not 'approved'")
+
+    def test_wrong_type(self):
+        self._refused(FakeDb(_submission(type="idea")), "new-voyage")
+
+    def test_missing_target(self):
+        self._refused(FakeDb(_submission(target_voyage=None)), "target_voyage")
+
+    def test_unclean_target(self):
+        self._refused(FakeDb(_submission(target_voyage="../etc/x")), "target_voyage")
+
+    def test_submission_not_found(self):
+        self._refused(FakeDb(None), "not found")
+
+    def test_curator_desk_approve_is_not_an_authorization(self):
+        self._refused(FakeDb(_submission(), ("curator-desk", "approve")), "latest verdict")
+
+    def test_an_approve_followed_by_a_reject_is_not_an_authorization(self):
+        self._refused(FakeDb(_submission(), ("editor-in-chief", "reject")), "latest verdict")
+
+    def test_no_verdict_at_all(self):
+        self._refused(FakeDb(_submission(), None), "latest verdict")
+
+    def test_a_slug_collision_in_write_bundle_also_ends_the_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _scratch_repo(Path(tmp))
+            (repo / "data" / "test-voyage-1500.json").write_text("{}")
+            before = _tree(repo)
+            with _sandbox(FakeDb(_submission())) as (git_calls, nodes_run):
+                P.run_publish(P.PublishConfig(pg={}, carta="0.7", repo_root=repo), 1,
+                              run_id="test-collision")
+            self.assertEqual(_tree(repo), before)
+            self.assertEqual(git_calls, [])
+            self.assertEqual(nodes_run[-1], "refuse")
+            self.assertNotIn("update_atlas", nodes_run)
+
+
+class LiveCheckoutIsNeverTouched(unittest.TestCase):
+    """F2: no git operation and no file write may target the live checkout."""
+
+    def _assert_refused(self, cfg, expect):
+        with _sandbox(FakeDb(_submission())) as (git_calls, nodes_run):
+            result = P.run_publish(cfg, 1, run_id="test-live-root")
+        self.assertEqual(git_calls, [])
+        self.assertEqual(nodes_run, ["load_approved", "refuse"])
+        self.assertFalse(result.state.fact("published"))
+        self.assertIn(expect, " ".join(r.reason for r in result.state.rejections))
+
+    def test_repo_root_equal_to_the_live_checkout_is_refused(self):
+        self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=P.LIVE_CHECKOUT),
+                             "live checkout")
+
+    def test_a_symlink_or_dotdot_path_to_it_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            link = Path(tmp) / "innocent"
+            link.symlink_to(P.LIVE_CHECKOUT)
+            self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=link), "live checkout")
+        self._assert_refused(
+            P.PublishConfig(pg={}, carta="0.7", repo_root=P.LIVE_CHECKOUT / "data" / ".."),
+            "live checkout")
+
+    def test_no_configured_root_is_refused_for_a_real_run(self):
+        env = os.environ.pop(P.REPO_ROOT_ENV, None)
+        try:
+            self._assert_refused(P.PublishConfig(pg={}, carta="0.7"), "no repo root configured")
+        finally:
+            if env is not None:
+                os.environ[P.REPO_ROOT_ENV] = env
+
+    def test_a_directory_that_is_not_a_checkout_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=Path(tmp)),
+                                 "not a git checkout")
+
+    def test_run_git_itself_refuses_the_live_checkout(self):
+        with self.assertRaises(RuntimeError):
+            P._run_git(P.LIVE_CHECKOUT, "status")
+
+    def test_the_guard_follows_whatever_LIVE_CHECKOUT_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _scratch_repo(Path(tmp))
+            real = P.LIVE_CHECKOUT
+            P.LIVE_CHECKOUT = repo
+            try:
+                self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=repo),
+                                     "live checkout")
+            finally:
+                P.LIVE_CHECKOUT = real
+
+
+class AtlasEntryIsComplete(unittest.TestCase):
+    """F3: the entry the node writes must satisfy `AtlasEntry` or the Vercel
+    build breaks on the first real publish."""
+
+    def _required_keys(self):
+        ts = (ROOT / "lib" / "voyages.ts").read_text(encoding="utf-8")
+        body = re.search(r"export interface AtlasEntry \{(.*?)\n\}", ts, re.S).group(1)
+        return re.findall(r"^\s{2}(\w+)(\?)?:", body, re.M)
+
+    def test_a_real_run_writes_every_required_key_with_a_legal_profile(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = _scratch_repo(Path(tmp))
+            with _sandbox(FakeDb(_submission())) as (git_calls, nodes_run):
+                result = P.run_publish(P.PublishConfig(pg={}, carta="0.7", repo_root=repo), 1,
+                                       run_id="test-atlas-entry")
+            self.assertTrue(result.state.fact("published"), result.state.rejections)
+            ts = (repo / "lib" / "voyages.ts").read_text(encoding="utf-8")
+            entry = ts[ts.index('slug: "test-voyage-1500"') - 6:]
+            entry = entry[:entry.index("  },\n") + 5]
+            for key, optional in self._required_keys():
+                if not optional:
+                    self.assertRegex(entry, rf"\b{key}:", f"AtlasEntry.{key} missing from the entry")
+            profiles = re.search(r"export type VisualProfile = (.*?);",
+                                 (ROOT / "lib" / "voyageIllustrations.ts").read_text(), re.S).group(1)
+            written = re.search(r'visualProfile: "([^"]+)"', entry).group(1)
+            self.assertIn(f'"{written}"', profiles)
+            self.assertEqual(git_calls[-1][1], ("push", "origin", "HEAD:main"))
+            self.assertTrue(all(root == str(repo) for root, _ in git_calls))
 
 
 if __name__ == "__main__":
