@@ -234,7 +234,8 @@ class Verdicts(unittest.TestCase):
         """Carta §10.4, and the reason the dossier is read before the verdict
         rather than after it."""
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        with Stubbed(payload=payload, dossier=("support",)) as s:
+        # Short = fewer reviews than vocab/review_policy.json requires (1 today).
+        with Stubbed(payload=payload, dossier=()) as s:
             result = run(s)
         self.assertEqual(result.state.decision("verdict"), "escalate")
         self.assertEqual(s.world["status"], "peer-review")   # it did not move
@@ -430,7 +431,8 @@ class TheRouteIsOnTheDecision(unittest.TestCase):
 
     def test_an_escalation_routes_to_the_node_that_does_not_move_the_draft(self):
         payload = {**PAYLOAD, "waypoints": PAYLOAD["waypoints"][:1]}
-        with Stubbed(payload=payload, dossier=("support",)) as s:
+        # Short = fewer reviews than vocab/review_policy.json requires (1 today).
+        with Stubbed(payload=payload, dossier=()) as s:
             result, path = trace_file(s)
         records = [json.loads(line) for line in path.read_text().splitlines()][1:]
         routing = self._routing(records, "decide")
