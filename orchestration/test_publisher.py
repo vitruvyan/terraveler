@@ -196,7 +196,8 @@ class _Cur:
         if "from submissions" in sql:
             self.row = self.db.submission
         elif "from audit_log" in sql:
-            self.row = self.db.latest_verdict
+            rows = sorted(self.db.verdicts, key=lambda r: r[0], reverse="order by id desc" in sql)
+            self.row = rows[0][1:] if rows else None
         elif "from verified_spans" in sql:
             self.row = None
         elif "returning id" in sql:
@@ -218,8 +219,12 @@ class _Conn:
 class FakeDb:
     """submission is a dict (RealDictCursor row) or None; latest_verdict is
     (actor, verdict) or None."""
-    def __init__(self, submission, latest_verdict=("editor-in-chief", "approve")):
-        self.submission, self.latest_verdict, self.sql = submission, latest_verdict, []
+    def __init__(self, submission, latest_verdict=("editor-in-chief", "approve"), verdicts=None):
+        # verdicts: [(id, actor, verdict), ...]; the cursor answers by the
+        # ORDER BY the query actually asks for.
+        self.submission, self.sql = submission, []
+        self.verdicts = verdicts if verdicts is not None else (
+            [(1,) + tuple(latest_verdict)] if latest_verdict else [])
 
 
 def _submission(**kw):
@@ -316,6 +321,21 @@ class RefusalsEndTheRun(unittest.TestCase):
     def test_an_approve_followed_by_a_reject_is_not_an_authorization(self):
         self._refused(FakeDb(_submission(), ("editor-in-chief", "reject")), "latest verdict")
 
+    def test_the_latest_verdict_query_orders_by_id_desc(self):
+        db = FakeDb(_submission())
+        self._refused(FakeDb(_submission(), verdicts=[(1, "editor-in-chief", "approve"),
+                                                      (2, "curator-desk", "approve")]), "latest verdict")
+        self._refused(FakeDb(_submission(), verdicts=[(1, "editor-in-chief", "approve"),
+                                                      (2, "curator-desk", "changes")]), "latest verdict")
+        with tempfile.TemporaryDirectory() as tmp:
+            with _sandbox(db):
+                P.run_publish(P.PublishConfig(pg={}, carta="0.7", repo_root=_scratch_repo(Path(tmp))),
+                              1, run_id="test-order")
+        self.assertTrue(any("order by id desc" in q for q in db.sql if "audit_log" in q))
+
+    def test_leading_digit_slug_is_refused(self):
+        self._refused(FakeDb(_submission(target_voyage="1497-cabot")), "target_voyage")
+
     def test_no_verdict_at_all(self):
         self._refused(FakeDb(_submission(), None), "latest verdict")
 
@@ -369,6 +389,29 @@ class LiveCheckoutIsNeverTouched(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=Path(tmp)),
                                  "not a git checkout")
+
+    def test_a_git_worktree_of_the_live_repo_is_refused(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            live = Path(tmp) / "live"
+            live.mkdir()
+            g = lambda *a, cwd=live: subprocess.run(
+                ["git", "-c", "user.name=t", "-c", "user.email=t@t", *a], cwd=cwd,
+                check=True, capture_output=True)
+            g("init", "-q"); g("commit", "-q", "--allow-empty", "-m", "x")
+            sibling = Path(tmp) / "wt-sibling"
+            g("worktree", "add", "-q", "-b", "b1", str(sibling))
+            inside = live / ".worktrees" / "wt"
+            g("worktree", "add", "-q", "-b", "b2", str(inside))
+            real = P.LIVE_CHECKOUT
+            P.LIVE_CHECKOUT = live
+            try:
+                self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=sibling), "live checkout")
+                self._assert_refused(P.PublishConfig(pg={}, carta="0.7", repo_root=inside), "live checkout")
+                with self.assertRaises(RuntimeError):
+                    P._run_git(sibling, "status")
+            finally:
+                P.LIVE_CHECKOUT = real
 
     def test_run_git_itself_refuses_the_live_checkout(self):
         with self.assertRaises(RuntimeError):

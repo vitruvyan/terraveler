@@ -65,7 +65,8 @@ CODE_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 # at a temp dir.
 LIVE_CHECKOUT = Path("/home/caravaggio/terraveler")
 REPO_ROOT_ENV = "TERRAVELER_PUBLISH_REPO"
-SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Leading letter: the slug becomes a JS identifier in lib/data.ts.
+SLUG_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 PUBLISHABLE_TYPES = ("new-voyage",)
 # The note printed beside a quotation whose licence could not be read as open
 # (the Curator's default profile, ingest/licence.py). Kept identical to
@@ -162,10 +163,36 @@ class PublishConfig:
     repo_root: Path | None = None
 
 
+def _common_git_dir(path: Path) -> Path | None:
+    """The shared .git of a checkout, read from files (no git call): the .git
+    dir itself, or for a linked worktree the `commondir` its gitdir points at."""
+    dot = path / ".git"
+    if dot.is_dir():
+        return dot.resolve()
+    if dot.is_file():
+        text = dot.read_text(encoding="utf-8", errors="replace").strip()
+        if text.startswith("gitdir:"):
+            gitdir = Path(text[len("gitdir:"):].strip())
+            if not gitdir.is_absolute():
+                gitdir = path / gitdir
+            common = gitdir / "commondir"
+            if common.is_file():
+                return (gitdir / common.read_text().strip()).resolve()
+            return gitdir.resolve()
+    return None
+
+
 def _is_live_checkout(path: Path) -> bool:
+    """True for the live checkout, anything inside it, and any git worktree of
+    it (a worktree shares the live repo's object store and refs)."""
     try:
-        return path.resolve() == LIVE_CHECKOUT.resolve() or (
-            path.exists() and LIVE_CHECKOUT.exists() and path.samefile(LIVE_CHECKOUT))
+        live = LIVE_CHECKOUT.resolve()
+        resolved = path.resolve()
+        if resolved == live or resolved.is_relative_to(live):
+            return True
+        if path.exists() and LIVE_CHECKOUT.exists() and path.samefile(LIVE_CHECKOUT):
+            return True
+        return _common_git_dir(resolved) == (live / ".git").resolve()
     except OSError:
         return True  # cannot tell -> treat as unsafe
 
