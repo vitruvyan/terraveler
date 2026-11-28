@@ -26,7 +26,9 @@ def _text(value, limit=50000):
 
 
 def _sources(values):
-    if not isinstance(values, list) or not values or len(values) > 40:
+    # A writer's research joins every item's cited references
+    # (editorial_writer_context_bounds.sql allows 160).
+    if not isinstance(values, list) or not values or len(values) > 160:
         raise EvidenceError("editorial-sources-required")
     result = []
     for value in values:
@@ -132,7 +134,7 @@ def _research(value):
     references = _sources(value.get("references"))
     known = {s["id"]: s["text"] for s in references}
     findings = value.get("findings")
-    if not isinstance(findings, list) or not findings or len(findings) > 100:
+    if not isinstance(findings, list) or not findings or len(findings) > 200:
         raise EvidenceError("editorial-findings-required")
     for finding in findings:
         if not isinstance(finding, dict):

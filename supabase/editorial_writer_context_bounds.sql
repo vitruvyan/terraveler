@@ -9,9 +9,11 @@
 -- (Magellan, run 23: 26 cited references, 22 findings, 9 waypoints) needs ~49 KB,
 -- and claiming its writer raised 'research synthesis exceeds bounded context',
 -- rolled back the claim and stopped the worker. The served models take 200k+
--- tokens; the bound is a safety rail, not a model limit. It becomes 80
--- references and 96,000 octets. Everything else in the function is unchanged
--- from editorial_image_text_editor.sql.
+-- tokens; the bound is a safety rail, not a model limit. It becomes 160
+-- references, 200 findings and 300,000 octets: sized so that the reviewer's
+-- prompt (this research plus the draft, gateway cap 393,216 bytes) stays inside
+-- the smallest served context, granite4.2:30b at 131,072 tokens. Everything else
+-- in the function is unchanged from editorial_image_text_editor.sql.
 begin;
 create or replace function public.editorial_graph_context(p_task_id bigint)
 returns jsonb language plpgsql stable security definer set search_path=pg_catalog,public,pg_temp as $$
@@ -58,8 +60,8 @@ begin
   uncertainties:=uncertainties||coalesce(result->'uncertainties','[]');
   waypoints:=waypoints||coalesce(result->'waypoints','[]');
  end loop;
- if jsonb_array_length(refs) not between 1 and 80 or jsonb_array_length(findings) not between 1 and 100
- or jsonb_array_length(waypoints)>40 or octet_length((refs||findings||waypoints)::text)>96000
+ if jsonb_array_length(refs) not between 1 and 160 or jsonb_array_length(findings) not between 1 and 200
+ or jsonb_array_length(waypoints)>40 or octet_length((refs||findings||waypoints)::text)>300000
  then raise exception 'research synthesis exceeds bounded context'; end if;
  research:=jsonb_build_object('kind','research','references',refs,'findings',findings,'uncertainties',uncertainties,'waypoints',waypoints);
  if t.role='reviewer' then
