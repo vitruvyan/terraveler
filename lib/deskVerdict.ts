@@ -9,6 +9,7 @@
  */
 import { sb } from "@/lib/deskAuth";
 import { CARTA_VERSION } from "@/lib/carta";
+import { REVIEWS_TO_ADVANCE } from "@/lib/agentCapabilities";
 import { maybeRecalcRankForContributor } from "@/lib/rankPromotion";
 
 const STATUS: Record<string, string> = {
@@ -40,7 +41,7 @@ export async function resolveVerdict(
   if (verdict === "approve" && !NO_DOSSIER_TYPES.includes(String(rows[0].type))) {
     dossier = await sb("GET", `reviews?submission_id=eq.${submissionId}&select=verdict`);
     refutes = dossier.filter((r: any) => r.verdict === "refute").length;
-    if (!opts.override && (dossier.length < 2 || refutes > 0)) {
+    if (!opts.override && (dossier.length < REVIEWS_TO_ADVANCE || refutes > 0)) {
       return {
         ok: false, status: 409,
         error: `the dossier is not clean: ${dossier.length} review(s) recorded, ` +

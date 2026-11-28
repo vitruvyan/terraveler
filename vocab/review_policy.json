@@ -1,0 +1,4 @@
+{
+  "_comment": "Single source for how many independent peer reviews a draft needs before it may advance to a verdict. Read by lib/agentCapabilities.ts (MCP and write lanes, editor verdict) and scripts/desk_checks.py (Curator). Lowered from 2 to 1 on 2026-09-14 (adc3055) because the reviewer population never materialised; raise it here, once, when it does.",
+  "reviews_to_advance": 1
+}

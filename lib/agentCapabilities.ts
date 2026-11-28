@@ -1,4 +1,5 @@
 import type { Scope } from "@/lib/oauth";
+import REVIEW_POLICY from "@/vocab/review_policy.json";
 
 /**
  * The modern agent-facing policy in one small, dependency-free module.
@@ -65,7 +66,7 @@ export function capabilitySnapshotUrl(base: string, requestedScopes?: unknown): 
  * real, if thinner, check rather than the two-reviewer crowd check the
  * design intended — raise it again once a real reviewer population exists.
  */
-export const REVIEWS_TO_ADVANCE = 1;
+export const REVIEWS_TO_ADVANCE: number = REVIEW_POLICY.reviews_to_advance;
 
 /**
  * How many days an unworked claim on an open Waypoint stands before it
