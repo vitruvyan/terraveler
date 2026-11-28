@@ -185,7 +185,7 @@ class GatewayTests(unittest.TestCase):
 
     def test_oversized_input_never_reaches_gateway(self):
         value = task()
-        value["sources"] = ["x" * 65537]
+        value["sources"] = ["x" * 196609]
         with self.assertRaisesRegex(GatewayError, "gateway-input-invalid"):
             generate_candidate(value, self.config, open_request=lambda *_args, **_kw: self.fail("unexpected call"))
 
