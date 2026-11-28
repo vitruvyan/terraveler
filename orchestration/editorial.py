@@ -180,7 +180,7 @@ class WorkerConfig:
     worker_id: str = "editorial-worker"
     lease_seconds: int = 120
     heartbeat_seconds: float = 20
-    timeout_seconds: float = 1000
+    timeout_seconds: float = 1000  # == editorial_handlers.TASK_DEADLINE_SECONDS (repair budget)
 
     def __post_init__(self):
         if not self.worker_id or len(self.worker_id) > 120:
