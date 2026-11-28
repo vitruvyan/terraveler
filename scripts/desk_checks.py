@@ -59,12 +59,13 @@ CONFIDENCE = set(_VOCAB["confidence"])
 _VOCAB_RANK_THRESHOLDS = json.loads(
     (Path(__file__).resolve().parent.parent / "vocab" / "rank_thresholds.json").read_text())
 
-# Reviews a draft needs before it may advance to a verdict. Mirrors
-# REVIEWS_TO_ADVANCE in app/api/mcp/route.ts:313 — this script has no import
-# path to the Next.js source at runtime, so the number is copied rather than
-# shared, and the two must be kept in step by hand if the Carta's review
-# requirement ever changes.
-REVIEWS_TO_ADVANCE = 2
+# Reviews a draft needs before it may advance to a verdict. One source,
+# vocab/review_policy.json, read here and by lib/agentCapabilities.ts: the
+# copied constant drifted (2 here and in the editor's verdict, 1 in the write
+# lanes since adc3055), so drafts advanced on one review and were then
+# escalated by the Curator and refused at the Desk.
+REVIEWS_TO_ADVANCE = int(json.loads(
+    (Path(__file__).resolve().parent.parent / "vocab" / "review_policy.json").read_text())["reviews_to_advance"])
 
 # A reviewer this fresh at the moment they cast a review, with next to no
 # review history of its own, is indistinguishable from an account created for
