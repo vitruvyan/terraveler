@@ -2,6 +2,10 @@
 import { timingSafeEqual } from "node:crypto";
 import { dataRpc } from "@/lib/deskAuth";
 const positive=(v:unknown)=>Number.isSafeInteger(v)&&Number(v)>0;
+/** nomic-embed-text-v1.5, the corpus's own embedding space. */
+export const QUERY_EMBEDDING_DIMENSIONS=768;
+const queryEmbedding=(v:unknown)=>Array.isArray(v)&&v.length===QUERY_EMBEDDING_DIMENSIONS&&
+ v.every(x=>typeof x==="number"&&Number.isFinite(x)&&Math.abs(x)<=1000);
 export async function editorialMcpCorpus(args:unknown,header:string|null,env:Record<string,string|undefined>=process.env,rpc= dataRpc){
  const secret=env.EDITORIAL_MCP_CORPUS_KEY,worker=env.EDITORIAL_MCP_CORPUS_WORKER_ID;
  if(env.EDITORIAL_MCP_CORPUS_ENABLED!=="1"||!secret||secret.length<32||secret.length>512||!worker||worker.length>120)
@@ -11,12 +15,18 @@ export async function editorialMcpCorpus(args:unknown,header:string|null,env:Rec
  if(actual.length!==expected.length||!timingSafeEqual(actual,expected))return {error:"corpus-unauthorized"};
  if(!args||typeof args!=="object"||Array.isArray(args))return {error:"invalid-corpus-request"};
  const a=args as Record<string,unknown>;
- if(Object.keys(a).some(k=>!["task_id","attempt"].includes(k))||!positive(a.task_id)||!positive(a.attempt)||Number(a.attempt)>5)
+ if(Object.keys(a).some(k=>!["task_id","attempt","query_embedding"].includes(k))||!positive(a.task_id)||!positive(a.attempt)||Number(a.attempt)>5
+  ||(a.query_embedding!==undefined&&!queryEmbedding(a.query_embedding)))
   return {error:"invalid-corpus-request"};
+ // The embedding only orders what governance already allows; the database still
+ // decides which sources may be read and records why each one was picked.
+ const ranked=a.query_embedding!==undefined;
  try{
-  const result=await rpc("editorial_read_mcp_corpus",{p_task_id:a.task_id,p_attempt:a.attempt,p_worker:worker});
+  const result=await rpc("editorial_read_mcp_corpus",{p_task_id:a.task_id,p_attempt:a.attempt,p_worker:worker,
+   ...(ranked?{p_query_embedding:`[${(a.query_embedding as number[]).join(",")}]`}:{})});
   if(result?.task_id!==a.task_id||result?.attempt!==a.attempt||!Array.isArray(result?.sources)||!result.sources.length||
-   typeof result.consultation?.id!=="string"||! /^[a-f0-9]{64}$/.test(result.consultation?.snapshot_sha256??""))throw Error();
+   typeof result.consultation?.id!=="string"||! /^[a-f0-9]{64}$/.test(result.consultation?.snapshot_sha256??"")||
+   (ranked&&result.retrieval?.mode!=="relevance"))throw Error();
   return result;
  }catch{return {error:"corpus-unavailable"};}
 }

@@ -117,6 +117,34 @@ The database returns a bounded PD/CC corpus snapshot and immutable receipt
 with current endpoint and policy IDs; no source URL, scope or text is accepted
 from the caller. Each attempt permits at most three consultations.
 
+### Relevance and mix (`editorial_research_relevance.sql`)
+
+The first version read the voyage's rag_docs in id order, so every research
+item of a dossier received the same opening pages of one book. After
+`editorial_research_relevance.sql` the read is ordered by the work item's own
+question and spread across sources:
+
+- With `EDITORIAL_CORPUS_RELEVANCE=1` the worker embeds `work_item.question`
+  with the self-hosted nomic service (`EDITORIAL_EMBEDDING_URL`, default
+  `http://127.0.0.1:6002/v1/embeddings/create`) and sends the 768-d vector as
+  `query_embedding`. The database ranks governed chunks by cosine distance.
+  Once enabled, an unreachable embedding service fails the attempt. There is
+  no silent fallback to an unranked read, and a reply that is not
+  `retrieval.mode = relevance` is refused.
+- Without a vector, the read goes round-robin across works: the first chunk of
+  every work, then the second, and so on.
+- In both modes the read takes at most 3 chunks per work and 10 per host,
+  within an 18,000-octet budget. Editor-attached dossier receipts get a
+  7,000-octet share, or the whole budget when the dossier has no voyage corpus.
+- `editorial_corpus_consultations.retrieval` records the mode, the question,
+  the caps and every pick with its work and distance.
+- Ranking only orders what endpoint and policy checks already allow.
+  Item-verified hosts such as archive.org stay out until per-item verification
+  is recorded.
+
+Deploy the SQL first: the new optional argument keeps the old caller working.
+Then deploy the server and set the worker flag last.
+
 Set EDITORIAL_MCP_CORPUS_ENABLED=1 and the same dedicated secret on the server
 and worker after validation. The enabled worker uses only this MCP port,
 without fallback to direct corpus SQL; its result retains receipt metadata.

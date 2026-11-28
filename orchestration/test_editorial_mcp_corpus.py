@@ -28,3 +28,51 @@ class McpCorpusTests(unittest.TestCase):
         self.result["result"]["structuredContent"]["attempt"] = 2
         with self.assertRaises(EvidenceError):
             retrieve_mcp_sources(self.task, env=self.env, open_request=lambda *a, **k: io.BytesIO(json.dumps(self.result).encode()))
+
+
+class QueryEmbeddingTests(unittest.TestCase):
+    def setUp(self):
+        self.env = {"EDITORIAL_MCP_URL": "https://www.terraveler.com/api/mcp", "EDITORIAL_MCP_CORPUS_KEY": "x" * 40,
+                    "EDITORIAL_CORPUS_RELEVANCE": "1", "EDITORIAL_EMBEDDING_URL": "http://127.0.0.1:6002/v1/embeddings/create"}
+        self.task = {"id": 12, "attempt": 1, "input": {"work_item": {"question": "Which peoples met the fleet at Cebu?"}}}
+        self.vector = [0.01] * 768
+        self.result = {"jsonrpc": "2.0", "id": 1, "result": {"structuredContent": {
+            "task_id": 12, "attempt": 1, "sources": [{"id": "rag:1", "governance": {"endpoint_id": 2}}],
+            "retrieval": {"mode": "relevance", "works": 1},
+            "consultation": {"id": "00000000-0000-4000-8000-000000000001", "snapshot_sha256": "a" * 64}}}}
+
+    def embedder(self, vector=None):
+        def opener(request, timeout):
+            self.assertEqual(json.loads(request.data), {"text": "Which peoples met the fleet at Cebu?"})
+            return io.BytesIO(json.dumps({"embedding": self.vector if vector is None else vector}).encode())
+        return opener
+
+    def test_question_embedding_travels_with_the_corpus_request(self):
+        def corpus(request, timeout):
+            arguments = json.loads(request.data)["params"]["arguments"]
+            self.assertEqual(arguments["query_embedding"], self.vector)
+            return io.BytesIO(json.dumps(self.result).encode())
+        data = retrieve_mcp_sources(self.task, env=self.env, open_request=corpus, embed_request=self.embedder())
+        self.assertEqual(data[0]["id"], "rag:1")
+
+    def test_disabled_relevance_sends_no_embedding(self):
+        env = dict(self.env, EDITORIAL_CORPUS_RELEVANCE="0")
+        del self.result["result"]["structuredContent"]["retrieval"]
+        def corpus(request, timeout):
+            self.assertEqual(json.loads(request.data)["params"]["arguments"], {"task_id": 12, "attempt": 1})
+            return io.BytesIO(json.dumps(self.result).encode())
+        retrieve_mcp_sources(self.task, env=env, open_request=corpus,
+                             embed_request=lambda *a, **k: self.fail("embedding must not be requested"))
+
+    def test_no_silent_fallback_to_an_unranked_read(self):
+        never = lambda *a, **k: self.fail("corpus must not be read")
+        for vector in ([0.01] * 767, [float("nan")] * 768, ["x"] * 768):
+            with self.assertRaisesRegex(EvidenceError, "editorial-embedding-unavailable"):
+                retrieve_mcp_sources(self.task, env=self.env, open_request=never, embed_request=self.embedder(vector))
+        with self.assertRaisesRegex(EvidenceError, "editorial-research-question-required"):
+            retrieve_mcp_sources({"id": 12, "attempt": 1, "input": {}}, env=self.env, open_request=never)
+        # A server that ignored the embedding (unranked) is refused, not trusted.
+        self.result["result"]["structuredContent"]["retrieval"]["mode"] = "diversity"
+        with self.assertRaises(EvidenceError):
+            retrieve_mcp_sources(self.task, env=self.env, embed_request=self.embedder(),
+                                 open_request=lambda *a, **k: io.BytesIO(json.dumps(self.result).encode()))
