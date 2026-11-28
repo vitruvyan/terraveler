@@ -311,3 +311,41 @@ test("model deadlines default to the Desk's and are configurable within bounds f
  for(const bad of ["0","9999","900001","-1","1e6","abc",""])
   assert.equal(preparationTimeoutMs({EDITORIAL_PREPARATION_PLAN_TIMEOUT_MS:bad},"plan"),90000,bad);
 });
+
+test("the plan reviewer is told a plan has no sources yet and that doubts are gaps, not blockers",async()=>{
+ const {prepareEditorialPlan}=await mod,f=fixture();
+ const {generate:_generate,...ports}=f.ports;
+ const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+ const contracts:string[]=[];let calls=0;
+ const fetcher:typeof fetch=async(_url,init)=>{
+  contracts.push(JSON.parse(String(init?.body)).messages[0].content);
+  return Response.json({model:"local",choices:[{finish_reason:"stop",message:{content:JSON.stringify(calls++===0?work:review)}}]});
+ };
+ await prepareEditorialPlan(request,{...ports,env,fetcher});
+ const reviewContract=contracts[1];
+ assert.match(reviewContract,/source_receipt_ids are empty by design, and their absence is never an issue/);
+ assert.match(reviewContract,/applies to drafts, not to plans/);
+ assert.match(reviewContract,/belongs in the plan as a research question or a gap/);
+ assert.match(reviewContract,/Use blocked only when the dossier itself cannot proceed/);
+ assert.doesNotMatch(contracts[0],/research PLAN, reviewed before/,"the planner's own contract is unchanged");
+});
+
+test("a review whose verdict contradicts its issues is sent back once with the rule it broke",async()=>{
+ const {prepareEditorialPlan}=await mod,f=fixture();
+ const {generate:_generate,...ports}=f.ports;
+ const env={...ports.env,EDITOR_LIMEN_MODEL:"local",EDITOR_LIMEN_BASE_URL:"https://gateway.example/v1",EDITOR_LIMEN_API_KEY:"fixture-key",EDITOR_LIMEN_DATA_CLASS:"editorial"};
+ const bodies:any[]=[];
+ const answers=[work,{verdict:"blocked",issues:[]},review];
+ const fetcher:typeof fetch=async(_url,init)=>{
+  bodies.push(JSON.parse(String(init?.body)));
+  return Response.json({model:"local",choices:[{finish_reason:"stop",message:{content:JSON.stringify(answers[bodies.length-1])}}]});
+ };
+ assert.equal((await prepareEditorialPlan(request,{...ports,env,fetcher})).plan_id,1);
+ assert.equal(bodies.length,3,"planner, reviewer, one corrected review");
+ assert.match(bodies[2].messages.at(-1).content,/verdict and issues disagreed/);
+ // A second contradiction still fails the attempt: one correction, not a loop.
+ const g=fixture();const {generate:_g2,...ports2}=g.ports;let n=0;
+ const again:typeof fetch=async()=>Response.json({model:"local",choices:[{finish_reason:"stop",message:{content:JSON.stringify(n++===0?work:{verdict:"blocked",issues:[]})}}]});
+ await assert.rejects(prepareEditorialPlan(request,{...ports2,env:{...ports2.env,...env},fetcher:again}),(e:any)=>e.code==="plan-review-invalid");
+ assert.equal(n,3);
+});
