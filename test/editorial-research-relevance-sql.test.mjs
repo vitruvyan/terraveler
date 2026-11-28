@@ -7,7 +7,7 @@ import {PGlite} from '@electric-sql/pglite';
 // PGlite has no pgvector, so these tests cover the unranked (diversity) path and
 // the guards around the ranked one; the ranked order itself is checked on the
 // canonical database (see the PR description).
-const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography','editorial_image_text_editor','editorial_research_relevance','editorial_writer_context_bounds'];
+const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography','editorial_image_text_editor','editorial_research_relevance','editorial_writer_context_bounds','editorial_research_primary_weight'];
 const migrations=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 const scalar=async(db,sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
 
@@ -58,8 +58,11 @@ test('an unranked read spreads across works instead of one book\'s first pages',
  assert.equal(r.retrieval.mode,'diversity');
  const works=r.sources.map(s=>s.url);
  const perWork=works.reduce((m,u)=>(m[u]=(m[u]??0)+1,m),{});
- assert.ok(Object.keys(perWork).length>=5,`a mix of works, got ${JSON.stringify(perWork)}`);
- assert.ok(Object.values(perWork).every(n=>n<=3),'no work beyond three chunks');
+ assert.ok(Object.keys(perWork).length>=4,`a mix of works, got ${JSON.stringify(perWork)}`);
+ const wiki=works.filter(u=>u.includes('wikipedia.org')).length,primary=works.length-wiki;
+ assert.ok(wiki<=5,`Wikipedia orients, at most five chunks (${wiki})`);
+ assert.ok(primary>wiki,`the primary account outweighs the encyclopaedia (${primary} to ${wiki})`);
+ assert.ok(Object.entries(perWork).every(([u,n])=>n<=(u.includes('wikipedia.org')?2:8)),JSON.stringify(perWork));
  const perHost=works.reduce((m,u)=>{const h=new URL(u).host;m[h]=(m[h]??0)+1;return m},{});
  assert.ok(Object.values(perHost).every(n=>n<=10),`no host beyond ten chunks, got ${JSON.stringify(perHost)}`);
  assert.ok(!works.some(u=>u.includes('archive.org')),'item-verified hosts stay out until verified per item');
@@ -67,7 +70,7 @@ test('an unranked read spreads across works instead of one book\'s first pages',
  assert.ok(Buffer.byteLength(JSON.stringify(r.sources))<=24000,'fits the worker\'s cap');
  await db.exec('reset role');
  const why=await scalar(db,'select retrieval from editorial_corpus_consultations where task_id=$1',[task.id]);
- assert.equal(why.mode,'diversity');assert.equal(why.per_work_cap,3);assert.equal(why.per_host_cap,10);
+ assert.equal(why.mode,'diversity');assert.equal(why.per_work_cap,8);assert.equal(why.secondary_cap,5);
  assert.equal(why.picks.length,r.sources.length);assert.equal(why.works,Object.keys(perWork).length);
  assert.match(why.question,/\?$/);
  }finally{await db.close();}});
