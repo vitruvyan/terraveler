@@ -7,7 +7,7 @@ import {PGlite} from '@electric-sql/pglite';
 // PGlite has no pgvector, so these tests cover the unranked (diversity) path and
 // the guards around the ranked one; the ranked order itself is checked on the
 // canonical database (see the PR description).
-const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_research_relevance'];
+const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography','editorial_image_text_editor','editorial_research_relevance','editorial_writer_context_bounds'];
 const migrations=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 const scalar=async(db,sql,args=[])=>Object.values((await db.query(sql,args)).rows[0])[0];
 
@@ -104,6 +104,8 @@ v=json.load(sys.stdin); t=v['task']; config=GatewayConfig('http://offline-limen:
 def generate(task,cfg):
     ids=[s['id'] for s in task['input']['retrieved_sources']]
     c={'findings':[{'text':'A finding.','source_ids':ids[:2],'quotes':[]},{'text':'Another.','source_ids':ids[2:3],'quotes':[]}],'uncertainties':[]}
+    if v.get('cite_all'):
+        c['findings']=[{'text':('Finding %d. ' % n)+'A paragraph of ordinary research prose about the voyage and its sources. '*12,'source_ids':[sid],'quotes':[]} for n,sid in enumerate(ids)]
     if task['input']['work_item']['specialty']=='itinerary':
         c['waypoints']=[{'id':'cebu','sequence':1,'place_historical':'Cebu','place_modern':None,'latitude':10.3,'longitude':123.9,
           'arrival_date':'1521-04','departure_date':None,'date_note':None,'coordinate_note':None,'uncertainty':'Approximate.',
@@ -115,7 +117,7 @@ def retrieve(task):
     return retrieve_mcp_sources(task,env={'EDITORIAL_MCP_URL':'https://fixture.invalid/api/mcp','EDITORIAL_MCP_CORPUS_KEY':'x'*40},open_request=transport)
 json.dump(research(t,config,retrieve=retrieve,generator=generate),sys.stdout)
 `;
-function handler(task,receipt){const r=spawnSync('python3',['-c',python],{cwd:root,input:JSON.stringify({task,receipt}),encoding:'utf8',timeout:10000});assert.equal(r.status,0,r.stderr);return JSON.parse(r.stdout);}
+function handler(task,receipt,cite_all=false){const r=spawnSync('python3',['-c',python],{cwd:root,input:JSON.stringify({task,receipt,cite_all}),encoding:'utf8',timeout:10000});assert.equal(r.status,0,r.stderr);return JSON.parse(r.stdout);}
 
 test('three full reads still leave the writer claimable: results carry only cited references',async()=>{const db=await setup();try{
  let task=await claimResearch(db);
@@ -131,4 +133,18 @@ test('three full reads still leave the writer claimable: results carry only cite
  const writer=await scalar(db,"select editorial_claim('worker',array['writer'],120)");
  assert.ok(writer?.id,'the writer is claimable');
  assert.ok(writer.input.research_result.references.length<=10);
+ }finally{await db.close();}});
+
+test('research that cites everything it read still leaves the writer claimable (Magellan, run 23)',async()=>{const db=await setup();try{
+ let task=await claimResearch(db);let refs=0;
+ for(let n=0;n<3;n++){
+  if(n)task=await scalar(db,"select editorial_claim('worker',array['research'],120)");
+  const receipt=await scalar(db,'select editorial_read_mcp_corpus($1,$2,$3)',[task.id,task.attempt,'worker']);
+  const result=handler(task,receipt,true);refs+=result.references.length;
+  await scalar(db,'select editorial_complete($1,$2,$3,$4)',[task.id,task.lease_token,result,{}]);
+ }
+ assert.ok(refs>=36,`three full reads, all cited (${refs} references)`);
+ const writer=await scalar(db,"select editorial_claim('worker',array['writer'],120)");
+ assert.ok(writer?.id,'the writer is claimable');
+ assert.ok(Buffer.byteLength(JSON.stringify(writer.input.research_result))>40000,'beyond the old 40,000-octet bound');
  }finally{await db.close();}});

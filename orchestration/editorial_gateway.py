@@ -453,7 +453,10 @@ def generate_candidate(task: dict, config: GatewayConfig, *, open_request: Calla
         schema = _bind_source_ids(schema, known_ids)
     try:
         record = json.dumps(material, allow_nan=False)
-        if len(record.encode()) > 65536:
+        # Writer and reviewer prompts carry the joined research (up to 300,000
+        # octets, editorial_writer_context_bounds.sql). 384 KiB keeps a reviewer
+        # prompt inside granite4.2:30b's 131,072-token context.
+        if len(record.encode()) > 393216:
             raise ValueError()
     except (ValueError, TypeError):
         raise GatewayError("gateway-input-invalid") from None
