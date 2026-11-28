@@ -189,3 +189,64 @@ class HandlersTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ValidationRepairTest(unittest.TestCase):
+    """A mechanical defect goes back to its author with the exact problem named.
+
+    Run 17 (Cabeza de Vaca): one itinerary waypoint with departure before arrival
+    discarded the whole result and spent an attempt; the agent never learnt why.
+    """
+
+    def setUp(self):
+        self.config = GatewayConfig("http://limen:8080", "virtual-key", "editorial")
+        self.task = {"id": 1, "role": "research", "input": {"work_item": {"specialty": "itinerary"}},
+                     "agent_config": {"agent_key": "itinerary", "version": 2, "name": "Itinerary", "role": "research",
+                                      "model": "local-fixture", "instructions": "Preserve uncertainty."}}
+
+    def sequence(self, *values):
+        seen = []
+        def generate(task, config):
+            seen.append(copy.deepcopy(task["input"].get("validation_feedback")))
+            return {"candidate": copy.deepcopy(values[min(len(seen), len(values)) - 1])}
+        return generate, seen
+
+    def test_departure_before_arrival_is_corrected_on_the_next_round(self):
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0].update(arrival_date="1528-11", departure_date="1528-04")
+        generate, seen = self.sequence(wrong, ITINERARY_RESEARCH)
+        result = research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+        self.assertEqual(result["waypoints"], [WAYPOINT])
+        self.assertIsNone(seen[0])
+        self.assertEqual(seen[1]["rejected"], "editorial-waypoint-departure-before-arrival")
+        self.assertIn("waypoint sanlucar", seen[1]["problem"])
+        self.assertIn("1528-04", seen[1]["problem"])
+        self.assertEqual(result["candidate"]["validation_repairs"][0]["rejected"],
+                         "editorial-waypoint-departure-before-arrival", "the correction stays in the record")
+
+    def test_a_persistent_defect_still_fails_after_bounded_corrections(self):
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0].update(latitude=123.9)
+        generate, seen = self.sequence(wrong)
+        with self.assertRaisesRegex(EvidenceError, "editorial-invalid-waypoint-coordinate"):
+            research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+        self.assertEqual(len(seen), 3, "one generation plus two corrections, never more")
+        self.assertIn("latitude", seen[1]["problem"])
+
+    def test_defects_that_are_not_the_model_s_to_fix_are_not_retried(self):
+        generate, seen = self.sequence(ITINERARY_RESEARCH)
+        with self.assertRaises(EvidenceError):
+            research(self.task, self.config, retrieve=lambda _: [], generator=generate)
+        self.assertEqual(seen, [], "no generation without governed sources")
+        generate, seen = self.sequence("not an object")
+        with self.assertRaisesRegex(EvidenceError, "editorial-candidate-required"):
+            research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=lambda t, c: {"candidate": None})
+
+    def test_a_writer_told_about_an_unknown_source_can_fix_it(self):
+        self.task.update(role="writer", input={"research_result": copy.deepcopy(RESEARCH)})
+        wrong = copy.deepcopy(DRAFT_CANDIDATE)
+        wrong["paragraphs"][0]["source_id"] = "invented"
+        generate, seen = self.sequence(wrong, DRAFT_CANDIDATE)
+        draft = writer(self.task, self.config, generator=generate)
+        self.assertEqual(draft["citations"][0]["source_id"], "archive:1")
+        self.assertEqual(seen[1]["rejected"], "editorial-unknown-source")
