@@ -187,5 +187,109 @@ class HandlersTest(unittest.TestCase):
             production_handlers({"EDITORIAL_HANDLERS_ENABLED": "1", "EDITORIAL_HANDLER_ROLES": "publisher"})
 
 
+class ValidationRepairTest(unittest.TestCase):
+    """A mechanical defect goes back to its author with the exact problem named.
+
+    Run 17 (Cabeza de Vaca): one itinerary waypoint with departure before arrival
+    discarded the whole result and spent an attempt; the agent never learnt why.
+    """
+
+    def setUp(self):
+        self.config = GatewayConfig("http://limen:8080", "virtual-key", "editorial")
+        self.task = {"id": 1, "role": "research", "input": {"work_item": {"specialty": "itinerary"}},
+                     "agent_config": {"agent_key": "itinerary", "version": 2, "name": "Itinerary", "role": "research",
+                                      "model": "local-fixture", "instructions": "Preserve uncertainty."}}
+
+    def sequence(self, *values):
+        seen = []
+        def generate(task, config):
+            seen.append(copy.deepcopy(task["input"].get("validation_feedback")))
+            return {"candidate": copy.deepcopy(values[min(len(seen), len(values)) - 1])}
+        return generate, seen
+
+    def test_departure_before_arrival_is_corrected_on_the_next_round(self):
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0].update(arrival_date="1528-11", departure_date="1528-04")
+        generate, seen = self.sequence(wrong, ITINERARY_RESEARCH)
+        result = research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+        self.assertEqual(result["waypoints"], [WAYPOINT])
+        self.assertIsNone(seen[0])
+        self.assertEqual(seen[1]["rejections"][-1]["rejected"], "editorial-waypoint-departure-before-arrival")
+        self.assertIn("waypoint sanlucar", seen[1]["rejections"][-1]["problem"])
+        self.assertIn("1528-04", seen[1]["rejections"][-1]["problem"])
+        self.assertEqual(result["candidate"]["validation_repairs"][0]["rejected"],
+                         "editorial-waypoint-departure-before-arrival", "the correction stays in the record")
+
+    def test_a_persistent_defect_still_fails_after_bounded_corrections(self):
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0].update(latitude=123.9)
+        generate, seen = self.sequence(wrong)
+        with self.assertRaisesRegex(EvidenceError, "editorial-invalid-waypoint-coordinate"):
+            research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+        self.assertEqual(len(seen), 3, "one generation plus two corrections, never more")
+        self.assertIn("latitude", seen[1]["rejections"][-1]["problem"])
+
+    def test_defects_that_are_not_the_model_s_to_fix_are_not_retried(self):
+        generate, seen = self.sequence(ITINERARY_RESEARCH)
+        with self.assertRaises(EvidenceError):
+            research(self.task, self.config, retrieve=lambda _: [], generator=generate)
+        self.assertEqual(seen, [], "no generation without governed sources")
+        calls = []
+        def malformed(task, config):
+            calls.append(1)
+            return {"candidate": None}
+        with self.assertRaisesRegex(EvidenceError, "editorial-candidate-required"):
+            research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=malformed)
+        self.assertEqual(len(calls), 1, "a malformed envelope is not a candidate defect to repair")
+
+    def test_a_writer_told_about_an_unknown_source_can_fix_it(self):
+        self.task.update(role="writer", input={"research_result": copy.deepcopy(RESEARCH)})
+        wrong = copy.deepcopy(DRAFT_CANDIDATE)
+        wrong["paragraphs"][0]["source_id"] = "invented"
+        generate, seen = self.sequence(wrong, DRAFT_CANDIDATE)
+        draft = writer(self.task, self.config, generator=generate)
+        self.assertEqual(draft["citations"][0]["source_id"], "archive:1")
+        self.assertEqual(seen[1]["rejections"][-1]["rejected"], "editorial-unknown-source")
+
+    def test_no_correction_round_starts_that_would_outrun_the_worker_deadline(self):
+        import orchestration.editorial_handlers as handlers
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0].update(arrival_date="1528-11", departure_date="1528-04")
+        ticks = iter([0, 0, 700, 700])  # one 700 s generation; another would end past 900 s
+        original = handlers._clock
+        handlers._clock = lambda: next(ticks)
+        try:
+            generate, seen = self.sequence(wrong, ITINERARY_RESEARCH)
+            with self.assertRaisesRegex(EvidenceError, "editorial-waypoint-departure-before-arrival"):
+                research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+            self.assertEqual(len(seen), 1, "the real defect is recorded, not a handler timeout")
+        finally:
+            handlers._clock = original
+
+    def test_paragraph_with_an_internal_blank_line_is_one_paragraph(self):
+        self.task.update(role="writer", input={"research_result": copy.deepcopy(RESEARCH)})
+        candidate = copy.deepcopy(DRAFT_CANDIDATE)
+        candidate["paragraphs"][0]["text"] = " They departed in 1527.\n\n "
+        generate, seen = self.sequence(candidate)
+        draft = writer(self.task, self.config, generator=generate)
+        self.assertEqual(draft["body"], "They departed in 1527.")
+        self.assertEqual(len(seen), 1)
+
+    def test_a_quotation_in_a_waypoint_note_is_located(self):
+        wrong = copy.deepcopy(ITINERARY_RESEARCH)
+        wrong["waypoints"][0]["date_note"] = 'The source says "they sailed at dawn".'
+        generate, seen = self.sequence(wrong, ITINERARY_RESEARCH)
+        research(self.task, self.config, retrieve=lambda _: [SOURCE], generator=generate)
+        self.assertIn("waypoint sanlucar: date_note", seen[1]["rejections"][-1]["problem"])
+
+
+class DeadlineAgreementTest(unittest.TestCase):
+    def test_repair_budget_assumes_the_worker_s_real_deadline(self):
+        from orchestration.editorial import WorkerConfig
+        from orchestration.editorial_handlers import TASK_DEADLINE_SECONDS
+        self.assertEqual(WorkerConfig.timeout_seconds, TASK_DEADLINE_SECONDS)
+
+
 if __name__ == "__main__":
     unittest.main()
+

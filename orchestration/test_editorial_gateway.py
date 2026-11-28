@@ -285,3 +285,19 @@ class SubmissionCompactionTests(unittest.TestCase):
         self.assertNotIn(quote[:40], json.dumps(material))
         self.assertLess(len(json.dumps(material)), len(json.dumps(snapshot)) / 10)
         self.assertIn("evidence", snapshot["payload"]["waypoints"][0]["claims"][0], "the stored snapshot is untouched")
+
+
+class ValidationFeedbackTests(unittest.TestCase):
+    def test_rejection_reaches_the_model_and_the_rules_explain_it(self):
+        calls = []
+        def transport(request, timeout):
+            calls.append(json.loads(request.data))
+            return BytesIO(json.dumps({"choices": [{"message": {"content": '{"notes":[]}'}}]}).encode())
+        value = task()
+        value["input"] = {"validation_feedback": {"rejected": "editorial-waypoint-departure-before-arrival",
+                                                  "problem": "waypoint galveston: departure_date 1528-04 is earlier than arrival_date 1528-11"}}
+        generate_candidate(value, GatewayConfig("https://gateway.example/v1", "fixture-private-key", "editorial"),
+                           open_request=transport)
+        prompt = json.dumps(calls[0]["messages"])
+        self.assertIn("waypoint galveston: departure_date 1528-04", prompt)
+        self.assertIn("input.validation_feedback", calls[0]["messages"][0]["content"])

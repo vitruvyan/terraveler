@@ -6,6 +6,7 @@ functions so the worker's spawned process can import them without closures.
 from __future__ import annotations
 
 import copy
+import time
 from datetime import date
 import math
 import os
@@ -16,7 +17,39 @@ from orchestration.editorial_gateway import GatewayConfig, generate_candidate
 
 
 class EvidenceError(ValueError):
-    """A bounded structural or provenance failure, without raw source content."""
+    """A bounded structural or provenance failure, without raw source content.
+
+    `feedback` says, in a sentence, what the candidate got wrong. It is built
+    only from the candidate's own validated fields (identifiers, dates) and goes
+    back to the same agent for correction; the persisted failure stays the code.
+    """
+
+    def __init__(self, code, feedback=None):
+        super().__init__(code)
+        self.feedback = feedback
+
+
+# Mechanical defects in a candidate that its author can correct when told
+# exactly what is wrong. Retrieval, provenance and context failures are not here:
+# they are not the model's to fix.
+REPAIRABLE = frozenset({
+    "editorial-unknown-source", "editorial-quote-mismatch", "editorial-invalid-text",
+    "editorial-invalid-finding", "editorial-findings-required", "editorial-invalid-quotes",
+    "editorial-invalid-uncertainties", "editorial-waypoints-required", "editorial-invalid-waypoints",
+    "editorial-invalid-waypoint", "editorial-invalid-waypoint-identity", "editorial-invalid-waypoint-date",
+    "editorial-invalid-waypoint-coordinate", "editorial-invalid-waypoint-confidence",
+    "editorial-waypoint-uncertainty-required", "editorial-waypoint-departure-before-arrival",
+    "editorial-unexpected-waypoints", "editorial-draft-required", "editorial-citations-required",
+    "editorial-claim-not-in-draft", "editorial-uncited-paragraph",
+})
+MAX_REPAIR_TURNS = 2
+# The worker kills a handler at WorkerConfig.timeout_seconds (orchestration/
+# editorial.py, 1000 s). A correction round only starts if the round just spent
+# would still fit inside 90% of it; otherwise the original defect is raised, so
+# the record keeps the real cause instead of 'editorial-handler-timeout'.
+TASK_DEADLINE_SECONDS = 1000
+REPAIR_BUDGET_SECONDS = 0.9 * TASK_DEADLINE_SECONDS
+_clock = time.monotonic
 
 
 def _text(value, limit=50000):
@@ -65,11 +98,22 @@ WAYPOINT_FIELDS = {"id", "sequence", "place_historical", "place_modern", "latitu
                    "source_ids", "confidence", "uncertainty"}
 
 
-def _partial_date(value):
+def _located(check, feedback):
+    """Run a check; a quotation defect it raises gets a location the author can act on."""
+    try:
+        check()
+    except EvidenceError as error:
+        if str(error) == "editorial-quote-mismatch" and error.feedback is None:
+            raise EvidenceError("editorial-quote-mismatch", feedback) from None
+        raise
+
+
+def _partial_date(value, where="date"):
     if value is None:
         return
     if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}(?:-[0-9]{2}(?:-[0-9]{2})?)?", value):
-        raise EvidenceError("editorial-invalid-waypoint-date")
+        raise EvidenceError("editorial-invalid-waypoint-date",
+                            f"{where} must be YYYY, YYYY-MM or YYYY-MM-DD (years below 1000 zero-padded, e.g. 0629)")
     parts = [int(part) for part in value.split("-")]
     try:
         if len(parts) > 1 and not 1 <= parts[1] <= 12:
@@ -77,7 +121,7 @@ def _partial_date(value):
         if len(parts) == 3:
             date(*parts)
     except ValueError:
-        raise EvidenceError("editorial-invalid-waypoint-date") from None
+        raise EvidenceError("editorial-invalid-waypoint-date", f"{where} {value} is not a real calendar date") from None
 
 
 def _waypoints(values, known):
@@ -95,36 +139,45 @@ def _waypoints(values, known):
             raise EvidenceError("editorial-invalid-waypoint-identity")
         identities.add(identity)
         sequences.add(sequence)
+        here = f"waypoint {identity}"
         _text(waypoint["place_historical"], 500)
         if waypoint["place_modern"] is not None:
             _text(waypoint["place_modern"], 500)
         for field, minimum, maximum in (("latitude", -90, 90), ("longitude", -180, 180)):
             coordinate = waypoint[field]
             if type(coordinate) not in (int, float) or not math.isfinite(coordinate) or not minimum <= coordinate <= maximum:
-                raise EvidenceError("editorial-invalid-waypoint-coordinate")
-        _partial_date(waypoint["arrival_date"])
-        _partial_date(waypoint["departure_date"])
+                raise EvidenceError("editorial-invalid-waypoint-coordinate",
+                                    f"{here}: {field} must be a number between {minimum} and {maximum} "
+                                    "(latitude is north-south, longitude east-west)")
+        _partial_date(waypoint["arrival_date"], f"{here}: arrival_date")
+        _partial_date(waypoint["departure_date"], f"{here}: departure_date")
         if waypoint["arrival_date"] and waypoint["departure_date"]:
             arrival = waypoint["arrival_date"].split("-")
             departure = waypoint["departure_date"].split("-")
             precision = min(len(arrival), len(departure))
             # Compare at the shared precision: "1528" and "1528-05" are compatible.
             if departure[:precision] < arrival[:precision]:
-                raise EvidenceError("editorial-waypoint-departure-before-arrival")
-        for field, limit in (("date_note", 500), ("coordinate_note", 500), ("uncertainty", 500)):
+                raise EvidenceError("editorial-waypoint-departure-before-arrival",
+                                    f"{here}: departure_date {waypoint['departure_date']} is earlier than arrival_date "
+                                    f"{waypoint['arrival_date']}. Correct the dates from the sources, or set departure_date "
+                                    "to null and explain the uncertainty in date_note")
+        for field, limit in (("date_note", 500), ("coordinate_note", 500), ("uncertainty", 500), ("event", 5000)):
             if waypoint[field] is not None:
-                _quoted_spans(_text(waypoint[field], limit), known)
-        _quoted_spans(_text(waypoint["event"], 5000), known)
+                _located(lambda: _quoted_spans(_text(waypoint[field], limit), known),
+                         f"{here}: {field} contains a quotation that is not verbatim in the cited source; "
+                         "paraphrase without quotation marks")
         ids = waypoint["source_ids"]
         if (not isinstance(ids, list) or not ids
                 or any(not isinstance(source, str) or source not in known for source in ids)
                 or len(ids) != len(set(ids))):
-            raise EvidenceError("editorial-unknown-source")
+            raise EvidenceError("editorial-unknown-source",
+                                f"{here}: source_ids must be a non-empty list of distinct ids from input.retrieved_sources")
         confidence = waypoint["confidence"]
         if confidence not in ("certain", "approximate", "reconstructed"):
             raise EvidenceError("editorial-invalid-waypoint-confidence")
         if confidence != "certain" and not isinstance(waypoint["uncertainty"], str):
-            raise EvidenceError("editorial-waypoint-uncertainty-required")
+            raise EvidenceError("editorial-waypoint-uncertainty-required",
+                                f"{here}: confidence is {confidence}, so uncertainty must explain why")
     return copy.deepcopy(values)
 
 
@@ -136,10 +189,12 @@ def _research(value):
     findings = value.get("findings")
     if not isinstance(findings, list) or not findings or len(findings) > 200:
         raise EvidenceError("editorial-findings-required")
-    for finding in findings:
+    for number, finding in enumerate(findings, 1):
         if not isinstance(finding, dict):
             raise EvidenceError("editorial-invalid-finding")
-        _quoted_spans(_text(finding.get("text")), known)
+        _located(lambda: _quoted_spans(_text(finding.get("text")), known),
+                 f"finding {number}: text contains a quotation that is not verbatim in its source; "
+                 "paraphrase without quotation marks")
         ids = finding.get("source_ids")
         if not isinstance(ids, list) or not ids or any(not isinstance(i, str) or i not in known for i in ids):
             raise EvidenceError("editorial-unknown-source")
@@ -213,9 +268,54 @@ def _generate(task, config, generator, **context):
     return generated["candidate"], generated
 
 
+_DEFAULT_FEEDBACK = {
+    "editorial-unknown-source": "a source_id is not one of the ids provided in the input",
+    "editorial-quote-mismatch": "a quotation is not a verbatim span of its cited source",
+    "editorial-uncited-paragraph": ("a paragraph's text contains a blank line or starts/ends with whitespace; "
+                                    "each paragraph must be one block of text"),
+}
+
+
+def _with_repair(task, config, generator, build, **context):
+    """Generate, validate, and on a mechanical defect tell the same agent exactly
+    what was rejected and ask again: at most MAX_REPAIR_TURNS corrections per
+    attempt. One wrong date used to discard a whole itinerary and spend an
+    attempt without the agent ever learning what it got wrong."""
+    repairs = []
+    started = _clock()
+    for turn in range(MAX_REPAIR_TURNS + 1):
+        extra = dict(context)
+        if repairs:
+            extra["validation_feedback"] = {
+                "instruction": ("Your previous output (not repeated here) was rejected by a deterministic check. "
+                                "Regenerate the complete output from the same input, avoiding every problem listed."),
+                "rejections": [dict(r) for r in repairs], "correction_round": len(repairs)}
+        began = _clock()
+        candidate, raw = _generate(task, config, generator, **extra)
+        took = _clock() - began
+        try:
+            result = build(candidate, raw)
+        except EvidenceError as error:
+            code = str(error)
+            if (code not in REPAIRABLE or turn == MAX_REPAIR_TURNS
+                    or (_clock() - started) + took > REPAIR_BUDGET_SECONDS):
+                raise
+            repairs.append({"rejected": code,
+                            "problem": (error.feedback or _DEFAULT_FEEDBACK.get(code) or code)[:500]})
+            continue
+        if repairs and isinstance(result.get("candidate"), dict):
+            result["candidate"]["validation_repairs"] = repairs
+        return result
+    raise AssertionError("unreachable")
+
+
 def research(task, config, *, retrieve: Callable, generator=generate_candidate):
     references = _sources(retrieve(task))
-    candidate, raw = _generate(task, config, generator, retrieved_sources=references)
+    return _with_repair(task, config, generator, lambda candidate, raw: _research_result(task, candidate, raw, references),
+                        retrieved_sources=references)
+
+
+def _research_result(task, candidate, raw, references):
     result = {**candidate, "kind": "research", "references": references}
     _research(result)
     work_item = task.get("input", {}).get("work_item", {})
@@ -238,7 +338,12 @@ def research(task, config, *, retrieve: Callable, generator=generate_candidate):
 def writer(task, config, *, generator=generate_candidate):
     research_result = _context(task, "research")
     references = _research(research_result)
-    candidate, raw = _generate(task, config, generator, research_result=research_result)
+    return _with_repair(task, config, generator,
+                        lambda candidate, raw: _draft_result(candidate, raw, research_result, references),
+                        research_result=research_result)
+
+
+def _draft_result(candidate, raw, research_result, references):
     paragraphs = candidate.get("paragraphs")
     if not isinstance(paragraphs, list) or not 1 <= len(paragraphs) <= 200:
         raise EvidenceError("editorial-draft-required")
@@ -246,7 +351,11 @@ def writer(task, config, *, generator=generate_candidate):
     for paragraph in paragraphs:
         if not isinstance(paragraph, dict) or set(paragraph) != {"text", "source_id"}:
             raise EvidenceError("editorial-draft-required")
-        texts.append(_text(paragraph["text"]))
+        # One block per paragraph: an internal blank line would split it into
+        # pieces the citation map cannot match.
+        texts.append(re.sub(r"\n\s*\n", "\n", _text(paragraph["text"])).strip())
+        if not texts[-1]:
+            raise EvidenceError("editorial-draft-required", "a paragraph's text is empty")
     result = {"kind": "draft", "title": candidate.get("title"), "body": "\n\n".join(texts),
               "citations": [{"source_id": paragraph["source_id"], "claim": text}
                             for paragraph, text in zip(paragraphs, texts)],
