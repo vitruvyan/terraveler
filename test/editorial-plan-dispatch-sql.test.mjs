@@ -42,7 +42,7 @@ else: result=reviewer(task,conf,generator=generate)
 json.dump(result,sys.stdout)
 `;
 function executeHandler(task,receipt=null,reviewVerdicts={}){const child=spawnSync('python3',['-c',python],{cwd:root,env:{...process.env,PYTHONPATH:root},input:JSON.stringify({task,receipt,review_verdicts:reviewVerdicts}),encoding:'utf8',timeout:10000,maxBuffer:1024*1024});assert.equal(child.status,0,child.stderr||child.error?.message);return JSON.parse(child.stdout);}
-const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography','editorial_image_text_editor'];
+const names=['editorial_workflow','editorial_team','editorial_agent_binding','editorial_pipeline','editorial_chat','editorial_specialists','editorial_agent_specialties','editorial_mcp_plans','editorial_preparation','editorial_mcp_corpus','editorial_plan_dispatch','editorial_dossier_sources','editorial_textual_newsroom','editorial_task_retry','editorial_graph_revisions','editorial_waypoints','editorial_commons_images','editorial_iconography','editorial_image_text_editor','editorial_claim_run_priority'];
 const migration=await Promise.all(names.map(n=>readFile(new URL(`../supabase/${n}.sql`,import.meta.url),'utf8')));
 test('dispatch migration contains one definition per function and balanced SQL dollar quotes',()=>{
  const sql=migration.at(-1);
@@ -495,4 +495,31 @@ test('image receipts must come from the same attempt and the image graph shape i
    await assert.rejects(scalar(x,'select editorial_dispatch_plan($1,$2,$3)',[1,p.plan_id,'dispatch-images-bad-001']),/at most one iconography|unsupported editorial dependency graph|one factcheck per writer/,why);
   }finally{await x.close();}
  }
+});
+
+test('an older dossier\'s revision is claimed before a newer dossier\'s first task',async()=>{
+ const db=await fixture();
+ try{
+  const first=await revisionRun(db);
+  // A second dossier is dispatched while the first is still at research.
+  await db.exec('reset role');
+  await db.exec("insert into submissions values(2,'approved','{}','example')");
+  assert.equal((await scalar(db,"select editorial_attach(2,'example-two','Example two','Research')")).topic_id,2);
+  const url='https://en.wikipedia.org/wiki/Example';
+  const rec=await scalar(db,'select editorial_record_mcp_consultation($1,$2,$3)',['get_wikipedia_outline',{url},JSON.stringify({kind:'wikipedia-orientation',purpose:'planning-only',requested_url:url,revision_id:124,sections:[{index:'1',title:'History'}],text:'Orientation',text_truncated:false,sections_truncated:false,external_links_truncated:false})]);
+  const planner=await scalar(db,"select id from editorial_agent_versions where agent_key='planner'");
+  const reviewer=await scalar(db,"select id from editorial_agent_versions where agent_key='reviewer'");
+  const prep=await scalar(db,'select editorial_record_preparation($1,$2,$3,$4,$5,$6,$7,$8,$9)',[2,0,'prepared-request-00002',null,url,{orientation_receipt_id:rec.id,gaps:[],work_items:[item('history','history',[]),item('diary','diary',['history']),item('diary-factcheck','factcheck',['diary'])]},planner,reviewer,{verdict:'adequate-for-next-stage',issues:[]}]);
+  await db.exec('set role terraveler_service');
+  const second=await scalar(db,'select editorial_dispatch_plan($1,$2,$3)',[2,prep.plan_id,'dispatch-second-00001']);
+  assert.ok(second.run_id>first.run_id);
+  await completeRole(db,'research');
+  await completeRole(db,'writer');
+  await completeRole(db,'reviewer',{'0':'changes-requested'});
+  // Queued now: the second dossier's research (lower id) and the first
+  // dossier's revised draft (created last, highest id).
+  const next=await scalar(db,"select editorial_claim('worker',array['research','writer'],120)");
+  assert.equal(next.input.graph_run_id,first.run_id,'the dossier nearer completion goes first');
+  assert.equal(next.input.revision,1);
+ }finally{await db.close();}
 });
